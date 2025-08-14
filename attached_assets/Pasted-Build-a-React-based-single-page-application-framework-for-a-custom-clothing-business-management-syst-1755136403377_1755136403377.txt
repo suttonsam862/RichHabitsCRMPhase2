@@ -1,0 +1,19 @@
+Build a React-based single-page application framework for a custom clothing business management system. Use TypeScript, Material-UI for styling, and React Router for future route expansions, but limit the initial build to only the Admin role with full permissions and a single page: the Organizations page. Integrate with Supabase for database operations, authentication, and real-time features where applicable—set up Supabase client in the app, handle Admin authentication via Supabase auth (e.g., email/password or OAuth, with role-based access ensuring full Admin permissions). Do not use any mock backend, local state for data simulation, or hardcoded mock data; all data fetching and management must come from the Supabase database (assume schema exists or create necessary tables via Supabase dashboard if needed, but focus code on querying/inserting/updating). Seed any initial data via SQL scripts directly in Supabase, not in the codebase.
+
+For the Organizations page:
+- Fetch organizations from Supabase table (e.g., 'organizations'), grouped by state. Include fields like: organization name, logo_url, state, sports (array or related table), assigned salesperson, contact per sport (related table or JSON), universal discounts (JSON or related), address, phone, email, creation date.
+- Structure the page as vertical rows per state, each row being a horizontally scrollable container (e.g., using CSS overflow-x: scroll or a carousel library like react-slick).
+- Within each row, render animated rectangular blocks (cards) for each organization: 
+  - Background: 20% opacity expanded version of the organization's logo image from logo_url (blurred or stretched to fill the card).
+  - Overlay: A centered logo icon displaying the actual logo image at full opacity.
+  - Add subtle animations (e.g., scale on hover, fade-in on load via Framer Motion or CSS).
+- Make each block clickable to open a modal popup (using Material-UI Dialog or Modal) with tabs (Material-UI Tabs) for organization management sections:
+  - Tab 1: General Info (fetch/edit name, address, phone, email, state, creation date via Supabase).
+  - Tab 2: Sports Management (fetch/edit list of sports, with assigned salesperson and contact details per sport; use Supabase queries/upserts).
+  - Tab 3: Discounts (fetch/edit universal discounts, with fields for percentages or rules).
+  - Tab 4: Orders (fetch list of current orders in production for this organization from Supabase 'orders' table, with links to navigate to a placeholder order details route—implement the route but keep it minimal, e.g., a page fetching and displaying order details from DB).
+  - Tab 5: Other (fetch/edit additional info like notes or audit logs from related tables).
+- Include a search/filter bar at the top to filter organizations by name, state, or sport using Supabase RPC or client-side filtering on fetched data.
+- Add Admin controls: Buttons to add new organizations (opens a form modal, inserts via Supabase), edit existing ones via the popup (updates via Supabase), or delete (with confirmation, deletes via Supabase).
+
+Keep the app extensible: Set up App.js with routes, but only render the Organizations page at the root path. Comment out placeholders for future pages (e.g., Orders, Designs) to avoid implementation now. Ensure clean code structure: components folder with reusable parts (e.g., OrgCard, StateRow, OrgModal), and use TypeScript interfaces for data types (e.g., interface Organization { name: string; logo_url: string; state: string; sports: Sport[]; ... } where Sport includes salesperson and contact). Optimize for performance, accessibility, and real-time updates if feasible via Supabase subscriptions. If file attachments are provided later, incorporate them for logos or data seeding via Supabase storage.
