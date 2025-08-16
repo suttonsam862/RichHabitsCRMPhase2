@@ -58,17 +58,3 @@ export const queryClient = new QueryClient({
   },
 });
 
-export async function apiRequest(url: string, method: "GET"|"POST"|"PUT"|"DELETE" = "GET", data?: any) {
-  const res = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: data ? JSON.stringify(data) : undefined,
-  });
-  if (!res.ok) {
-    let body: any = null;
-    try { body = await res.json(); } catch {}
-    console.error("API request failed:", { url, method, status: res.status, body });
-    throw new Error(body?.details?.message || `Request failed: ${res.status}`);
-  }
-  return res.json();
-}
