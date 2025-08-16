@@ -1,0 +1,45 @@
+Goal: Replace Org UI with a neon/dark multi‑step modal, add logo upload, and persist to existing tables (organizations, org_sports, sports). Keep edits small and reversible.
+
+Do (UI):
+
+Font: add local Coolvetica (user will supply file). Create public/fonts/Coolvetica.woff2, add @font-face in globals, apply to body/subtitles/labels/inputs; keep current title font. Fallback: system sans.
+
+Inputs: ensure text + caret = white; placeholder = text-white/50.
+
+Wizard modal: 3 tabs with scrollable tab bar:
+
+Primary (required): name*, is_business toggle, email_domain, address fields (address_line1, address_line2, city, state dropdown, postal_code, country).
+
+Branding: logo upload (see backend), brand_primary, brand_secondary.
+
+Sports & contacts: add one or more sports via dropdown from sports table; for each row require contact_name, contact_email (and optional phone). Validate ≥1 sport unless is_business=true. UI supports multiple contacts visually but save only the primary contact (schema limit).
+
+Cards/list: show orgs as neon GlowCards; show logo, name, type (School/Business), sport count, created_at.
+
+Constants: add US_STATES array for dropdown.
+
+Do (Backend):
+6) Logo upload route: create POST /api/upload/logo (multipart). On server only, use Supabase Storage with service role: env SUPABASE_SERVICE_ROLE + SUPABASE_URL. Bucket org-logos (create if missing). Store orgId/filename, return public URL; write to organizations.logo_url.
+7) Create org flow: API endpoint creates org row, then inserts org_sports rows for each selected sport with contact_name, contact_email, contact_phone.
+
+Migrations (minimal, Drizzle):
+8) Add to organizations:
+
+is_business boolean default false not null
+
+address_line1 text, address_line2 text, city text, state text, postal_code text, country text
+Generate migration + types; no destructive changes.
+
+Rules:
+
+Use only existing tables + the fields above; no other schema edits.
+
+Keep storage upload server-side; never expose service key to client.
+
+If bucket policies are needed, output SQL/policy text but don’t apply without approval.
+
+Return a unified diff, list of files changed, and a 1–2 line summary per file.
+
+Files likely touched: pages/organizations, components/GlowCard, new components/OrgWizard/*, server/routes.ts (create org + upload), server/storage-supabase.ts, sql/migrations/*, globals.css, constants/usStates.ts.
+
+After: print test steps (create org with 1 sport/contact; business without sports; upload logo). If anything needs secrets, ask.
