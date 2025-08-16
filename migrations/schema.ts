@@ -1,7 +1,7 @@
 import { pgTable, foreignKey, varchar, text, timestamp, unique, jsonb, numeric } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-
+const gen_random_uuid = sql`gen_random_uuid()`
 
 export const sports = pgTable("sports", {
 	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
