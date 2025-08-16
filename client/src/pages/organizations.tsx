@@ -1,9 +1,9 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { OrganizationCard } from "@/components/organization-card";
 import { OrganizationModal } from "@/components/organization-modal";
@@ -46,122 +46,130 @@ export default function Organizations() {
     return acc;
   }, {} as Record<string, OrganizationWithSports[]>);
 
+  const getGradientVariant = (index: number) => {
+    const variants = ['default', 'blue', 'green', 'orange'] as const;
+    return variants[index % variants.length];
+  };
+
   if (error) {
     return (
       <div className="container mx-auto py-8">
-        <Card className="glass">
-          <CardContent className="p-8 text-center">
-            <p className="text-destructive">Error loading organizations. Please try again.</p>
-          </CardContent>
-        </Card>
+        <div className="neon-card">
+          <div className="neon-card-inner p-8 text-center">
+            <p className="text-red-400">Error loading organizations. Please try again.</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          Rich Habits Organizations
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Manage your custom clothing business relationships
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <div className="container mx-auto py-8 space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+            Rich Habits Organizations
+          </h1>
+          <p className="text-white/70 text-lg">
+            Manage your custom clothing business relationships
+          </p>
+        </div>
 
-      {/* Search and Actions */}
-      <Card className="glass">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search organizations, states, or sports..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 glass"
-                data-testid="input-search-organizations"
-              />
+        {/* Search and Actions */}
+        <div className="neon-card max-w-2xl mx-auto">
+          <div className="neon-card-inner p-6">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
+                <Input
+                  placeholder="Search organizations, states, or sports..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-purple-400/50"
+                  data-testid="input-search-organizations"
+                />
+              </div>
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <div className="neon-button">
+                    <div className="neon-button-inner flex items-center justify-center gap-2 whitespace-nowrap">
+                      <Plus className="h-4 w-4" />
+                      Add Organization
+                    </div>
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Create New Organization</DialogTitle>
+                  </DialogHeader>
+                  <div className="max-h-[70vh] overflow-y-auto pr-2">
+                    <CreateOrganizationForm onSuccess={() => setShowCreateDialog(false)} />
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button 
-                  className="whitespace-nowrap"
-                  data-testid="button-create-organization"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Organization
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="glass-strong max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Organization</DialogTitle>
-                </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto pr-2">
-                  <CreateOrganizationForm onSuccess={() => setShowCreateDialog(false)} />
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Organizations by State */}
-      {isLoading ? (
-        <Card className="glass">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">Loading organizations...</p>
-          </CardContent>
-        </Card>
-      ) : Object.keys(filteredOrganizationsByState).length === 0 ? (
-        <Card className="glass">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">
-              {searchTerm ? "No organizations match your search." : "No organizations found."}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-8">
-          {Object.entries(filteredOrganizationsByState)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([state, orgs]) => (
-            <div key={state} className="space-y-4">
-              <h2 
-                className="text-2xl font-semibold text-foreground/90"
-                data-testid={`text-state-${state.toLowerCase().replace(' ', '-')}`}
-              >
-                {state}
-                <span className="text-sm text-muted-foreground ml-2">
-                  ({orgs.length} organization{orgs.length !== 1 ? 's' : ''})
-                </span>
-              </h2>
-              
-              <div className="overflow-x-auto pb-4">
-                <div className="flex gap-4 scrollbar-hide" style={{ minWidth: 'min-content' }}>
-                  {orgs.map((org) => (
-                    <OrganizationCard
-                      key={org.id}
-                      organization={org}
-                      onClick={() => setSelectedOrg(org)}
-                    />
-                  ))}
+        {/* Organizations by State */}
+        {isLoading ? (
+          <div className="neon-card max-w-md mx-auto">
+            <div className="neon-card-inner p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto mb-4"></div>
+              <p className="text-white/70">Loading organizations...</p>
+            </div>
+          </div>
+        ) : Object.keys(filteredOrganizationsByState).length === 0 ? (
+          <div className="neon-card max-w-md mx-auto">
+            <div className="neon-card-inner p-8 text-center">
+              <p className="text-white/70">
+                {searchTerm ? "No organizations match your search." : "No organizations found."}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {Object.entries(filteredOrganizationsByState)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([state, orgs]) => (
+              <div key={state} className="space-y-6">
+                <h2 
+                  className="text-3xl font-semibold text-white/90 text-center"
+                  data-testid={`text-state-${state.toLowerCase().replace(' ', '-')}`}
+                >
+                  {state}
+                  <span className="text-sm text-white/50 ml-3 font-normal">
+                    ({orgs.length} organization{orgs.length !== 1 ? 's' : ''})
+                  </span>
+                </h2>
+                
+                <div className="overflow-x-auto pb-4">
+                  <div className="flex gap-6 justify-center scrollbar-hide" style={{ minWidth: 'min-content' }}>
+                    {orgs.map((org, index) => (
+                      <OrganizationCard
+                        key={org.id}
+                        organization={org}
+                        onClick={() => setSelectedOrg(org)}
+                        gradientVariant={getGradientVariant(index)}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* Organization Detail Modal */}
-      {selectedOrg && (
-        <OrganizationModal
-          organization={selectedOrg}
-          open={!!selectedOrg}
-          onClose={() => setSelectedOrg(null)}
-        />
-      )}
+        {/* Organization Detail Modal */}
+        {selectedOrg && (
+          <OrganizationModal
+            organization={selectedOrg}
+            open={!!selectedOrg}
+            onClose={() => setSelectedOrg(null)}
+          />
+        )}
+      </div>
     </div>
   );
 }
