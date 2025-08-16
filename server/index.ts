@@ -6,6 +6,7 @@ import { sql } from 'drizzle-orm';
 import { organizations } from '../shared/schema';
 import { errorHandler } from "./middleware/error";
 import organizationsRouter from "./routes/organizations";
+import debugRouter from "./routes/debug";
 
 const app = express();
 app.use(express.json());
@@ -60,6 +61,7 @@ app.use((req, res, next) => {
   // Register routes
   app.use(router);
   app.use("/api/organizations", organizationsRouter);
+  app.use("/api/debug", debugRouter);
 
   // Health check endpoint
   app.get('/api/health', async (req,res,next)=>{
