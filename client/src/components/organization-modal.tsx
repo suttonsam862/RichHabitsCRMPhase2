@@ -13,7 +13,7 @@ import {
   Edit,
   Trash
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +75,10 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="org-modal-desc">
+          <DialogDescription id="org-modal-desc" className="sr-only">
+            Loading organization details and management interface
+          </DialogDescription>
           <div className="p-8 text-center">
             <p className="text-muted-foreground">Loading organization details...</p>
           </div>
@@ -89,7 +92,10 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="org-modal-desc">
+        <DialogDescription id="org-modal-desc" className="sr-only">
+          Loading organization details and management interface
+        </DialogDescription>
         {editMode ? (
           <div className="p-6">
             <DialogHeader className="mb-6">
@@ -136,7 +142,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                       <Building2 className="h-8 w-8 text-primary" />
                     </div>
                   )}
-                  
+
                   <div className="space-y-2">
                     <DialogTitle 
                       className="text-2xl font-bold"
@@ -266,7 +272,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                       )}
 
                       <Separator />
-                      
+
                       <div className="text-sm text-muted-foreground">
                         <p>Created: {new Date(currentOrg.createdAt).toLocaleDateString()}</p>
                       </div>
@@ -294,7 +300,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                               </p>
                             </div>
                           )}
-                          
+
                           {discountInfo.minOrder && (
                             <div>
                               <p className="font-medium">Minimum Order</p>
