@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { storage } from "./supabase-storage";
+import * as Orgs from "./organizations";
 import { 
   insertOrganizationSchema, 
   insertSportSchema, 
@@ -35,18 +36,12 @@ function asyncHandler(fn: Function) {
 }
 
 // Organizations routes
-router.get("/api/organizations", asyncHandler(async (req: any, res: any) => {
+router.get("/api/organizations", async (req, res, next) => {
   try {
-    const organizations = await storage.getOrganizations();
-    res.json(organizations);
-  } catch (error: any) {
-    console.error("Error fetching organizations:", error);
-    res.status(500).json({ 
-      error: "Failed to fetch organizations", 
-      details: error.message 
-    });
-  }
-}));
+    const rows = await Orgs.listOrganizations();
+    res.json(rows.map(o => ({ ...o, sports: [] })));
+  } catch (e) { next(e); }
+});
 
 router.get("/api/organizations/:id", asyncHandler(async (req: any, res: any) => {
   try {
