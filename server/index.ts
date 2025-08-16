@@ -4,6 +4,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { db } from './db';
 import { sql } from 'drizzle-orm';
 import { organizations } from '../shared/schema';
+import { errorHandler } from "./middleware/error";
+import organizationsRouter from "./routes/organizations";
 
 const app = express();
 app.use(express.json());
@@ -57,6 +59,7 @@ app.use((req, res, next) => {
 
   // Register routes
   app.use(router);
+  app.use("/api/organizations", organizationsRouter);
 
   // Health check endpoint
   app.get('/api/health', async (req,res,next)=>{
@@ -67,10 +70,8 @@ app.use((req, res, next) => {
     }catch(e){ next(e); }
   });
 
-  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
-    console.error('API error:', { msg: err?.message, stack: err?.stack, path: req.originalUrl, method: req.method });
-    res.status(500).json({ error: err?.message || 'Server error' });
-  });
+  // Use the enhanced error handler
+  app.use(errorHandler);
 
   // Setup vite in development
   if (app.get("env") === "development") {
