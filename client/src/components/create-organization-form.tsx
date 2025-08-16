@@ -33,11 +33,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
 
   const createMutation = useMutation({
     mutationFn: (data: InsertOrganization) =>
-      apiRequest("/api/organizations", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      }),
+      apiRequest('/api/organizations', { method: 'POST', data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
       toast({
