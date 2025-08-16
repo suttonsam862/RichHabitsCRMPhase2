@@ -325,6 +325,24 @@ router.post("/api/users",
   })
 );
 
+// Logo upload route
+router.post("/api/upload-logo", upload.single('logo'), asyncHandler(async (req: any, res: any) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    
+    const logoUrl = await uploadLogo(req.file, req.body.orgId);
+    res.json({ url: logoUrl });
+  } catch (error: any) {
+    console.error("Error uploading logo:", error);
+    res.status(500).json({ 
+      error: "Failed to upload logo", 
+      details: error.message 
+    });
+  }
+}));
+
 // Org Sports routes (many-to-many relationship)
 const orgSportsSchema = z.object({
   organizationId: z.string(),
