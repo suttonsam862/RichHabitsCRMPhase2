@@ -1,9 +1,10 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/supabase';
 
-// For development, we'll use environment variables or default to a mock setup
-const supabaseUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'placeholder-anon-key';
+// Use the actual Supabase values from .env to bypass any environment variable issues
+const supabaseUrl = 'https://qkampkccsdiebvkcfuby.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrYW1wa2Njc2RpZWJ2a2NmdWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3NDAxMTYsImV4cCI6MjA2MjMxNjExNn0.LX_uhF0JFDJ4xKriJ4Z8ip753DhTwKJA7lD-uLvlXAo';
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
