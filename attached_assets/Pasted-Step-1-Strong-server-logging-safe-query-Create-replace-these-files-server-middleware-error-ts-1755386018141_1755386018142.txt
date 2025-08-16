@@ -1,0 +1,101 @@
+Step 1 — Strong server logging + safe query
+
+Create/replace these files.
+
+server/middleware/error.ts
+
+import type { Request, Response, NextFunction } from "express";
+
+export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
+  const payload = {
+    message: err?.message || "Internal server error",
+    code: err?.code,
+    detail: err?.detail,
+    table: err?.table,
+    column: err?.column,
+    stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
+  };
+  console.error("API Error:", payload);
+  res.status(500).json({ error: "Internal server error", details: payload });
+}
+
+
+server/routes/organizations.ts (or wherever your GET lives)
+
+import { Router } from "express";
+import sql from "../db"; // your postgres() client import
+const router = Router();
+
+router.get("/", async (_req, res, next) => {
+  try {
+    const rows = await sql/*sql*/`
+      SELECT
+        id, name, logo_url,
+        state, city, postal_code,
+        phone, contact_email,
+        COALESCE(is_business, false) AS is_business,
+        created_at, updated_at
+      FROM public.organizations
+      ORDER BY created_at DESC NULLS LAST
+    `;
+    res.json({ data: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** quick debug: see actual columns the DB has */
+router.get("/__columns", async (_req, res, next) => {
+  try {
+    const cols = await sql/*sql*/`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema='public' AND table_name='organizations'
+      ORDER BY ordinal_position
+    `;
+    res.json({ columns: cols.map(c => c.column_name) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
+
+
+server/index.ts (wire the error handler and a health route)
+
+// ...existing imports
+import morgan from "morgan";
+import { errorHandler } from "./middleware/error";
+// ...
+app.use(morgan("dev"));
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
+app.use("/api/organizations", organizationsRouter); // ensure this is mounted
+app.use(errorHandler); // <-- keep last
+
+Step 2 — Client logs the server error
+
+client/src/lib/queryClient.ts (your fetch helper)
+
+export async function apiRequest(url: string, method: "GET"|"POST"|"PUT"|"DELETE" = "GET", data?: any) {
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  if (!res.ok) {
+    let body: any = null;
+    try { body = await res.json(); } catch {}
+    console.error("API request failed:", { url, method, status: res.status, body });
+    throw new Error(body?.details?.message || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+Step 3 — Reload and check
+
+Reload the app.
+
+Open Network panel → click the failing /api/organizations → see response JSON.
+
+If it still fails, hit /api/organizations/__columns in the browser; paste me that list.
