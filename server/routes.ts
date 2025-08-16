@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { storage } from "./supabase-storage";
 import * as Orgs from "./organizations";
+import { upload, uploadLogo } from "./logo-upload";
 import { 
   insertOrganizationSchema, 
   insertSportSchema, 
@@ -318,6 +319,31 @@ router.post("/api/users",
       console.error("Error creating user:", error);
       res.status(500).json({ 
         error: "Failed to create user", 
+        details: error.message 
+      });
+    }
+  })
+);
+
+// Org Sports routes (many-to-many relationship)
+const orgSportsSchema = z.object({
+  organizationId: z.string(),
+  sportId: z.string(),
+  contact_name: z.string().min(1),
+  contact_email: z.string().email(),
+  contact_phone: z.string().optional(),
+});
+
+router.post("/api/org-sports",
+  validateRequestBody(orgSportsSchema),
+  asyncHandler(async (req: any, res: any) => {
+    try {
+      const orgSport = await storage.createOrgSport(req.validatedBody);
+      res.status(201).json(orgSport);
+    } catch (error: any) {
+      console.error("Error creating org sport:", error);
+      res.status(500).json({ 
+        error: "Failed to create org sport", 
         details: error.message 
       });
     }

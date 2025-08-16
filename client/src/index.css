@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Coolvetica Font */
+@font-face {
+  font-family: 'Coolvetica';
+  src: url('/fonts/Coolvetica.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Glassmorphism Background Gradient */
   --background: linear-gradient(135deg, hsl(220, 70%, 95%) 0%, hsl(200, 85%, 92%) 100%);
@@ -118,10 +127,26 @@
   }
 
   body {
-    @apply font-sans antialiased text-foreground;
+    font-family: 'Coolvetica', system-ui, sans-serif;
+    @apply antialiased text-foreground;
     background: linear-gradient(135deg, hsl(240, 10%, 3.9%) 0%, hsl(240, 15%, 8%) 50%, hsl(240, 10%, 3.9%) 100%);
     min-height: 100vh;
     scroll-behavior: smooth;
+  }
+
+  /* Ensure white text and caret in inputs */
+  input, textarea, select {
+    color: white !important;
+    caret-color: white !important;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Apply Coolvetica to body text, subtitles, labels, and inputs */
+  body, .subtitle, label, input, textarea, select {
+    font-family: 'Coolvetica', system-ui, sans-serif;
   }
 
   /* Glassmorphism utilities */

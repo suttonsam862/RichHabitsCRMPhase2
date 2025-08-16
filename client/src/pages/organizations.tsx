@@ -4,10 +4,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { OrganizationCard } from "@/components/organization-card";
 import { OrganizationModal } from "@/components/organization-modal";
-import { CreateOrganizationForm } from "@/components/create-organization-form";
+import { OrgWizardModal } from "@/components/organization-wizard/org-wizard-modal";
 import { GlowCard } from "@/components/ui/glow-card";
 import { RBButton } from "@/components/ui/rb-button";
 import { HeadMeta } from "@/components/head-meta";
@@ -94,22 +93,13 @@ export default function Organizations() {
                 data-testid="input-search-organizations"
               />
             </div>
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <RBButton className="whitespace-nowrap">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Organization
-                </RBButton>
-              </DialogTrigger>
-              <DialogContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Create New Organization</DialogTitle>
-                </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto pr-2">
-                  <CreateOrganizationForm onSuccess={() => setShowCreateDialog(false)} />
-                </div>
-              </DialogContent>
-            </Dialog>
+            <RBButton 
+              className="whitespace-nowrap"
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Organization
+            </RBButton>
           </div>
         </GlowCard>
 
@@ -170,6 +160,13 @@ export default function Organizations() {
             onClose={() => setSelectedOrg(null)}
           />
         )}
+
+        {/* Organization Creation Wizard */}
+        <OrgWizardModal
+          open={showCreateDialog}
+          onClose={() => setShowCreateDialog(false)}
+          onSuccess={() => setShowCreateDialog(false)}
+        />
       </div>
     </>
   );

@@ -386,6 +386,34 @@ export class SupabaseStorage {
     return organizations || [];
   }
 
+  // Org Sports (many-to-many relationship)
+  async createOrgSport(data: {
+    organizationId: string;
+    sportId: string;
+    contact_name: string;
+    contact_email: string;
+    contact_phone?: string;
+  }) {
+    const { data: orgSport, error } = await supabase
+      .from('org_sports')
+      .insert({
+        organization_id: data.organizationId,
+        sport_id: data.sportId,
+        contact_name: data.contact_name,
+        contact_email: data.contact_email,
+        contact_phone: data.contact_phone,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create org sport: ${error.message}`);
+    }
+
+    return orgSport;
+  }
+
   // Real-time subscriptions (for future use)
   subscribeToOrganizations(callback: (payload: any) => void) {
     return supabase

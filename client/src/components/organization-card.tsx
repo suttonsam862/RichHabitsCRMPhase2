@@ -15,7 +15,7 @@ export function OrganizationCard({
   onClick, 
   gradientVariant = 'default' 
 }: OrganizationCardProps) {
-  const { name, logo_url, sports, universal_discounts, state } = organization;
+  const { name, logo_url, sports, universal_discounts, state, is_business, created_at } = organization;
   
   // Calculate discount percentage if available
   const discountInfo = universal_discounts as any;
@@ -79,9 +79,15 @@ export function OrganizationCard({
               >
                 {name}
               </h3>
-              <p className="text-white/60 text-sm">
-                {state}
-              </p>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  className={`${is_business ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' : 'bg-green-500/20 text-green-300 border-green-500/30'}`}
+                  data-testid={`badge-org-type-${organization.id}`}
+                >
+                  {is_business ? 'Business' : 'School'}
+                </Badge>
+                <span className="text-white/60 text-sm">{state}</span>
+              </div>
             </div>
           </div>
 
@@ -94,9 +100,10 @@ export function OrganizationCard({
               </span>
             </div>
             
-            <div className="flex items-center gap-1 text-white/50">
-              <ShoppingBag className="h-4 w-4" />
-              <span>View Details</span>
+            <div className="flex items-center gap-1 text-white/50 text-xs">
+              <span data-testid={`text-created-date-${organization.id}`}>
+                {new Date(created_at).toLocaleDateString()}
+              </span>
             </div>
           </div>
 
