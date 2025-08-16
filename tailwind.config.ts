@@ -4,7 +4,24 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
+      maxWidth: {
+        '7xl': '80rem',
+      },
+      colors: {
+        'bg-void': 'hsl(240, 10%, 3.9%)',
+        'text-soft': 'hsl(0, 0%, 70%)',
+        'glow-1': 'hsl(240, 100%, 60%)',
+        'glow-2': 'hsl(300, 100%, 60%)', 
+        'glow-3': 'hsl(180, 100%, 60%)',
+        'glow-4': 'hsl(60, 100%, 60%)',
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

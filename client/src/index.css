@@ -119,8 +119,9 @@
 
   body {
     @apply font-sans antialiased text-foreground;
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    background: linear-gradient(135deg, hsl(240, 10%, 3.9%) 0%, hsl(240, 15%, 8%) 50%, hsl(240, 10%, 3.9%) 100%);
     min-height: 100vh;
+    scroll-behavior: smooth;
   }
 
   /* Glassmorphism utilities */
@@ -160,6 +161,43 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Design System Utilities */
+  .glow-border {
+    @apply relative rounded-lg overflow-hidden;
+    background: linear-gradient(135deg, 
+      rgba(147, 51, 234, 0.3) 0%, 
+      rgba(59, 130, 246, 0.3) 25%, 
+      rgba(236, 72, 153, 0.3) 50%, 
+      rgba(168, 85, 247, 0.3) 100%);
+    transition: all 0.3s ease;
+  }
+
+  .glow-border:hover {
+    background: linear-gradient(135deg, 
+      rgba(147, 51, 234, 0.6) 0%, 
+      rgba(59, 130, 246, 0.6) 25%, 
+      rgba(236, 72, 153, 0.6) 50%, 
+      rgba(168, 85, 247, 0.6) 100%);
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.3),
+                0 0 40px rgba(59, 130, 246, 0.2);
+  }
+
+  .glass {
+    @apply bg-card/40 backdrop-blur-md border border-white/10;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-hover:hover {
+    @apply ring-1 ring-white/20 shadow-2xl;
+    transform: translateY(-2px);
+    backdrop-filter: blur(20px);
   }
 
   /* Neon gradient card styles */

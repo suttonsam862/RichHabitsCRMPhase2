@@ -1,13 +1,16 @@
 
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { OrganizationCard } from "@/components/organization-card";
 import { OrganizationModal } from "@/components/organization-modal";
 import { CreateOrganizationForm } from "@/components/create-organization-form";
+import { PageShell } from "@/components/ui/page-shell";
+import { GlowCard } from "@/components/ui/glow-card";
+import { RBButton } from "@/components/ui/rb-button";
 import type { OrganizationWithSports } from "../../../shared/supabase-schema";
 
 export default function Organizations() {
@@ -53,81 +56,79 @@ export default function Organizations() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="neon-card">
-          <div className="neon-card-inner p-8 text-center">
-            <p className="text-red-400">Error loading organizations. Please try again.</p>
-          </div>
-        </div>
+      <div className="min-h-screen">
+        <PageShell>
+          <GlowCard>
+            <div className="p-8 text-center">
+              <p className="text-red-400">Error loading organizations. Please try again.</p>
+            </div>
+          </GlowCard>
+        </PageShell>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div className="container mx-auto py-8 space-y-8">
+    <div className="min-h-screen">
+      <PageShell>
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-glow-1 via-glow-2 to-glow-3 bg-clip-text text-transparent">
             Rich Habits Organizations
           </h1>
-          <p className="text-white/70 text-lg">
+          <p className="text-text-soft text-lg">
             Manage your custom clothing business relationships
           </p>
         </div>
 
         {/* Search and Actions */}
-        <div className="neon-card max-w-2xl mx-auto">
-          <div className="neon-card-inner p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
-                <Input
-                  placeholder="Search organizations, states, or sports..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-purple-400/50"
-                  data-testid="input-search-organizations"
-                />
-              </div>
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <DialogTrigger asChild>
-                  <div className="neon-button">
-                    <div className="neon-button-inner flex items-center justify-center gap-2 whitespace-nowrap">
-                      <Plus className="h-4 w-4" />
-                      Add Organization
-                    </div>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Create New Organization</DialogTitle>
-                  </DialogHeader>
-                  <div className="max-h-[70vh] overflow-y-auto pr-2">
-                    <CreateOrganizationForm onSuccess={() => setShowCreateDialog(false)} />
-                  </div>
-                </DialogContent>
-              </Dialog>
+        <GlowCard className="max-w-2xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
+              <Input
+                placeholder="Search organizations, states, or sports..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-glow-1/50"
+                data-testid="input-search-organizations"
+              />
             </div>
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <RBButton className="whitespace-nowrap">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Organization
+                </RBButton>
+              </DialogTrigger>
+              <DialogContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Create New Organization</DialogTitle>
+                </DialogHeader>
+                <div className="max-h-[70vh] overflow-y-auto pr-2">
+                  <CreateOrganizationForm onSuccess={() => setShowCreateDialog(false)} />
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-        </div>
+        </GlowCard>
 
         {/* Organizations by State */}
         {isLoading ? (
-          <div className="neon-card max-w-md mx-auto">
-            <div className="neon-card-inner p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto mb-4"></div>
-              <p className="text-white/70">Loading organizations...</p>
+          <GlowCard className="max-w-md mx-auto">
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-glow-1 mx-auto mb-4"></div>
+              <p className="text-text-soft">Loading organizations...</p>
             </div>
-          </div>
+          </GlowCard>
         ) : Object.keys(filteredOrganizationsByState).length === 0 ? (
-          <div className="neon-card max-w-md mx-auto">
-            <div className="neon-card-inner p-8 text-center">
-              <p className="text-white/70">
+          <GlowCard className="max-w-md mx-auto">
+            <div className="p-8 text-center">
+              <p className="text-text-soft">
                 {searchTerm ? "No organizations match your search." : "No organizations found."}
               </p>
             </div>
-          </div>
+          </GlowCard>
         ) : (
           <div className="space-y-8">
             {Object.entries(filteredOrganizationsByState)
@@ -139,7 +140,7 @@ export default function Organizations() {
                   data-testid={`text-state-${state.toLowerCase().replace(' ', '-')}`}
                 >
                   {state}
-                  <span className="text-sm text-white/50 ml-3 font-normal">
+                  <span className="text-sm text-text-soft ml-3 font-normal">
                     ({orgs.length} organization{orgs.length !== 1 ? 's' : ''})
                   </span>
                 </h2>
@@ -169,7 +170,8 @@ export default function Organizations() {
             onClose={() => setSelectedOrg(null)}
           />
         )}
-      </div>
+      </PageShell>
     </div>
   );
 }
+
