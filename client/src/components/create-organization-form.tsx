@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOrganizationSchema } from "@shared/schema";
-import type { InsertOrganization } from "@shared/schema";
+import { insertOrganizationSchema } from "../../../shared/supabase-schema";
+import type { InsertOrganization } from "../../../shared/supabase-schema";
 
 interface CreateOrganizationFormProps {
   onSuccess: () => void;
@@ -23,7 +23,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
     defaultValues: {
       name: "",
       state: "",
-      logoUrl: "",
+      logo_url: "",
       address: "",
       phone: "",
       email: "",
@@ -59,7 +59,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
     // Clean up empty strings to null for optional fields
     const cleanedData = {
       ...data,
-      logoUrl: data.logoUrl || undefined,
+      logo_url: data.logo_url || undefined,
       address: data.address || undefined,
       phone: data.phone || undefined,
       email: data.email || undefined,
@@ -113,7 +113,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
 
         <FormField
           control={form.control}
-          name="logoUrl"
+          name="logo_url"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Logo URL</FormLabel>

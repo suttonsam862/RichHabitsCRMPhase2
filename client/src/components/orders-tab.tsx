@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateOrderForm } from "@/components/create-order-form";
-import type { Order } from "@shared/schema";
+import type { Order } from "../../../shared/supabase-schema";
 import { Link } from "wouter";
 
 interface OrdersTabProps {
@@ -82,14 +82,14 @@ export function OrdersTab({ organizationId, orders = [] }: OrdersTabProps) {
                   <div className="space-y-2">
                     <CardTitle className="flex items-center gap-2">
                       <span data-testid={`text-order-number-${order.id}`}>
-                        {order.orderNumber}
+                        {order.order_number}
                       </span>
                       <Badge variant={getStatusColor(order.status)} className="text-xs">
                         {formatStatus(order.status)}
                       </Badge>
                     </CardTitle>
                     <p className="text-muted-foreground" data-testid={`text-customer-name-${order.id}`}>
-                      {order.customerName}
+                      {order.customer_name}
                     </p>
                   </div>
                   
@@ -105,11 +105,11 @@ export function OrdersTab({ organizationId, orders = [] }: OrdersTabProps) {
               <CardContent className="pt-0 space-y-3">
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex items-center gap-4">
-                    {order.totalAmount && (
+                    {order.total_amount && (
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium" data-testid={`text-order-total-${order.id}`}>
-                          ${order.totalAmount}
+                          ${order.total_amount}
                         </span>
                       </div>
                     )}
@@ -117,7 +117,7 @@ export function OrdersTab({ organizationId, orders = [] }: OrdersTabProps) {
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()}
+                        {new Date(order.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>

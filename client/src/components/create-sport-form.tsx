@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertSportSchema } from "@shared/schema";
-import type { InsertSport } from "@shared/schema";
+import { insertSportSchema } from "../../../shared/supabase-schema";
+import type { InsertSport } from "../../../shared/supabase-schema";
 
 interface CreateSportFormProps {
   organizationId: string;
@@ -21,12 +21,12 @@ export function CreateSportForm({ organizationId, onSuccess }: CreateSportFormPr
   const form = useForm<InsertSport>({
     resolver: zodResolver(insertSportSchema),
     defaultValues: {
-      organizationId,
+      organization_id: organizationId,
       name: "",
-      salesperson: "",
-      contactName: "",
-      contactEmail: "",
-      contactPhone: "",
+      assigned_salesperson: "",
+      contact_name: "",
+      contact_email: "",
+      contact_phone: "",
     },
   });
 
@@ -83,7 +83,7 @@ export function CreateSportForm({ organizationId, onSuccess }: CreateSportFormPr
 
         <FormField
           control={form.control}
-          name="salesperson"
+          name="assigned_salesperson"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Assigned Salesperson</FormLabel>
@@ -105,7 +105,7 @@ export function CreateSportForm({ organizationId, onSuccess }: CreateSportFormPr
           
           <FormField
             control={form.control}
-            name="contactName"
+            name="contact_name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Contact Name</FormLabel>
@@ -125,7 +125,7 @@ export function CreateSportForm({ organizationId, onSuccess }: CreateSportFormPr
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="contactEmail"
+              name="contact_email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Email</FormLabel>
@@ -145,7 +145,7 @@ export function CreateSportForm({ organizationId, onSuccess }: CreateSportFormPr
 
             <FormField
               control={form.control}
-              name="contactPhone"
+              name="contact_phone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Phone</FormLabel>

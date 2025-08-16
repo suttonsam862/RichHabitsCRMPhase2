@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Building2, Users, ShoppingBag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { OrganizationWithSports } from "@shared/schema";
+import type { OrganizationWithSports } from "../../../shared/supabase-schema";
 
 interface OrganizationCardProps {
   organization: OrganizationWithSports;
@@ -10,10 +10,10 @@ interface OrganizationCardProps {
 }
 
 export function OrganizationCard({ organization, onClick }: OrganizationCardProps) {
-  const { name, logoUrl, sports, universalDiscounts } = organization;
+  const { name, logo_url, sports, universal_discounts } = organization;
   
   // Calculate discount percentage if available
-  const discountInfo = universalDiscounts as any;
+  const discountInfo = universal_discounts as any;
   const discountPercent = discountInfo?.percentage || 0;
 
   return (
@@ -31,10 +31,10 @@ export function OrganizationCard({ organization, onClick }: OrganizationCardProp
         data-testid={`card-organization-${organization.id}`}
       >
         {/* Background Image with Blur Effect */}
-        {logoUrl && (
+        {logo_url && (
           <div 
             className="absolute inset-0 org-card-bg group-hover:scale-110 transition-transform duration-500"
-            style={{ backgroundImage: `url(${logoUrl})` }}
+            style={{ backgroundImage: `url(${logo_url})` }}
           />
         )}
         
@@ -46,10 +46,10 @@ export function OrganizationCard({ organization, onClick }: OrganizationCardProp
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {logoUrl ? (
+                {logo_url ? (
                   <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-background/50 shadow-lg">
                     <img 
-                      src={logoUrl} 
+                      src={logo_url} 
                       alt={`${name} logo`}
                       className="w-full h-full object-cover"
                       data-testid={`img-organization-logo-${organization.id}`}

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { OrganizationCard } from "@/components/organization-card";
 import { OrganizationModal } from "@/components/organization-modal";
 import { CreateOrganizationForm } from "@/components/create-organization-form";
-import type { OrganizationWithSports } from "@shared/schema";
+import type { OrganizationWithSports } from "../../../shared/supabase-schema";
 
 export default function Organizations() {
   const [searchTerm, setSearchTerm] = useState("");

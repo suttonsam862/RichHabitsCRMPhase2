@@ -25,7 +25,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { EditOrganizationForm } from "@/components/edit-organization-form";
 import { SportsTab } from "@/components/sports-tab";
 import { OrdersTab } from "@/components/orders-tab";
-import type { OrganizationWithSports, Sport, Order } from "@shared/schema";
+import type { OrganizationWithSports, Sport, Order } from "../../../shared/supabase-schema";
 
 interface OrganizationModalProps {
   organization: OrganizationWithSports;

@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOrganizationSchema } from "@shared/schema";
-import type { InsertOrganization, Organization } from "@shared/schema";
+import { insertOrganizationSchema } from "../../../shared/supabase-schema";
+import type { InsertOrganization, Organization } from "../../../shared/supabase-schema";
 
 interface EditOrganizationFormProps {
   organization: Organization;
@@ -25,7 +25,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     defaultValues: {
       name: organization.name,
       state: organization.state,
-      logoUrl: organization.logoUrl || "",
+      logo_url: organization.logo_url || "",
       address: organization.address || "",
       phone: organization.phone || "",
       email: organization.email || "",
@@ -116,7 +116,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
 
         <FormField
           control={form.control}
-          name="logoUrl"
+          name="logo_url"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Logo URL</FormLabel>

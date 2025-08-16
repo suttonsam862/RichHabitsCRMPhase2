@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CreateSportForm } from "@/components/create-sport-form";
 import { EditSportForm } from "@/components/edit-sport-form";
-import type { Sport } from "@shared/schema";
+import type { Sport } from "../../../shared/supabase-schema";
 
 interface SportsTabProps {
   organizationId: string;
@@ -88,9 +88,9 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
                   <div className="space-y-2">
                     <CardTitle className="flex items-center gap-2">
                       {sport.name}
-                      {sport.salesperson && (
+                      {sport.assigned_salesperson && (
                         <Badge variant="secondary" className="text-xs">
-                          {sport.salesperson}
+                          {sport.assigned_salesperson}
                         </Badge>
                       )}
                     </CardTitle>
@@ -130,33 +130,33 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                {(sport.contactName || sport.contactEmail || sport.contactPhone) && (
+                {(sport.contact_name || sport.contact_email || sport.contact_phone) && (
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm text-muted-foreground">Contact Information</h4>
                     
-                    {sport.contactName && (
+                    {sport.contact_name && (
                       <div className="flex items-center gap-2 text-sm">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span data-testid={`text-contact-name-${sport.id}`}>
-                          {sport.contactName}
+                          {sport.contact_name}
                         </span>
                       </div>
                     )}
                     
-                    {sport.contactEmail && (
+                    {sport.contact_email && (
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span data-testid={`text-contact-email-${sport.id}`}>
-                          {sport.contactEmail}
+                          {sport.contact_email}
                         </span>
                       </div>
                     )}
                     
-                    {sport.contactPhone && (
+                    {sport.contact_phone && (
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="h-4 w-4 text-muted-foreground" />
                         <span data-testid={`text-contact-phone-${sport.id}`}>
-                          {sport.contactPhone}
+                          {sport.contact_phone}
                         </span>
                       </div>
                     )}

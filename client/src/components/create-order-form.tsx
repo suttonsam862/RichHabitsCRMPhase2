@@ -11,8 +11,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOrderSchema } from "@shared/schema";
-import type { InsertOrder } from "@shared/schema";
+import { insertOrderSchema } from "../../../shared/supabase-schema";
+import type { InsertOrder } from "../../../shared/supabase-schema";
 import { z } from "zod";
 
 // Extended schema for form with items array
@@ -38,11 +38,11 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
   const form = useForm<OrderFormData>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      organizationId,
-      orderNumber: "",
-      customerName: "",
+      organization_id: organizationId,
+      order_number: "",
+      customer_name: "",
       status: "pending",
-      totalAmount: "",
+      total_amount: 0,
       notes: "",
       items: [{ item: "", quantity: 1, price: 0 }],
     },
@@ -80,7 +80,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
 
   const onSubmit = (data: OrderFormData) => {
     // Calculate total if not provided
-    let totalAmount = data.totalAmount;
+    let totalAmount = data.total_amount;
     if (!totalAmount && data.items.length > 0) {
       const calculated = data.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
       totalAmount = calculated.toFixed(2);
@@ -88,7 +88,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
 
     const orderData: InsertOrder = {
       ...data,
-      totalAmount,
+      total_amount: totalAmount,
       items: data.items,
     };
 
@@ -101,7 +101,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="orderNumber"
+            name="order_number"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Order Number *</FormLabel>
@@ -120,7 +120,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
 
           <FormField
             control={form.control}
-            name="customerName"
+            name="customer_name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Customer Name *</FormLabel>
@@ -165,7 +165,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
 
           <FormField
             control={form.control}
-            name="totalAmount"
+            name="total_amount"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Total Amount (Optional)</FormLabel>

@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertSportSchema } from "@shared/schema";
-import type { InsertSport, Sport } from "@shared/schema";
+import { insertSportSchema } from "../../../shared/supabase-schema";
+import type { InsertSport, Sport } from "../../../shared/supabase-schema";
 
 interface EditSportFormProps {
   sport: Sport;
@@ -21,12 +21,12 @@ export function EditSportForm({ sport, onSuccess }: EditSportFormProps) {
   const form = useForm<InsertSport>({
     resolver: zodResolver(insertSportSchema.partial()),
     defaultValues: {
-      organizationId: sport.organizationId,
+      organization_id: sport.organization_id,
       name: sport.name,
-      salesperson: sport.salesperson || "",
-      contactName: sport.contactName || "",
-      contactEmail: sport.contactEmail || "",
-      contactPhone: sport.contactPhone || "",
+      assigned_salesperson: sport.assigned_salesperson || "",
+      contact_name: sport.contact_name || "",
+      contact_email: sport.contact_email || "",
+      contact_phone: sport.contact_phone || "",
     },
   });
 
@@ -39,7 +39,7 @@ export function EditSportForm({ sport, onSuccess }: EditSportFormProps) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations", sport.organizationId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations", sport.organization_id] });
       toast({
         title: "Sport updated",
         description: "The sport has been successfully updated.",
@@ -83,7 +83,7 @@ export function EditSportForm({ sport, onSuccess }: EditSportFormProps) {
 
         <FormField
           control={form.control}
-          name="salesperson"
+          name="assigned_salesperson"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Assigned Salesperson</FormLabel>
@@ -105,7 +105,7 @@ export function EditSportForm({ sport, onSuccess }: EditSportFormProps) {
           
           <FormField
             control={form.control}
-            name="contactName"
+            name="contact_name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Contact Name</FormLabel>
@@ -125,7 +125,7 @@ export function EditSportForm({ sport, onSuccess }: EditSportFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="contactEmail"
+              name="contact_email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Email</FormLabel>
@@ -145,7 +145,7 @@ export function EditSportForm({ sport, onSuccess }: EditSportFormProps) {
 
             <FormField
               control={form.control}
-              name="contactPhone"
+              name="contact_phone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Phone</FormLabel>
