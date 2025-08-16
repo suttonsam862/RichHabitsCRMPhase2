@@ -11,6 +11,7 @@ import { CreateOrganizationForm } from "@/components/create-organization-form";
 import { PageShell } from "@/components/ui/page-shell";
 import { GlowCard } from "@/components/ui/glow-card";
 import { RBButton } from "@/components/ui/rb-button";
+import { HeadMeta } from "@/components/head-meta";
 import type { OrganizationWithSports } from "../../../shared/supabase-schema";
 
 export default function Organizations() {
@@ -70,6 +71,7 @@ export default function Organizations() {
 
   return (
     <div className="min-h-screen">
+      <HeadMeta title="Organizations" desc="Manage organizations and sports programs" />
       <PageShell>
         {/* Header */}
         <div className="text-center space-y-4">
