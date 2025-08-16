@@ -94,11 +94,13 @@ export default function Organizations() {
                   Add Organization
                 </Button>
               </DialogTrigger>
-              <DialogContent className="glass-strong max-w-2xl">
+              <DialogContent className="glass-strong max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Organization</DialogTitle>
                 </DialogHeader>
-                <CreateOrganizationForm onSuccess={() => setShowCreateDialog(false)} />
+                <div className="max-h-[70vh] overflow-y-auto pr-2">
+                  <CreateOrganizationForm onSuccess={() => setShowCreateDialog(false)} />
+                </div>
               </DialogContent>
             </Dialog>
           </div>
