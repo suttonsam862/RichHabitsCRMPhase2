@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { OrganizationCard } from "@/components/organization-card";
 import { OrganizationModal } from "@/components/organization-modal";
 import { CreateOrganizationForm } from "@/components/create-organization-form";
-import { PageShell } from "@/components/ui/page-shell";
 import { GlowCard } from "@/components/ui/glow-card";
 import { RBButton } from "@/components/ui/rb-button";
 import { HeadMeta } from "@/components/head-meta";
@@ -57,22 +56,21 @@ export default function Organizations() {
 
   if (error) {
     return (
-      <div className="min-h-screen">
-        <PageShell>
-          <GlowCard>
-            <div className="p-8 text-center">
-              <p className="text-red-400">Error loading organizations. Please try again.</p>
-            </div>
-          </GlowCard>
-        </PageShell>
-      </div>
+      <>
+        <HeadMeta title="Organizations" desc="Manage organizations and sports programs" />
+        <GlowCard>
+          <div className="p-8 text-center">
+            <p className="text-red-400">Error loading organizations. Please try again.</p>
+          </div>
+        </GlowCard>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <>
       <HeadMeta title="Organizations" desc="Manage organizations and sports programs" />
-      <PageShell>
+      <div className="space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-glow-1 via-glow-2 to-glow-3 bg-clip-text text-transparent">
@@ -172,8 +170,8 @@ export default function Organizations() {
             onClose={() => setSelectedOrg(null)}
           />
         )}
-      </PageShell>
-    </div>
+      </div>
+    </>
   );
 }
 

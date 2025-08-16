@@ -15,6 +15,11 @@ export default {
       maxWidth: {
         '7xl': '80rem',
       },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
       colors: {
         'bg-void': 'hsl(240, 10%, 3.9%)',
         'text-soft': 'hsl(0, 0%, 70%)',
@@ -22,12 +27,6 @@ export default {
         'glow-2': 'hsl(300, 100%, 60%)', 
         'glow-3': 'hsl(180, 100%, 60%)',
         'glow-4': 'hsl(60, 100%, 60%)',
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
-      colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {

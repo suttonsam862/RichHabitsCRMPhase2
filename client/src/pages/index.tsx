@@ -3,16 +3,15 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { Building2, ArrowRight } from "lucide-react";
-import { PageShell } from "@/components/ui/page-shell";
 import { GlowCard } from "@/components/ui/glow-card";
 import { RBButton } from "@/components/ui/rb-button";
 import { HeadMeta } from "@/components/head-meta";
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
+    <>
       <HeadMeta title="Home" desc="Welcome to Rich Habits - Custom Clothing Business Management" />
-      <PageShell className="flex items-center justify-center min-h-screen py-16">
+      <div className="flex items-center justify-center min-h-[calc(100vh-12rem)] py-16">
         <div className="text-center space-y-8 max-w-2xl mx-auto">
           {/* Hero Title */}
           <motion.div
@@ -88,8 +87,8 @@ export default function Home() {
             </GlowCard>
           </motion.div>
         </div>
-      </PageShell>
-    </div>
+      </div>
+    </>
   );
 }
 
