@@ -1,10 +1,8 @@
 import { pgTable, foreignKey, varchar, text, timestamp, unique, jsonb, numeric } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-const gen_random_uuid = sql`gen_random_uuid()`
-
 export const sports = pgTable("sports", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	organizationId: varchar("organization_id").notNull(),
 	name: text().notNull(),
 	salesperson: text(),
@@ -21,7 +19,7 @@ export const sports = pgTable("sports", {
 ]);
 
 export const users = pgTable("users", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	username: text().notNull(),
 	password: text().notNull(),
 	role: text().default('admin').notNull(),
@@ -31,7 +29,7 @@ export const users = pgTable("users", {
 ]);
 
 export const organizations = pgTable("organizations", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	name: text().notNull(),
 	logoUrl: text("logo_url"),
 	state: text().notNull(),
@@ -44,7 +42,7 @@ export const organizations = pgTable("organizations", {
 });
 
 export const orders = pgTable("orders", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	organizationId: varchar("organization_id").notNull(),
 	orderNumber: text("order_number").notNull(),
 	customerName: text("customer_name").notNull(),
