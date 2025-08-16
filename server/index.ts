@@ -1,10 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { router } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { db } from './db';
+import { sql } from 'drizzle-orm';
+import { organizations } from '../shared/schema';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Request logger
+app.use((req,res,next)=>{
+  const t=Date.now();
+  res.on('finish',()=>console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} ${Date.now()-t}ms`));
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -48,12 +58,18 @@ app.use((req, res, next) => {
   // Register routes
   app.use(router);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  // Health check endpoint
+  app.get('/api/health', async (req,res,next)=>{
+    try{
+      await db.execute(sql`select 1 as ok`);
+      const [{ count }] = await db.select({count: sql<number>`count(*)`}).from(organizations).limit(1);
+      res.json({ ok:true, time:new Date().toISOString(), db:'up', orgs:Number(count) });
+    }catch(e){ next(e); }
+  });
 
-    res.status(status).json({ message });
-    throw err;
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    console.error('API error:', { msg: err?.message, stack: err?.stack, path: req.originalUrl, method: req.method });
+    res.status(500).json({ error: err?.message || 'Server error' });
   });
 
   // Setup vite in development
