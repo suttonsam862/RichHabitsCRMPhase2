@@ -24,24 +24,32 @@ export const organizations = pgTable("organizations", {
         id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),
         name: text().notNull(),
         logoUrl: text("logo_url"),
-        is_business: boolean().default(false).notNull(),
-        email_domain: text(),
-        state: text().notNull(),
-        address_line1: text(),
-        address_line2: text(),
-        city: text(),
-        postal_code: text(),
-        country: text(),
+        state: text(),  // Optional state field
+        address: text(),  // Simple address field
         phone: text(),
-        contact_email: text(),
-        brand_primary: text(),
-        brand_secondary: text(),
+        email: text(),  // Email field for contact
         universalDiscounts: jsonb("universal_discounts"),
         notes: text(),
-        website: text(),
-        status: text(),
+        is_business: boolean().default(false).notNull(),
         createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 });
+
+// Export proper types
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = typeof organizations.$inferInsert;
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
+export type Sport = typeof sports.$inferSelect;
+export type InsertSport = typeof sports.$inferInsert;
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+
+export type OrganizationWithSports = Organization & {
+  sports: Sport[];
+};
 
 export const org_sports = pgTable("org_sports", {
         id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),

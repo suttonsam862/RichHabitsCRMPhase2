@@ -60,21 +60,7 @@ router.get("/api/organizations/:id", asyncHandler(async (req: any, res: any) => 
   }
 }));
 
-router.post("/api/organizations", 
-  validateRequestBody(insertOrganizationSchema), 
-  asyncHandler(async (req: any, res: any) => {
-    try {
-      const organization = await storage.createOrganization(req.validatedBody);
-      res.status(201).json(organization);
-    } catch (error: any) {
-      console.error("Error creating organization:", error);
-      res.status(500).json({ 
-        error: "Failed to create organization", 
-        details: error.message 
-      });
-    }
-  })
-);
+// POST /api/organizations route moved to server/routes/organizations.ts for better validation and payload mapping
 
 router.put("/api/organizations/:id", 
   validateRequestBody(insertOrganizationSchema.partial()), 

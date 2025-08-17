@@ -8,11 +8,11 @@ import {
   type InsertSport,
   type Order,
   type InsertOrder
-} from "@shared/schema";
+} from "../shared/schema";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { users, organizations, sports, orders } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, organizations, sports, orders, org_sports } from "../shared/schema";
+import { eq, sql } from "drizzle-orm";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is required");
@@ -104,11 +104,11 @@ export class DatabaseStorage implements IStorage {
   async deleteOrganization(id: string): Promise<boolean> {
     try {
       // Delete related sports and orders first (cascade should handle this, but being explicit)
-      await db.delete(sports).where(eq(sports.organizationId, id));
+      await db.delete(org_sports).where(eq(org_sports.organizationId, id));
       await db.delete(orders).where(eq(orders.organizationId, id));
 
       const result = await db.delete(organizations).where(eq(organizations.id, id));
-      return result.rowCount > 0;
+      return result.length > 0;
     } catch (error) {
       console.error('Error deleting organization:', error);
       return false;
@@ -117,8 +117,8 @@ export class DatabaseStorage implements IStorage {
 
   // Sport operations
   async getSportsByOrganization(organizationId: string): Promise<Sport[]> {
+    // Return actual sports, not org_sports
     return await db.select().from(sports)
-      .where(eq(sports.organizationId, organizationId))
       .orderBy(sports.name);
   }
 
@@ -138,7 +138,7 @@ export class DatabaseStorage implements IStorage {
   async deleteSport(id: string): Promise<boolean> {
     try {
       const result = await db.delete(sports).where(eq(sports.id, id));
-      return result.rowCount > 0;
+      return result.length > 0;
     } catch (error) {
       console.error('Error deleting sport:', error);
       return false;
@@ -164,7 +164,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateOrder(id: string, updates: Partial<InsertOrder>): Promise<Order | undefined> {
     const result = await db.update(orders)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: sql`now()` })
       .where(eq(orders.id, id))
       .returning();
     return result[0];
@@ -173,7 +173,7 @@ export class DatabaseStorage implements IStorage {
   async deleteOrder(id: string): Promise<boolean> {
     try {
       const result = await db.delete(orders).where(eq(orders.id, id));
-      return result.rowCount > 0;
+      return result.length > 0;
     } catch (error) {
       console.error('Error deleting order:', error);
       return false;

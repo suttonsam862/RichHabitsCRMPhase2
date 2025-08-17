@@ -63,16 +63,23 @@ export interface OrderWithOrganization extends Order {
 }
 
 // Zod validation schemas for inserts
-export const insertOrganizationSchema = z.object({
-  name: z.string().min(1, "Organization name is required"),
-  logo_url: z.string().url().optional().or(z.literal("")),
-  state: z.string().min(1, "State is required"),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  notes: z.string().optional(),
-  universal_discounts: z.record(z.any()).optional(),
+// US State validation - optional or 2-letter code
+const US_STATE = z.string().regex(/^[A-Z]{2}$/).optional().or(z.literal("").transform(() => undefined));
+
+export const CreateOrganizationSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  address: z.string().optional().or(z.literal("").transform(() => undefined)),
+  state: US_STATE,
+  phone: z.string().optional().or(z.literal("").transform(() => undefined)),
+  email: z.string().email("Invalid email").optional().or(z.literal("").transform(() => undefined)),
+  notes: z.string().optional().or(z.literal("").transform(() => undefined)),
+  logoUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)), // client camelCase
+  isBusiness: z.coerce.boolean().optional().default(false),
+  universalDiscounts: z.any().optional(), // we store as JSONB; accept object/array/null
 });
+
+// Keep legacy schema for backward compatibility
+export const insertOrganizationSchema = CreateOrganizationSchema;
 
 export const insertSportSchema = z.object({
   organization_id: z.string().uuid("Invalid organization ID"),

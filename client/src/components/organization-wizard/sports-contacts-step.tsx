@@ -54,27 +54,23 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
   const createOrgMutation = useMutation({
     mutationFn: async (data: CreateOrgFormData) => {
       // First, create the organization
+      // Map form data to camelCase payload as expected by CreateOrganizationSchema
+      const payload = {
+        name: data.name,
+        address: data.address_line1 || "", // Single address field
+        state: data.state || "", // Optional state (2-letter code or empty)
+        phone: data.phone || "",
+        email: data.email || "",
+        notes: data.notes || "",
+        logoUrl: data.logo_url || "", // camelCase for API
+        isBusiness: data.is_business || false, // camelCase boolean
+        universalDiscounts: null, // No universal discounts for now
+      };
+
+      console.log("🔍 Sending organization payload:", payload);
       const orgResponse = await apiRequest("/api/organizations", {
         method: "POST",
-        body: JSON.stringify({
-          name: data.name,
-          is_business: data.is_business,
-          email_domain: data.email_domain,
-          state: data.state || "Unknown",
-          address: data.address_line1,
-          address_line1: data.address_line1,
-          address_line2: data.address_line2,
-          city: data.city,
-          postal_code: data.postal_code,
-          country: data.country,
-          phone: data.phone,
-          email: data.email,
-          logo_url: data.logo_url,
-          brand_primary: data.brand_primary,
-          brand_secondary: data.brand_secondary,
-          notes: data.notes,
-        }),
-        headers: { "Content-Type": "application/json" },
+        data: payload,
       });
 
       // Then create org_sports entries for each sport
@@ -83,14 +79,13 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
           data.sports.map(sport =>
             apiRequest("/api/org-sports", {
               method: "POST",
-              body: JSON.stringify({
+              data: {
                 organizationId: orgResponse.id,
                 sportId: sport.sportId,
                 contact_name: sport.contact_name,
                 contact_email: sport.contact_email,
                 contact_phone: sport.contact_phone,
-              }),
-              headers: { "Content-Type": "application/json" },
+              },
             })
           )
         );

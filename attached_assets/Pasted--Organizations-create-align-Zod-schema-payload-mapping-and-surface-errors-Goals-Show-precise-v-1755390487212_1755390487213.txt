@@ -1,0 +1,121 @@
+“Organizations create: align Zod schema + payload mapping and surface errors”
+
+Goals
+
+Show precise validation errors from POST /api/organizations to the client (HTTP 422 with readable messages).
+
+Align the server Zod schema with the actual DB columns and the client wizard payload.
+
+Map camelCase → snake_case before inserting.
+
+Changes
+
+Improve error response
+
+In server/routes/organizations.ts (or wherever POST /api/organizations lives), wrap validation in try/catch and format Zod errors:
+
+import { z } from "zod";
+
+// Zod error helper
+function zodToMessages(err: z.ZodError) {
+  return err.issues.map(i => `${i.path.join(".")}: ${i.message}`);
+}
+
+
+Zod schema (server)
+
+Replace the current create schema with this (make optional fields truly optional, coerce boolean, and accept empty strings as undefined):
+
+import { z } from "zod";
+
+const US_STATE = z.string().regex(/^[A-Z]{2}$/).optional().or(z.literal("").transform(() => undefined));
+
+export const CreateOrganizationSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  address: z.string().optional().or(z.literal("").transform(() => undefined)),
+  state: US_STATE,
+  phone: z.string().optional().or(z.literal("").transform(() => undefined)),
+  email: z.string().email("Invalid email").optional().or(z.literal("").transform(() => undefined)),
+  notes: z.string().optional().or(z.literal("").transform(() => undefined)),
+  logoUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)), // client camelCase
+  isBusiness: z.coerce.boolean().optional().default(false),
+  universalDiscounts: z.any().optional(), // we store as JSONB; accept object/array/null
+});
+
+
+Camel → snake mapping before insert
+
+app.post("/api/organizations", async (req, res) => {
+  try {
+    const input = CreateOrganizationSchema.parse(req.body);
+
+    const row = {
+      name: input.name,
+      address: input.address ?? null,
+      state: input.state ?? null,
+      phone: input.phone ?? null,
+      email: input.email ?? null,
+      notes: input.notes ?? null,
+      logo_url: input.logoUrl ?? null,
+      is_business: input.isBusiness ?? false,
+      universal_discounts: input.universalDiscounts ?? null, // JSONB
+    };
+
+    const inserted = await db`insert into organizations ${db(row)} returning *`;
+    return res.status(201).json(inserted[0]);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(422).json({ error: "Validation failed", details: zodToMessages(err) });
+    }
+    console.error("Create org error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+Front-end payload (wizard submit)
+
+Ensure the submit composes exactly these fields (camelCase):
+
+const payload = {
+  name,
+  address,
+  state,                 // "CA" etc. or ""
+  phone,
+  email,
+  notes,
+  logoUrl,               // from upload endpoint
+  isBusiness,            // boolean
+  universalDiscounts,    // object/array or undefined
+};
+await fetch("/api/organizations", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
+
+
+Optional DB defaults (safe)
+
+If not already present, set defaults to prevent nullability surprises:
+
+alter table organizations alter column is_business set default false;
+alter table organizations alter column universal_discounts type jsonb using coalesce(universal_discounts, 'null'::jsonb);
+
+
+Return list consistent with UI
+
+In GET /api/organizations, include the columns the UI needs. At minimum:
+
+select id, name, logo_url, state, address, phone, email, notes, is_business, universal_discounts, created_at
+
+
+Acceptance
+
+Submitting the wizard with only “Name” succeeds (201) and appears in the list.
+
+Invalid email/state shows 422 with readable messages.
+
+SVG/PNG logo URL persists as logo_url and renders on the card.
+
+No more generic “Validation failed” without details.
