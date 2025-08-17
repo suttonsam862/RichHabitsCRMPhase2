@@ -1,136 +1,123 @@
 # Rich Habits Custom Clothing - Business Management System
 
-## Project Overview
-A React-TypeScript business management system for Rich Habits Custom Clothing, designed to streamline organizational workflows with advanced file management and interactive user experience.
+## Overview
+A comprehensive React-TypeScript business management system for Rich Habits Custom Clothing, featuring robust organization management, order tracking, and enhanced data validation.
 
-### Key Technologies
-- **Frontend**: React with TypeScript, Wouter routing, shadcn/ui components
-- **Backend**: Node.js/Express with TypeScript
-- **Database**: PostgreSQL (Supabase hosted)
-- **ORM**: Drizzle ORM
-- **Styling**: Tailwind CSS with glassmorphic UI design
-- **State Management**: TanStack Query (React Query v5)
-- **File Upload**: Multer with Supabase storage
+## Recent Changes (January 17, 2025)
 
-## Recent Architectural Changes (August 17, 2025)
+### Organization Creation Flow - Hardened & Fixed
+Fixed critical issues in the organization creation flow that were preventing organizations from being created:
 
-### Organization Creation Hardening
-- **Issue**: Organization creation was failing due to missing user_id, field mapping issues, and Select component errors
-- **Solution**: 
-  - Created `organizations-hardened.ts` route with robust field normalization
-  - Handles both camelCase and snake_case field names
-  - Conditional user role assignment (skips if no auth context)
-  - Fixed Select components to never have empty string values
-  - Added database schema audit script for detecting mismatches
-  - Created comprehensive smoke test suite
+**Database Layer:**
+- Added idempotent SQL migration (`/supabase/migrations/20250117_fix_org_creation.sql`)
+- Made `user_roles.user_id` nullable to support creation without JWT authentication
+- Added database triggers:
+  - `trg_organizations_fix_defaults`: Normalizes NULL universalDiscounts to {} 
+  - `trg_user_roles_set_user_from_jwt`: Handles user_id population from auth.uid()
+- Seeded base roles (owner, admin, member) with unique slugs
+- Added indexes on organizations.name and organizations.created_at
 
-### Database Schema Updates
-- Added `roles` table with `slug`, `name`, `description` fields
-- Added `user_roles` table for organization ownership tracking
-- Created indexes for performance optimization
-- All tables use VARCHAR for ID fields (not UUID)
+**API Layer:**
+- Enhanced `/server/routes/organizations-hardened.ts` with:
+  - Proper field normalization (camelCase → snake_case)
+  - Universal discounts always normalized to {} instead of NULL
+  - Transaction support for organization + role assignment
+  - Better error reporting with PG error codes
+  - Support for organization creation with or without authentication
+
+**Front-end Layer:**
+- Updated `/client/src/components/organization-wizard/sports-contacts-step.tsx`
+  - Changed universalDiscounts from null to {} in payload
+  - Proper field mapping for API compatibility
+
+**Testing:**
+- Created comprehensive test suite (`/server/scripts/test-org-creation.ts`)
+- Added migration notes (`MIGRATION_NOTES.md`)
+
+## Technology Stack
+- **Frontend:** React 18 with TypeScript, Vite, TailwindCSS, shadcn/ui
+- **Backend:** Node.js/Express with TypeScript
+- **Database:** PostgreSQL (via Supabase)
+- **ORM:** Drizzle ORM
+- **File Storage:** Multer for uploads, Supabase Storage for logos
+- **Authentication:** Passport.js with session management
+- **State Management:** TanStack Query (React Query v5)
 
 ## Project Architecture
 
-### Directory Structure
-```
-/
-├── client/                  # Frontend React application
-│   ├── src/
-│   │   ├── pages/          # Page components (Wouter routing)
-│   │   ├── components/     # Reusable UI components
-│   │   │   └── organization-wizard/  # Multi-step org creation
-│   │   ├── lib/            # Utilities and API clients
-│   │   └── hooks/          # Custom React hooks
-├── server/                  # Backend Express application
-│   ├── routes/             # API route handlers
-│   │   └── organizations-hardened.ts  # Robust org creation
-│   ├── scripts/            # Utility scripts
-│   │   ├── schemaAudit.ts # Database schema validation
-│   │   └── smokeOrgs.ts   # API smoke tests
-│   └── db.ts               # Database connection
-├── shared/                  # Shared types and schemas
-│   ├── schema.ts           # Drizzle ORM schemas
-│   └── schemas/            # Zod validation schemas
-└── docs/                    # Documentation
-    └── orgs-hardening-notes.md  # Recent fixes documentation
-```
-
-### API Routes
-- `POST /api/organizations` - Create organization (accepts both camelCase and snake_case)
-- `GET /api/organizations` - List with filtering, sorting, pagination
-- `GET /api/organizations/:id` - Get single organization
-- `DELETE /api/organizations/:id` - Delete organization
-- `POST /api/upload/logo` - Upload organization logo
-
 ### Database Schema
-- `organizations` - Main org table with business info
-- `roles` - Role definitions (e.g., 'owner')
-- `user_roles` - User-organization-role associations
-- `org_sports` - Organization sports associations
-- `sports` - Sports definitions
+- **organizations**: Core entity with logo_url, state, address, phone, email, universal_discounts (JSONB), notes, is_business flag
+- **user_roles**: Links users to organizations with roles (now supports null user_id for unauthenticated creation)
+- **roles**: Defines system roles (owner, admin, member) with unique slugs
+- **orders**: Tracks customer orders linked to organizations
+- **org_sports**: Links organizations to sports with contact information
+- **sports**: Available sports catalog
 
-## Configuration
+### API Endpoints
+- `/api/organizations` - CRUD operations for organizations (hardened version)
+- `/api/orders` - Order management
+- `/api/org-sports` - Sports association management
+- `/api/upload/logo` - Logo upload handling
+- `/api/health` - System health check
+- `/api/debug` - Debug endpoints for development
 
-### Environment Variables
-- `DATABASE_URL` - PostgreSQL connection string
-- `SUPABASE_URL` - Supabase project URL
-- `SUPABASE_ANON_KEY` - Supabase anonymous key
-- `ASSIGN_OWNER_ON_CREATE` - Whether to assign owner role (default: true)
-- `DEFAULT_USER_ID` - Fallback user ID for development
+### Frontend Components
+- **Organization Wizard**: Multi-step form for creating organizations
+  - Primary Information Step
+  - Branding Step (logo upload, colors)
+  - Sports & Contacts Step
+- **Organization Management**: List, search, filter organizations
+- **Order Management**: Create and track orders
 
 ### Key Features
-1. **Organization Management**
-   - Create organizations with logo upload
-   - Filter by type (school/business), state
-   - Sort by name or creation date
-   - Pagination support
+- Robust organization creation with data normalization
+- Logo upload with Supabase Storage integration
+- Multi-step wizard interface
+- Real-time validation with Zod schemas
+- Error boundary implementation
+- Responsive design with dark mode support
 
-2. **Field Normalization**
-   - Accepts both camelCase and snake_case
-   - Converts empty strings to null
-   - Uppercases state codes
-   - Validates but doesn't reject on minor issues
+## Security & Validation
+- Zod schemas for input validation
+- SQL injection prevention via parameterized queries
+- CSRF protection via sessions
+- File upload validation (type, size limits)
+- Database triggers for data integrity
 
-3. **Error Handling**
-   - Graceful degradation when auth is missing
-   - Clear validation messages
-   - Request ID tracking for debugging
-
-## Development Commands
-
-### Running the Application
-```bash
-npm run dev  # Starts both frontend and backend
-```
-
-### Database Operations
-```bash
-npm run db:push   # Push schema changes to database
-npm run db:migrate # Run migrations
-```
-
-### Testing
-```bash
-cd server && npx tsx scripts/schemaAudit.ts  # Verify database schema
-cd server && npx tsx scripts/smokeOrgs.ts    # Run API smoke tests
-```
+## Development Guidelines
+- Always use TypeScript for type safety
+- Follow the established file structure
+- Use Drizzle ORM for database operations
+- Implement proper error handling
+- Write comprehensive tests for critical flows
+- Document API changes in migration notes
 
 ## User Preferences
-- Keep error messages user-friendly and non-technical
-- Prioritize resilient, fail-safe operations
-- Support multiple naming conventions for API flexibility
-- Always validate but be lenient where possible
+- Keep error messages user-friendly
+- Maintain consistent UI/UX patterns
+- Prioritize data integrity over convenience
+- Always use real data, never mock data
 
-## Known Issues & Solutions
-1. **Select Component Errors**: Fixed by ensuring no empty string values
-2. **User Role Assignment**: Now optional, won't block org creation
-3. **Field Mapping**: Unified handler for both naming conventions
-4. **Database Schema Drift**: Use schemaAudit.ts to detect and fix
+## Known Issues & TODOs
+- [ ] Implement user authentication flow
+- [ ] Add organization editing capabilities
+- [ ] Implement order status tracking
+- [ ] Add bulk import for organizations
+- [ ] Implement email notifications
 
-## Next Steps
-- [ ] Add organization editing UI
-- [ ] Implement bulk operations
-- [ ] Add export functionality
-- [ ] Enhance search capabilities
-- [ ] Add activity logging
+## Testing
+Run tests with:
+```bash
+# Organization creation tests
+tsx server/scripts/test-org-creation.ts
+
+# API smoke tests
+npm run smoke:orgs
+```
+
+## Deployment
+The application is configured for Replit deployment with:
+- Express server on port 5000
+- Vite development server with HMR
+- PostgreSQL database via DATABASE_URL
+- Environment variables for configuration

@@ -25,10 +25,10 @@ router.get("/", async (_req, res, next) => {
       phone: organizations.phone,
       email: organizations.email,
       notes: organizations.notes,
-      logo_url: organizations.logoUrl,
+      logo_url: organizations.logo_url,
       is_business: organizations.is_business,
-      universal_discounts: organizations.universalDiscounts,
-      created_at: organizations.createdAt,
+      universal_discounts: organizations.universal_discounts,
+      created_at: organizations.created_at,
     }).from(organizations).orderBy(sql`created_at DESC NULLS LAST`);
     console.log("✅ Organizations query successful. Found", rows.length, "organizations");
     console.log("🔍 Sample organization data:", rows.slice(0, 1));
@@ -48,6 +48,7 @@ router.post("/", async (req, res) => {
     const input = CreateOrganizationSchema.parse(req.body);
 
     // Map camelCase from client to snake_case for database
+    // CRITICAL: Normalize universalDiscounts to {} instead of null
     const row = {
       name: input.name,
       address: input.address ?? null,
@@ -57,27 +58,62 @@ router.post("/", async (req, res) => {
       notes: input.notes ?? null,
       logo_url: input.logoUrl ?? null,
       is_business: input.isBusiness ?? false,
-      universal_discounts: input.universalDiscounts ?? null, // JSONB
+      universal_discounts: input.universalDiscounts ?? {}, // Always coalesce to empty object, never null
     };
 
     console.log("🔍 Creating organization with data:", row);
-    const inserted = await db.insert(organizations).values(row).returning({
-      id: organizations.id,
-      name: organizations.name,
-      logo_url: organizations.logoUrl,
-      state: organizations.state,
-      address: organizations.address,
-      phone: organizations.phone,
-      email: organizations.email,
-      notes: organizations.notes,
-      is_business: organizations.is_business,
-      universal_discounts: organizations.universalDiscounts,
-      created_at: organizations.createdAt,
+    
+    // Start a transaction to handle both organization and user_roles
+    const result = await db.transaction(async (tx) => {
+      // Insert organization
+      const [org] = await tx.insert(organizations).values(row).returning({
+        id: organizations.id,
+        name: organizations.name,
+        logo_url: organizations.logo_url,
+        state: organizations.state,
+        address: organizations.address,
+        phone: organizations.phone,
+        email: organizations.email,
+        notes: organizations.notes,
+        is_business: organizations.is_business,
+        universal_discounts: organizations.universal_discounts,
+        created_at: organizations.created_at,
+      });
+      
+      // Try to get user ID from various sources
+      const userId = (req as any).user?.id || (req as any).userId || req.headers['x-user-id'];
+      
+      if (userId) {
+        try {
+          // Get owner role ID
+          const [ownerRole] = await tx
+            .select({ id: sql`id` })
+            .from(sql`public.roles`)
+            .where(sql`slug = 'owner'`)
+            .limit(1);
+          
+          if (ownerRole) {
+            // Insert user role
+            await tx.execute(sql`
+              INSERT INTO public.user_roles (user_id, org_id, role_id)
+              VALUES (${userId}::uuid, ${org.id}::uuid, ${ownerRole.id}::uuid)
+            `);
+            console.log("✅ Owner role assigned to user:", userId);
+          }
+        } catch (roleErr) {
+          console.warn("⚠️ Could not assign owner role:", roleErr);
+          // Don't fail the transaction, organization creation is more important
+        }
+      } else {
+        console.log("ℹ️ No user ID available, skipping owner role assignment");
+      }
+      
+      return org;
     });
     
-    console.log("✅ Organization created successfully:", inserted[0]);
-    return res.status(201).json(inserted[0]);
-  } catch (err) {
+    console.log("✅ Organization created successfully:", result);
+    return res.status(201).json(result);
+  } catch (err: any) {
     if (err instanceof z.ZodError) {
       console.error("❌ Validation error:", zodToMessages(err));
       return res.status(422).json({ 
@@ -86,7 +122,11 @@ router.post("/", async (req, res) => {
       });
     }
     console.error("❌ Create org error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ 
+      error: "Internal server error",
+      code: err.code,
+      detail: err.detail || err.message
+    });
   }
 });
 

@@ -92,30 +92,10 @@ const CreateOrgSchema = z.object({
     }
   }
   
-  // Handle additional fields if present
-  if (data.email_domain && data.email_domain !== "") {
-    normalized.email_domain = data.email_domain;
-  }
-  if (data.brand_primary && data.brand_primary !== "") {
-    normalized.brand_primary = data.brand_primary;
-  }
-  if (data.brand_secondary && data.brand_secondary !== "") {
-    normalized.brand_secondary = data.brand_secondary;
-  }
-  if (data.address_line1 && data.address_line1 !== "") {
-    normalized.address_line1 = data.address_line1;
-  }
-  if (data.address_line2 && data.address_line2 !== "") {
-    normalized.address_line2 = data.address_line2;
-  }
-  if (data.city && data.city !== "") {
-    normalized.city = data.city;
-  }
-  if (data.postal_code && data.postal_code !== "") {
-    normalized.postal_code = data.postal_code;
-  }
-  if (data.country && data.country !== "") {
-    normalized.country = data.country;
+  // Store additional fields separately if needed (these don't exist in DB)
+  // We'll only pass fields that exist in the organizations table
+  if (data.user_id) {
+    normalized.user_id = data.user_id;
   }
   
   return normalized;
@@ -138,8 +118,8 @@ function getUserId(req: any): string | null {
       if (payload.sub || payload.user_id || payload.id) {
         return payload.sub || payload.user_id || payload.id;
       }
-    } catch (e) {
-      console.warn('Failed to extract user ID from JWT:', e.message);
+    } catch (e: any) {
+      console.warn('Failed to extract user ID from JWT:', e.message || e);
     }
   }
   
@@ -191,10 +171,23 @@ router.post("/", async (req, res) => {
       });
     }
     
-    // Create organization
+    // Create organization - filter to only valid database columns
+    const { user_id, ...dbData } = normalized; // Extract user_id as it's not a column
+    
+    // Ensure we only insert columns that exist in the organizations table
+    const validColumns = ['name', 'logo_url', 'state', 'address', 'phone', 'email', 'notes', 'is_business', 'universal_discounts'];
+    const insertData: any = {};
+    for (const key of validColumns) {
+      if (key in dbData) {
+        insertData[key] = dbData[key];
+      }
+    }
+    
+    console.log(`[${rid}] Attempting to insert organization with data:`, JSON.stringify(insertData, null, 2));
+    
     const [created] = await db
       .insert(organizations)
-      .values(normalized)
+      .values(insertData)
       .returning();
     
     console.log(`[${rid}] Organization created - ID: ${created.id}`);
@@ -202,7 +195,7 @@ router.post("/", async (req, res) => {
     // Conditionally assign owner role
     if (ASSIGN_OWNER_ON_CREATE) {
       // Get user ID from multiple sources including the validated data
-      let userId = normalized.user_id || getUserId(req);
+      let userId = user_id || getUserId(req);
       
       if (userId) {
         try {
@@ -215,7 +208,7 @@ router.post("/", async (req, res) => {
               SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
             `);
             
-            const ownerRole = Array.isArray(ownerRoleResult) ? ownerRoleResult[0] : ownerRoleResult.rows?.[0];
+            const ownerRole = Array.isArray(ownerRoleResult) ? ownerRoleResult[0] : (ownerRoleResult as any).rows?.[0];
             
             if (ownerRole?.id) {
               // Insert user role with proper null checking
@@ -226,7 +219,7 @@ router.post("/", async (req, res) => {
                 RETURNING id
               `);
               
-              const insertedRole = Array.isArray(insertResult) ? insertResult[0] : insertResult.rows?.[0];
+              const insertedRole = Array.isArray(insertResult) ? insertResult[0] : (insertResult as any).rows?.[0];
               
               if (insertedRole?.id) {
                 console.log(`[${rid}] ✅ Assigned owner role to user ${userId} for org ${created.id}`);
@@ -271,8 +264,9 @@ router.post("/", async (req, res) => {
     if (err.code === '23502') { // Not null violation
       return res.status(400).json({
         error: "Missing required field",
-        field: err.column,
-        message: `Required field '${err.column}' cannot be null`
+        field: err.column || 'unknown',
+        message: `Required field '${err.column || 'unknown'}' cannot be null`,
+        detail: err.detail || err.message
       });
     }
     
