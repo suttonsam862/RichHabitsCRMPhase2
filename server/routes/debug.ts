@@ -23,4 +23,12 @@ r.get('/whoami', async (_req, res) => {
   res.json({ hostMasked: host?.replace(/^[^.]*/, '***') });
 });
 
+r.get('/test', async (_req, res) => {
+  res.json({ 
+    message: 'Debug API endpoint working!', 
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV 
+  });
+});
+
 export default r;

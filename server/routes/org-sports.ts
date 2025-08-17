@@ -7,6 +7,48 @@ import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
 
+// Simple GET route for testing
+router.get("/", async (req, res) => {
+  res.json({ 
+    message: "Org-Sports API endpoint working",
+    timestamp: new Date().toISOString(),
+    available_endpoints: ["POST /"]
+  });
+});
+
+// Simple test to get existing sports data
+router.get("/test-init", async (req, res) => {
+  try {
+    // Get database connection info
+    const dbInfo = await db.execute(sql`
+      SELECT current_database(), current_user, current_schema
+    `);
+    
+    // Get all existing sports
+    const allSports = await db.execute(sql`
+      SELECT id, name FROM sports LIMIT 10
+    `);
+    
+    // Get count of sports
+    const sportCount = await db.execute(sql`
+      SELECT COUNT(*) as count FROM sports
+    `);
+    
+    res.json({
+      message: "Sports data lookup",
+      database: dbInfo,
+      allSports: allSports,
+      sportCount: sportCount,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Lookup failed",
+      message: (error as Error).message
+    });
+  }
+});
+
 // Supabase admin client for user creation
 const supabaseUrl = 'https://qkampkccsdiebvkcfuby.supabase.co';
 const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -80,20 +122,36 @@ router.post("/", async (req, res) => {
       SELECT id FROM sports WHERE id = ${sportId}::uuid LIMIT 1
     `);
     
-    const sportResult = Array.isArray(sportExists) ? sportExists : (sportExists as any).rows || [];
-    console.log(`[${requestId}] Sport query result:`, sportResult);
-    if (sportResult.length === 0) {
+    console.log(`[${requestId}] Sport query result:`, sportExists);
+    
+    // Handle Drizzle response (should be an array)
+    if (!Array.isArray(sportExists) || sportExists.length === 0) {
       return res.status(404).json({
         error: "Sport not found",
         sportId: sportId
       });
     }
     
+    // Create org_sports table if it doesn't exist with proper schema
+    console.log(`[${requestId}] Ensuring org_sports table exists...`);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS org_sports (
+        id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+        organization_id varchar NOT NULL,
+        sport_id varchar NOT NULL,
+        contact_name text NOT NULL,
+        contact_email text NOT NULL,
+        contact_phone text,
+        created_at timestamp DEFAULT NOW(),
+        UNIQUE(organization_id, sport_id)
+      )
+    `);
+
     // Insert or update org_sports record
     console.log(`[${requestId}] Upserting org_sports record...`);
     const orgSportResult = await db.execute(sql`
       INSERT INTO org_sports (organization_id, sport_id, contact_name, contact_email, contact_phone)
-      VALUES (${orgId}::uuid, ${sportId}::uuid, ${contactName}, ${contactEmail}, ${contactPhone || null})
+      VALUES (${orgId}, ${sportId}, ${contactName}, ${contactEmail}, ${contactPhone || null})
       ON CONFLICT (organization_id, sport_id) 
       DO UPDATE SET 
         contact_name = EXCLUDED.contact_name,
