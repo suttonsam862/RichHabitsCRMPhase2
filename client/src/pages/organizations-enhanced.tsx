@@ -21,7 +21,7 @@ import type { Org, OrgQueryParams } from "../../../shared/schemas/organization";
 
 // US States for dropdown
 const US_STATES = [
-  { value: "ALL", label: "All States" },
+  { value: "", label: "All States" },
   { value: "AL", label: "Alabama" },
   { value: "AK", label: "Alaska" },
   { value: "AZ", label: "Arizona" },
@@ -76,7 +76,7 @@ const US_STATES = [
 
 export default function OrganizationsEnhanced() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedState, setSelectedState] = useState("ALL");
+  const [selectedState, setSelectedState] = useState("");
   const [orgType, setOrgType] = useState<"all" | "school" | "business">("all");
   const [sortBy, setSortBy] = useState<"name" | "created_at">("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -85,27 +85,27 @@ export default function OrganizationsEnhanced() {
   const [selectedOrg, setSelectedOrg] = useState<Org | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
-  
+
   // Debounce search term
   const debouncedSearch = useDebounce(searchTerm, 300);
-  
+
   // Build query params
   const queryParams: OrgQueryParams = {
     q: debouncedSearch || undefined,
-    state: selectedState === "ALL" ? undefined : selectedState as any,
+    state: selectedState === "all" ? undefined : selectedState || undefined, // Handle "all" state selection
     type: orgType,
     sort: sortBy,
     order: sortOrder,
     page,
     pageSize,
   };
-  
+
   // Fetch organizations
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["organizations", queryParams],
     queryFn: () => fetchOrganizations(queryParams),
   });
-  
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: deleteOrganization,
@@ -125,18 +125,18 @@ export default function OrganizationsEnhanced() {
       });
     },
   });
-  
+
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, selectedState, orgType, sortBy, sortOrder, pageSize]);
-  
+
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this organization?")) {
       deleteMutation.mutate(id);
     }
   };
-  
+
   const renderEmptyState = () => (
     <GlowCard className="max-w-md mx-auto">
       <div className="p-8 text-center space-y-4">
@@ -154,7 +154,7 @@ export default function OrganizationsEnhanced() {
       </div>
     </GlowCard>
   );
-  
+
   const renderLoadingState = () => (
     <div className="space-y-4">
       {[1, 2, 3].map((i) => (
@@ -168,7 +168,7 @@ export default function OrganizationsEnhanced() {
       ))}
     </div>
   );
-  
+
   const renderErrorState = () => (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
@@ -180,7 +180,7 @@ export default function OrganizationsEnhanced() {
       </AlertDescription>
     </Alert>
   );
-  
+
   const renderOrganizationCard = (org: Org) => (
     <div
       key={org.id}
@@ -210,7 +210,7 @@ export default function OrganizationsEnhanced() {
             />
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Badge variant={org.is_business ? "default" : "secondary"}>
             {org.is_business ? "Business" : "School"}
@@ -223,14 +223,14 @@ export default function OrganizationsEnhanced() {
       </GlowCard>
     </div>
   );
-  
+
   return (
     <>
       <HeadMeta 
         title="Organizations - Rich Habits Custom Clothing" 
         desc="Manage your custom clothing business relationships. Create, edit, and organize your school and business partnerships."
       />
-      
+
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
@@ -241,7 +241,7 @@ export default function OrganizationsEnhanced() {
             Manage your custom clothing business relationships
           </p>
         </div>
-        
+
         {/* Filters */}
         <GlowCard className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -256,13 +256,14 @@ export default function OrganizationsEnhanced() {
                 data-testid="input-search-organizations"
               />
             </div>
-            
+
             {/* State Filter */}
             <Select value={selectedState} onValueChange={setSelectedState}>
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-state-filter">
                 <SelectValue placeholder="All States" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all" data-testid="option-state-all">All states</SelectItem>
                 {US_STATES.map((state) => (
                   <SelectItem key={state.value} value={state.value} data-testid={`option-state-${state.value}`}>
                     {state.label}
@@ -270,7 +271,7 @@ export default function OrganizationsEnhanced() {
                 ))}
               </SelectContent>
             </Select>
-            
+
             {/* Type Filter */}
             <Select value={orgType} onValueChange={(value: any) => setOrgType(value)}>
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-type-filter">
@@ -282,7 +283,7 @@ export default function OrganizationsEnhanced() {
                 <SelectItem value="business" data-testid="option-type-business">Businesses</SelectItem>
               </SelectContent>
             </Select>
-            
+
             {/* Sort By */}
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-sort">
@@ -293,7 +294,7 @@ export default function OrganizationsEnhanced() {
                 <SelectItem value="name" data-testid="option-sort-name">Name</SelectItem>
               </SelectContent>
             </Select>
-            
+
             {/* Sort Order */}
             <Select value={sortOrder} onValueChange={(value: any) => setSortOrder(value)}>
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-order">
@@ -305,7 +306,7 @@ export default function OrganizationsEnhanced() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex justify-between items-center mt-4">
             <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value))}>
               <SelectTrigger className="w-32 bg-white/5 border-white/20 text-white" data-testid="select-page-size">
@@ -317,14 +318,14 @@ export default function OrganizationsEnhanced() {
                 <SelectItem value="50">50 per page</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <RBButton onClick={() => setShowCreateDialog(true)} data-testid="button-add-organization">
               <Plus className="h-4 w-4 mr-2" />
               Add Organization
             </RBButton>
           </div>
         </GlowCard>
-        
+
         {/* Results */}
         {error ? (
           renderErrorState()
@@ -337,14 +338,14 @@ export default function OrganizationsEnhanced() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {data.items.map(renderOrganizationCard)}
             </div>
-            
+
             {/* Pagination */}
             {data.totalPages > 1 && (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-text-soft">
                   Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, data.total)} of {data.total} organizations
                 </p>
-                
+
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -356,11 +357,11 @@ export default function OrganizationsEnhanced() {
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
-                  
+
                   <span className="px-3 text-sm text-white">
                     Page {page} of {data.totalPages}
                   </span>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -376,7 +377,7 @@ export default function OrganizationsEnhanced() {
             )}
           </>
         )}
-        
+
         {/* Organization Detail Modal */}
         {selectedOrg && (
           <OrganizationModal
@@ -385,7 +386,7 @@ export default function OrganizationsEnhanced() {
             onClose={() => setSelectedOrg(null)}
           />
         )}
-        
+
         {/* Organization Creation Wizard */}
         <OrgWizardModal
           open={showCreateDialog}
