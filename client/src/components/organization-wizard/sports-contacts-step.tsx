@@ -22,6 +22,7 @@ const AVAILABLE_SPORTS = [
   { id: "6", name: "Swimming" },
   { id: "7", name: "Volleyball" },
   { id: "8", name: "Tennis" },
+  { id: "9", name: "Wrestling" },
 ];
 
 const contactSchema = z.object({
@@ -114,7 +115,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
   const addSportContact = () => {
     const formValues = form.getValues();
     const sportName = AVAILABLE_SPORTS.find(s => s.id === selectedSportId)?.name;
-    
+
     if (!selectedSportId || !sportName || !formValues.contact_name || !formValues.contact_email) {
       return;
     }
@@ -143,7 +144,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
   const handleSubmit = () => {
     const currentSports = formData.sports || [];
-    
+
     // Validate that non-business organizations have at least one sport
     if (!formData.is_business && currentSports.length === 0) {
       toast({
@@ -175,7 +176,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       {/* Add Sport Contact Form */}
       <div className="space-y-4 p-4 border border-white/20 rounded-lg bg-white/5">
         <h4 className="text-lg font-medium text-white">Add Sport Contact</h4>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Sport Selection */}
           <div className="space-y-2">
@@ -326,7 +327,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
           <ArrowLeft className="mr-2 h-4 w-4" />
           Previous
         </Button>
-        
+
         <Button
           type="button"
           onClick={handleSubmit}

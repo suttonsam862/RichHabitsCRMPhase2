@@ -30,8 +30,6 @@ export const OrgBase = z.object({
     .or(z.literal(""))
     .transform(val => val === "" ? undefined : val),
   
-  
-  
   phone: z.string()
     .regex(/^[\d\s\-\(\)\+\.x]+$/, "Phone number contains invalid characters")
     .min(10, "Phone number must be at least 10 digits")
