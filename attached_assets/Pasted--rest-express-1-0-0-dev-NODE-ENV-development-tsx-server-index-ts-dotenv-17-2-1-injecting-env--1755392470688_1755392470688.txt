@@ -1,0 +1,140 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (3) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+1:00:49 AM [express] Server running on 0.0.0.0:5000
+1:00:49 AM [express] 🔍 Testing database connection...
+[2025-08-17T01:00:50.112Z] GET / -> 200 48ms
+[2025-08-17T01:00:50.405Z] GET /@vite/client -> 200 36ms
+[2025-08-17T01:00:50.409Z] GET / -> 200 41ms
+[2025-08-17T01:00:50.426Z] GET /src/main.tsx?v=zcoMAX2ZQyZi4-b3Ar8KH -> 200 54ms
+[2025-08-17T01:00:50.485Z] GET /@vite/client -> 304 1ms
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2025-08-17T01:00:50.994Z] GET /src/App.tsx?v=zcoMAX2ZQyZi4-b3Ar8KH -> 200 2ms
+[2025-08-17T01:00:51.007Z] GET /@react-refresh -> 304 15ms
+[2025-08-17T01:00:51.019Z] GET /src/main.tsx?v=mgOkaguByvXuYsLAoCvte -> 200 1ms
+[2025-08-17T01:00:51.553Z] GET /src/index.css?v=zcoMAX2ZQyZi4-b3Ar8KH -> 200 545ms
+[2025-08-17T01:00:51.849Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 1ms
+[2025-08-17T01:00:51.873Z] GET /src/components/route-transition.tsx -> 304 17ms
+[2025-08-17T01:00:51.874Z] GET /src/components/ui/toaster.tsx -> 304 19ms
+[2025-08-17T01:00:51.880Z] GET /src/layouts/AppLayout.tsx -> 304 1ms
+[2025-08-17T01:00:51.891Z] GET /src/pages/organizations-enhanced.tsx -> 200 31ms
+[2025-08-17T01:00:51.892Z] GET /src/pages/index.tsx -> 304 1ms
+1:00:51 AM [express] ✅ Database connection successful!
+1:00:51 AM [{"current_database":"postgres","current_user":"postgres","version":"PostgreSQL 15.8 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit"}] 📊 Database info:
+1:00:51 AM [express] 🔍 Testing organizations table access...
+[2025-08-17T01:00:51.974Z] GET /src/pages/order-details.tsx -> 304 3ms
+[2025-08-17T01:00:51.975Z] GET /src/pages/not-found.tsx -> 304 2ms
+1:00:52 AM [0] ✅ Organizations table accessible. Row count:
+[2025-08-17T01:00:52.118Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 1ms
+[2025-08-17T01:00:52.119Z] GET /src/index.css?v=mgOkaguByvXuYsLAoCvte -> 200 2ms
+[2025-08-17T01:00:52.120Z] GET /src/lib/queryClient.ts -> 304 2ms
+[2025-08-17T01:00:52.127Z] GET /src/components/ui/tooltip.tsx -> 304 0ms
+[2025-08-17T01:00:52.133Z] GET /@react-refresh -> 304 0ms
+[2025-08-17T01:00:52.142Z] GET /src/App.tsx?v=mgOkaguByvXuYsLAoCvte -> 200 1ms
+[2025-08-17T01:00:52.315Z] GET /src/hooks/use-toast.ts -> 304 13ms
+[2025-08-17T01:00:52.316Z] GET /src/components/ui/toast.tsx -> 304 14ms
+[2025-08-17T01:00:52.342Z] GET /src/components/ui/input.tsx -> 304 0ms
+[2025-08-17T01:00:52.348Z] GET /src/components/ui/select.tsx -> 304 0ms
+[2025-08-17T01:00:52.350Z] GET /src/components/ui/button.tsx -> 304 1ms
+[2025-08-17T01:00:52.410Z] GET /src/components/ui/badge.tsx -> 304 1ms
+[2025-08-17T01:00:52.461Z] GET /src/components/ui/alert.tsx -> 304 1ms
+[2025-08-17T01:00:52.461Z] GET /src/components/ui/skeleton.tsx -> 304 1ms
+[2025-08-17T01:00:52.489Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 304 0ms
+[2025-08-17T01:00:52.497Z] GET /src/components/ui/rb-button.tsx -> 304 0ms
+[2025-08-17T01:00:52.498Z] GET /src/components/organization-modal.tsx -> 304 1ms
+[2025-08-17T01:00:52.499Z] GET /src/components/ui/glow-card.tsx -> 304 1ms
+[2025-08-17T01:00:52.518Z] GET /src/components/head-meta.tsx -> 304 3ms
+[2025-08-17T01:00:52.518Z] GET /src/lib/api/organizations.ts -> 304 3ms
+[2025-08-17T01:00:52.539Z] GET /src/hooks/use-debounce.ts -> 304 1ms
+[2025-08-17T01:00:52.546Z] GET /src/components/ui/card.tsx -> 304 0ms
+[2025-08-17T01:00:52.550Z] GET /src/components/ui/separator.tsx -> 304 0ms
+[2025-08-17T01:00:52.551Z] GET /src/lib/utils.ts -> 304 1ms
+[2025-08-17T01:00:52.569Z] GET /src/components/route-transition.tsx -> 304 0ms
+[2025-08-17T01:00:52.570Z] GET /src/components/ui/toaster.tsx -> 304 0ms
+[2025-08-17T01:00:52.591Z] GET /src/layouts/AppLayout.tsx -> 304 1ms
+[2025-08-17T01:00:52.595Z] GET /src/pages/index.tsx -> 304 1ms
+[2025-08-17T01:00:52.598Z] GET /src/pages/organizations-enhanced.tsx -> 304 0ms
+[2025-08-17T01:00:52.599Z] GET /src/pages/order-details.tsx -> 304 0ms
+[2025-08-17T01:00:52.617Z] GET /src/pages/not-found.tsx -> 304 0ms
+[2025-08-17T01:00:52.619Z] GET /src/lib/queryClient.ts -> 304 0ms
+[2025-08-17T01:00:52.643Z] GET /src/components/ui/tooltip.tsx -> 304 0ms
+[2025-08-17T01:00:52.647Z] GET /src/components/ui/dialog.tsx -> 304 0ms
+[2025-08-17T01:00:52.648Z] GET /src/components/ui/scroll-area.tsx -> 304 1ms
+[2025-08-17T01:00:52.648Z] GET /src/components/ui/tabs.tsx -> 304 0ms
+[2025-08-17T01:00:52.665Z] GET /src/components/organization-wizard/primary-step.tsx -> 304 1ms
+[2025-08-17T01:00:52.668Z] GET /src/components/organization-wizard/branding-step.tsx -> 304 0ms
+[2025-08-17T01:00:52.692Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 304 0ms
+[2025-08-17T01:00:52.696Z] GET /src/components/edit-organization-form.tsx -> 304 0ms
+[2025-08-17T01:00:52.697Z] GET /src/components/orders-tab.tsx -> 304 1ms
+[2025-08-17T01:00:52.698Z] GET /src/components/sports-tab.tsx -> 304 0ms
+[2025-08-17T01:00:52.713Z] GET /src/hooks/use-toast.ts -> 304 1ms
+[2025-08-17T01:00:52.717Z] GET /src/components/ui/toast.tsx -> 304 0ms
+[2025-08-17T01:00:52.741Z] GET /src/components/ui/input.tsx -> 304 1ms
+[2025-08-17T01:00:52.751Z] GET /src/components/ui/button.tsx -> 304 1ms
+[2025-08-17T01:00:52.752Z] GET /src/components/ui/select.tsx -> 304 1ms
+[2025-08-17T01:00:52.756Z] GET /src/components/ui/badge.tsx -> 304 0ms
+[2025-08-17T01:00:52.763Z] GET /src/components/ui/skeleton.tsx -> 304 0ms
+[2025-08-17T01:00:52.767Z] GET /src/components/ui/alert.tsx -> 304 1ms
+[2025-08-17T01:00:52.790Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 304 0ms
+[2025-08-17T01:00:52.802Z] GET /src/components/organization-modal.tsx -> 304 0ms
+[2025-08-17T01:00:52.807Z] GET /src/components/ui/rb-button.tsx -> 304 1ms
+[2025-08-17T01:00:52.807Z] GET /src/components/ui/glow-card.tsx -> 304 1ms
+[2025-08-17T01:00:52.813Z] GET /src/components/head-meta.tsx -> 304 1ms
+[2025-08-17T01:00:52.817Z] GET /src/lib/api/organizations.ts -> 304 1ms
+[2025-08-17T01:00:52.842Z] GET /src/hooks/use-debounce.ts -> 304 0ms
+[2025-08-17T01:00:52.854Z] GET /src/components/ui/card.tsx -> 304 1ms
+[2025-08-17T01:00:52.891Z] GET /src/components/ui/switch.tsx -> 304 1ms
+[2025-08-17T01:00:52.891Z] GET /src/lib/utils.ts -> 304 0ms
+[2025-08-17T01:00:52.892Z] GET /src/components/ui/separator.tsx -> 304 0ms
+[2025-08-17T01:00:52.893Z] GET /src/components/ui/form.tsx -> 304 1ms
+[2025-08-17T01:00:52.900Z] GET /src/constants/us-states.ts -> 304 0ms
+[2025-08-17T01:00:52.901Z] GET /src/components/create-order-form.tsx -> 304 0ms
+[2025-08-17T01:00:52.945Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 304 1ms
+[2025-08-17T01:00:52.945Z] GET /src/components/create-sport-form.tsx -> 304 1ms
+[2025-08-17T01:00:52.946Z] GET /src/components/edit-sport-form.tsx -> 304 0ms
+[2025-08-17T01:00:52.951Z] GET /src/components/ui/dialog.tsx -> 304 1ms
+[2025-08-17T01:00:52.951Z] GET /src/components/ui/textarea.tsx -> 304 0ms
+[2025-08-17T01:00:52.955Z] GET /src/components/ui/scroll-area.tsx -> 304 0ms
+[2025-08-17T01:00:52.995Z] GET /src/components/ui/tabs.tsx -> 304 1ms
+[2025-08-17T01:00:52.995Z] GET /src/components/organization-wizard/primary-step.tsx -> 304 0ms
+[2025-08-17T01:00:53.000Z] GET /src/components/organization-wizard/branding-step.tsx -> 304 1ms
+[2025-08-17T01:00:53.004Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 304 0ms
+[2025-08-17T01:00:53.006Z] GET /src/components/edit-organization-form.tsx -> 304 1ms
+[2025-08-17T01:00:53.007Z] GET /src/components/sports-tab.tsx -> 304 1ms
+[2025-08-17T01:00:53.044Z] GET /src/components/ui/label.tsx -> 304 0ms
+[2025-08-17T01:00:53.045Z] GET /src/components/orders-tab.tsx -> 304 0ms
+[2025-08-17T01:00:53.062Z] GET /src/components/ui/form.tsx -> 304 0ms
+[2025-08-17T01:00:53.063Z] GET /src/components/ui/switch.tsx -> 304 1ms
+[2025-08-17T01:00:53.064Z] GET /src/constants/us-states.ts -> 304 1ms
+[2025-08-17T01:00:53.064Z] GET /src/components/ui/textarea.tsx -> 304 1ms
+[2025-08-17T01:00:53.094Z] GET /src/components/create-sport-form.tsx -> 304 0ms
+[2025-08-17T01:00:53.095Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 304 0ms
+[2025-08-17T01:00:53.113Z] GET /src/components/edit-sport-form.tsx -> 304 1ms
+[2025-08-17T01:00:53.114Z] GET /src/components/create-order-form.tsx -> 304 1ms
+[2025-08-17T01:00:53.118Z] GET /src/components/ui/label.tsx -> 304 0ms
+[2025-08-17T01:00:53.127Z] GET /fonts/Coolvetica.woff2 -> 200 11ms
+[2025-08-17T01:00:53.924Z] GET /fonts/Coolvetica.woff2 -> 200 3ms
+API Error: PostgresError: column "address" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42703',
+  position: '43',
+  file: 'parse_relation.c',
+  line: '3665',
+  routine: 'errorMissingColumn'
+}
+[2025-08-17T01:01:00.761Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 500 70ms
+1:01:00 AM [express] GET /api/organizations 500 in 71ms :: {"error":"Internal server error","details…
