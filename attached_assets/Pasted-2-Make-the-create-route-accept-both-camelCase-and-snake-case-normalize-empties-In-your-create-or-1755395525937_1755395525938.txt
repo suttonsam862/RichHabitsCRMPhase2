@@ -1,0 +1,100 @@
+2) Make the create route accept both camelCase and snake_case + normalize empties
+
+In your create-org handler (e.g. server/routes/organizations.ts), normalize input and map keys:
+
+// helpers
+const toNull = (v: any) =>
+  v === '' || v === undefined ? null : (typeof v === 'string' ? v.trim() : v);
+
+router.post('/api/organizations', async (req, res) => {
+  const rid = Math.random().toString(16).slice(2, 10);
+
+  try {
+    const b = req.body ?? {};
+
+    // Accept both camelCase (client) and snake_case (server/DB)
+    const data = {
+      name: String(b.name || '').trim(),
+      address: toNull(b.address),
+      state: b.state ? String(b.state).trim().toUpperCase() : null,
+      phone: toNull(b.phone),
+      email: toNull(b.email),
+      logo_url: toNull(b.logo_url ?? b.logoUrl),
+      is_business:
+        typeof b.is_business === 'boolean'
+          ? b.is_business
+          : !!b.isBusiness,
+      notes: toNull(b.notes),
+      universal_discounts: b.universal_discounts ?? b.universalDiscounts ?? {},
+    };
+
+    if (!data.name) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: 'name is required',
+      });
+    }
+
+    const rows = await sql/*sql*/`
+      INSERT INTO public.organizations
+        (name, address, state, phone, email, logo_url, is_business, notes, universal_discounts)
+      VALUES (
+        ${data.name},
+        ${data.address},
+        ${data.state},
+        ${data.phone},
+        ${data.email},
+        ${data.logo_url},
+        ${data.is_business},
+        ${data.notes},
+        ${sql.json(data.universal_discounts)}
+      )
+      RETURNING *;
+    `;
+
+    return res.status(201).json(rows[0]);
+  } catch (err: any) {
+    console.error(`[${rid}] Error creating organization:`, err);
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: err?.message,
+      code: err?.code,
+      detail: err?.detail,
+      requestId: rid,
+    });
+  }
+});
+
+
+Why this fixes it:
+
+If the client sends logoUrl/isBusiness, the server maps them to logo_url/is_business.
+
+Empty strings ("") are converted to NULL so your insert doesn’t trip on constraints.
+
+With the address column present, the INSERT no longer errors out.
+
+3) (Nice-to-have) Frontend payload keys
+
+If you also want the client to match DB naming, change the create call to send logo_url and is_business. But with the server mapping above, it’s optional.
+
+4) Quick verification
+
+Create (copy/paste, adjust URL):
+
+curl -X POST http://localhost:5000/api/organizations \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Oak Mountain High School",
+    "address": "5476 Caldwell Mill Rd",
+    "state": "AL",
+    "phone": "",
+    "email": "",
+    "notes": "",
+    "logoUrl": "https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/public/logos/org-logos/00782083-aa2f-4f33-9ee8-4b46309405ac.svg",
+    "isBusiness": false,
+    "universalDiscounts": {}
+  }'
+
+
+You should get 201 with the created row. Then reload the Organizations page—your new org should appear.
