@@ -7,10 +7,18 @@ import { organizations } from "../../shared/schema";
 const router = Router();
 
 router.get("/", async (_req, res, next) => {
+  console.log("🔍 GET /api/organizations - Starting request");
   try {
+    console.log("🔍 Attempting to query organizations table...");
     const rows = await db.select().from(organizations).orderBy(sql`created_at DESC NULLS LAST`);
+    console.log("✅ Organizations query successful. Found", rows.length, "organizations");
+    console.log("🔍 Sample organization data:", rows.slice(0, 1));
     res.json({ data: rows });
-  } catch (err) {
+  } catch (err: any) {
+    console.error("❌ Error in GET /api/organizations:");
+    console.error("- Error message:", err.message);
+    console.error("- Error code:", err.code);
+    console.error("- Error stack:", err.stack);
     next(err);
   }
 });
