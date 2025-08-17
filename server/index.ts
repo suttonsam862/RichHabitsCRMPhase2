@@ -96,10 +96,12 @@ app.use((req, res, next) => {
 
 
   // Register routes
-  app.use(router);
+  // Mount specific routers first to override general routes
   app.use("/api/organizations", organizationsRouter);
   app.use("/api/debug", debugRouter);
   app.use("/api/upload", uploadRoutes);
+  // Mount general router last (it has conflicting /api/organizations route that we're overriding)
+  app.use(router);
 
   // Health check endpoint
   app.get('/api/health', async (req,res,next)=>{

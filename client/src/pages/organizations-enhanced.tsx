@@ -19,9 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import type { Org, OrgQueryParams } from "../../../shared/schemas/organization";
 
-// US States for dropdown
+// US States for dropdown (without "All States" in the array - handled separately)
 const US_STATES = [
-  { value: "", label: "All States" },
   { value: "AL", label: "Alabama" },
   { value: "AK", label: "Alaska" },
   { value: "AZ", label: "Arizona" },
@@ -72,11 +71,14 @@ const US_STATES = [
   { value: "WV", label: "West Virginia" },
   { value: "WI", label: "Wisconsin" },
   { value: "WY", label: "Wyoming" },
-];
+] as const;
+
+// State type to match backend expectations
+type StateType = typeof US_STATES[number]['value'] | 'any';
 
 export default function OrganizationsEnhanced() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedState, setSelectedState] = useState("");
+  const [selectedState, setSelectedState] = useState<StateType>("any");
   const [orgType, setOrgType] = useState<"all" | "school" | "business">("all");
   const [sortBy, setSortBy] = useState<"name" | "created_at">("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -92,7 +94,7 @@ export default function OrganizationsEnhanced() {
   // Build query params
   const queryParams: OrgQueryParams = {
     q: debouncedSearch || undefined,
-    state: selectedState === "all" ? undefined : selectedState || undefined, // Handle "all" state selection
+    state: selectedState === "any" ? undefined : selectedState as any, // Use "any" for no filter
     type: orgType,
     sort: sortBy,
     order: sortOrder,
@@ -258,12 +260,12 @@ export default function OrganizationsEnhanced() {
             </div>
 
             {/* State Filter */}
-            <Select value={selectedState} onValueChange={setSelectedState}>
+            <Select value={selectedState} onValueChange={(value) => setSelectedState(value as StateType)}>
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-state-filter">
                 <SelectValue placeholder="All States" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All States</SelectItem>
+                <SelectItem value="any">All States</SelectItem>
                 {US_STATES.map((state) => (
                   <SelectItem key={state.value} value={state.value} data-testid={`option-state-${state.value}`}>
                     {state.label}
