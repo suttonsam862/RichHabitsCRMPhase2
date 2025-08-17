@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X } from "lucide-react";
@@ -31,7 +31,7 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
   const handleSuccess = () => {
     setFormData({
       is_business: false,
-      country: "United States", 
+      country: "United States",
       sports: [],
       brand_primary: "#3B82F6",
       brand_secondary: "#8B5CF6",
@@ -72,22 +72,22 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
               <div className="border-b border-white/10 px-4">
                 <ScrollArea>
                   <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 h-12">
-                    <TabsTrigger 
-                      value="primary" 
+                    <TabsTrigger
+                      value="primary"
                       className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white text-white/70"
                       data-testid="tab-primary"
                     >
                       Primary
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="branding" 
+                    <TabsTrigger
+                      value="branding"
                       className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white text-white/70"
                       data-testid="tab-branding"
                     >
                       Branding
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="sports" 
+                    <TabsTrigger
+                      value="sports"
                       className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white text-white/70"
                       data-testid="tab-sports"
                     >
@@ -100,7 +100,7 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
               {/* Tab Content */}
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 <TabsContent value="primary" className="mt-0">
-                  <PrimaryStep 
+                  <PrimaryStep
                     formData={formData}
                     updateFormData={updateFormData}
                     onNext={() => setActiveTab("branding")}
@@ -108,7 +108,7 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
                 </TabsContent>
 
                 <TabsContent value="branding" className="mt-0">
-                  <BrandingStep 
+                  <BrandingStep
                     formData={formData}
                     updateFormData={updateFormData}
                     onNext={() => setActiveTab("sports")}
@@ -117,7 +117,7 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
                 </TabsContent>
 
                 <TabsContent value="sports" className="mt-0">
-                  <SportsContactsStep 
+                  <SportsContactsStep
                     formData={formData}
                     updateFormData={updateFormData}
                     onPrev={() => setActiveTab("branding")}

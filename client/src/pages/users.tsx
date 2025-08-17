@@ -186,10 +186,10 @@ export default function UsersPage() {
               Create User
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent aria-describedby="create-user-description">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
+              <DialogDescription id="create-user-description">
                 Create a new user account. A temporary password will be generated if not provided.
               </DialogDescription>
             </DialogHeader>
@@ -281,10 +281,10 @@ export default function UsersPage() {
 
       {/* Edit User Dialog */}
       <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <DialogContent>
+        <DialogContent aria-describedby="edit-user-description">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="edit-user-description">
               Update user information. Leave password empty to keep current password.
             </DialogDescription>
           </DialogHeader>

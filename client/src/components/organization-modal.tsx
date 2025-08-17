@@ -75,10 +75,13 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="org-modal-desc">
-          <DialogDescription id="org-modal-desc" className="sr-only">
-            Loading organization details and management interface
-          </DialogDescription>
+        <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="org-modal-loading-desc">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Loading Organization</DialogTitle>
+            <DialogDescription id="org-modal-loading-desc">
+              Loading organization details and management interface
+            </DialogDescription>
+          </DialogHeader>
           <div className="p-8 text-center">
             <p className="text-muted-foreground">Loading organization details...</p>
           </div>
@@ -94,7 +97,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
     <Dialog open={open} onOpenChange={() => onClose()}>
       <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="org-modal-desc">
         <DialogDescription id="org-modal-desc" className="sr-only">
-          Loading organization details and management interface
+          {editMode ? "Edit organization details and settings" : "View organization details and management interface"}
         </DialogDescription>
         {editMode ? (
           <div className="p-6">
