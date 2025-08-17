@@ -1,0 +1,198 @@
+Mode: High Power ON, Extended Thinking ON, Web Search OFF (codebase only)
+
+Goal: Ship a production-ready Organizations feature:
+
+Create orgs (with/without logo), list/filter/sort/paginate, edit & delete safely.
+
+Zero schema mismatches, great UX/A11y, clear errors, resilient uploads.
+
+Minimal, surgical code edits with tests & a short runbook.
+
+Repo scope (read & modify):
+
+Server: server/** (routes, validation, upload, logging)
+
+Client: client/src/pages/organizations.tsx, client/src/components/**, client/src/lib/**
+
+Shared: shared/** (types/schemas)
+
+Migrations/SQL if present (Drizzle or raw SQL helper)
+
+1) Contract first: Shared types & validation
+
+Create shared/schemas/organization.ts with zod:
+
+OrgBase:
+
+name (string, 1..120, trimmed) required
+
+logo_url (string.url().optional())
+
+state (enum of US states or 2-letter regex, optional)
+
+address, phone, email (all optional; email validated if present)
+
+is_business (boolean, default false)
+
+notes (string optional, max 2k)
+
+universal_discounts (z.record(z.string(), z.number()).default({}))
+
+OrgCreate = OrgBase
+
+OrgUpdate = OrgBase.partial()
+
+Org = OrgBase & { id: string; created_at: string; updated_at: string }
+
+Export types to both server/client. Remove any duplicate local schemas in favor of this source of truth.
+
+2) DB alignment & safety rails
+
+Verify public.organizations columns exactly match the schema above. If not, generate a single idempotent migration that:
+
+add column if not exists is_business boolean not null default false;
+
+add column if not exists universal_discounts jsonb not null default '{}'::jsonb;
+
+add column if not exists updated_at timestamptz not null default now();
+
+Backfill updated_at from created_at where null.
+
+Add/update trigger to set updated_at = now() on update.
+
+(Optional but recommended) create index if not exists idx_orgs_name on public.organizations (lower(name));
+
+(Optional) check constraint: state must be 2 uppercase letters.
+
+Ensure server selects a minimal projection for listing:
+id, name, state, logo_url, is_business, created_at, updated_at
+
+Never reference non-existent columns. Coerce empty strings → null server-side.
+
+3) Upload flow (SVG-safe, predictable URLs)
+
+In POST /api/upload/logo:
+
+Allow list: image/png, image/jpeg, image/webp, image/svg+xml.
+
+Max 4MB; return 400 on violation with { fieldErrors: { file: "..." } }.
+
+Store to logos bucket under org-logos/${uuid}${ext}.
+
+Return { url, path, mime, size } where url is a public, directly usable URL.
+
+Client: on upload success, put url into the form’s logo_url and preview it with a simple <img src={logo_url} alt={${name} logo}/> (no inline SVG parsing).
+
+4) Server routes (CRUD + robust errors)
+
+GET /api/organizations supports query params:
+
+q (search name, case-insensitive), state, type (school|business|all),
+sort (name|created_at), order (asc|desc), page (1..), pageSize (<=50)
+
+POST /api/organizations uses OrgCreate. Return { ok: true, organization }.
+
+PATCH /api/organizations/:id uses OrgUpdate. Partial updates only.
+
+DELETE /api/organizations/:id soft delete if you already support it; else hard delete with 204.
+
+Error shape:
+
+400: { error: "Validation failed", fieldErrors: { field: [msg] } }
+
+404: { error: "Not found" }
+
+500: { error: "Internal server error", code?, hint? }
+
+Add a tiny request-id middleware; log method path status durMs rid and sanitized context.
+
+5) Client data layer (React Query)
+
+Create client/src/lib/api/organizations.ts with:
+
+fetchOrganizations(params) → { items, total, page, pageSize }
+
+createOrganization(data: OrgCreate)
+
+updateOrganization(id, data: OrgUpdate)
+
+deleteOrganization(id)
+
+Query keys: ['orgs', params]. Invalidate on create/update/delete.
+
+Map fieldErrors to the form controls.
+
+6) Organizations Page UX (polished)
+
+Header row: Title + primary “Add Organization” button.
+
+Filters: search input (debounced 300ms), state dropdown, type toggle (All/Schools/Businesses), sort select, page size select.
+
+List: responsive grid or table (your current cards look good)—each item shows logo, name, state, badges (Business/School), created date, and action menu (Edit/Delete).
+
+Empty state: friendly illustration + “Add your first organization”.
+
+Loading: Skeletons.
+
+Errors: Inline alert with “Retry” button; keep filters/states intact.
+
+Pagination: server-side (Prev/Next) or infinite scroll; keep it simple with Prev/Next for now.
+
+7) Create/Edit wizard (stable & A11y)
+
+Use the shared schema. All errors from server are surfaced next to fields.
+
+Step 1: Primary info (name*, type toggle, state dropdown, address, phone, email).
+
+Step 2: Branding (logo upload/preview, notes).
+
+Step 3: Sports & contacts (keep structure but make optional for create; can be added post-create).
+
+Dialog A11y: add <DialogDescription id="org-create-desc" className="sr-only">Create a new organization</DialogDescription> and reference it via aria-describedby.
+
+Ensure input text color contrasts (white on dark), and Coolvetica applies only to body/subtitles as you wanted.
+
+8) Guardrails for the future
+
+Add a server unit test for validation: one valid payload, one per-field failure, one DB failure.
+
+Add a client smoke test for the page: renders empty state, creates an org (mock), renders list.
+
+Add a small seed script (npm run seed:orgs) to create 3 demo orgs for quick manual QA.
+
+Document a 10-line RUNBOOK (see output requirements).
+
+9) Output requirements
+
+List root causes found (schema drift, a11y warnings, upload edge cases, etc.)
+
+Provide unified diffs for all changed files (server routes, shared schema, client page & hooks).
+
+Provide a RUNBOOK:
+
+Start dev server.
+
+Open /organizations → see empty state.
+
+Upload SVG & PNG logos successfully (see preview).
+
+Create: valid required-only → succeeds. Toggle is_business both ways.
+
+Filters: search by name, filter Business, sort by name asc/desc, paginate.
+
+Edit an org’s name/state; verify persisted.
+
+Delete an org; confirm removal and toast.
+
+Confirm: no Radix dialog warning; no schema errors; consistent logs.
+
+Constraints
+
+No secrets in code or logs.
+
+Keep diffs minimal & readable.
+
+Preserve existing styling; only fix clarity/contrast where needed.
+
+Commit message:
+feat(orgs): ironclad CRUD + filters/sort, shared schema, resilient uploads, a11y + logging
