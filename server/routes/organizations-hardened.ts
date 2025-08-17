@@ -197,38 +197,41 @@ router.post("/", async (req, res) => {
       // Get user ID from multiple sources including the validated data
       let userId = user_id || getUserId(req);
       
-      if (userId) {
+      // Validate UUID format before attempting any database operations
+      const isValidUUID = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+      
+      if (!userId) {
+        console.warn(`[${rid}] ℹ️ No user ID available - skipping owner role assignment`);
+      } else if (!isValidUUID) {
+        console.warn(`[${rid}] Invalid user ID format: ${userId} - skipping role assignment`);
+      } else {
+        // Only attempt INSERT if we have a valid UUID
         try {
-          // Validate user ID format
-          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
-            console.warn(`[${rid}] Invalid user ID format: ${userId} - skipping role assignment`);
-          } else {
-            // Get owner role ID
-            const ownerRoleResult = await db.execute(sql`
-              SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
+          // Get owner role ID
+          const ownerRoleResult = await db.execute(sql`
+            SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
+          `);
+          
+          const ownerRole = Array.isArray(ownerRoleResult) ? ownerRoleResult[0] : (ownerRoleResult as any).rows?.[0];
+          
+          if (ownerRole?.id) {
+            // Insert user role with proper null checking and triple conflict resolution
+            const insertResult = await db.execute(sql`
+              INSERT INTO user_roles (user_id, org_id, role_id)
+              VALUES (${userId}::uuid, ${created.id}::uuid, ${ownerRole.id}::uuid)
+              ON CONFLICT (user_id, org_id, role_id) DO NOTHING
+              RETURNING id
             `);
             
-            const ownerRole = Array.isArray(ownerRoleResult) ? ownerRoleResult[0] : (ownerRoleResult as any).rows?.[0];
+            const insertedRole = Array.isArray(insertResult) ? insertResult[0] : (insertResult as any).rows?.[0];
             
-            if (ownerRole?.id) {
-              // Insert user role with proper null checking
-              const insertResult = await db.execute(sql`
-                INSERT INTO user_roles (user_id, org_id, role_id)
-                VALUES (${userId}::uuid, ${created.id}::uuid, ${ownerRole.id}::uuid)
-                ON CONFLICT (user_id, org_id) DO NOTHING
-                RETURNING id
-              `);
-              
-              const insertedRole = Array.isArray(insertResult) ? insertResult[0] : (insertResult as any).rows?.[0];
-              
-              if (insertedRole?.id) {
-                console.log(`[${rid}] ✅ Assigned owner role to user ${userId} for org ${created.id}`);
-              } else {
-                console.log(`[${rid}] ℹ️ User ${userId} already has a role for org ${created.id}`);
-              }
+            if (insertedRole?.id) {
+              console.log(`[${rid}] ✅ Assigned owner role to user ${userId} for org ${created.id}`);
             } else {
-              console.warn(`[${rid}] ❌ Owner role not found in database - please run role seeding`);
+              console.log(`[${rid}] ℹ️ User ${userId} already has this role for org ${created.id}`);
             }
+          } else {
+            console.warn(`[${rid}] ❌ Owner role not found in database - please run role seeding`);
           }
         } catch (roleError: any) {
           console.error(`[${rid}] ❌ Failed to assign owner role:`, {
@@ -239,8 +242,6 @@ router.post("/", async (req, res) => {
           });
           // Don't fail the request - organization was created successfully
         }
-      } else {
-        console.warn(`[${rid}] ℹ️ No user ID available - skipping owner role assignment`);
       }
     }
     
