@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { RouteTransition } from "@/components/route-transition";
 import { AppLayout } from "@/layouts/AppLayout";
 import Home from "./pages/index";
-import Organizations from "./pages/organizations";
+import Organizations from "./pages/organizations-enhanced";
 import OrderDetails from "./pages/order-details";
 import NotFound from "./pages/not-found";
 import { queryClient } from "./lib/queryClient";

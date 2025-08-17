@@ -1,7 +1,7 @@
 # Rich Habits Custom Clothing - Business Management System
 
 ## Project Overview
-A React-based single-page application framework for "Rich Habits Custom Clothing" business management system, focusing on organizations management with glassmorphism UI design. The system handles user management, organizations, sports teams, and order processing with a modern, professional interface.
+A React-based single-page application framework for "Rich Habits Custom Clothing" business management system, featuring comprehensive organizations management with glassmorphism UI design. The system handles user management, organizations with advanced filtering/sorting/pagination, sports teams, and order processing with a modern, professional interface.
 
 ## Tech Stack
 - **Frontend**: React, TypeScript, Vite, TailwindCSS, shadcn/ui

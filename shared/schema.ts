@@ -32,6 +32,7 @@ export const organizations = pgTable("organizations", {
         notes: text(),
         is_business: boolean().default(false).notNull(),
         createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 });
 
 // Export proper types

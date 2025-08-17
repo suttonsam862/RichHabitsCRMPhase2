@@ -20,14 +20,15 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 4 * 1024 * 1024, // 4MB limit per spec
   },
   fileFilter: (req, file, cb) => {
-    // Accept images and SVG files
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'image/svg+xml') {
+    // Allowlist: image/png, image/jpeg, image/webp, image/svg+xml
+    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files (including SVG) are allowed'));
+      cb(new Error('Only PNG, JPEG, WebP, and SVG files are allowed'));
     }
   },
 });
@@ -50,8 +51,8 @@ async function ensureBucketExists() {
       console.log(`Creating bucket: ${BUCKET_NAME}`);
       const { error: createError } = await supabaseAdmin.storage.createBucket(BUCKET_NAME, {
         public: true,
-        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'],
-        fileSizeLimit: 5242880, // 5MB
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
+        fileSizeLimit: 4194304, // 4MB per spec
       });
       
       if (createError) {
@@ -124,16 +125,20 @@ router.post('/logo', upload.single('file'), async (req, res) => {
   } catch (error: any) {
     console.error('Logo upload error:', error);
     
-    // Handle specific multer errors
+    // Handle specific multer errors with fieldErrors format
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ 
-        error: 'File too large. Maximum size is 5MB.' 
+      return res.status(400).json({ 
+        fieldErrors: { 
+          file: 'File too large. Maximum size is 4MB.' 
+        }
       });
     }
     
-    if (error.message && error.message.includes('Only image files')) {
+    if (error.message && error.message.includes('Only PNG')) {
       return res.status(400).json({ 
-        error: 'Invalid file type. Only image files (PNG, JPG, GIF, WebP, SVG) are allowed.' 
+        fieldErrors: { 
+          file: 'Invalid file type. Only PNG, JPEG, WebP, and SVG files are allowed.' 
+        }
       });
     }
 
