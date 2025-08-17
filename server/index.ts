@@ -51,7 +51,41 @@ app.use((req, res, next) => {
   next();
 });
 
+// Environment validation with masked logging
+function validateEnvironmentVariables() {
+  console.log('\n=== Environment Variable Check ===');
+  
+  const requiredVars = [
+    { name: 'SUPABASE_URL', value: process.env.SUPABASE_URL },
+    { name: 'SUPABASE_SERVICE_ROLE_KEY', value: process.env.SUPABASE_SERVICE_ROLE_KEY }
+  ];
+  
+  let hasErrors = false;
+  
+  for (const { name, value } of requiredVars) {
+    if (!value) {
+      console.error(`🚨 MISSING REQUIRED ENVIRONMENT VARIABLE: ${name}`);
+      hasErrors = true;
+    } else {
+      const masked = value.substring(0, 6) + '*'.repeat(Math.max(0, value.length - 6));
+      console.log(`✓ ${name}: ${masked} (length: ${value.length})`);
+    }
+  }
+  
+  if (hasErrors) {
+    console.error('\n🚨 CRITICAL ERROR: Missing required environment variables!');
+    console.error('Please set the missing variables and restart the server.');
+    console.error('Server cannot start without proper configuration.\n');
+    process.exit(1);
+  }
+  
+  console.log('✓ All required environment variables are set\n');
+}
+
 (async () => {
+  // Validate environment variables before starting server
+  validateEnvironmentVariables();
+  
   // ALWAYS serve the app on the port specified in the environment variable PORT
   const port = parseInt(process.env.PORT || '5000', 10);
   const host = "0.0.0.0";
@@ -61,14 +95,14 @@ app.use((req, res, next) => {
     try {
       log("🔍 Testing database connection...");
       const result = await db.execute(sql`SELECT current_database(), current_user, version()`);
-      const dbInfo = Array.isArray(result) ? result[0] : result.rows?.[0];
+      const dbInfo = Array.isArray(result) ? result[0] : (result as any).rows?.[0];
       log("✅ Database connection successful!");
       log("📊 Database info:", JSON.stringify(dbInfo));
 
       // Test organizations table access
       log("🔍 Testing organizations table access...");
       const orgCount = await db.execute(sql`SELECT COUNT(*) as count FROM organizations`);
-      const count = Array.isArray(orgCount) ? orgCount[0]?.count : orgCount.rows?.[0]?.count;
+      const count = Array.isArray(orgCount) ? orgCount[0]?.count : (orgCount as any).rows?.[0]?.count;
       log("✅ Organizations table accessible. Row count:", String(count));
 
       // Ensure required roles exist

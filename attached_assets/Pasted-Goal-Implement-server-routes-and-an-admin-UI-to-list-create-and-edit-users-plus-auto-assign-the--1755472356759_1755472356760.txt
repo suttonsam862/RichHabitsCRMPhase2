@@ -1,0 +1,166 @@
+Goal: Implement server routes and an admin UI to list, create, and edit users, plus auto-assign the customer role to new sport contacts. Keep changes minimal and production-safe.
+
+0) Preconditions (fail fast if missing)
+
+Verify env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY present.
+
+If missing, print a clear error and stop.
+
+1) Add Supabase admin client
+
+Create server/lib/supabaseAdmin.ts:
+
+import { createClient } from '@supabase/supabase-js';
+const url = process.env.SUPABASE_URL!;
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export const sbAdmin = createClient(url, key, { auth:{ autoRefreshToken:false, persistSession:false } });
+
+2) Backend: users routes (admin)
+
+Create server/routes/users-admin.ts:
+
+GET /api/users/admin → list users (auth.admin.listUsers({ page:1, perPage:100 })).
+
+PUT /api/users/admin → update by id; accepts { userId, email?, fullName?, password? }.
+
+Map fullName → user_metadata.full_name.
+
+JSON responses: { ok:true, users } and { ok:true, user } or { ok:false, error }.
+
+No auth check for now (internal admin panel). Leave a // TODO to secure later.
+
+Create server/routes/users.ts:
+
+POST /api/users → create user with { email, password? (optional), fullName?, orgId?, roleSlug?="customer" }.
+
+Generate random password if omitted (base64url ~20 chars).
+
+email_confirm:true.
+
+If orgId provided: lookup role id by slug, insert into public.user_roles (user_id, org_id, role_id) with ON CONFLICT (user_id, org_id, role_id) DO NOTHING.
+
+Return { ok:true, user:{id,email,fullName}, tempPassword }.
+
+Create helper server/lib/roles.ts:
+
+import { PoolClient } from 'pg';
+export async function getRoleIdBySlug(client: PoolClient, slug: string){
+  const { rows } = await client.query(`SELECT id FROM public.roles WHERE slug=$1 LIMIT 1`, [slug]);
+  return rows[0]?.id as string|undefined;
+}
+
+
+Wire routes in server/index.ts (or main app file):
+
+import usersAdmin from './routes/users-admin';
+import users from './routes/users';
+app.use('/api/users/admin', usersAdmin);
+app.use('/api/users', users);
+
+3) Backend: sport contact → user creation endpoint
+
+Create server/routes/org-sports.ts:
+
+POST /api/org-sports accepts { orgId, sportId, contactName, contactEmail, contactPhone?, createUser=true, roleSlug="customer" }.
+
+Upsert contact into public.org_sports (by (org_id, sport_id) or your existing key).
+
+If createUser:
+
+Call POST /api/users internally or directly use sbAdmin.
+
+Assign role to orgId as above.
+
+Return { ok:true, orgSportId, userId?, tempPassword? }.
+
+Mount:
+
+import orgSports from './routes/org-sports';
+app.use('/api/org-sports', orgSports);
+
+4) Frontend: Users admin page
+
+Create client/src/pages/users.tsx:
+
+On load: fetch /api/users/admin and display a table (email, name, id).
+
+Form to create user (email, full name, optional orgId).
+
+POST to /api/users, then toast “Temp password: …”.
+
+Simple edit form per row (update email/name/password → PUT /api/users/admin).
+
+Add nav link “Users” in your main nav/sidebar.
+
+Keep UI minimal (no design dependencies beyond what’s already in the project).
+
+5) Frontend: sport contact step integration
+
+In the sport contact save handler (wizard step):
+
+After saving contact info, POST to /api/org-sports with { orgId, sportId, contactName, contactEmail, contactPhone, createUser:true, roleSlug:"customer" }.
+
+On success, toast with “user created” (do not show password in UI here).
+
+6) Persistence hygiene
+
+Ensure org create and sport contact flows never send "" or null for optional fields; omit or send undefined.
+
+Always send universalDiscounts: {} if falsy.
+
+7) Smoke tests (run & report)
+
+List users:
+
+curl -s http://localhost:5000/api/users/admin | jq '.ok, (.users|length)'
+
+
+Expect: true, count ≥ 0.
+
+Create user (no org):
+
+curl -s -X POST http://localhost:5000/api/users \
+ -H 'Content-Type: application/json' \
+ -d '{"email":"test+usr1@example.com","fullName":"Test User 1"}' | jq
+
+
+Expect: ok:true, user.id, tempPassword.
+
+Create user with org + role assignment:
+
+ORG_ID='<an existing org UUID>'
+curl -s -X POST http://localhost:5000/api/users \
+ -H 'Content-Type: application/json' \
+ -d "{\"email\":\"test+usr2@example.com\",\"fullName\":\"Test User 2\",\"orgId\":\"$ORG_ID\",\"roleSlug\":\"customer\"}" | jq
+
+
+Then verify:
+
+psql "$DATABASE_URL" -c "SELECT count(*) FROM public.user_roles WHERE org_id='$ORG_ID';"
+
+
+Expect: count increased by 1.
+
+Sport contact → user creation:
+
+SPORT_ID='<existing sport UUID>'
+curl -s -X POST http://localhost:5000/api/org-sports \
+ -H 'Content-Type: application/json' \
+ -d "{\"orgId\":\"$ORG_ID\",\"sportId\":\"$SPORT_ID\",\"contactName\":\"Coach Sam\",\"contactEmail\":\"coach.sam@example.com\",\"createUser\":true}" | jq
+
+
+Then verify user_roles for $ORG_ID increased again.
+
+Update user:
+
+Pick a returned user.id, then:
+
+USER_ID='<uuid>'
+curl -s -X PUT http://localhost:5000/api/users/admin \
+ -H 'Content-Type: application/json' \
+ -d "{\"userId\":\"$USER_ID\",\"fullName\":\"Renamed User\"}" | jq
+
+
+Expect: ok:true.
+
+Report back: success/failure for each step (with short outputs). If any step fails, paste the exact error payload and the server log lines around it.
