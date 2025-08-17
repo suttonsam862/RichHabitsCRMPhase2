@@ -87,7 +87,6 @@ router.get("/", async (req, res, next) => {
         logo_url: organizations.logoUrl,
         is_business: organizations.is_business,
         created_at: organizations.createdAt,
-        updated_at: sql`${organizations.updatedAt || organizations.createdAt}`, // Fallback for backward compat
       })
       .from(organizations)
       .where(whereClause)
@@ -199,7 +198,6 @@ router.post("/", async (req, res) => {
       name: validatedData.name,
       logo_url: validatedData.logo_url || null,
       state: validatedData.state || null,
-      address: validatedData.address || null,
       phone: validatedData.phone || null,
       email: validatedData.email || null,
       is_business: validatedData.is_business ?? false,
@@ -294,7 +292,6 @@ router.patch("/:id", async (req, res) => {
     if ('name' in cleanedData) dbData.name = cleanedData.name;
     if ('logo_url' in cleanedData) dbData.logo_url = cleanedData.logo_url;
     if ('state' in cleanedData) dbData.state = cleanedData.state;
-    if ('address' in cleanedData) dbData.address = cleanedData.address;
     if ('phone' in cleanedData) dbData.phone = cleanedData.phone;
     if ('email' in cleanedData) dbData.email = cleanedData.email;
     if ('is_business' in cleanedData) dbData.is_business = cleanedData.is_business;

@@ -30,11 +30,7 @@ export const OrgBase = z.object({
     .or(z.literal(""))
     .transform(val => val === "" ? undefined : val),
   
-  address: z.string()
-    .max(500, "Address cannot exceed 500 characters")
-    .optional()
-    .or(z.literal(""))
-    .transform(val => val === "" ? undefined : val),
+  
   
   phone: z.string()
     .regex(/^[\d\s\-\(\)\+\.x]+$/, "Phone number contains invalid characters")
