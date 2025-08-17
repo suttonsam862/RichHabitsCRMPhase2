@@ -24,6 +24,7 @@ export const organizations = pgTable("organizations", {
         id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),
         name: text().notNull(),
         logo_url: text("logo_url"),
+        title_card_url: text("title_card_url"),
         state: text(),
         address: text(),
         phone: text(),
@@ -33,6 +34,8 @@ export const organizations = pgTable("organizations", {
         created_at: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
         is_business: boolean().default(false).notNull(),
         updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+        brand_primary: text("brand_primary"),
+        brand_secondary: text("brand_secondary"),
 });
 
 // Export proper types

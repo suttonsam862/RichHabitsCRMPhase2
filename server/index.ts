@@ -59,7 +59,8 @@ function validateEnvironmentVariables() {
   
   const requiredVars = [
     { name: 'SUPABASE_URL', value: process.env.SUPABASE_URL },
-    { name: 'SUPABASE_SERVICE_ROLE_KEY', value: process.env.SUPABASE_SERVICE_ROLE_KEY }
+    { name: 'SUPABASE_SERVICE_ROLE_KEY', value: process.env.SUPABASE_SERVICE_ROLE_KEY },
+    { name: 'OPENAI_API_KEY', value: process.env.OPENAI_API_KEY }
   ];
   
   let hasErrors = false;
