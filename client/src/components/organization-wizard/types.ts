@@ -20,19 +20,31 @@ export interface CreateOrgFormData {
   state?: USState | string;
   postal_code?: string;
   country: string;
-  
+
   // Branding step
   logo_file?: File;
   logo_url?: string;
   brand_primary?: string;
   brand_secondary?: string;
-  
+
   // Sports & contacts step
   sports: SportContact[];
-  
+
   // Legacy fields for compatibility
   address?: string;
   phone?: string;
   email?: string;
   notes?: string;
+}
+
+export interface OrgWizardData {
+  name: string;
+  state: string;
+  phone: string;
+  email: string;
+  notes: string;
+  address: string;
+  logoUrl: string;
+  isBusiness: boolean;
+  universalDiscounts: Record<string, any>;
 }

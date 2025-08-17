@@ -75,7 +75,7 @@ export const CreateOrganizationSchema = z.object({
   notes: z.string().optional().or(z.literal("").transform(() => undefined)),
   logoUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)), // client camelCase
   isBusiness: z.coerce.boolean().optional().default(false),
-  universalDiscounts: z.any().optional(), // we store as JSONB; accept object/array/null
+  universalDiscounts: z.any().default({}).transform(val => val === null || val === undefined ? {} : val), // we store as JSONB; accept object/array/null but transform to {}
 });
 
 // Keep legacy schema for backward compatibility

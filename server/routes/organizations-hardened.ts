@@ -37,8 +37,8 @@ const CreateOrgSchema = z.object({
   email: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   
-  universalDiscounts: z.record(z.any()).optional(),
-  universal_discounts: z.record(z.any()).optional(),
+  universalDiscounts: z.record(z.any()).default({}).catch({}),
+  universal_discounts: z.record(z.any()).default({}).catch({}),
   
   // Additional fields from wizard
   email_domain: z.string().optional().or(z.literal("")),

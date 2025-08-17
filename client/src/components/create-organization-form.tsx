@@ -28,6 +28,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
       phone: "",
       email: "",
       notes: "",
+      universalDiscounts: {},
     },
   });
 

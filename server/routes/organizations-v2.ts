@@ -124,6 +124,11 @@ router.post("/", async (req, res) => {
   console.log(`[${rid}] POST /api/organizations - Body:`, JSON.stringify(req.body, null, 2));
   
   try {
+    // Safeguard: Ensure universalDiscounts is never null
+    if (req.body && req.body.universalDiscounts === null) {
+      req.body.universalDiscounts = {};
+    }
+    
     // Strict content-type validation for JSON payloads
     if (!req.is('application/json')) {
       return res.status(400).json({
