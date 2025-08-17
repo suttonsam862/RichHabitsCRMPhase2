@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Building2, Home } from "lucide-react";
+import { Building2, Home, Users } from "lucide-react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -14,6 +14,7 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
   const navItems = [
     { path: "/", label: "Home", icon: Home },
     { path: "/organizations", label: "Organizations", icon: Building2 },
+    { path: "/users", label: "Users", icon: Users },
   ];
 
   return (

@@ -8,6 +8,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import Home from "./pages/index";
 import Organizations from "./pages/organizations-enhanced";
 import OrderDetails from "./pages/order-details";
+import Users from "./pages/users";
 import NotFound from "./pages/not-found";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,9 @@ function Router() {
             {/* Main Organizations page */}
             <Route path="/" component={Home} />
             <Route path="/organizations" component={Organizations} />
+            
+            {/* Users management page */}
+            <Route path="/users" component={Users} />
 
             {/* Order details page */}
             <Route path="/orders/:id" component={OrderDetails} />

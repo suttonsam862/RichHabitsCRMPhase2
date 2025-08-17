@@ -57,7 +57,9 @@ const CreateOrgSportSchema = z.object({
   sportId: z.string().uuid("Invalid sport ID format"),
   contactName: z.string().min(1, "Contact name is required"),
   contactEmail: z.string().email("Invalid email format"),
-  contactPhone: z.string().optional()
+  contactPhone: z.string().optional(),
+  createUser: z.boolean().default(true),
+  roleSlug: z.string().default("customer")
 });
 
 function generateRandomPassword(): string {
@@ -89,17 +91,18 @@ router.post("/", async (req, res) => {
       });
     }
     
-    const { orgId, sportId, contactName, contactEmail, contactPhone } = parseResult.data;
+    const { orgId, sportId, contactName, contactEmail, contactPhone, createUser, roleSlug } = parseResult.data;
     console.log(`[${requestId}] Validated data:`, parseResult.data);
     
     // Check if organization exists
     console.log(`[${requestId}] Checking if organization exists: ${orgId}`);
     const orgExists = await db.execute(sql`
-      SELECT id FROM organizations WHERE id = ${orgId}::uuid LIMIT 1
+      SELECT id FROM organizations WHERE id = ${orgId} LIMIT 1
     `);
     
     const orgResult = Array.isArray(orgExists) ? orgExists : (orgExists as any).rows || [];
     console.log(`[${requestId}] Organization query result:`, orgResult);
+    console.log(`[${requestId}] Organization query raw result:`, JSON.stringify(orgExists, null, 2));
     if (orgResult.length === 0) {
       return res.status(404).json({
         error: "Organization not found",
@@ -110,13 +113,14 @@ router.post("/", async (req, res) => {
     // Check if sport exists
     console.log(`[${requestId}] Checking if sport exists: ${sportId}`);
     const sportExists = await db.execute(sql`
-      SELECT id FROM sports WHERE id = ${sportId}::uuid LIMIT 1
+      SELECT id FROM sports WHERE id = ${sportId} LIMIT 1
     `);
     
     console.log(`[${requestId}] Sport query result:`, sportExists);
     
     // Handle Drizzle response (should be an array)
-    if (!Array.isArray(sportExists) || sportExists.length === 0) {
+    const sportResult = Array.isArray(sportExists) ? sportExists : (sportExists as any).rows || [];
+    if (sportResult.length === 0) {
       return res.status(404).json({
         error: "Sport not found",
         sportId: sportId
@@ -132,60 +136,46 @@ router.post("/", async (req, res) => {
     
     console.log(`[${requestId}] Org-sport record created/updated - ID: ${orgSportId}`);
     
-    // Generate random password for new user
-    const tempPassword = generateRandomPassword();
-    console.log(`[${requestId}] Creating user account for: ${contactEmail}`);
-    
-    // Create user using Supabase auth admin
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-      email: contactEmail,
-      password: tempPassword,
-      email_confirm: true
-    });
-    
-    if (userError) {
-      console.error(`[${requestId}] Failed to create user:`, userError);
-      return res.status(500).json({
-        error: "Failed to create user account",
-        message: userError.message,
-        requestId: requestId
-      });
+    let userId = undefined;
+    let tempPassword = undefined;
+
+    // Create user account if requested
+    if (createUser) {
+      console.log(`[${requestId}] Creating user account for: ${contactEmail}`);
+      
+      // Call internal users API for user creation
+      try {
+        const userResponse = await fetch(`http://localhost:5000/api/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: contactEmail,
+            fullName: contactName,
+            orgId: orgId,
+            roleSlug: roleSlug
+          })
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          if (userData.ok) {
+            userId = userData.user.id;
+            tempPassword = userData.tempPassword;
+            console.log(`[${requestId}] User created successfully via API - ID: ${userId}`);
+          } else {
+            console.warn(`[${requestId}] User creation failed:`, userData.error);
+          }
+        } else {
+          console.warn(`[${requestId}] User creation request failed:`, userResponse.status);
+        }
+      } catch (userError: any) {
+        console.warn(`[${requestId}] User creation error:`, userError.message);
+      }
     }
     
-    if (!userData.user?.id) {
-      throw new Error("User created but no ID returned");
-    }
-    
-    const userId = userData.user.id;
-    console.log(`[${requestId}] User created successfully - ID: ${userId}`);
-    
-    // Create customer role if needed and get a default role ID
-    console.log(`[${requestId}] Ensuring customer role exists...`);
-    try {
-      await db.execute(sql`
-        INSERT INTO roles (name, slug, description) 
-        VALUES ('Customer', 'customer', 'Customer role for sport contacts') 
-        ON CONFLICT (slug) DO NOTHING
-      `);
-    } catch (roleCreateError: any) {
-      console.log(`[${requestId}] Role creation attempted:`, roleCreateError.message);
-    }
-    
-    // Use a default role structure
-    const customerRole = { id: 'customer-role-default' };
-    
-    // Insert user role relationship
-    console.log(`[${requestId}] Assigning customer role to user...`);
-    try {
-      await db.execute(sql`
-        INSERT INTO user_roles (user_id, org_id, role_id)
-        VALUES (${userId}, ${orgId}, ${customerRole.id})
-        ON CONFLICT (user_id, org_id) DO NOTHING
-      `);
-      console.log(`[${requestId}] ✅ Customer role assigned successfully`);
-    } catch (roleError: any) {
-      console.log(`[${requestId}] ⚠️ Role assignment skipped - may already exist:`, roleError.message);
-    }
+    // Role assignment is now handled by the users API
     
     // Return success response
     res.status(201).json({
