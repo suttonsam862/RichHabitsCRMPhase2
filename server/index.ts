@@ -55,30 +55,42 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
   const host = "0.0.0.0";
 
-  // Test database connection on startup
-  async function testDatabaseConnection() {
+  // Test database connection and ensure required data exists
+  async function testConnection() {
     try {
       log("🔍 Testing database connection...");
       const result = await db.execute(sql`SELECT current_database(), current_user, version()`);
+      const dbInfo = Array.isArray(result) ? result[0] : result.rows?.[0];
       log("✅ Database connection successful!");
-      log("📊 Database info:", JSON.stringify(result[0]));
+      log("📊 Database info:", JSON.stringify(dbInfo));
 
-      // Test organizations table
+      // Test organizations table access
       log("🔍 Testing organizations table access...");
       const orgCount = await db.execute(sql`SELECT COUNT(*) as count FROM organizations`);
-      log("✅ Organizations table accessible. Row count:", String(orgCount[0].count));
+      const count = Array.isArray(orgCount) ? orgCount[0]?.count : orgCount.rows?.[0]?.count;
+      log("✅ Organizations table accessible. Row count:", String(count));
 
-    } catch (err: any) {
+      // Ensure required roles exist
+      log("🔍 Ensuring required roles exist...");
+      try {
+        const { ensureRolesExist } = await import('./scripts/ensureRolesExist');
+        await ensureRolesExist();
+      } catch (roleError: any) {
+        console.warn('⚠️ Could not ensure roles exist:', roleError.message);
+        // Don't fail server startup for this
+      }
+
+    } catch (error: any) {
       log("❌ Database connection failed:");
-      log("- Error message:", err.message);
-      log("- Error code:", err.code);
-      log("- Error stack:", err.stack);
+      log("- Error message:", error.message);
+      log("- Error code:", error.code);
+      process.exit(1);
     }
   }
 
   const server = app.listen(port, host, () => {
     log(`Server running on ${host}:${port}`);
-    testDatabaseConnection();
+    testConnection();
   });
 
   // Handle server errors

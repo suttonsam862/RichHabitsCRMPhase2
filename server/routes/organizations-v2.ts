@@ -35,6 +35,37 @@ function formatFieldErrors(err: z.ZodError) {
   return fieldErrors;
 }
 
+// Helper to get user ID from various sources including JWT
+function getUserId(req: any): string | null {
+  // First try explicit user_id from request body
+  if (req.body?.user_id) {
+    return req.body.user_id;
+  }
+  
+  // Try JWT token extraction
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      // Simple JWT payload extraction (assumes standard JWT structure)
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      if (payload.sub || payload.user_id || payload.id) {
+        return payload.sub || payload.user_id || payload.id;
+      }
+    } catch (e) {
+      console.warn('Failed to extract user ID from JWT:', e.message);
+    }
+  }
+  
+  // Try other headers and sources
+  const userId = req.headers['x-user-id'] || 
+                 req.headers['x-supabase-user-id'] ||
+                 req.user?.id || 
+                 req.session?.userId;
+                 
+  return userId || null;
+}
+
 // GET /api/organizations - List with filtering, sorting, pagination
 router.get("/", async (req, res, next) => {
   const rid = res.locals.rid;
@@ -219,13 +250,69 @@ router.post("/", async (req, res) => {
     
     console.log(`[${rid}] Organization created successfully - ID: ${created.id}, Name: ${created.name}`);
     
+    // Attempt to assign owner role if user is authenticated
+    const userId = getUserId(req);
+    let roleAssignmentStatus = "skipped";
+    
+    if (userId) {
+      try {
+        // Validate user ID format
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+          console.warn(`[${rid}] Invalid user ID format: ${userId} - skipping role assignment`);
+          roleAssignmentStatus = "invalid_user_id";
+        } else {
+          // Get owner role ID
+          const ownerRoleResult = await db.execute(sql`
+            SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
+          `);
+          
+          const ownerRole = Array.isArray(ownerRoleResult) ? ownerRoleResult[0] : ownerRoleResult.rows?.[0];
+          
+          if (ownerRole?.id) {
+            // Insert user role with proper null checking
+            const insertResult = await db.execute(sql`
+              INSERT INTO user_roles (user_id, org_id, role_id)
+              VALUES (${userId}::uuid, ${created.id}::uuid, ${ownerRole.id}::uuid)
+              ON CONFLICT (user_id, org_id) DO NOTHING
+              RETURNING id
+            `);
+            
+            const insertedRole = Array.isArray(insertResult) ? insertResult[0] : insertResult.rows?.[0];
+            
+            if (insertedRole?.id) {
+              roleAssignmentStatus = "assigned";
+              console.log(`[${rid}] ✅ Assigned owner role to user ${userId} for org ${created.id}`);
+            } else {
+              roleAssignmentStatus = "already_exists";
+              console.log(`[${rid}] ℹ️ User ${userId} already has a role for org ${created.id}`);
+            }
+          } else {
+            roleAssignmentStatus = "no_owner_role";
+            console.warn(`[${rid}] ❌ Owner role not found in database - please run role seeding`);
+          }
+        }
+      } catch (roleError: any) {
+        roleAssignmentStatus = "error";
+        console.error(`[${rid}] ❌ Failed to assign owner role:`, {
+          error: roleError.message,
+          code: roleError.code,
+          userId: userId,
+          orgId: created.id
+        });
+        // Don't fail the request - organization was created successfully
+      }
+    } else {
+      console.warn(`[${rid}] ℹ️ No user ID available - skipping owner role assignment`);
+    }
+    
     res.status(201).json({
       success: true,
       message: "Organization created successfully",
       organization: created,
       meta: {
         createdAt: new Date().toISOString(),
-        requestId: rid
+        requestId: rid,
+        roleAssignment: roleAssignmentStatus
       }
     });
     

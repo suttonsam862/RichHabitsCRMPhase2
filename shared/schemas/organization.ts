@@ -57,7 +57,10 @@ export const OrgBase = z.object({
   universal_discounts: z.record(
     z.string().min(1, "Discount key cannot be empty"), 
     z.number().min(0, "Discount value must be non-negative").max(100, "Discount cannot exceed 100%")
-  ).default({}).catch({})
+  ).default({}).catch({}),
+  
+  // Optional user_id for role assignment
+  user_id: z.string().uuid("Invalid user ID format").optional()
 });
 
 // Schema for creating organizations

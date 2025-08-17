@@ -49,6 +49,9 @@ const CreateOrgSchema = z.object({
   city: z.string().optional().or(z.literal("")),
   postal_code: z.string().optional().or(z.literal("")),
   country: z.string().optional().or(z.literal("")),
+  
+  // Optional user_id for role assignment
+  user_id: z.string().uuid().optional(),
 }).transform((data) => {
   // Normalize and map fields
   const normalized: any = {
@@ -118,10 +121,31 @@ const CreateOrgSchema = z.object({
   return normalized;
 });
 
-// Helper to get user ID from various sources
+// Helper to get user ID from various sources including JWT
 function getUserId(req: any): string | null {
-  // Try different sources for user ID
+  // First try explicit user_id from request body
+  if (req.body?.user_id) {
+    return req.body.user_id;
+  }
+  
+  // Try JWT token extraction
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      // Simple JWT payload extraction (assumes standard JWT structure)
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      if (payload.sub || payload.user_id || payload.id) {
+        return payload.sub || payload.user_id || payload.id;
+      }
+    } catch (e) {
+      console.warn('Failed to extract user ID from JWT:', e.message);
+    }
+  }
+  
+  // Try other headers and sources
   const userId = req.headers['x-user-id'] || 
+                 req.headers['x-supabase-user-id'] ||
                  req.user?.id || 
                  req.session?.userId ||
                  DEFAULT_USER_ID;
@@ -177,35 +201,53 @@ router.post("/", async (req, res) => {
     
     // Conditionally assign owner role
     if (ASSIGN_OWNER_ON_CREATE) {
-      const userId = getUserId(req);
+      // Get user ID from multiple sources including the validated data
+      let userId = normalized.user_id || getUserId(req);
       
       if (userId) {
         try {
-          // Get owner role ID
-          const [ownerRole] = await db.execute(sql`
-            SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
-          `) as any;
-          
-          if (ownerRole?.rows?.[0]?.id || ownerRole?.[0]?.id) {
-            const roleId = ownerRole?.rows?.[0]?.id || ownerRole?.[0]?.id;
-            
-            // Insert user role (ignore conflicts)
-            await db.execute(sql`
-              INSERT INTO user_roles (user_id, org_id, role_id)
-              VALUES (${userId}, ${created.id}, ${roleId})
-              ON CONFLICT (user_id, org_id) DO NOTHING
+          // Validate user ID format
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+            console.warn(`[${rid}] Invalid user ID format: ${userId} - skipping role assignment`);
+          } else {
+            // Get owner role ID
+            const ownerRoleResult = await db.execute(sql`
+              SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
             `);
             
-            console.log(`[${rid}] Assigned owner role to user ${userId}`);
-          } else {
-            console.warn(`[${rid}] Owner role not found in database`);
+            const ownerRole = Array.isArray(ownerRoleResult) ? ownerRoleResult[0] : ownerRoleResult.rows?.[0];
+            
+            if (ownerRole?.id) {
+              // Insert user role with proper null checking
+              const insertResult = await db.execute(sql`
+                INSERT INTO user_roles (user_id, org_id, role_id)
+                VALUES (${userId}::uuid, ${created.id}::uuid, ${ownerRole.id}::uuid)
+                ON CONFLICT (user_id, org_id) DO NOTHING
+                RETURNING id
+              `);
+              
+              const insertedRole = Array.isArray(insertResult) ? insertResult[0] : insertResult.rows?.[0];
+              
+              if (insertedRole?.id) {
+                console.log(`[${rid}] ✅ Assigned owner role to user ${userId} for org ${created.id}`);
+              } else {
+                console.log(`[${rid}] ℹ️ User ${userId} already has a role for org ${created.id}`);
+              }
+            } else {
+              console.warn(`[${rid}] ❌ Owner role not found in database - please run role seeding`);
+            }
           }
         } catch (roleError: any) {
-          console.warn(`[${rid}] Failed to assign owner role:`, roleError.message);
+          console.error(`[${rid}] ❌ Failed to assign owner role:`, {
+            error: roleError.message,
+            code: roleError.code,
+            userId: userId,
+            orgId: created.id
+          });
           // Don't fail the request - organization was created successfully
         }
       } else {
-        console.warn(`[${rid}] No user ID available - skipping owner role assignment`);
+        console.warn(`[${rid}] ℹ️ No user ID available - skipping owner role assignment`);
       }
     }
     
