@@ -119,59 +119,159 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// POST /api/organizations - Create new organization
+// POST /api/organizations - Create new organization (Enhanced validation)
 router.post("/", async (req, res) => {
   const rid = res.locals.rid;
-  console.log(`[${rid}] POST /api/organizations - Body:`, req.body);
+  console.log(`[${rid}] POST /api/organizations - Body:`, JSON.stringify(req.body, null, 2));
   
   try {
-    // Validate input
-    const input = OrgCreate.parse(req.body);
+    // Strict content-type validation for JSON payloads
+    if (!req.is('application/json')) {
+      return res.status(400).json({
+        error: "Invalid content type",
+        message: "Request must be application/json",
+        received: req.get('Content-Type') || 'none'
+      });
+    }
+
+    // Enhanced validation with strict zod schema
+    const parseResult = OrgCreate.safeParse(req.body);
     
-    // Clean data (convert empty strings to null)
-    const cleanedData = cleanOrgData(input);
+    if (!parseResult.success) {
+      const fieldErrors = formatFieldErrors(parseResult.error);
+      console.error(`[${rid}] Validation failed:`, {
+        issues: parseResult.error.issues,
+        fieldErrors
+      });
+      
+      return res.status(400).json({
+        error: "Validation failed",
+        message: "One or more fields contain invalid data",
+        fieldErrors,
+        details: parseResult.error.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message,
+          value: issue.code === 'invalid_type' ? typeof req.body[issue.path[0]] : req.body[issue.path[0]]
+        }))
+      });
+    }
+
+    const validatedData = parseResult.data;
     
-    // Map to database columns
+    // Additional business logic validation
+    if (validatedData.logo_url) {
+      try {
+        const logoUrl = new URL(validatedData.logo_url);
+        // Ensure logo URL is from allowed domains or our upload service
+        const allowedDomains = ['supabase.co', 'amazonaws.com', process.env.SUPABASE_URL?.replace('https://', '')];
+        const isAllowedDomain = allowedDomains.some(domain => 
+          domain && logoUrl.hostname.includes(domain)
+        );
+        
+        if (!isAllowedDomain) {
+          console.warn(`[${rid}] Logo URL from external domain: ${logoUrl.hostname}`);
+        }
+      } catch (urlError) {
+        return res.status(400).json({
+          error: "Invalid logo URL",
+          message: "Logo URL must be a valid URL format"
+        });
+      }
+    }
+
+    // Check for duplicate organization name (case-insensitive)
+    const existingOrg = await db
+      .select({ id: organizations.id, name: organizations.name })
+      .from(organizations)
+      .where(sql`lower(${organizations.name}) = lower(${validatedData.name})`)
+      .limit(1);
+    
+    if (existingOrg.length > 0) {
+      return res.status(409).json({
+        error: "Duplicate organization name",
+        message: `An organization with the name "${validatedData.name}" already exists`,
+        existingId: existingOrg[0].id
+      });
+    }
+    
+    // Map validated data to database columns (exact snake_case column names)
     const dbData = {
-      name: cleanedData.name,
-      logoUrl: cleanedData.logo_url || null,
-      state: cleanedData.state || null,
-      address: cleanedData.address || null,
-      phone: cleanedData.phone || null,
-      email: cleanedData.email || null,
-      is_business: cleanedData.is_business ?? false,
-      notes: cleanedData.notes || null,
-      universalDiscounts: cleanedData.universal_discounts || {},
+      name: validatedData.name,
+      logo_url: validatedData.logo_url || null,
+      state: validatedData.state || null,
+      address: validatedData.address || null,
+      phone: validatedData.phone || null,
+      email: validatedData.email || null,
+      is_business: validatedData.is_business ?? false,
+      notes: validatedData.notes || null,
+      universal_discounts: validatedData.universal_discounts || {},
     };
     
-    console.log(`[${rid}] Creating organization with data:`, dbData);
+    console.log(`[${rid}] Creating organization with validated data:`, dbData);
     
     const [created] = await db
       .insert(organizations)
       .values(dbData)
       .returning();
     
-    console.log(`[${rid}] Organization created successfully:`, created.id);
+    console.log(`[${rid}] Organization created successfully - ID: ${created.id}, Name: ${created.name}`);
     
     res.status(201).json({
-      ok: true,
-      organization: created
+      success: true,
+      message: "Organization created successfully",
+      organization: created,
+      meta: {
+        createdAt: new Date().toISOString(),
+        requestId: rid
+      }
     });
     
   } catch (err: any) {
-    if (err instanceof z.ZodError) {
-      console.error(`[${rid}] Validation error:`, err.issues);
-      return res.status(400).json({
-        error: "Validation failed",
-        fieldErrors: formatFieldErrors(err)
+    console.error(`[${rid}] Error creating organization:`, {
+      error: err.message,
+      code: err.code,
+      detail: err.detail,
+      constraint: err.constraint,
+      stack: err.stack
+    });
+    
+    // Handle specific database errors
+    if (err.code === '23505') { // Unique constraint violation
+      return res.status(409).json({
+        error: "Duplicate entry",
+        message: "Organization with this name already exists",
+        constraint: err.constraint
       });
     }
     
-    console.error(`[${rid}] Error creating organization:`, err);
+    if (err.code === '23502') { // Not null violation
+      return res.status(400).json({
+        error: "Missing required field",
+        message: `Required field cannot be null: ${err.column}`,
+        field: err.column
+      });
+    }
+    
+    if (err.code === '22001') { // String data too long
+      return res.status(400).json({
+        error: "Data too long",
+        message: "One or more fields exceed maximum length",
+        detail: err.detail
+      });
+    }
+    
+    // Generic error response
     res.status(500).json({
       error: "Internal server error",
-      code: err.code,
-      hint: err.hint
+      message: "Failed to create organization",
+      requestId: rid,
+      ...(process.env.NODE_ENV === 'development' && {
+        details: {
+          code: err.code,
+          hint: err.hint,
+          detail: err.detail
+        }
+      })
     });
   }
 });
@@ -189,17 +289,17 @@ router.patch("/:id", async (req, res) => {
     // Clean data
     const cleanedData = cleanOrgData(input);
     
-    // Map to database columns (only include provided fields)
+    // Map to database columns (only include provided fields, exact snake_case column names)
     const dbData: any = {};
     if ('name' in cleanedData) dbData.name = cleanedData.name;
-    if ('logo_url' in cleanedData) dbData.logoUrl = cleanedData.logo_url;
+    if ('logo_url' in cleanedData) dbData.logo_url = cleanedData.logo_url;
     if ('state' in cleanedData) dbData.state = cleanedData.state;
     if ('address' in cleanedData) dbData.address = cleanedData.address;
     if ('phone' in cleanedData) dbData.phone = cleanedData.phone;
     if ('email' in cleanedData) dbData.email = cleanedData.email;
     if ('is_business' in cleanedData) dbData.is_business = cleanedData.is_business;
     if ('notes' in cleanedData) dbData.notes = cleanedData.notes;
-    if ('universal_discounts' in cleanedData) dbData.universalDiscounts = cleanedData.universal_discounts;
+    if ('universal_discounts' in cleanedData) dbData.universal_discounts = cleanedData.universal_discounts;
     
     if (Object.keys(dbData).length === 0) {
       return res.status(400).json({

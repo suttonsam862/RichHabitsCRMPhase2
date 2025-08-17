@@ -23,16 +23,16 @@ export const users = pgTable("users", {
 export const organizations = pgTable("organizations", {
         id: varchar().default(sql`gen_random_uuid()`).primaryKey().notNull(),
         name: text().notNull(),
-        logoUrl: text("logo_url"),
-        state: text(),  // Optional state field
-        address: text(),  // Simple address field
+        logo_url: text("logo_url"),
+        state: text(),
+        address: text(),
         phone: text(),
-        email: text(),  // Email field for contact
-        universalDiscounts: jsonb("universal_discounts"),
+        email: text(),
+        universal_discounts: jsonb("universal_discounts"),
         notes: text(),
+        created_at: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
         is_business: boolean().default(false).notNull(),
-        createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-        updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+        updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // Export proper types

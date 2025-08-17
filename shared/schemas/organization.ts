@@ -9,17 +9,61 @@ const US_STATES = [
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
 ] as const;
 
-// Base organization schema (shared fields)
+// Strict organization validation schema (enhanced)
 export const OrgBase = z.object({
-  name: z.string().min(1).max(120).trim(),
-  logo_url: z.string().url().optional(),
-  state: z.enum(US_STATES).optional().or(z.string().regex(/^[A-Z]{2}$/).optional()),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email("Invalid email format").optional().or(z.literal("")),
-  is_business: z.boolean().default(false),
-  notes: z.string().max(2000).optional(),
-  universal_discounts: z.record(z.string(), z.number()).default({})
+  name: z.string()
+    .min(1, "Organization name is required")
+    .max(120, "Organization name cannot exceed 120 characters")
+    .trim()
+    .refine(name => name.length > 0, "Organization name cannot be empty after trimming"),
+  
+  logo_url: z.string()
+    .url("Logo URL must be a valid URL")
+    .optional()
+    .or(z.literal(""))
+    .transform(val => val === "" ? undefined : val),
+  
+  state: z.enum(US_STATES, {
+    errorMap: () => ({ message: "State must be a valid 2-letter US state code" })
+  }).optional()
+    .or(z.string().regex(/^[A-Z]{2}$/, "State must be a 2-letter uppercase code").optional())
+    .or(z.literal(""))
+    .transform(val => val === "" ? undefined : val),
+  
+  address: z.string()
+    .max(500, "Address cannot exceed 500 characters")
+    .optional()
+    .or(z.literal(""))
+    .transform(val => val === "" ? undefined : val),
+  
+  phone: z.string()
+    .regex(/^[\d\s\-\(\)\+\.x]+$/, "Phone number contains invalid characters")
+    .min(10, "Phone number must be at least 10 digits")
+    .max(20, "Phone number cannot exceed 20 characters")
+    .optional()
+    .or(z.literal(""))
+    .transform(val => val === "" ? undefined : val),
+  
+  email: z.string()
+    .email("Invalid email format")
+    .max(255, "Email cannot exceed 255 characters")
+    .optional()
+    .or(z.literal(""))
+    .transform(val => val === "" ? undefined : val),
+  
+  is_business: z.boolean()
+    .default(false),
+  
+  notes: z.string()
+    .max(2000, "Notes cannot exceed 2000 characters")
+    .optional()
+    .or(z.literal(""))
+    .transform(val => val === "" ? undefined : val),
+  
+  universal_discounts: z.record(
+    z.string().min(1, "Discount key cannot be empty"), 
+    z.number().min(0, "Discount value must be non-negative").max(100, "Discount cannot exceed 100%")
+  ).default({})
 });
 
 // Schema for creating organizations

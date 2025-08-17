@@ -23,12 +23,18 @@ const upload = multer({
     fileSize: 4 * 1024 * 1024, // 4MB limit per spec
   },
   fileFilter: (req, file, cb) => {
-    // Allowlist: image/png, image/jpeg, image/webp, image/svg+xml
-    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
-    if (allowedMimeTypes.includes(file.mimetype)) {
+    // Strict allowlist: PNG, JPEG, JPG, SVG only (per requirements)
+    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'svg'];
+    
+    const fileExt = file.originalname.split('.').pop()?.toLowerCase();
+    
+    if (allowedMimeTypes.includes(file.mimetype) && fileExt && allowedExtensions.includes(fileExt)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PNG, JPEG, WebP, and SVG files are allowed'));
+      const error = new Error(`Invalid file type. Only PNG, JPG/JPEG, and SVG files are allowed. Received: ${file.mimetype} (${fileExt})`);
+      error.name = 'INVALID_FILE_TYPE';
+      cb(error);
     }
   },
 });
@@ -51,7 +57,7 @@ async function ensureBucketExists() {
       console.log(`Creating bucket: ${BUCKET_NAME}`);
       const { error: createError } = await supabaseAdmin.storage.createBucket(BUCKET_NAME, {
         public: true,
-        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'],
         fileSizeLimit: 4194304, // 4MB per spec
       });
       
