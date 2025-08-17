@@ -1,0 +1,155 @@
+Goal: Make the Organizations workflow rock-solid: list, search, filter, sort, paginate, and create organizations without runtime errors. Fix the current Radix <Select> crash and the DB/column mismatches. Add defensive validation, logging, and zero-downtime migrations.
+
+Repository facts & symptoms to address:
+
+Frontend page: client/src/pages/organizations-enhanced.tsx (Radix <Select> warning: SelectItem value cannot be "").
+
+UI kit: client/src/components/ui/select.tsx (Radix wrapper), other UI components in client/src/components/ui/*.
+
+Server: Express + TypeScript (server/index.ts, routes under server/), Postgres via postgres client.
+
+Storage: Supabase bucket logos for logos (must accept SVG; content-type image/svg+xml).
+
+Table public.organizations exists but some columns may be missing (e.g., address, phone, email, universal_discounts, is_business, updated_at).
+
+We want the page to load with no empty-string Select values, safe defaults, resilient server params, and idempotent DB migrations.
+
+Do this:
+
+Fix Radix Select crash
+
+Audit all <SelectItem> in organizations-enhanced.tsx (and any filter components) and ensure no item uses value="".
+
+Use non-empty defaults:
+
+type: all | business | school → default all
+
+sort: created_at | name → default created_at
+
+order: asc | desc → default desc
+
+state filter: use any instead of empty string as the “no filter” case
+
+Ensure the <Select value> props are never "". Normalize URL/localStorage hydration so empty values become the default.
+
+Server: bulletproof orgs list API
+
+File: server/routes/organizations.ts (or wherever /api/organizations lives).
+
+Coerce/clean query params:
+
+type = oneOf(['all','business','school'], 'all')
+
+sort = oneOf(['created_at','name'], 'created_at')
+
+order = oneOf(['asc','desc'], 'desc')
+
+state = undefined when 'any' or empty
+
+page/pageSize = integers with sane limits; cap pageSize (e.g., max 100)
+
+Safe SQL with placeholders; no dynamic identifiers. For sort, map to a whitelist of column names.
+
+Search should safely COALESCE missing columns: COALESCE(name,''), COALESCE(address,''), COALESCE(phone,''), COALESCE(email,'').
+
+Return { data, page, pageSize, total }. Add a total count query.
+
+DB migration (idempotent)
+
+Create a migration (e.g., server/db/migrations/2025_08_17_orgs_columns.sql) and run it:
+
+ALTER TABLE public.organizations
+  ADD COLUMN IF NOT EXISTS address TEXT,
+  ADD COLUMN IF NOT EXISTS phone TEXT,
+  ADD COLUMN IF NOT EXISTS email TEXT,
+  ADD COLUMN IF NOT EXISTS is_business BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS universal_discounts JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_orgs_set_updated_at ON public.organizations;
+CREATE TRIGGER trg_orgs_set_updated_at
+BEFORE UPDATE ON public.organizations
+FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_orgs_name_lower ON public.organizations (lower(name));
+
+
+Confirm with SELECT column_name FROM information_schema.columns WHERE table_name='organizations';
+
+Create Organization route hardening
+
+Validate payload with zod/yup (server-side): required name, optional logo_url, address, state, phone, email, notes, is_business (default false), universal_discounts (default {}).
+
+Reject bad state (must be 2-letter US code) and malformed email/phone. Return 400 with a helpful JSON error.
+
+Ensure logo upload accepts image/svg+xml, image/png, image/jpeg; propagate precise error messages to the client.
+
+Frontend UX polish
+
+Debounce search input (already present; ensure it’s used) and sync filters to URL params.
+
+Empty state: friendly CTA + button to open “Create Organization” modal.
+
+Persist user selections (query params or localStorage) but never persist "".
+
+Show inline errors if API 4xx; show retry banner on 5xx with request ID (see logging).
+
+Instrumentation & logs
+
+On the server, log structured JSON for /api/organizations including sanitized query params and generated SQL pieces (not full text; show sort/where parts as objects).
+
+Include a short request id in responses (e.g., x-request-id header) and echo it in error payloads so users can paste it into logs.
+
+Acceptance criteria
+
+Navigating to Organizations never throws; no Radix empty-value warnings.
+
+/api/organizations returns 200 for all combinations of filters, including when columns are null/missing in older rows.
+
+Creating an org with SVG/PNG/JPG logo succeeds; DB row reflects data; page refresh shows it immediately.
+
+Search/filter/sort/pagination all work and are URL-shareable.
+
+Lighthouse/React profiler: no major regressions.
+
+Deliverables
+
+Commits with clear messages.
+
+The SQL migration file + a short README note on how to run migrations locally.
+
+Before/after screenshots/GIF of Organizations page, plus sample API responses.
+
+Constraints: Keep changes minimal but robust; don’t introduce new libs unless necessary. Preserve existing design language.
+
+Recommended Agent Settings
+
+Thinking: High Power (enable “dynamic intelligence / high-power reasoning”)
+
+Run permissions:
+
+File system read/write ✅
+
+Shell/Node scripts ✅ (Node 20+)
+
+Start the dev server and hit endpoints locally ✅
+
+Safety rails:
+
+Require a diff preview for each changed file before finalizing
+
+Confirm the migration file contents before executing SQL
+
+Timeout per action: 180–240s
+
+Max parallel ops: 2 (to avoid racey dev server restarts)
+
+Logs: Verbose/Debug while working; leave Info in final code
