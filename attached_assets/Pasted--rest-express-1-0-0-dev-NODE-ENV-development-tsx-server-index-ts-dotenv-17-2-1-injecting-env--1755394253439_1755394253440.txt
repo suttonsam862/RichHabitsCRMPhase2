@@ -1,0 +1,460 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (3) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+1:27:25 AM [express] Server running on 0.0.0.0:5000
+1:27:25 AM [express] 🔍 Testing database connection...
+[2025-08-17T01:27:25.460Z] GET / -> 200 50ms
+[2025-08-17T01:27:25.697Z] GET /@vite/client -> 200 21ms
+[2025-08-17T01:27:25.701Z] GET / -> 200 27ms
+[2025-08-17T01:27:25.727Z] GET /src/main.tsx?v=mmoJTvt24EkSZVsXLNd29 -> 200 48ms
+[2025-08-17T01:27:25.814Z] GET /@vite/client -> 304 2ms
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2025-08-17T01:27:26.291Z] GET /src/App.tsx?v=mmoJTvt24EkSZVsXLNd29 -> 200 6ms
+[2025-08-17T01:27:26.311Z] GET /@react-refresh -> 304 27ms
+[2025-08-17T01:27:26.313Z] GET /src/main.tsx?v=__MyIeRWWVOpZo_SLbgFm -> 200 1ms
+[2025-08-17T01:27:26.837Z] GET /src/index.css?v=mmoJTvt24EkSZVsXLNd29 -> 200 532ms
+[2025-08-17T01:27:26.842Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 1ms
+1:27:27 AM [express] ✅ Database connection successful!
+1:27:27 AM [{"current_database":"postgres","current_user":"postgres","version":"PostgreSQL 15.8 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit"}] 📊 Database info:
+1:27:27 AM [express] 🔍 Testing organizations table access...
+[2025-08-17T01:27:27.224Z] GET /src/components/route-transition.tsx -> 304 38ms
+[2025-08-17T01:27:27.225Z] GET /src/pages/index.tsx -> 304 21ms
+[2025-08-17T01:27:27.237Z] GET /src/pages/order-details.tsx -> 304 34ms
+[2025-08-17T01:27:27.242Z] GET /src/components/ui/toaster.tsx -> 304 56ms
+[2025-08-17T01:27:27.264Z] GET /src/pages/organizations-enhanced.tsx -> 304 61ms
+[2025-08-17T01:27:27.265Z] GET /src/layouts/AppLayout.tsx -> 304 1ms
+1:27:27 AM [0] ✅ Organizations table accessible. Row count:
+[2025-08-17T01:27:27.270Z] GET /src/pages/not-found.tsx -> 304 4ms
+[2025-08-17T01:27:27.468Z] GET /src/lib/queryClient.ts -> 304 48ms
+[2025-08-17T01:27:27.468Z] GET /src/components/ui/tooltip.tsx -> 304 47ms
+[2025-08-17T01:27:27.484Z] GET /@react-refresh -> 304 0ms
+[2025-08-17T01:27:27.501Z] GET /src/App.tsx?v=__MyIeRWWVOpZo_SLbgFm -> 200 1ms
+[2025-08-17T01:27:27.508Z] GET /src/index.css?v=__MyIeRWWVOpZo_SLbgFm -> 200 1ms
+[2025-08-17T01:27:27.615Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 9ms
+[2025-08-17T01:27:27.704Z] GET /src/components/ui/glow-card.tsx -> 304 12ms
+[2025-08-17T01:27:27.704Z] GET /src/components/head-meta.tsx -> 304 12ms
+[2025-08-17T01:27:27.734Z] GET /src/components/ui/badge.tsx -> 304 0ms
+[2025-08-17T01:27:27.735Z] GET /src/components/ui/card.tsx -> 304 1ms
+[2025-08-17T01:27:27.738Z] GET /src/components/ui/button.tsx -> 304 1ms
+[2025-08-17T01:27:27.742Z] GET /src/components/ui/separator.tsx -> 304 1ms
+[2025-08-17T01:27:27.862Z] GET /src/hooks/use-toast.ts -> 304 1ms
+[2025-08-17T01:27:27.862Z] GET /src/components/ui/toast.tsx -> 304 1ms
+[2025-08-17T01:27:27.907Z] GET /src/components/ui/input.tsx -> 304 1ms
+[2025-08-17T01:27:27.909Z] GET /src/components/ui/select.tsx -> 304 0ms
+[2025-08-17T01:27:27.911Z] GET /src/components/ui/skeleton.tsx -> 304 1ms
+[2025-08-17T01:27:27.922Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 304 1ms
+[2025-08-17T01:27:27.923Z] GET /src/components/organization-modal.tsx -> 304 1ms
+[2025-08-17T01:27:27.923Z] GET /src/components/ui/alert.tsx -> 304 1ms
+[2025-08-17T01:27:27.956Z] GET /src/components/ui/rb-button.tsx -> 304 1ms
+[2025-08-17T01:27:27.958Z] GET /src/lib/api/organizations.ts -> 304 0ms
+[2025-08-17T01:27:27.959Z] GET /src/hooks/use-debounce.ts -> 304 0ms
+[2025-08-17T01:27:27.975Z] GET /src/components/ui/toaster.tsx -> 304 0ms
+[2025-08-17T01:27:27.976Z] GET /src/lib/utils.ts -> 304 1ms
+[2025-08-17T01:27:27.977Z] GET /src/components/route-transition.tsx -> 304 3ms
+[2025-08-17T01:27:28.005Z] GET /src/layouts/AppLayout.tsx -> 304 1ms
+[2025-08-17T01:27:28.008Z] GET /src/pages/organizations-enhanced.tsx -> 304 1ms
+[2025-08-17T01:27:28.008Z] GET /src/pages/index.tsx -> 304 1ms
+[2025-08-17T01:27:28.028Z] GET /src/lib/queryClient.ts -> 304 1ms
+[2025-08-17T01:27:28.029Z] GET /src/pages/order-details.tsx -> 304 2ms
+[2025-08-17T01:27:28.030Z] GET /src/pages/not-found.tsx -> 304 1ms
+[2025-08-17T01:27:28.054Z] GET /src/components/ui/tooltip.tsx -> 304 1ms
+[2025-08-17T01:27:28.061Z] GET /src/components/ui/dialog.tsx -> 304 1ms
+[2025-08-17T01:27:28.062Z] GET /src/components/ui/scroll-area.tsx -> 304 2ms
+[2025-08-17T01:27:28.081Z] GET /src/components/ui/tabs.tsx -> 304 1ms
+[2025-08-17T01:27:28.082Z] GET /src/components/organization-wizard/primary-step.tsx -> 304 0ms
+[2025-08-17T01:27:28.086Z] GET /src/components/organization-wizard/branding-step.tsx -> 304 1ms
+[2025-08-17T01:27:28.103Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 304 0ms
+[2025-08-17T01:27:28.110Z] GET /src/components/edit-organization-form.tsx -> 304 0ms
+[2025-08-17T01:27:28.111Z] GET /src/components/sports-tab.tsx -> 304 0ms
+[2025-08-17T01:27:28.130Z] GET /src/components/orders-tab.tsx -> 304 1ms
+[2025-08-17T01:27:28.134Z] GET /src/hooks/use-toast.ts -> 304 1ms
+[2025-08-17T01:27:28.135Z] GET /src/components/ui/toast.tsx -> 304 1ms
+[2025-08-17T01:27:28.152Z] GET /src/components/ui/glow-card.tsx -> 304 1ms
+[2025-08-17T01:27:28.160Z] GET /src/components/head-meta.tsx -> 304 1ms
+[2025-08-17T01:27:28.161Z] GET /src/components/ui/input.tsx -> 304 0ms
+[2025-08-17T01:27:28.178Z] GET /src/components/ui/select.tsx -> 304 0ms
+[2025-08-17T01:27:28.186Z] GET /src/components/ui/badge.tsx -> 304 0ms
+[2025-08-17T01:27:28.188Z] GET /src/components/ui/button.tsx -> 304 2ms
+[2025-08-17T01:27:28.200Z] GET /src/components/ui/skeleton.tsx -> 304 0ms
+[2025-08-17T01:27:28.208Z] GET /src/components/ui/alert.tsx -> 304 0ms
+[2025-08-17T01:27:28.210Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 304 0ms
+[2025-08-17T01:27:28.227Z] GET /src/components/organization-modal.tsx -> 304 0ms
+[2025-08-17T01:27:28.236Z] GET /src/components/ui/rb-button.tsx -> 304 0ms
+[2025-08-17T01:27:28.237Z] GET /src/lib/api/organizations.ts -> 304 0ms
+[2025-08-17T01:27:28.250Z] GET /src/hooks/use-debounce.ts -> 304 0ms
+[2025-08-17T01:27:28.257Z] GET /src/components/ui/card.tsx -> 304 0ms
+[2025-08-17T01:27:28.260Z] GET /src/components/ui/separator.tsx -> 304 0ms
+[2025-08-17T01:27:28.276Z] GET /src/lib/utils.ts -> 304 1ms
+[2025-08-17T01:27:28.287Z] GET /src/components/ui/form.tsx -> 304 0ms
+[2025-08-17T01:27:28.289Z] GET /src/components/ui/switch.tsx -> 304 1ms
+[2025-08-17T01:27:28.298Z] GET /src/constants/us-states.ts -> 304 0ms
+[2025-08-17T01:27:28.305Z] GET /src/components/ui/textarea.tsx -> 304 1ms
+[2025-08-17T01:27:28.309Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 304 0ms
+[2025-08-17T01:27:28.326Z] GET /src/components/create-sport-form.tsx -> 304 1ms
+[2025-08-17T01:27:28.335Z] GET /src/components/edit-sport-form.tsx -> 304 1ms
+[2025-08-17T01:27:28.336Z] GET /src/components/create-order-form.tsx -> 304 1ms
+[2025-08-17T01:27:28.347Z] GET /src/components/ui/dialog.tsx -> 304 0ms
+[2025-08-17T01:27:28.352Z] GET /src/components/ui/scroll-area.tsx -> 304 0ms
+[2025-08-17T01:27:28.357Z] GET /src/components/ui/tabs.tsx -> 304 0ms
+[2025-08-17T01:27:28.375Z] GET /src/components/organization-wizard/primary-step.tsx -> 304 1ms
+[2025-08-17T01:27:28.383Z] GET /src/components/organization-wizard/branding-step.tsx -> 304 0ms
+[2025-08-17T01:27:28.384Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 304 0ms
+[2025-08-17T01:27:28.396Z] GET /src/components/edit-organization-form.tsx -> 304 0ms
+[2025-08-17T01:27:28.401Z] GET /src/components/sports-tab.tsx -> 304 1ms
+[2025-08-17T01:27:28.408Z] GET /src/components/orders-tab.tsx -> 304 0ms
+[2025-08-17T01:27:28.423Z] GET /src/components/ui/label.tsx -> 304 0ms
+[2025-08-17T01:27:28.431Z] GET /src/components/ui/form.tsx -> 304 0ms
+[2025-08-17T01:27:28.433Z] GET /src/components/ui/switch.tsx -> 304 0ms
+[2025-08-17T01:27:28.447Z] GET /src/constants/us-states.ts -> 304 0ms
+[2025-08-17T01:27:28.450Z] GET /src/components/ui/textarea.tsx -> 304 1ms
+[2025-08-17T01:27:28.457Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 304 0ms
+[2025-08-17T01:27:28.472Z] GET /src/components/create-sport-form.tsx -> 304 1ms
+[2025-08-17T01:27:28.479Z] GET /src/components/edit-sport-form.tsx -> 304 1ms
+[2025-08-17T01:27:28.482Z] GET /src/components/create-order-form.tsx -> 304 1ms
+[2025-08-17T01:27:28.503Z] GET /src/components/ui/label.tsx -> 304 1ms
+[2025-08-17T01:27:28.510Z] GET /fonts/Coolvetica.woff2 -> 200 8ms
+[2025-08-17T01:27:28.578Z] GET /fonts/Coolvetica.woff2 -> 200 3ms
+[179ea959] POST /api/organizations - Body: {
+  "name": "Working Test Org",
+  "is_business": false
+}
+[179ea959] Creating organization with validated data: {
+  name: 'Working Test Org',
+  logo_url: null,
+  state: null,
+  address: null,
+  phone: null,
+  email: null,
+  is_business: false,
+  notes: null,
+  universal_discounts: {}
+}
+[179ea959] Error creating organization: {
+  error: 'column "address" of relation "organizations" does not exist',
+  code: '42703',
+  detail: undefined,
+  constraint: undefined,
+  stack: 'PostgresError: column "address" of relation "organizations" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)'
+}
+[2025-08-17T01:27:32.433Z] POST /api/organizations -> 500 190ms
+1:27:32 AM [express] POST /api/organizations 500 in 190ms :: {"error":"Internal server error","messa…
+[179ea959] POST / -> 500 191ms
+[a8b96837] POST /api/organizations - Body: {
+  "name": "Acme Corporation",
+  "logo_url": "https://example.com/logo.png",
+  "state": "CA",
+  "address": "123 Business Ave, San Francisco, CA 94105",
+  "phone": "+1 (555) 123-4567",
+  "email": "contact@acmecorp.com",
+  "is_business": true,
+  "notes": "Premium client with custom requirements",
+  "universal_discounts": {
+    "bulk_order": 15,
+    "repeat_customer": 10
+  }
+}
+[a8b96837] Logo URL from external domain: example.com
+[a8b96837] Creating organization with validated data: {
+  name: 'Acme Corporation',
+  logo_url: 'https://example.com/logo.png',
+  state: 'CA',
+  address: '123 Business Ave, San Francisco, CA 94105',
+  phone: '+1 (555) 123-4567',
+  email: 'contact@acmecorp.com',
+  is_business: true,
+  notes: 'Premium client with custom requirements',
+  universal_discounts: { bulk_order: 15, repeat_customer: 10 }
+}
+[a8b96837] Error creating organization: {
+  error: 'column "address" of relation "organizations" does not exist',
+  code: '42703',
+  detail: undefined,
+  constraint: undefined,
+  stack: 'PostgresError: column "address" of relation "organizations" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)'
+}
+[2025-08-17T01:27:37.893Z] POST /api/organizations -> 500 178ms
+1:27:37 AM [express] POST /api/organizations 500 in 178ms :: {"error":"Internal server error","messa…
+[a8b96837] POST / -> 500 179ms
+[ce72dff4] POST /api/organizations - Body: {
+  "name": "Jane Smith",
+  "state": "NY",
+  "phone": "555-987-6543",
+  "email": "jane.smith@email.com",
+  "is_business": false,
+  "notes": "Individual customer - prefers email contact"
+}
+[ce72dff4] Creating organization with validated data: {
+  name: 'Jane Smith',
+  logo_url: null,
+  state: 'NY',
+  address: null,
+  phone: '555-987-6543',
+  email: 'jane.smith@email.com',
+  is_business: false,
+  notes: 'Individual customer - prefers email contact',
+  universal_discounts: {}
+}
+[ce72dff4] Error creating organization: {
+  error: 'column "address" of relation "organizations" does not exist',
+  code: '42703',
+  detail: undefined,
+  constraint: undefined,
+  stack: 'PostgresError: column "address" of relation "organizations" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)'
+}
+[2025-08-17T01:27:38.173Z] POST /api/organizations -> 500 177ms
+1:27:38 AM [express] POST /api/organizations 500 in 177ms :: {"error":"Internal server error","messa…
+[ce72dff4] POST / -> 500 178ms
+[98f1801a] POST /api/organizations - Body: {
+  "name": "Simple Org",
+  "is_business": false
+}
+[98f1801a] Creating organization with validated data: {
+  name: 'Simple Org',
+  logo_url: null,
+  state: null,
+  address: null,
+  phone: null,
+  email: null,
+  is_business: false,
+  notes: null,
+  universal_discounts: {}
+}
+[98f1801a] Error creating organization: {
+  error: 'column "address" of relation "organizations" does not exist',
+  code: '42703',
+  detail: undefined,
+  constraint: undefined,
+  stack: 'PostgresError: column "address" of relation "organizations" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)'
+}
+[2025-08-17T01:27:38.441Z] POST /api/organizations -> 500 178ms
+1:27:38 AM [express] POST /api/organizations 500 in 178ms :: {"error":"Internal server error","messa…
+[98f1801a] POST / -> 500 178ms
+[5ee98dcf] POST /api/organizations - Body: {
+  "state": "TX",
+  "is_business": true
+}
+[5ee98dcf] Validation failed: {
+  issues: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ],
+  fieldErrors: { name: [ 'Required' ] }
+}
+[2025-08-17T01:27:38.533Z] POST /api/organizations -> 400 3ms
+1:27:38 AM [express] POST /api/organizations 400 in 3ms :: {"error":"Validation failed","message":"O…
+[5ee98dcf] POST / -> 400 3ms
+[aec287c3] POST /api/organizations - Body: {
+  "name": "   ",
+  "is_business": false
+}
+[aec287c3] Validation failed: {
+  issues: [
+    {
+      code: 'custom',
+      message: 'Organization name cannot be empty after trimming',
+      path: [Array]
+    }
+  ],
+  fieldErrors: { name: [ 'Organization name cannot be empty after trimming' ] }
+}
+[2025-08-17T01:27:38.612Z] POST /api/organizations -> 400 2ms
+1:27:38 AM [express] POST /api/organizations 400 in 2ms :: {"error":"Validation failed","message":"O…
+[aec287c3] POST / -> 400 2ms
+[d874e208] GET /api/organizations - Query params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: '1',
+  pageSize: '20'
+}
+[d874e208] Parsed params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: 1,
+  pageSize: 20
+}
+[d874e208] Error in GET /api/organizations: TypeError: Cannot convert undefined or null to object
+    at Function.entries (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)
+    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)
+    at Array.reduce (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)
+    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+API Error: {
+  message: 'Cannot convert undefined or null to object',
+  code: undefined,
+  detail: undefined,
+  table: undefined,
+  column: undefined,
+  stack: 'TypeError: Cannot convert undefined or null to object\n' +
+    '    at Function.entries (<anonymous>)\n' +
+    '    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)\n' +
+    '    at Array.reduce (<anonymous>)\n' +
+    '    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)\n' +
+    '    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)\n' +
+    '    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)\n' +
+    '    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)\n' +
+    '    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)\n' +
+    '    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)'
+}
+[2025-08-17T01:27:45.758Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 500 68ms
+1:27:45 AM [express] GET /api/organizations 500 in 68ms :: {"error":"Internal server error","details…
+[d874e208] GET /api/organizations -> 500 69ms
+[7c023c92] GET /api/organizations - Query params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: '1',
+  pageSize: '20'
+}
+[7c023c92] Parsed params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: 1,
+  pageSize: 20
+}
+[7c023c92] Error in GET /api/organizations: TypeError: Cannot convert undefined or null to object
+    at Function.entries (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)
+    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)
+    at Array.reduce (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)
+    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+API Error: {
+  message: 'Cannot convert undefined or null to object',
+  code: undefined,
+  detail: undefined,
+  table: undefined,
+  column: undefined,
+  stack: 'TypeError: Cannot convert undefined or null to object\n' +
+    '    at Function.entries (<anonymous>)\n' +
+    '    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)\n' +
+    '    at Array.reduce (<anonymous>)\n' +
+    '    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)\n' +
+    '    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)\n' +
+    '    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)\n' +
+    '    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)\n' +
+    '    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)\n' +
+    '    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)'
+}
+[2025-08-17T01:30:13.871Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 500 60ms
+1:30:13 AM [express] GET /api/organizations 500 in 60ms :: {"error":"Internal server error","details…
+[7c023c92] GET /api/organizations -> 500 61ms
+[60d93799] GET /api/organizations - Query params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: '1',
+  pageSize: '20'
+}
+[60d93799] Parsed params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: 1,
+  pageSize: 20
+}
+[60d93799] Error in GET /api/organizations: TypeError: Cannot convert undefined or null to object
+    at Function.entries (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)
+    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)
+    at Array.reduce (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)
+    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+API Error: {
+  message: 'Cannot convert undefined or null to object',
+  code: undefined,
+  detail: undefined,
+  table: undefined,
+  column: undefined,
+  stack: 'TypeError: Cannot convert undefined or null to object\n' +
+    '    at Function.entries (<anonymous>)\n' +
+    '    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)\n' +
+    '    at Array.reduce (<anonymous>)\n' +
+    '    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)\n' +
+    '    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)\n' +
+    '    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)\n' +
+    '    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)\n' +
+    '    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)\n' +
+    '    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)\n' +
+    '    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)'
+}
+[2025-08-17T01:30:14.546Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 500 62ms
+1:30:14 AM [express] GET /api/organizations 500 in 62ms :: {"error":"Internal server error","details…
+[60d93799] GET /api/organizations -> 500 63ms
