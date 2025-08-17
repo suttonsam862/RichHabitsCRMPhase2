@@ -1,0 +1,130 @@
+Goal
+
+Make organization logo uploads work reliably (including SVG), always return JSON to the client, and remove the Radix UI dialog warning. Use Supabase Storage.
+
+Context
+
+Stack: Express (Node/TS), Vite/React, Radix UI, Supabase.
+
+Env vars are already set in Replit secrets: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL.
+
+API routes mounted under /api.
+
+Current upload returns HTTP 200 without a JSON body, causing res.json() to throw TypeError.
+
+Console warning: “Missing Description or aria-describedby={undefined} for {DialogContent}.”
+
+Tasks
+
+Supabase Storage bucket
+
+Ensure a bucket named logos exists.
+
+Prefer Public bucket for now (simple public URLs). If it’s private, keep it but return a signed URL (see server code task below).
+
+Server route (Express)
+
+Create server/routes/upload.ts implementing POST /api/upload/logo:
+
+Use multer with memoryStorage() and limits.fileSize = 5MB.
+
+Accept field name file.
+
+Name file: ${uuid}.${ext}; keep original extension if present; default to .png.
+
+Compute contentType from req.file.mimetype; if SVG, force image/svg+xml.
+
+Upload to Supabase Storage bucket logos under path org-logos/<filename>, upsert: false.
+
+On success, always res.status(200).json({ path, url, contentType }).
+
+For public bucket: use getPublicUrl().
+
+For private bucket: use createSignedUrl(path, 86400) (24h) and return signedUrl as url.
+
+On any failure, res.status(4xx/5xx).json({ error }). Never send an empty body.
+
+Use SUPABASE_SERVICE_ROLE_KEY to initialize the server Supabase client (server-only, write access).
+
+Add route mount in server/index.ts:
+
+import uploadRoutes from "./routes/upload";
+app.use("/api/upload", uploadRoutes);
+
+
+Add dependency: multer.
+
+Client upload helper
+
+In the organization branding step (file likely client/src/components/organization-wizard/branding-step.tsx), create/adjust:
+
+async function uploadLogo(file: File) {
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch("/api/upload/logo", { method: "POST", body: fd });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || json.error) {
+    throw new Error(json?.error || `Upload failed (${res.status})`);
+  }
+  return json as { url: string|null; path: string; contentType: string };
+}
+
+
+Ensure file input accepts SVG:
+
+<input type="file" accept="image/*,.svg" ... />
+
+
+After successful upload, set the organization’s logo_url to the returned url (or store path if you plan to use signed URLs later).
+
+Radix dialog a11y warning
+
+Wherever the “Add Organization” dialog is rendered (e.g., client/src/components/organization-wizard/org-wizard-modal.tsx or organization-modal.tsx), add a DialogDescription within DialogContent:
+
+<DialogContent>
+  <DialogHeader>
+    <DialogTitle>Add Organization</DialogTitle>
+    <DialogDescription>Upload a logo and fill in primary details.</DialogDescription>
+  </DialogHeader>
+  {/* form... */}
+</DialogContent>
+
+
+Optional storage policies (only if bucket is private)
+
+Create read policy to allow public GETs without signing, or skip if using signed URLs:
+
+create policy "allow read logos to anon"
+  on storage.objects for select
+  using (bucket_id = 'logos');
+
+
+Insert uses service-role; no extra policy required.
+
+Acceptance Criteria
+
+Uploading PNG/JPG/SVG returns 200 with JSON: { path, url, contentType }.
+
+No “Logo upload failed: TypeError” in the browser.
+
+Organization form displays uploaded logo using returned url.
+
+Dialog warning “Missing Description…” disappears.
+
+If upload fails (e.g., >5MB), client shows a meaningful error toast with server-provided message.
+
+No secrets are logged; service-role key stays server-side only.
+
+Tests
+
+Try PNG → succeeds; preview loads.
+
+Try SVG → succeeds; preview loads.
+
+Try 7MB file → server returns 413/400 JSON; client shows error toast.
+
+Toggle bucket privacy and verify:
+
+Public: url is a stable CDN link.
+
+Private: url is a signed URL; image loads while the URL is valid.
