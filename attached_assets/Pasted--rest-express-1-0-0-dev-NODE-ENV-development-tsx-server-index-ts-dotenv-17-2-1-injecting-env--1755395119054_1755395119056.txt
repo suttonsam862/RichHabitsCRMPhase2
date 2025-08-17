@@ -1,0 +1,181 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (3) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+1:42:11 AM [express] Server running on 0.0.0.0:5000
+1:42:11 AM [express] 🔍 Testing database connection...
+[2025-08-17T01:42:11.813Z] GET / -> 200 51ms
+[2025-08-17T01:42:12.153Z] GET /@vite/client -> 200 28ms
+[2025-08-17T01:42:12.168Z] GET / -> 200 45ms
+[2025-08-17T01:42:12.354Z] GET /src/main.tsx?v=5BID3ye2zYaVVjWnc7yNV -> 200 4ms
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2025-08-17T01:42:13.220Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 7ms
+[2025-08-17T01:42:13.221Z] GET /@vite/client -> 304 2ms
+[2025-08-17T01:42:13.231Z] GET /@react-refresh -> 304 773ms
+[2025-08-17T01:42:13.241Z] GET /src/main.tsx?v=y8iAotEhLeIe71obiRfur -> 200 1ms
+1:42:14 AM [express] ✅ Database connection successful!
+1:42:14 AM [{"current_database":"postgres","current_user":"postgres","version":"PostgreSQL 15.8 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit"}] 📊 Database info:
+1:42:14 AM [express] 🔍 Testing organizations table access...
+[2025-08-17T01:42:14.943Z] GET /@react-refresh -> 304 2ms
+[2025-08-17T01:42:14.944Z] GET /src/App.tsx?v=5BID3ye2zYaVVjWnc7yNV -> 200 2ms
+[2025-08-17T01:42:15.010Z] GET /src/index.css?v=5BID3ye2zYaVVjWnc7yNV -> 200 2ms
+1:42:15 AM [0] ✅ Organizations table accessible. Row count:
+[2025-08-17T01:42:15.015Z] GET /src/App.tsx?v=y8iAotEhLeIe71obiRfur -> 200 2ms
+[2025-08-17T01:42:15.015Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 1ms
+[2025-08-17T01:42:15.283Z] GET /src/components/ui/toaster.tsx -> 304 12ms
+[2025-08-17T01:42:15.285Z] GET /src/index.css?v=y8iAotEhLeIe71obiRfur -> 200 13ms
+[2025-08-17T01:42:15.304Z] GET /src/components/route-transition.tsx -> 304 0ms
+[2025-08-17T01:42:15.346Z] GET /src/components/ui/toaster.tsx -> 304 1ms
+[2025-08-17T01:42:15.346Z] GET /src/layouts/AppLayout.tsx -> 304 1ms
+[2025-08-17T01:42:15.581Z] GET /src/pages/organizations-enhanced.tsx -> 304 0ms
+[2025-08-17T01:42:15.582Z] GET /src/components/route-transition.tsx -> 304 1ms
+[2025-08-17T01:42:15.600Z] GET /src/pages/index.tsx -> 304 0ms
+[2025-08-17T01:42:15.637Z] GET /src/layouts/AppLayout.tsx -> 304 0ms
+[2025-08-17T01:42:15.673Z] GET /src/pages/order-details.tsx -> 304 1ms
+[2025-08-17T01:42:15.673Z] GET /src/pages/index.tsx -> 304 1ms
+[2025-08-17T01:42:15.804Z] GET /src/pages/not-found.tsx -> 304 0ms
+[2025-08-17T01:42:15.866Z] GET /src/pages/organizations-enhanced.tsx -> 304 16ms
+[2025-08-17T01:42:15.866Z] GET /src/lib/queryClient.ts -> 304 0ms
+[2025-08-17T01:42:15.876Z] GET /src/components/ui/tooltip.tsx -> 304 1ms
+[2025-08-17T01:42:15.876Z] GET /src/pages/order-details.tsx -> 304 0ms
+[2025-08-17T01:42:15.920Z] GET /src/pages/not-found.tsx -> 304 1ms
+[2025-08-17T01:42:15.921Z] GET /src/hooks/use-toast.ts -> 304 0ms
+[2025-08-17T01:42:15.930Z] GET /src/components/ui/toast.tsx -> 304 1ms
+[2025-08-17T01:42:15.931Z] GET /src/lib/queryClient.ts -> 304 0ms
+[2025-08-17T01:42:15.973Z] GET /src/components/ui/tooltip.tsx -> 304 1ms
+[2025-08-17T01:42:15.981Z] GET /src/components/ui/input.tsx -> 304 1ms
+[2025-08-17T01:42:15.982Z] GET /src/hooks/use-toast.ts -> 304 1ms
+[2025-08-17T01:42:16.007Z] GET /src/components/ui/select.tsx -> 304 0ms
+[2025-08-17T01:42:16.021Z] GET /src/components/ui/toast.tsx -> 304 0ms
+[2025-08-17T01:42:16.042Z] GET /src/components/ui/button.tsx -> 304 1ms
+[2025-08-17T01:42:16.057Z] GET /src/components/ui/badge.tsx -> 304 0ms
+[2025-08-17T01:42:16.076Z] GET /src/components/head-meta.tsx -> 304 0ms
+[2025-08-17T01:42:16.077Z] GET /src/components/ui/glow-card.tsx -> 304 0ms
+[2025-08-17T01:42:16.092Z] GET /src/components/ui/skeleton.tsx -> 304 1ms
+[2025-08-17T01:42:16.108Z] GET /src/components/ui/alert.tsx -> 304 1ms
+[2025-08-17T01:42:16.127Z] GET /src/components/ui/input.tsx -> 304 1ms
+[2025-08-17T01:42:16.127Z] GET /src/components/ui/select.tsx -> 304 0ms
+[2025-08-17T01:42:16.141Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 304 1ms
+[2025-08-17T01:42:16.161Z] GET /src/components/organization-modal.tsx -> 304 0ms
+[2025-08-17T01:42:16.179Z] GET /src/components/ui/button.tsx -> 304 1ms
+[2025-08-17T01:42:16.180Z] GET /src/components/ui/badge.tsx -> 304 0ms
+[2025-08-17T01:42:16.190Z] GET /src/components/ui/glow-card.tsx -> 304 0ms
+[2025-08-17T01:42:16.212Z] GET /src/components/ui/rb-button.tsx -> 304 0ms
+[2025-08-17T01:42:16.229Z] GET /src/components/ui/alert.tsx -> 304 0ms
+[2025-08-17T01:42:16.230Z] GET /src/components/ui/skeleton.tsx -> 304 0ms
+[2025-08-17T01:42:16.242Z] GET /src/components/head-meta.tsx -> 304 1ms
+[2025-08-17T01:42:16.262Z] GET /src/lib/api/organizations.ts -> 304 0ms
+[2025-08-17T01:42:16.278Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 304 0ms
+[2025-08-17T01:42:16.281Z] GET /src/components/organization-modal.tsx -> 304 0ms
+[2025-08-17T01:42:16.292Z] GET /src/hooks/use-debounce.ts -> 304 0ms
+[2025-08-17T01:42:16.312Z] GET /src/components/ui/card.tsx -> 304 0ms
+[2025-08-17T01:42:16.329Z] GET /src/components/ui/rb-button.tsx -> 304 1ms
+[2025-08-17T01:42:16.330Z] GET /src/lib/api/organizations.ts -> 304 0ms
+[2025-08-17T01:42:16.344Z] GET /src/components/ui/separator.tsx -> 304 1ms
+[2025-08-17T01:42:16.364Z] GET /src/lib/utils.ts -> 304 0ms
+[2025-08-17T01:42:16.379Z] GET /src/hooks/use-debounce.ts -> 304 1ms
+[2025-08-17T01:42:16.379Z] GET /src/components/ui/card.tsx -> 304 1ms
+[2025-08-17T01:42:16.401Z] GET /src/components/ui/dialog.tsx -> 304 0ms
+[2025-08-17T01:42:16.414Z] GET /src/components/ui/scroll-area.tsx -> 304 0ms
+[2025-08-17T01:42:16.431Z] GET /src/components/ui/separator.tsx -> 304 1ms
+[2025-08-17T01:42:16.431Z] GET /src/lib/utils.ts -> 304 0ms
+[2025-08-17T01:42:16.453Z] GET /src/components/ui/tabs.tsx -> 304 1ms
+[2025-08-17T01:42:16.465Z] GET /src/components/organization-wizard/primary-step.tsx -> 304 0ms
+[2025-08-17T01:42:16.482Z] GET /src/components/ui/dialog.tsx -> 304 1ms
+[2025-08-17T01:42:16.484Z] GET /src/components/ui/scroll-area.tsx -> 304 1ms
+[2025-08-17T01:42:16.503Z] GET /src/components/organization-wizard/branding-step.tsx -> 304 0ms
+[2025-08-17T01:42:16.515Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 304 0ms
+[2025-08-17T01:42:16.534Z] GET /src/components/organization-wizard/primary-step.tsx -> 304 0ms
+[2025-08-17T01:42:16.535Z] GET /src/components/ui/tabs.tsx -> 304 1ms
+[2025-08-17T01:42:16.554Z] GET /src/components/edit-organization-form.tsx -> 304 1ms
+[2025-08-17T01:42:16.566Z] GET /src/components/sports-tab.tsx -> 304 0ms
+[2025-08-17T01:42:16.583Z] GET /src/components/organization-wizard/branding-step.tsx -> 304 0ms
+[2025-08-17T01:42:16.584Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 304 0ms
+[2025-08-17T01:42:16.607Z] GET /src/components/orders-tab.tsx -> 304 1ms
+[2025-08-17T01:42:16.634Z] GET /src/components/edit-organization-form.tsx -> 304 1ms
+[2025-08-17T01:42:16.635Z] GET /src/components/sports-tab.tsx -> 304 1ms
+[2025-08-17T01:42:16.658Z] GET /src/components/ui/form.tsx -> 304 1ms
+[2025-08-17T01:42:16.658Z] GET /src/components/ui/switch.tsx -> 304 0ms
+[2025-08-17T01:42:16.686Z] GET /src/components/orders-tab.tsx -> 304 2ms
+[2025-08-17T01:42:16.711Z] GET /src/constants/us-states.ts -> 304 0ms
+[2025-08-17T01:42:16.712Z] GET /src/components/ui/textarea.tsx -> 304 1ms
+[2025-08-17T01:42:16.714Z] GET /src/components/ui/form.tsx -> 304 1ms
+[2025-08-17T01:42:16.735Z] GET /src/components/ui/switch.tsx -> 304 0ms
+[2025-08-17T01:42:16.762Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 304 1ms
+[2025-08-17T01:42:16.764Z] GET /src/constants/us-states.ts -> 304 0ms
+[2025-08-17T01:42:16.765Z] GET /src/components/create-sport-form.tsx -> 304 0ms
+[2025-08-17T01:42:16.790Z] GET /src/components/ui/textarea.tsx -> 304 0ms
+[2025-08-17T01:42:16.818Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 304 0ms
+[2025-08-17T01:42:16.819Z] GET /src/components/edit-sport-form.tsx -> 304 1ms
+[2025-08-17T01:42:16.821Z] GET /src/components/create-order-form.tsx -> 304 0ms
+[2025-08-17T01:42:16.841Z] GET /src/components/create-sport-form.tsx -> 304 0ms
+[2025-08-17T01:42:16.871Z] GET /src/components/edit-sport-form.tsx -> 304 1ms
+[2025-08-17T01:42:16.873Z] GET /src/components/ui/label.tsx -> 304 1ms
+[2025-08-17T01:42:16.898Z] GET /src/components/create-order-form.tsx -> 304 0ms
+[2025-08-17T01:42:16.923Z] GET /src/components/ui/label.tsx -> 304 1ms
+[2025-08-17T01:42:17.172Z] GET /fonts/Coolvetica.woff2 -> 200 8ms
+[2025-08-17T01:42:17.275Z] GET /fonts/Coolvetica.woff2 -> 200 4ms
+[a8f03f0a] GET /api/organizations - Query params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: '1',
+  pageSize: '20'
+}
+[a8f03f0a] Parsed params: {
+  type: 'all',
+  sort: 'created_at',
+  order: 'desc',
+  page: 1,
+  pageSize: 20
+}
+[a8f03f0a] Found 0 organizations (total: 0)
+[2025-08-17T01:42:26.388Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 200 183ms
+1:42:26 AM [express] GET /api/organizations 200 in 183ms :: {"items":[],"total":0,"page":1,"pageSize…
+[a8f03f0a] GET / -> 200 182ms
+✅ Bucket logos already exists
+[2025-08-17T01:44:07.203Z] POST /api/upload/logo -> 200 1313ms
+1:44:07 AM [express] POST /api/upload/logo 200 in 1313ms :: {"path":"org-logos/f9c8b548-63c6-4caa-b4…
+[6db957ac] POST /api/organizations - Body: {
+  "name": "Oak Mountain High School",
+  "address": "5476 Caldwell Mill Rd",
+  "state": "AL",
+  "phone": "",
+  "email": "",
+  "notes": "",
+  "logoUrl": "https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/public/logos/org-logos/f9c8b548-63c6-4caa-b4af-49024bf6284e.svg",
+  "isBusiness": false,
+  "universalDiscounts": null
+}
+[6db957ac] Creating organization with validated data: {
+  name: 'Oak Mountain High School',
+  logo_url: null,
+  state: 'AL',
+  phone: null,
+  email: null,
+  is_business: false,
+  notes: null,
+  universal_discounts: {}
+}
+[6db957ac] Error creating organization: {
+  error: 'column "address" of relation "organizations" does not exist',
+  code: '42703',
+  detail: undefined,
+  constraint: undefined,
+  stack: 'PostgresError: column "address" of relation "organizations" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)'
+}
+[2025-08-17T01:44:36.685Z] POST /api/organizations -> 500 180ms
+1:44:36 AM [express] POST /api/organizations 500 in 180ms :: {"error":"Internal server error","messa…
+[6db957ac] POST / -> 500 180ms
