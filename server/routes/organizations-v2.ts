@@ -66,7 +66,7 @@ router.get("/", async (req, res, next) => {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
     // Build order by clause
-    const orderColumn = params.sort === 'name' ? organizations.name : organizations.createdAt;
+    const orderColumn = params.sort === 'name' ? organizations.name : organizations.created_at;
     const orderDirection = params.order === 'asc' ? asc : desc;
     
     // Calculate offset
@@ -84,9 +84,9 @@ router.get("/", async (req, res, next) => {
         id: organizations.id,
         name: organizations.name,
         state: organizations.state,
-        logo_url: organizations.logoUrl,
+        logo_url: organizations.logo_url,
         is_business: organizations.is_business,
-        created_at: organizations.createdAt,
+        created_at: organizations.created_at,
       })
       .from(organizations)
       .where(whereClause)
