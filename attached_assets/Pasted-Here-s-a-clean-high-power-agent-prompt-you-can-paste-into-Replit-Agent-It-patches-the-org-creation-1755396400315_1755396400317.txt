@@ -1,0 +1,173 @@
+Here’s a clean, high-power agent prompt you can paste into Replit Agent. It patches the org-creation flow and hunts for future schema/typing mismatches that would break it.
+
+---
+
+# 🔧 Agent Task: Hardening Organization Creation + Schema/Typing Parity
+
+**Goal:** Make the “Create Organization” flow bulletproof across backend + frontend. Eliminate current errors (null `user_roles.user_id`, missing `address`, camel/snake case drift, empty Select values) and proactively detect future mismatches between code and DB.
+
+## Context & Known Symptoms
+
+* Backend: Node/Express + `postgres` (serverless) SQL tag.
+* DB: Supabase (Postgres).
+* Frontend: React + Radix UI, Wouter, shadcn/ui.
+* Recent errors seen:
+
+  * `null value in column "user_id" of relation "user_roles"` (code 23502) when creating an org.
+  * `column "address" does not exist` on insert.
+  * `Radix SelectItem must have a non-empty value` on Organizations page.
+  * Client sends `logoUrl`, server uses `logo_url` (mapping drift).
+* We want a professional, resilient workflow: create → list → filter/sort/paginate without edge-case explosions.
+
+---
+
+## Deliverables (create these in repo)
+
+1. **Patch** `POST /api/organizations` with robust normalization + conditional role assignment.
+2. **Trigger/DB guard** so org creation never fails when no auth context exists.
+3. **Schema audit script** that compares DB columns vs server shapes and emits a report.
+4. **Frontend fixes** for Select and payload mapping.
+5. **Test script** (HTTP smoke tests) that validates happy path + edge cases.
+6. **Docs**: `docs/orgs-hardening-notes.md` summarizing what changed.
+
+---
+
+## Step A — Schema Audit (detect current + future drift)
+
+1. Create `server/scripts/schemaAudit.ts` that:
+
+   * Connects using existing DB client.
+   * Reads `information_schema.columns` for `public.organizations`, `public.user_roles`, `public.roles`.
+   * Prints a table of `{ column_name, data_type, is_nullable, column_default }`.
+   * Compares against the server’s expected insert shape:
+
+     ```txt
+     organizations:
+       id uuid (pk, default gen_random_uuid())
+       name text not null
+       address text null
+       state text null
+       phone text null
+       email text null
+       logo_url text null
+       is_business boolean not null default false
+       notes text null
+       universal_discounts jsonb not null default '{}'
+       created_at timestamptz not null default now()
+     roles:
+       slug text unique (expects 'owner')
+     user_roles:
+       user_id uuid not null
+       org_id uuid not null
+       role_id uuid not null
+       unique (user_id, org_id)
+     ```
+   * If missing, auto-generate **one migration file** under `server/sql/migrations/` to add columns/defaults (idempotent with `IF NOT EXISTS` style patterns where possible).
+   * Print clear “OK/DIFF” status.
+
+2. Run the script and apply the migration if needed.
+
+---
+
+## Step B — Patch the Create Route (normalize, map, guard)
+
+**Files:** Wherever `POST /api/organizations` lives (e.g., `server/index.ts` or a routes file).
+
+Implement:
+
+* Accept both camelCase and snake\_case fields. Map `logoUrl → logo_url`, `isBusiness → is_business`, `universalDiscounts → universal_discounts`.
+
+* Normalize empty strings to `NULL` (except `universal_discounts`, default to `{}`).
+
+* Uppercase `state` if present.
+
+* Insert only columns that actually exist (based on Step A); do **not** reference `address` if your audit proves it’s absent (or add it via migration).
+
+* Conditional role assignment:
+
+  * Resolve user id from `req.headers['x-user-id']` or `req.user?.id` or `process.env.DEFAULT_USER_ID`.
+  * If no user id, **skip** inserting into `user_roles` and log a warn instead of failing.
+  * If user id exists, `INSERT … ON CONFLICT DO NOTHING` using the `'owner'` role id.
+
+* Add structured logging with a short requestId and include `code`, `detail` on errors.
+
+*(If helpful, generate a safe patch based on this logic; keep existing project style.)*
+
+---
+
+## Step C — Fix/Guard DB Trigger (if present)
+
+If there’s a trigger that assigns the owner on `INSERT` into `organizations`:
+
+* Modify function to **no-op when `auth.uid()` is NULL** (server direct connections don’t carry Supabase JWT).
+* Use `ON CONFLICT DO NOTHING` to avoid dup memberships.
+
+---
+
+## Step D — Frontend: Select + Payload Drift
+
+**Files:** `client/src/pages/organizations*.tsx`, any shared components used by filter/sort.
+
+* Ensure all `<SelectItem value="…">` values are **non-empty strings**. Never pass `""`. Use a placeholder outside the items or handle `undefined` state before rendering items.
+* When posting, send camelCase payload, but the server must accept both. Ensure you include `logoUrl` if uploaded.
+* After successful create, optimistically update the list or refetch with the same query params.
+
+---
+
+## Step E — Logo Upload edge-cases
+
+* Ensure the upload route and storage accept `image/svg+xml`. If you sanitize SVGs, keep the sanitizer tolerant.
+* Don’t fail org creation if `logoUrl` is absent; treat it as optional.
+
+---
+
+## Step F — Tests / Smoke Checks
+
+Add `server/scripts/smokeOrgs.http` (or a small Node script) that runs:
+
+1. Create with minimal fields (name only) → `201`, returns id.
+2. Create with empty optional fields → `201`.
+3. Create with `x-user-id` header → verify one row appears in `user_roles`.
+4. Create **without** `x-user-id` header → `201` and **no** `user_roles` row.
+5. List `/api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20` → contains the created orgs.
+6. Run twice to ensure idempotency and no unique/constraint explosions.
+
+---
+
+## Step G — Config switches
+
+* Support:
+
+  * `ASSIGN_OWNER_ON_CREATE=true|false` (default: `true`)
+  * `DEFAULT_USER_ID=<uuid>` for dev convenience
+* If `ASSIGN_OWNER_ON_CREATE=false`, always skip user\_roles insert.
+
+---
+
+## Acceptance Criteria
+
+* Creating an org **never** fails due to missing auth context or absent optional columns.
+* `logoUrl` from client is saved as `logo_url` (or remains `NULL` when omitted).
+* No Radix Select error on Organizations page (no empty `value` in any `SelectItem`).
+* Schema audit script reports **OK** after migration.
+* Smoke tests pass locally in this Replit environment.
+
+**Notes**
+
+* Do not print or commit secrets. Use existing env handling.
+* Keep code style consistent with repo (imports, logger, promise handling).
+
+---
+
+## Run Plan (Agent)
+
+1. Search/open org routes; implement normalization + conditional role insert.
+2. Create/execute `schemaAudit.ts`, generate migration if needed, re-run audit.
+3. Inspect/fix any triggers; re-deploy.
+4. Fix frontend Select values + payload mapping.
+5. Add and run smoke tests; show outputs.
+6. Write `docs/orgs-hardening-notes.md` summarizing diffs and how to toggle `ASSIGN_OWNER_ON_CREATE`.
+
+---
+
+**Use Replit settings:** High Power thinking: **ON**, Multi-file edits: **ENABLED**, Run & test: **ENABLED**, Internet: **OFF** (not required).
