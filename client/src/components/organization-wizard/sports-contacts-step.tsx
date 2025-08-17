@@ -181,7 +181,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
           {/* Sport Selection */}
           <div className="space-y-2">
             <label className="text-white text-sm font-medium">Sport</label>
-            <Select value={selectedSportId || undefined} onValueChange={setSelectedSportId}>
+            <Select value={selectedSportId && selectedSportId !== "" ? selectedSportId : undefined} onValueChange={setSelectedSportId}>
               <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-sport">
                 <SelectValue placeholder="Select sport" />
               </SelectTrigger>

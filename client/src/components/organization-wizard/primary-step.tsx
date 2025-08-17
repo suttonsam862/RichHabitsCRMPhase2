@@ -120,7 +120,7 @@ export function PrimaryStep({ formData, updateFormData, onNext }: PrimaryStepPro
                 <FormLabel className="text-white">State</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value || undefined}
+                  value={field.value && field.value !== "" ? field.value : undefined}
                 >
                   <FormControl>
                     <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-state">

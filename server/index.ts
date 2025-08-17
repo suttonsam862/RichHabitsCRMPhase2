@@ -5,7 +5,7 @@ import { db } from './db';
 import { sql } from 'drizzle-orm';
 import { organizations } from '../shared/schema';
 import { errorHandler } from "./middleware/error";
-import organizationsRouter from "./routes/organizations-v2";
+import organizationsRouter from "./routes/organizations-hardened";
 import debugRouter from "./routes/debug";
 import uploadRoutes from "./routes/upload";
 

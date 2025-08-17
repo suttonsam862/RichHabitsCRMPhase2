@@ -1,123 +1,136 @@
 # Rich Habits Custom Clothing - Business Management System
 
 ## Project Overview
-A React-based single-page application framework for "Rich Habits Custom Clothing" business management system, featuring comprehensive organizations management with glassmorphism UI design. The system handles user management, organizations with advanced filtering/sorting/pagination, sports teams, and order processing with a modern, professional interface.
+A React-TypeScript business management system for Rich Habits Custom Clothing, designed to streamline organizational workflows with advanced file management and interactive user experience.
 
-## Tech Stack
-- **Frontend**: React, TypeScript, Vite, TailwindCSS, shadcn/ui
-- **Backend**: Express.js, Node.js
-- **Database**: PostgreSQL with Drizzle ORM
-- **Styling**: Glassmorphism design with custom CSS variables
-- **State Management**: TanStack Query (React Query)
-- **Routing**: Wouter
-- **Forms**: React Hook Form with Zod validation
-- **Animation**: Framer Motion
+### Key Technologies
+- **Frontend**: React with TypeScript, Wouter routing, shadcn/ui components
+- **Backend**: Node.js/Express with TypeScript
+- **Database**: PostgreSQL (Supabase hosted)
+- **ORM**: Drizzle ORM
+- **Styling**: Tailwind CSS with glassmorphic UI design
+- **State Management**: TanStack Query (React Query v5)
+- **File Upload**: Multer with Supabase storage
+
+## Recent Architectural Changes (August 17, 2025)
+
+### Organization Creation Hardening
+- **Issue**: Organization creation was failing due to missing user_id, field mapping issues, and Select component errors
+- **Solution**: 
+  - Created `organizations-hardened.ts` route with robust field normalization
+  - Handles both camelCase and snake_case field names
+  - Conditional user role assignment (skips if no auth context)
+  - Fixed Select components to never have empty string values
+  - Added database schema audit script for detecting mismatches
+  - Created comprehensive smoke test suite
+
+### Database Schema Updates
+- Added `roles` table with `slug`, `name`, `description` fields
+- Added `user_roles` table for organization ownership tracking
+- Created indexes for performance optimization
+- All tables use VARCHAR for ID fields (not UUID)
 
 ## Project Architecture
 
-### Database Schema (shared/schema.ts)
-- **Users**: Authentication and user management
-- **Organizations**: Client organizations with contact info and universal discounts
-- **Sports**: Sports teams within organizations with contact details
-- **Orders**: Order management with items, status tracking, and customer information
+### Directory Structure
+```
+/
+├── client/                  # Frontend React application
+│   ├── src/
+│   │   ├── pages/          # Page components (Wouter routing)
+│   │   ├── components/     # Reusable UI components
+│   │   │   └── organization-wizard/  # Multi-step org creation
+│   │   ├── lib/            # Utilities and API clients
+│   │   └── hooks/          # Custom React hooks
+├── server/                  # Backend Express application
+│   ├── routes/             # API route handlers
+│   │   └── organizations-hardened.ts  # Robust org creation
+│   ├── scripts/            # Utility scripts
+│   │   ├── schemaAudit.ts # Database schema validation
+│   │   └── smokeOrgs.ts   # API smoke tests
+│   └── db.ts               # Database connection
+├── shared/                  # Shared types and schemas
+│   ├── schema.ts           # Drizzle ORM schemas
+│   └── schemas/            # Zod validation schemas
+└── docs/                    # Documentation
+    └── orgs-hardening-notes.md  # Recent fixes documentation
+```
 
-### Storage Layer (server/storage.ts)
-- Full CRUD operations for all entities
-- In-memory storage implementation with proper TypeScript types
-- Relationship management between organizations, sports, and orders
+### API Routes
+- `POST /api/organizations` - Create organization (accepts both camelCase and snake_case)
+- `GET /api/organizations` - List with filtering, sorting, pagination
+- `GET /api/organizations/:id` - Get single organization
+- `DELETE /api/organizations/:id` - Delete organization
+- `POST /api/upload/logo` - Upload organization logo
 
-### API Routes (server/routes.ts)
-- RESTful endpoints for all entities
-- Request validation using Zod schemas
-- Proper error handling and response formatting
+### Database Schema
+- `organizations` - Main org table with business info
+- `roles` - Role definitions (e.g., 'owner')
+- `user_roles` - User-organization-role associations
+- `org_sports` - Organization sports associations
+- `sports` - Sports definitions
 
-### Frontend Structure
-- **Pages**: Organizations (main), Order Details, Not Found
-- **Components**: Modular components for forms, cards, tabs, and modals
-- **UI**: Complete shadcn/ui component library integration
-- **Styling**: Custom glassmorphism theme with light/dark mode support
+## Configuration
 
-## Key Features Implemented
+### Environment Variables
+- `DATABASE_URL` - PostgreSQL connection string
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_ANON_KEY` - Supabase anonymous key
+- `ASSIGN_OWNER_ON_CREATE` - Whether to assign owner role (default: true)
+- `DEFAULT_USER_ID` - Fallback user ID for development
 
-### Organizations Management
-- ✅ Organization listing with state grouping
-- ✅ Search functionality across organizations, states, and sports
-- ✅ Create/Edit/Delete organizations
-- ✅ Organization detail modal with tabs
-- ✅ Contact information management
-- ✅ Universal discount configuration
-- ✅ Logo upload system with Supabase Storage integration
-- ✅ Support for PNG, JPG, and SVG logo formats
-- ✅ Multi-step organization creation wizard with branding
+### Key Features
+1. **Organization Management**
+   - Create organizations with logo upload
+   - Filter by type (school/business), state
+   - Sort by name or creation date
+   - Pagination support
 
-### Sports Management
-- ✅ Sports teams within organizations
-- ✅ Salesperson assignment
-- ✅ Contact information for each sport
-- ✅ Create/Edit/Delete sports functionality
+2. **Field Normalization**
+   - Accepts both camelCase and snake_case
+   - Converts empty strings to null
+   - Uppercases state codes
+   - Validates but doesn't reject on minor issues
 
-### Order Management
-- ✅ Order creation with multiple items
-- ✅ Order status tracking (Pending, In Production, Completed, Cancelled)
-- ✅ Customer information management
-- ✅ Order details page with full item breakdown
-- ✅ Integration with organizations
+3. **Error Handling**
+   - Graceful degradation when auth is missing
+   - Clear validation messages
+   - Request ID tracking for debugging
 
-### UI/UX Design
-- ✅ Glassmorphism theme implementation
-- ✅ Responsive design for mobile and desktop
-- ✅ Rich Habits brand colors and styling
-- ✅ Smooth animations and transitions
-- ✅ Professional business interface
+## Development Commands
+
+### Running the Application
+```bash
+npm run dev  # Starts both frontend and backend
+```
+
+### Database Operations
+```bash
+npm run db:push   # Push schema changes to database
+npm run db:migrate # Run migrations
+```
+
+### Testing
+```bash
+cd server && npx tsx scripts/schemaAudit.ts  # Verify database schema
+cd server && npx tsx scripts/smokeOrgs.ts    # Run API smoke tests
+```
 
 ## User Preferences
-- Design Focus: Modern glassmorphism UI with professional business aesthetics
-- Technical Approach: TypeScript-first development with proper type safety
-- Architecture: Component-based React with separation of concerns
+- Keep error messages user-friendly and non-technical
+- Prioritize resilient, fail-safe operations
+- Support multiple naming conventions for API flexibility
+- Always validate but be lenient where possible
 
-## Recent Changes
-
-### August 17, 2025
-- ✅ Implemented Supabase Storage integration for reliable logo uploads
-- ✅ Created comprehensive upload route with proper error handling  
-- ✅ Added support for PNG, JPG, and SVG file formats with 5MB size limit
-- ✅ Fixed Radix UI dialog accessibility warning by adding DialogDescription
-- ✅ Enhanced organization wizard with improved logo upload functionality
-- ✅ Implemented proper JSON response format for all upload operations
-- ✅ Added file type validation and contentType detection (including SVG handling)
-- ✅ Created public Supabase Storage bucket with proper MIME type configuration
-- ✅ Updated client-side upload helper with better error handling
-- ✅ Verified upload functionality with successful PNG and SVG test uploads
-
-### January 14, 2025
-- ✅ Implemented complete glassmorphism CSS theme with custom variables
-- ✅ Created comprehensive database schema with proper relationships
-- ✅ Built storage layer with full CRUD operations and TypeScript types
-- ✅ Developed all frontend components including forms, modals, and cards
-- ✅ Set up routing with organizations and order details pages
-- ✅ Integrated TanStack Query for state management
-- ✅ Added form validation with Zod and React Hook Form
-- ✅ Implemented search and filtering functionality
-- ✅ Added responsive design with mobile support
-- ✅ Completed all TypeScript error resolution
-- ✅ Successfully pushed database schema to PostgreSQL
-
-## Development Status
-- **Backend**: ✅ Complete (API routes, storage, validation)
-- **Frontend**: ✅ Complete (components, pages, forms, routing)
-- **Database**: ✅ Complete (schema pushed to PostgreSQL)
-- **Styling**: ✅ Complete (glassmorphism theme implemented)
-- **TypeScript**: ✅ Complete (all errors resolved)
+## Known Issues & Solutions
+1. **Select Component Errors**: Fixed by ensuring no empty string values
+2. **User Role Assignment**: Now optional, won't block org creation
+3. **Field Mapping**: Unified handler for both naming conventions
+4. **Database Schema Drift**: Use schemaAudit.ts to detect and fix
 
 ## Next Steps
-1. Test application functionality with user interaction
-2. Add sample data for demonstration
-3. Potential enhancements: user authentication, advanced order filtering, reporting features
-
-## Running the Project
-- Development server runs on `npm run dev`
-- Database schema managed with `npm run db:push`
-- All dependencies installed and configured
-- Hot reloading enabled for development
-
-The application is ready for user testing and feedback.
+- [ ] Add organization editing UI
+- [ ] Implement bulk operations
+- [ ] Add export functionality
+- [ ] Enhance search capabilities
+- [ ] Add activity logging
