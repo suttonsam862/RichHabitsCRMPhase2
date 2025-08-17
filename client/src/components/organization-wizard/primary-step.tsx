@@ -14,12 +14,7 @@ const primarySchema = z.object({
   name: z.string().min(1, "Organization name is required"),
   is_business: z.boolean(),
   email_domain: z.string().optional(),
-  address_line1: z.string().optional(),
-  address_line2: z.string().optional(),
-  city: z.string().optional(),
   state: z.string().optional(),
-  postal_code: z.string().optional(),
-  country: z.string(),
 });
 
 interface PrimaryStepProps {
@@ -35,12 +30,7 @@ export function PrimaryStep({ formData, updateFormData, onNext }: PrimaryStepPro
       name: formData.name || "",
       is_business: formData.is_business || false,
       email_domain: formData.email_domain || "",
-      address_line1: formData.address_line1 || "",
-      address_line2: formData.address_line2 || "",
-      city: formData.city || "",
       state: formData.state || "",
-      postal_code: formData.postal_code || "",
-      country: formData.country || "United States",
     },
   });
 
@@ -121,128 +111,30 @@ export function PrimaryStep({ formData, updateFormData, onNext }: PrimaryStepPro
             )}
           />
 
-          {/* Address Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="address_line1"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Address Line 1</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Street address"
-                      className="glass text-white border-white/20 focus:border-blue-400"
-                      data-testid="input-address-line1"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address_line2"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Address Line 2</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Apartment, suite, etc."
-                      className="glass text-white border-white/20 focus:border-blue-400"
-                      data-testid="input-address-line2"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">City</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="City"
-                      className="glass text-white border-white/20 focus:border-blue-400"
-                      data-testid="input-city"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">State</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value || undefined}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-state">
-                        <SelectValue placeholder="Select state" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-gray-800 border-white/20">
-                      {US_STATES.map((state) => (
-                        <SelectItem key={state.value} value={state.value} className="text-white focus:bg-white/10">
-                          {state.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="postal_code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Postal Code</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="12345"
-                      className="glass text-white border-white/20 focus:border-blue-400"
-                      data-testid="input-postal-code"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
+          {/* State Field */}
           <FormField
             control={form.control}
-            name="country"
+            name="state"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white">Country</FormLabel>
-                <FormControl>
-                  <Input
-                    className="glass text-white border-white/20 focus:border-blue-400"
-                    data-testid="input-country"
-                    {...field}
-                  />
-                </FormControl>
+                <FormLabel className="text-white">State</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value || undefined}
+                >
+                  <FormControl>
+                    <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-state">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="bg-gray-800 border-white/20">
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state.value} value={state.value} className="text-white focus:bg-white/10">
+                        {state.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
