@@ -1,0 +1,28 @@
+The above error occurred in the <OrgWizardModal> component:
+
+    at OrgWizardModal (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/organization-wizard/org-wizard-modal.tsx:26:34)
+    at div
+    at OrganizationsEnhanced (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/pages/organizations-enhanced.tsx:117:39)
+    at Route (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=6adddafb:323:16)
+    at Switch (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=6adddafb:379:17)
+    at div
+    at MotionComponent (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=6adddafb:6536:40)
+    at RouteTransition (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/route-transition.tsx:18:35)
+    at PresenceChild (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=6adddafb:7742:24)
+    at AnimatePresence (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=6adddafb:7800:26)
+    at div
+    at MotionComponent (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=6adddafb:6536:40)
+    at div
+    at main
+    at div
+    at AppLayout (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/layouts/AppLayout.tsx:21:29)
+    at Router
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P23V4H6I.js?v=6adddafb:48:15)
+    at TooltipProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=6adddafb:61:5)
+    at QueryClientProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=6adddafb:2805:3)
+    at _a (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-helmet-async.js?v=6adddafb:624:5)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+DialogHeader is not defined
