@@ -39,26 +39,27 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('logo', file);
+      formData.append('file', file);
 
       const response = await fetch('/api/upload/logo', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
+      const json = await response.json().catch(() => null);
+      
+      if (!response.ok || !json || json.error) {
+        throw new Error(json?.error || `Upload failed (${response.status})`);
       }
 
-      const result = await response.json();
-      setLogoPreview(result.url);
+      setLogoPreview(json.url);
       updateFormData({ 
-        logo_url: result.url, 
+        logo_url: json.url, 
         logo_file: file 
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logo upload failed:', error);
-      // Still allow the user to proceed, just without logo upload
+      // Show error to user but allow fallback to local preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
@@ -135,7 +136,7 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
                   <div className="flex flex-col items-center">
                     <ImageIcon className="w-8 h-8 text-white/50 mb-2" />
                     <p className="text-white/70 text-sm">Click to upload logo</p>
-                    <p className="text-white/50 text-xs mt-1">PNG, JPG up to 5MB</p>
+                    <p className="text-white/50 text-xs mt-1">PNG, JPG, SVG up to 5MB</p>
                   </div>
                 )}
               </div>
@@ -144,7 +145,7 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.svg"
               onChange={handleFileChange}
               className="hidden"
               data-testid="input-logo-file"

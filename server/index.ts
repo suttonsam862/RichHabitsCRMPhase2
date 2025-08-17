@@ -7,6 +7,7 @@ import { organizations } from '../shared/schema';
 import { errorHandler } from "./middleware/error";
 import organizationsRouter from "./routes/organizations";
 import debugRouter from "./routes/debug";
+import uploadRoutes from "./routes/upload";
 
 const app = express();
 app.use(express.json());
@@ -60,12 +61,12 @@ app.use((req, res, next) => {
       log("🔍 Testing database connection...");
       const result = await db.execute(sql`SELECT current_database(), current_user, version()`);
       log("✅ Database connection successful!");
-      log("📊 Database info:", result[0]);
+      log("📊 Database info:", JSON.stringify(result[0]));
 
       // Test organizations table
       log("🔍 Testing organizations table access...");
       const orgCount = await db.execute(sql`SELECT COUNT(*) as count FROM organizations`);
-      log("✅ Organizations table accessible. Row count:", orgCount[0].count);
+      log("✅ Organizations table accessible. Row count:", String(orgCount[0].count));
 
     } catch (err: any) {
       log("❌ Database connection failed:");
@@ -98,6 +99,7 @@ app.use((req, res, next) => {
   app.use(router);
   app.use("/api/organizations", organizationsRouter);
   app.use("/api/debug", debugRouter);
+  app.use("/api/upload", uploadRoutes);
 
   // Health check endpoint
   app.get('/api/health', async (req,res,next)=>{

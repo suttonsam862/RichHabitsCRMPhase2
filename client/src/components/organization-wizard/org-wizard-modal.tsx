@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X } from "lucide-react";
@@ -47,9 +47,14 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
           {/* Header */}
           <DialogHeader className="px-6 py-4 border-b border-white/10">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-white text-xl font-semibold">
-                Create New Organization
-              </DialogTitle>
+              <div>
+                <DialogTitle className="text-white text-xl font-semibold">
+                  Create New Organization
+                </DialogTitle>
+                <DialogDescription className="text-white/70 mt-1">
+                  Upload a logo and fill in primary details, branding, and contact information.
+                </DialogDescription>
+              </div>
               <button
                 onClick={onClose}
                 className="text-white/50 hover:text-white transition-colors"

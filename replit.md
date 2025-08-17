@@ -46,6 +46,9 @@ A React-based single-page application framework for "Rich Habits Custom Clothing
 - ✅ Organization detail modal with tabs
 - ✅ Contact information management
 - ✅ Universal discount configuration
+- ✅ Logo upload system with Supabase Storage integration
+- ✅ Support for PNG, JPG, and SVG logo formats
+- ✅ Multi-step organization creation wizard with branding
 
 ### Sports Management
 - ✅ Sports teams within organizations
@@ -73,6 +76,18 @@ A React-based single-page application framework for "Rich Habits Custom Clothing
 - Architecture: Component-based React with separation of concerns
 
 ## Recent Changes
+
+### August 17, 2025
+- ✅ Implemented Supabase Storage integration for reliable logo uploads
+- ✅ Created comprehensive upload route with proper error handling  
+- ✅ Added support for PNG, JPG, and SVG file formats with 5MB size limit
+- ✅ Fixed Radix UI dialog accessibility warning by adding DialogDescription
+- ✅ Enhanced organization wizard with improved logo upload functionality
+- ✅ Implemented proper JSON response format for all upload operations
+- ✅ Added file type validation and contentType detection (including SVG handling)
+- ✅ Created public Supabase Storage bucket with proper MIME type configuration
+- ✅ Updated client-side upload helper with better error handling
+- ✅ Verified upload functionality with successful PNG and SVG test uploads
 
 ### January 14, 2025
 - ✅ Implemented complete glassmorphism CSS theme with custom variables
