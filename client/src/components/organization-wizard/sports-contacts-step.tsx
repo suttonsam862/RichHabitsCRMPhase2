@@ -40,7 +40,7 @@ interface SportsContactsStepProps {
 export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess }: SportsContactsStepProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedSportId, setSelectedSportId] = useState<string>("");
+  const [selectedSportId, setSelectedSportId] = useState<string | undefined>(undefined);
 
   const form = useForm({
     resolver: zodResolver(contactSchema),
@@ -180,7 +180,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
           {/* Sport Selection */}
           <div className="space-y-2">
             <label className="text-white text-sm font-medium">Sport</label>
-            <Select value={selectedSportId} onValueChange={setSelectedSportId}>
+            <Select value={selectedSportId || undefined} onValueChange={setSelectedSportId}>
               <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-sport">
                 <SelectValue placeholder="Select sport" />
               </SelectTrigger>

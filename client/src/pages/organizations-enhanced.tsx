@@ -76,14 +76,49 @@ const US_STATES = [
 // State type to match backend expectations
 type StateType = typeof US_STATES[number]['value'] | 'any';
 
+// Safe defaults to prevent empty string issues
+const SAFE_DEFAULTS = {
+  state: 'any' as StateType,
+  orgType: 'all' as const,
+  sortBy: 'created_at' as const,
+  sortOrder: 'desc' as const,
+  pageSize: 20,
+  page: 1
+} as const;
+
+// Helper function to normalize empty strings to safe defaults
+function normalizeToDefault<T>(value: any, defaultValue: T): T {
+  if (value === "" || value === null || value === undefined) {
+    return defaultValue;
+  }
+  return value;
+}
+
+// Helper to get URL params with normalization
+function getInitialStateFromURL() {
+  if (typeof window === 'undefined') return SAFE_DEFAULTS;
+  
+  const params = new URLSearchParams(window.location.search);
+  return {
+    state: normalizeToDefault(params.get('state'), SAFE_DEFAULTS.state) as StateType,
+    orgType: normalizeToDefault(params.get('type'), SAFE_DEFAULTS.orgType) as 'all' | 'school' | 'business',
+    sortBy: normalizeToDefault(params.get('sort'), SAFE_DEFAULTS.sortBy) as 'name' | 'created_at',
+    sortOrder: normalizeToDefault(params.get('order'), SAFE_DEFAULTS.sortOrder) as 'asc' | 'desc',
+    page: parseInt(normalizeToDefault(params.get('page'), SAFE_DEFAULTS.page.toString())),
+    pageSize: parseInt(normalizeToDefault(params.get('pageSize'), SAFE_DEFAULTS.pageSize.toString()))
+  };
+}
+
 export default function OrganizationsEnhanced() {
+  const initialState = getInitialStateFromURL();
+  
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedState, setSelectedState] = useState<StateType>("any");
-  const [orgType, setOrgType] = useState<"all" | "school" | "business">("all");
-  const [sortBy, setSortBy] = useState<"name" | "created_at">("created_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [selectedState, setSelectedState] = useState<StateType>(initialState.state);
+  const [orgType, setOrgType] = useState<"all" | "school" | "business">(initialState.orgType);
+  const [sortBy, setSortBy] = useState<"name" | "created_at">(initialState.sortBy);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(initialState.sortOrder);
+  const [page, setPage] = useState(initialState.page);
+  const [pageSize, setPageSize] = useState(initialState.pageSize);
   const [selectedOrg, setSelectedOrg] = useState<Org | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
@@ -127,6 +162,20 @@ export default function OrganizationsEnhanced() {
       });
     },
   });
+
+  // Sync filter state to URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedState !== SAFE_DEFAULTS.state) params.set('state', selectedState);
+    if (orgType !== SAFE_DEFAULTS.orgType) params.set('type', orgType);
+    if (sortBy !== SAFE_DEFAULTS.sortBy) params.set('sort', sortBy);
+    if (sortOrder !== SAFE_DEFAULTS.sortOrder) params.set('order', sortOrder);
+    if (page !== SAFE_DEFAULTS.page) params.set('page', page.toString());
+    if (pageSize !== SAFE_DEFAULTS.pageSize) params.set('pageSize', pageSize.toString());
+    
+    const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [selectedState, orgType, sortBy, sortOrder, page, pageSize]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -260,7 +309,10 @@ export default function OrganizationsEnhanced() {
             </div>
 
             {/* State Filter */}
-            <Select value={selectedState} onValueChange={(value) => setSelectedState(value as StateType)}>
+            <Select 
+              value={selectedState} 
+              onValueChange={(value) => setSelectedState(normalizeToDefault(value, SAFE_DEFAULTS.state) as StateType)}
+            >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-state-filter">
                 <SelectValue placeholder="All States" />
               </SelectTrigger>
@@ -275,21 +327,27 @@ export default function OrganizationsEnhanced() {
             </Select>
 
             {/* Type Filter */}
-            <Select value={orgType} onValueChange={(value: any) => setOrgType(value)}>
+            <Select 
+              value={orgType} 
+              onValueChange={(value) => setOrgType(normalizeToDefault(value, SAFE_DEFAULTS.orgType) as "all" | "school" | "business")}
+            >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-type-filter">
-                <SelectValue />
+                <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" data-testid="option-type-all">All</SelectItem>
+                <SelectItem value="all" data-testid="option-type-all">All Types</SelectItem>
                 <SelectItem value="school" data-testid="option-type-school">Schools</SelectItem>
                 <SelectItem value="business" data-testid="option-type-business">Businesses</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Sort By */}
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <Select 
+              value={sortBy} 
+              onValueChange={(value) => setSortBy(normalizeToDefault(value, SAFE_DEFAULTS.sortBy) as "name" | "created_at")}
+            >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-sort">
-                <SelectValue />
+                <SelectValue placeholder="Sort By" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="created_at" data-testid="option-sort-created">Date Created</SelectItem>
@@ -298,21 +356,30 @@ export default function OrganizationsEnhanced() {
             </Select>
 
             {/* Sort Order */}
-            <Select value={sortOrder} onValueChange={(value: any) => setSortOrder(value)}>
+            <Select 
+              value={sortOrder} 
+              onValueChange={(value) => setSortOrder(normalizeToDefault(value, SAFE_DEFAULTS.sortOrder) as "asc" | "desc")}
+            >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-order">
-                <SelectValue />
+                <SelectValue placeholder="Sort Order" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="asc" data-testid="option-order-asc">Ascending</SelectItem>
-                <SelectItem value="desc" data-testid="option-order-desc">Descending</SelectItem>
+                <SelectItem value="desc" data-testid="option-order-desc">Newest First</SelectItem>
+                <SelectItem value="asc" data-testid="option-order-asc">Oldest First</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex justify-between items-center mt-4">
-            <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value))}>
+            <Select 
+              value={pageSize.toString()} 
+              onValueChange={(value) => {
+                const numValue = parseInt(normalizeToDefault(value, SAFE_DEFAULTS.pageSize.toString()));
+                setPageSize(isNaN(numValue) ? SAFE_DEFAULTS.pageSize : numValue);
+              }}
+            >
               <SelectTrigger className="w-32 bg-white/5 border-white/20 text-white" data-testid="select-page-size">
-                <SelectValue />
+                <SelectValue placeholder="Page Size" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="10">10 per page</SelectItem>

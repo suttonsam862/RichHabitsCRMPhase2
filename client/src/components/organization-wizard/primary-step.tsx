@@ -188,7 +188,10 @@ export function PrimaryStep({ formData, updateFormData, onNext }: PrimaryStepPro
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-white">State</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || undefined}
+                  >
                     <FormControl>
                       <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-state">
                         <SelectValue placeholder="Select state" />
