@@ -17,7 +17,19 @@ router.get("/", async (_req, res, next) => {
   console.log("🔍 GET /api/organizations - Starting request");
   try {
     console.log("🔍 Attempting to query organizations table...");
-    const rows = await db.select().from(organizations).orderBy(sql`created_at DESC NULLS LAST`);
+    // Use explicit column selection to avoid missing column errors
+    const rows = await db.select({
+      id: organizations.id,
+      name: organizations.name,
+      state: organizations.state,
+      phone: organizations.phone,
+      email: organizations.email,
+      notes: organizations.notes,
+      logo_url: organizations.logoUrl,
+      is_business: organizations.is_business,
+      universal_discounts: organizations.universalDiscounts,
+      created_at: organizations.createdAt,
+    }).from(organizations).orderBy(sql`created_at DESC NULLS LAST`);
     console.log("✅ Organizations query successful. Found", rows.length, "organizations");
     console.log("🔍 Sample organization data:", rows.slice(0, 1));
     res.json({ data: rows });

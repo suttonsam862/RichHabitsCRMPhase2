@@ -263,7 +263,7 @@ export default function OrganizationsEnhanced() {
                 <SelectValue placeholder="All States" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" data-testid="option-state-all">All states</SelectItem>
+                <SelectItem value="all">All States</SelectItem>
                 {US_STATES.map((state) => (
                   <SelectItem key={state.value} value={state.value} data-testid={`option-state-${state.value}`}>
                     {state.label}
