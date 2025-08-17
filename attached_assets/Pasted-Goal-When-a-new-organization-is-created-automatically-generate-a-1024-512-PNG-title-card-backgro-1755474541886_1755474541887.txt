@@ -1,0 +1,166 @@
+Goal: When a new organization is created, automatically generate a 1024×512 PNG “title card” background image based on (a) the uploaded logo’s palette and (b) the two brand colors selected in the org form. Save once to Supabase Storage; don’t overwrite on color changes. Add an admin-only edit path to regenerate/replace.
+
+0) Preconditions (fail fast)
+
+Verify env vars exist at server boot:
+
+OPENAI_API_KEY (for gpt-image-1) 
+OpenAI Cookbook
+OpenAI Help Center
+
+SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (for Storage) 
+Supabase
++1
+
+If any missing, print a clear error and exit(1).
+
+1) Deps
+
+Add:
+
+npm i openai node-vibrant sharp @supabase/supabase-js
+
+
+openai → image generation (gpt-image-1, base64 output). 
+OpenAI Cookbook
+OpenAI Help Center
+
+node-vibrant → extract dominant colors from the logo. 
+GitHub
+
+sharp → ensure PNG encoding/canvas safety if needed.
+
+@supabase/supabase-js → upload to Storage. 
+Supabase
++1
+
+2) Storage setup
+
+Ensure (or create) a public bucket org-tiles. Path per org: org-tiles/<orgId>/title.png.
+
+Use standard upload (or upsert=false). Keep images immutable after create. 
+Supabase
++1
+
+3) DB
+
+In public.organizations, add column if missing:
+
+title_card_url text (nullable).
+
+Do not regenerate on color updates; only set this once at create. A separate “replace” endpoint will update it.
+
+4) Server: utilities
+
+Create server/lib/supabaseAdmin.ts:
+
+import { createClient } from '@supabase/supabase-js';
+export const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+
+Create server/lib/palette.ts:
+
+import Vibrant from 'node-vibrant';
+import fetch from 'node-fetch';
+
+export async function getLogoPalette(url: string): Promise<string[]> {
+  const res = await fetch(url);
+  const buf = Buffer.from(await res.arrayBuffer());
+  const palette = await Vibrant.from(buf).getPalette();
+  const hexes = Object.values(palette)
+    .filter(Boolean)
+    .map(s => s!.getHex());
+  // unique + top 3
+  return Array.from(new Set(hexes)).slice(0, 3);
+}
+
+
+Create server/lib/tiles.ts:
+
+import OpenAI from 'openai';
+import { sb } from './supabaseAdmin';
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+export async function generateTitleCard({
+  orgId, teamName, logoUrl, brandPrimaryHex, brandSecondaryHex
+}: {
+  orgId: string; teamName: string; logoUrl: string;
+  brandPrimaryHex: string; brandSecondaryHex: string;
+}): Promise<string> {
+  // Build prompt — neon/ink “design tile” vibe, but text legible.
+  const paletteHint = `${brandPrimaryHex}, ${brandSecondaryHex}`;
+  const prompt =
+`Create a crisp 1024x512 PNG “title card” for a sports team.
+Text: "${teamName}" in a bold, high-contrast wordmark (single font style).
+Style: vibrant neon gradient strokes with subtle abstract stripes in the background (no logos), clean edges, not noisy.
+Color rules:
+- Use ${paletteHint} plus hues sampled from the team logo.
+- Background should harmonize with ${brandPrimaryHex}; stroke accents may use ${brandSecondaryHex}.
+Composition:
+- Centered wordmark, strong contrast against background, readable at small size.
+- No real-world photos, no brand marks, no IP; pure graphic.
+
+Return just the rendered graphic.`;
+
+  const img = await openai.images.generate({
+    model: 'gpt-image-1',
+    prompt,
+    size: '1024x512',
+    quality: 'medium',          // good quality vs. cost/latency
+    // API returns base64 data:
+    // result.data[0].b64_json
+  });
+  const b64 = img.data[0].b64_json!; // base64 PNG per docs
+  const fileBytes = Buffer.from(b64, 'base64');
+
+  const path = `org-tiles/${orgId}/title.png`;
+  const { error } = await sb.storage.from('org-tiles')
+    .upload(path, fileBytes, { contentType: 'image/png', upsert: false }); // immutable on create
+  if (error) throw error;
+
+  const { data: pub } = sb.storage.from('org-tiles').getPublicUrl(path);
+  return pub.publicUrl;
+}
+
+
+(Notes: gpt-image-1 returns base64; save to PNG; don’t rely on temporary URLs. 
+OpenAI Cookbook
+OpenAI Help Center
+)
+
+5) Hook into org creation (generate once)
+
+In the org creation handler (after the org row is committed and you have org.id, logo_url, brand_primary, brand_secondary):
+
+If title_card_url is null, call getLogoPalette(logo_url) to extract a few extra hues (use just as hint text in prompt); pass your two selected colors as the canonical background/text guidance.
+
+Call generateTitleCard({...}).
+
+UPDATE public.organizations SET title_card_url=$1 WHERE id=$2 (only if currently null).
+
+Do not generate on subsequent updates.
+
+6) Replace flow (edit path)
+
+New admin route: POST /api/organizations/:id/replace-title-card
+
+Re-run generateTitleCard with current colors and logo, upsert:true to overwrite, then update title_card_url.
+
+Keep this off by default; only used from the edit screen.
+
+7) UI (cards)
+
+On the Organizations list/card, if title_card_url exists, use it as the card background via style={{ backgroundImage: \url(${url})` }}` and overlay the existing logo+name.
+
+If missing (older rows), lazy-generate with a small “Generate Title Card” admin button calling the replace route.
+
+8) Smoke test (scripted)
+
+Create a new org with logo + two hexes → expect title_card_url set and a PNG at org-tiles/<orgId>/title.png.
+
+Confirm URL loads and is cached by the CDN.
+
+Update org colors → confirm no change to existing title_card_url.
+
+Call replace route → confirm image updated.
