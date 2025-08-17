@@ -21,7 +21,7 @@ import type { Org, OrgQueryParams } from "../../../shared/schemas/organization";
 
 // US States for dropdown
 const US_STATES = [
-  { value: "", label: "All States" },
+  { value: "ALL", label: "All States" },
   { value: "AL", label: "Alabama" },
   { value: "AK", label: "Alaska" },
   { value: "AZ", label: "Arizona" },
@@ -76,7 +76,7 @@ const US_STATES = [
 
 export default function OrganizationsEnhanced() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedState, setSelectedState] = useState("");
+  const [selectedState, setSelectedState] = useState("ALL");
   const [orgType, setOrgType] = useState<"all" | "school" | "business">("all");
   const [sortBy, setSortBy] = useState<"name" | "created_at">("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -92,7 +92,7 @@ export default function OrganizationsEnhanced() {
   // Build query params
   const queryParams: OrgQueryParams = {
     q: debouncedSearch || undefined,
-    state: selectedState as any || undefined,
+    state: selectedState === "ALL" ? undefined : selectedState as any,
     type: orgType,
     sort: sortBy,
     order: sortOrder,
