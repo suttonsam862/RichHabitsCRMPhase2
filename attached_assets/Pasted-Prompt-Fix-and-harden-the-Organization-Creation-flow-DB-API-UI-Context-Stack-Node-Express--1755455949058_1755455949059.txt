@@ -1,0 +1,314 @@
+Prompt: Fix and harden the Organization Creation flow (DB + API + UI)
+Context
+
+Stack: Node/Express (TypeScript), Vite/React front-end, Supabase Postgres (not calling via Supabase client for inserts—using pooled PG connection).
+
+Current symptoms seen in logs:
+
+null value in column "user_id" of relation "user_roles" violates not-null constraint (PG code 23502)
+
+UI sometimes submits universalDiscounts: null
+
+Prior error: column "address" of relation "organizations" does not exist (UI sends a single address string; DB has address_line1 plus a legacy address)
+
+Relevant tables:
+
+public.organizations has: name, logo_url, state, address_line1, address_line2, city, postal_code, phone, contact_email, notes, country, status, website, universal_discounts jsonb NOT NULL DEFAULT '{}', address, email.
+
+public.user_roles (user_id uuid DEFAULT auth.uid() NOT NULL, org_id uuid NOT NULL, role_id uuid NOT NULL)
+
+public.roles (id uuid, name text NOT NULL, slug text NOT NULL)
+
+Root causes
+
+user_roles.user_id DEFAULT auth.uid() NOT NULL fails when inserts run without a Supabase JWT (auth.uid() = NULL), causing 23502.
+
+UI sends universalDiscounts: null; DB column is jsonb NOT NULL DEFAULT '{}' → validation/constraint mismatch.
+
+UI sends address (single field); DB expects address_line1 (plus legacy address) → mapping mismatch.
+
+Objectives
+
+Make org creation succeed with or without an authenticated Supabase JWT.
+
+Normalize payload at the API so DB types always match (never sending NULL for universal_discounts, map address/email correctly).
+
+Add DB safeguards (triggers) so accidental future mismatches do not break inserts.
+
+Seed/ensure roles (owner, admin, member) and uniqueness on roles.slug.
+
+Provide tests and a verification checklist.
+
+Tasks
+A) Create an idempotent SQL migration
+
+Create a new SQL migration file (e.g., supabase/migrations/20250817_fix_org_creation.sql) with the exact content below. It must be idempotent (safe to rerun).
+
+begin;
+
+-- 1) Ensure roles have unique slugs; backfill any null slugs and seed base roles.
+do $$
+begin
+  -- Add unique constraint if missing
+  if not exists (
+    select 1 from pg_constraint where conname = 'roles_slug_unique'
+  ) then
+    alter table public.roles
+      add constraint roles_slug_unique unique (slug);
+  end if;
+end$$;
+
+-- Backfill null slugs (if any)
+update public.roles
+set slug = lower(regexp_replace(name, '\s+', '_', 'g'))
+where slug is null;
+
+-- Seed roles (no-op if present)
+insert into public.roles (slug, name) values
+  ('owner','Owner'),
+  ('admin','Admin'),
+  ('member','Member')
+on conflict (slug) do nothing;
+
+-- 2) Make user_roles robust when no Supabase JWT is present.
+-- Drop NOT NULL and default on user_id; we'll use a trigger to fill from auth.uid() when available.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='user_roles'
+      and column_name='user_id' and is_nullable='NO'
+  ) then
+    alter table public.user_roles alter column user_id drop not null;
+  end if;
+exception when others then
+  null;
+end$$;
+
+alter table public.user_roles alter column user_id drop default;
+
+create or replace function public.user_roles_set_user_from_jwt()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.user_id is null then
+    begin
+      new.user_id := auth.uid(); -- will be NULL if no JWT; that's OK
+    exception when others then
+      null;
+    end;
+  end if;
+  return new;
+end
+$$;
+
+drop trigger if exists trg_user_roles_set_user_from_jwt on public.user_roles;
+create trigger trg_user_roles_set_user_from_jwt
+before insert on public.user_roles
+for each row execute function public.user_roles_set_user_from_jwt();
+
+-- 3) Harden organizations inserts/updates against UI mismatches.
+create or replace function public.organizations_fix_defaults()
+returns trigger
+language plpgsql
+as $$
+begin
+  -- universal_discounts must never be NULL
+  if new.universal_discounts is null then
+    new.universal_discounts := '{}'::jsonb;
+  end if;
+
+  -- Mirror single-field address to line1 and keep legacy 'address' consistent
+  if new.address_line1 is null and new.address is not null then
+    new.address_line1 := new.address;
+  end if;
+  if new.address is null and new.address_line1 is not null then
+    new.address := new.address_line1;
+  end if;
+
+  -- Mirror contact_email and email both ways if one side missing
+  if new.contact_email is null and new.email is not null then
+    new.contact_email := new.email;
+  end if;
+  if new.email is null and new.contact_email is not null then
+    new.email := new.contact_email;
+  end if;
+
+  return new;
+end
+$$;
+
+drop trigger if exists trg_organizations_fix_defaults on public.organizations;
+create trigger trg_organizations_fix_defaults
+before insert or update on public.organizations
+for each row execute function public.organizations_fix_defaults();
+
+-- 4) Helpful indexes for search/sort (optional but good)
+do $$
+begin
+  if not exists (select 1 from pg_indexes where schemaname='public' and indexname='ix_organizations_name') then
+    create index ix_organizations_name on public.organizations (lower(name));
+  end if;
+  if not exists (select 1 from pg_indexes where schemaname='public' and indexname='ix_organizations_created_at') then
+    create index ix_organizations_created_at on public.organizations (created_at desc);
+  end if;
+end$$;
+
+commit;
+
+B) Patch the API (Express/TypeScript)
+
+Locate the POST handler for /api/organizations. Add strict Zod validation and normalize to DB shape:
+
+Force universalDiscounts to {} when input is null/undefined.
+
+Map UI fields → DB fields: logoUrl → logo_url, isBusiness → is_business, address → address (DB trigger mirrors to address_line1), email → email (trigger mirrors to contact_email).
+
+Only insert into public.user_roles if you have a known userId from JWT/session; otherwise skip (DB now tolerates NULL via trigger, but explicit insert should pass a real user when available).
+
+When an error occurs, include code, detail in the JSON to aid debugging.
+
+Example (adjust import paths to your repo):
+
+import { z } from "zod";
+// import db client...
+
+const CreateOrgSchema = z.object({
+  name: z.string().min(1),
+  address: z.string().optional().nullable(),
+  state: z.string().length(2).optional().nullable(),
+  phone: z.string().optional().nullable(),
+  email: z.string().email().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  logoUrl: z.string().url().optional().nullable(),
+  isBusiness: z.boolean().optional().default(false),
+  universalDiscounts: z.record(z.string(), z.number()).optional().nullable(),
+});
+
+app.post("/api/organizations", async (req, res) => {
+  const parsed = CreateOrgSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Validation failed", issues: parsed.error.issues });
+  }
+  const b = parsed.data;
+
+  const orgData = {
+    name: b.name,
+    logo_url: b.logoUrl ?? null,
+    is_business: !!b.isBusiness,
+    universal_discounts: b.universalDiscounts ?? {}, // coalesce here
+    state: b.state ?? null,
+    address: b.address ?? null,                       // trigger will mirror to address_line1
+    phone: b.phone ?? null,
+    email: b.email ?? null,                           // trigger will mirror to contact_email
+    notes: b.notes ?? null,
+  };
+
+  // Derive userId from your auth middleware (Supabase JWT) if available
+  const userId: string | undefined = (req as any).user?.id;
+
+  try {
+    await db.begin(async (sql) => {
+      const { id: orgId } = await sql/*sql*/`
+        insert into public.organizations ${sql(orgData, ...Object.keys(orgData))}
+        returning id
+      `.first();
+
+      if (userId) {
+        const { id: roleId } = await sql/*sql*/`
+          select id from public.roles where slug = 'owner'
+        `.first();
+        await sql/*sql*/`
+          insert into public.user_roles (user_id, org_id, role_id)
+          values (${userId}::uuid, ${orgId}::uuid, ${roleId}::uuid)
+        `;
+      }
+    });
+
+    return res.status(201).json({ ok: true });
+  } catch (e: any) {
+    console.error("Create org failed:", e);
+    return res.status(500).json({ error: "Internal server error", code: e.code, detail: e.detail });
+  }
+});
+
+C) Patch the Front-end
+
+In the org creation form submit handler:
+
+Never send universalDiscounts: null; send {} (empty object) if not set.
+
+For optional strings left blank, send undefined (let the server coalesce to null/defaults).
+
+const payload = {
+  name: form.name.trim(),
+  address: form.address?.trim() || undefined,
+  state: form.state || undefined,
+  phone: form.phone?.trim() || undefined,
+  email: form.email?.trim() || undefined,
+  notes: form.notes?.trim() || undefined,
+  logoUrl: uploadedLogoUrl || undefined,
+  isBusiness: !!form.isBusiness,
+  universalDiscounts: form.universalDiscounts ?? {}, // key change
+};
+
+D) Add tests
+
+API integration tests for /api/organizations:
+
+creates org with universalDiscounts: null → succeeds; DB value {}.
+
+creates org with only address (no address_line1) → DB has both address and address_line1 mirrored.
+
+creates org without JWT → org row created; no user_roles row inserted.
+
+creates org with JWT → user_roles row inserted with role slug owner.
+
+DB sanity test (optional): simple script that selects newly created org and asserts:
+
+universal_discounts is jsonb '{}'.
+
+address_line1 and address both non-null when either was provided.
+
+email and contact_email mirrored.
+
+E) Add a schema drift guard (optional but recommended)
+
+Add a CI step that:
+
+Introspects public.organizations columns and compares to the server’s TypeScript DTO (the Zod schema keys + types).
+
+Fails CI if new non-nullable columns without defaults are added, or if types drift (e.g., jsonb column without coalescing rule).
+
+Deliverables
+
+New SQL migration applied.
+
+API handler patched and compiled.
+
+Front-end payload normalized.
+
+Tests added and passing.
+
+Short MIGRATION_NOTES.md summarizing what changed and why.
+
+Acceptance Criteria
+
+Creating an organization never fails due to user_roles.user_id when unauthenticated.
+
+Passing universalDiscounts: null from UI still creates the org; DB shows {}.
+
+Passing only address fills both address and address_line1; similarly email mirrors to contact_email.
+
+If authenticated, creator is assigned the owner role; if not, the insert still succeeds without any role row.
+
+Roles table has unique slug values and includes owner, admin, member.
+
+Notes
+
+Keep the SQL idempotent (all do $$ ... $$; guards and on conflict do nothing retained).
+
+Do not remove the legacy address/email columns; use the trigger to keep both sides in sync.
+
+Log PG error code and detail in the API to speed up future debugging.
