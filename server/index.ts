@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/error";
 import organizationsRouter from "./routes/organizations-hardened";
 import debugRouter from "./routes/debug";
 import uploadRoutes from "./routes/upload";
+import orgSportsRouter from "./routes/org-sports";
 
 const app = express();
 app.use(express.json());
@@ -112,6 +113,7 @@ app.use((req, res, next) => {
   app.use("/api/organizations", organizationsRouter);
   app.use("/api/debug", debugRouter);
   app.use("/api/upload", uploadRoutes);
+  app.use("/api/org-sports", orgSportsRouter);
   // Mount general router last (it has conflicting /api/organizations route that we're overriding)
   app.use(router);
 
@@ -127,7 +129,7 @@ app.use((req, res, next) => {
   // Use the enhanced error handler
   app.use(errorHandler);
 
-  // Setup vite in development
+  // Setup vite in development - AFTER all API routes are mounted
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
