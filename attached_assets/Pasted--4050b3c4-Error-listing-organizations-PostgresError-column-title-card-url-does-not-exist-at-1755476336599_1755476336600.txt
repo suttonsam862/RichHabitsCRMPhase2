@@ -1,0 +1,39 @@
+[4050b3c4] Error listing organizations: PostgresError: column "title_card_url" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42703',
+  position: '34',
+  file: 'parse_relation.c',
+  line: '3665',
+  routine: 'errorMissingColumn'
+}
+[2025-08-18T00:18:45.633Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 500 144ms
+12:18:45 AM [express] GET /api/organizations 500 in 144ms :: {"error":"Failed to list organizations",…
+[11b1743b] GET /
+[11b1743b] Error listing organizations: PostgresError: column "title_card_url" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42703',
+  position: '34',
+  file: 'parse_relation.c',
+  line: '3665',
+  routine: 'errorMissingColumn'
+}
+[2025-08-18T00:18:47.268Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 500 125ms
+12:18:47 AM [express] GET /api/organizations 500 in 125ms :: {"error":"Failed to list organizations",…
