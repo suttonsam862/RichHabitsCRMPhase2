@@ -109,13 +109,16 @@ router.get("/", async (req, res, next) => {
       .from(organizations)
       .where(whereClause);
     
-    // Execute main query with minimal projection
+    // Execute main query with minimal projection including title card columns
     const rows = await db
       .select({
         id: organizations.id,
         name: organizations.name,
         state: organizations.state,
         logo_url: organizations.logo_url,
+        title_card_url: organizations.title_card_url,
+        brand_primary: organizations.brand_primary,
+        brand_secondary: organizations.brand_secondary,
         is_business: organizations.is_business,
         created_at: organizations.created_at,
       })
