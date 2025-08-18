@@ -65,6 +65,7 @@ router.post("/", async (req, res) => {
       universal_discounts: input.universalDiscounts ?? {}, // Always coalesce to empty object, never null
       brand_primary: input.brandPrimary ?? null,
       brand_secondary: input.brandSecondary ?? null,
+      status: 'active', // Default status for new organizations
     };
 
     console.log("🔍 Creating organization with data:", row);
@@ -72,7 +73,7 @@ router.post("/", async (req, res) => {
     // Start a transaction to handle both organization and user_roles
     const result = await db.transaction(async (tx) => {
       // Insert organization
-      const [org] = await tx.insert(organizations).values(row).returning({
+      const [org] = await tx.insert(organizations).values([row]).returning({
         id: organizations.id,
         name: organizations.name,
         logo_url: organizations.logo_url,
