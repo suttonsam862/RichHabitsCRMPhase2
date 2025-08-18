@@ -1,7 +1,6 @@
-
 import { Router } from "express";
 import { db } from "../db";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, ilike, and, asc, desc } from "drizzle-orm";
 import { organizations } from "../../shared/schema";
 import { z } from "zod";
 import { CreateOrganizationSchema } from "../../shared/supabase-schema";
@@ -15,7 +14,7 @@ function zodToMessages(err: z.ZodError) {
   return err.issues.map(i => `${i.path.join(".")}: ${i.message}`);
 }
 
-router.get("/", async (_req, res, next) => {
+router.get("/", async (req, res, next) => {
   console.log("🔍 GET /api/organizations - Starting request");
   try {
     console.log("🔍 Attempting to query organizations table...");
@@ -69,7 +68,7 @@ router.post("/", async (req, res) => {
     };
 
     console.log("🔍 Creating organization with data:", row);
-    
+
     // Start a transaction to handle both organization and user_roles
     const result = await db.transaction(async (tx) => {
       // Insert organization
@@ -89,10 +88,10 @@ router.post("/", async (req, res) => {
         brand_primary: organizations.brand_primary,
         brand_secondary: organizations.brand_secondary,
       });
-      
+
       // Try to get user ID from various sources
       const userId = (req as any).user?.id || (req as any).userId || req.headers['x-user-id'];
-      
+
       if (userId) {
         try {
           // Get owner role ID
@@ -101,7 +100,7 @@ router.post("/", async (req, res) => {
             .from(sql`public.roles`)
             .where(sql`slug = 'owner'`)
             .limit(1);
-          
+
           if (ownerRole) {
             // Insert user role
             await tx.execute(sql`
@@ -117,7 +116,7 @@ router.post("/", async (req, res) => {
       } else {
         console.log("ℹ️ No user ID available, skipping owner role assignment");
       }
-      
+
       // Generate title card if we have logo and brand colors, but no existing title card
       if (org.logo_url && row.brand_primary && row.brand_secondary && !org.title_card_url) {
         try {
@@ -135,7 +134,7 @@ router.post("/", async (req, res) => {
           await tx.update(organizations)
             .set({ title_card_url: titleCardUrl })
             .where(eq(organizations.id, org.id));
-          
+
           org.title_card_url = titleCardUrl;
           console.log("✅ Title card generated and saved:", titleCardUrl);
         } catch (titleError) {
@@ -146,7 +145,7 @@ router.post("/", async (req, res) => {
 
       return org;
     });
-    
+
     console.log("✅ Organization created successfully:", result);
     return res.status(201).json(result);
   } catch (err: any) {
@@ -170,21 +169,21 @@ router.post("/", async (req, res) => {
 router.post("/:id/replace-title-card", async (req, res) => {
   try {
     const orgId = req.params.id;
-    
+
     // Get the organization details
     const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
     if (!org) {
       return res.status(404).json({ error: "Organization not found" });
     }
-    
+
     if (!org.logo_url || !org.brand_primary || !org.brand_secondary) {
       return res.status(400).json({ 
         error: "Cannot generate title card: missing logo or brand colors" 
       });
     }
-    
+
     console.log("🎨 Replacing title card for organization:", org.name);
-    
+
     try {
       const titleCardUrl = await replaceTitleCard({
         orgId: org.id,
@@ -193,13 +192,13 @@ router.post("/:id/replace-title-card", async (req, res) => {
         brandPrimaryHex: org.brand_primary,
         brandSecondaryHex: org.brand_secondary
       });
-      
+
       // Update the organization with the new title card URL
       const [updated] = await db.update(organizations)
         .set({ title_card_url: titleCardUrl })
         .where(eq(organizations.id, orgId))
         .returning();
-      
+
       console.log("✅ Title card replaced successfully:", titleCardUrl);
       return res.json(updated);
     } catch (genError: any) {
