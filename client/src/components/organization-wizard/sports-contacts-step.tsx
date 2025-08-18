@@ -12,17 +12,17 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { type CreateOrgFormData, type SportContact } from "./types";
 
-// Temporary sports data - in real implementation this would come from the sports table
+// Temporary sports data - using UUIDs that match the database
 const AVAILABLE_SPORTS = [
-  { id: "1", name: "Football" },
-  { id: "2", name: "Basketball" },
-  { id: "3", name: "Soccer" },
-  { id: "4", name: "Baseball" },
-  { id: "5", name: "Track & Field" },
-  { id: "6", name: "Swimming" },
-  { id: "7", name: "Volleyball" },
-  { id: "8", name: "Tennis" },
-  { id: "9", name: "Wrestling" },
+  { id: "550e8400-e29b-41d4-a716-446655440001", name: "Football" },
+  { id: "550e8400-e29b-41d4-a716-446655440002", name: "Basketball" },
+  { id: "550e8400-e29b-41d4-a716-446655440003", name: "Soccer" },
+  { id: "550e8400-e29b-41d4-a716-446655440004", name: "Baseball" },
+  { id: "550e8400-e29b-41d4-a716-446655440005", name: "Track & Field" },
+  { id: "550e8400-e29b-41d4-a716-446655440006", name: "Swimming" },
+  { id: "550e8400-e29b-41d4-a716-446655440007", name: "Volleyball" },
+  { id: "550e8400-e29b-41d4-a716-446655440008", name: "Tennis" },
+  { id: "550e8400-e29b-41d4-a716-446655440009", name: "Wrestling" },
 ];
 
 const contactSchema = z.object({
@@ -66,8 +66,6 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
         logoUrl: data.logo_url || "", // camelCase for API
         isBusiness: data.is_business || false, // camelCase boolean
         universalDiscounts: {}, // Always send empty object, never null
-        brandPrimary: data.brand_primary || "", // Brand primary color
-        brandSecondary: data.brand_secondary || "", // Brand secondary color
       };
 
       console.log("🔍 Sending organization payload:", payload);
@@ -83,11 +81,11 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
             apiRequest("/api/org-sports", {
               method: "POST",
               data: {
-                organizationId: orgResponse.id,
+                orgId: orgResponse.id,
                 sportId: sport.sportId,
-                contact_name: sport.contact_name,
-                contact_email: sport.contact_email,
-                contact_phone: sport.contact_phone,
+                contactName: sport.contact_name,
+                contactEmail: sport.contact_email,
+                contactPhone: sport.contact_phone,
               },
             })
           )
