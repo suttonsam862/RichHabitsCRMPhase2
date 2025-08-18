@@ -1,0 +1,54 @@
+Goal: Fix org list/create flow and org-sport contact creation.
+Context:
+
+DB now has public.organizations.title_card_url (nullable).
+
+public.org_sports columns are UUID and have FKs to organizations(id) and sports(id).
+
+Org creation already returns 201 and inserts are persisting.
+
+Errors came from selecting a non-existent title_card_url and from validating sportId as UUID while the UI sent "9".
+
+Tasks (small, exact):
+
+Organizations list route (server/routes/... – whichever handler feeds /api/organizations):
+
+Keep selecting title_card_url (it now exists).
+
+No other DB field changes needed.
+
+Org creation route:
+
+After successful insert, if a generated “title card” image URL is available from our generator, set title_card_url on the new org. If not, leave it NULL. Do not regenerate automatically on brand color edits; only update via the edit path.
+
+Org-sports POST route (/api/org-sports):
+
+Accept body with either orgId or organizationId (map both to orgId internally).
+
+Validate sportId as UUID. If the UI sends a legacy numeric value, return a friendly 400 with a clear message: “sportId must be a UUID; refresh sports and pick again.”
+
+Insert into public.org_sports using UUIDs and honor the (organization_id, sport_id) uniqueness.
+
+Frontend:
+
+In the org creation wizard’s Sports/Contacts step, populate the sport selector by fetching /api/sports and use the UUID id for sportId (no numeric placeholders).
+
+When posting to /api/org-sports, send orgId (the org’s UUID) and the selected sportId (UUID), plus contactName, contactEmail, contactPhone.
+
+Startup roles helper:
+
+Fix the “require is not defined in ES module scope” warning by converting any require usage to ESM import (or remove the helper if migrations seed roles).
+
+Deliverables:
+
+Commits touching the org list/create routes, /api/org-sports route, and the wizard step.
+
+A short smoke test script that:
+
+creates an org,
+
+creates an org-sport contact using a UUID sportId,
+
+GETs /api/organizations and confirms title_card_url is present (may be null).
+
+Log lines on success, and helpful 400s on bad sportId.
