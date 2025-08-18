@@ -1,0 +1,146 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (3) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+
+=== Environment Variable Check ===
+✓ SUPABASE_URL: https:********************************** (length: 40)
+✓ SUPABASE_SERVICE_ROLE_KEY: eyJhbG********************************************************************************************************************************************************************************************************************* (length: 219)
+✓ OPENAI_API_KEY: sk-pro************************************************************************************************************************************************************** (length: 164)
+✓ All required environment variables are set
+
+12:16:59 AM [express] Server running on 0.0.0.0:5000
+12:16:59 AM [express] 🔍 Testing database connection...
+12:17:00 AM [vite] Serving SPA route: /
+[2025-08-18T00:17:00.151Z] GET / -> 200 65ms
+[2025-08-18T00:17:00.491Z] GET /@vite/client -> 200 25ms
+[2025-08-18T00:17:00.514Z] GET /src/main.tsx?v=0g3Ij4z2v8UxprweuSZjm -> 200 44ms
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2025-08-18T00:17:00.995Z] GET /@react-refresh -> 304 445ms
+[2025-08-18T00:17:01.015Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=0228b704 -> 200 7ms
+[2025-08-18T00:17:01.021Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-dom_client.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:01.025Z] GET /src/App.tsx?v=0g3Ij4z2v8UxprweuSZjm -> 200 1ms
+[2025-08-18T00:17:01.755Z] GET /src/index.css?v=0g3Ij4z2v8UxprweuSZjm -> 200 728ms
+[2025-08-18T00:17:01.777Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 1ms
+[2025-08-18T00:17:01.812Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QCHXOAYK.js?v=0228b704 -> 200 22ms
+[2025-08-18T00:17:01.817Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=0228b704 -> 200 26ms
+[2025-08-18T00:17:01.850Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WOOG5QLI.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:01.852Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:01.853Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=0228b704 -> 200 1ms
+12:17:02 AM [express] ✅ Database connection successful!
+12:17:02 AM [{"current_database":"postgres","current_user":"postgres","version":"PostgreSQL 15.8 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit"}] 📊 Database info:
+12:17:02 AM [express] 🔍 Testing organizations table access...
+[2025-08-18T00:17:02.064Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-helmet-async.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.084Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.093Z] GET /src/components/ui/toaster.tsx -> 200 1ms
+[2025-08-18T00:17:02.103Z] GET /src/components/route-transition.tsx -> 200 1ms
+12:17:02 AM [6] ✅ Organizations table accessible. Row count:
+12:17:02 AM [express] 🔍 Ensuring required roles exist...
+[2025-08-18T00:17:02.189Z] GET /src/pages/index.tsx -> 200 27ms
+[2025-08-18T00:17:02.190Z] GET /src/layouts/AppLayout.tsx -> 200 2ms
+[2025-08-18T00:17:02.259Z] GET /src/pages/organizations-enhanced.tsx -> 200 1ms
+[2025-08-18T00:17:02.282Z] GET /src/lib/queryClient.ts -> 200 1ms
+[2025-08-18T00:17:02.283Z] GET /src/pages/not-found.tsx -> 200 1ms
+[2025-08-18T00:17:02.283Z] GET /src/pages/users.tsx -> 200 1ms
+⚠️ Could not ensure roles exist: require is not defined in ES module scope, you can use import instead
+[2025-08-18T00:17:02.292Z] GET /src/pages/order-details.tsx -> 200 1ms
+[2025-08-18T00:17:02.383Z] GET /src/components/ui/tooltip.tsx -> 200 1ms
+[2025-08-18T00:17:02.402Z] GET /src/components/ui/toast.tsx -> 200 15ms
+[2025-08-18T00:17:02.403Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-KBTYAULA.js?v=0228b704 -> 200 15ms
+[2025-08-18T00:17:02.418Z] GET /src/components/ui/glow-card.tsx -> 200 1ms
+[2025-08-18T00:17:02.419Z] GET /src/hooks/use-toast.ts -> 200 1ms
+[2025-08-18T00:17:02.426Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/lucide-react.js?v=0228b704 -> 200 2ms
+[2025-08-18T00:17:02.438Z] GET /src/components/head-meta.tsx -> 200 0ms
+[2025-08-18T00:17:02.454Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.455Z] GET /src/components/ui/button.tsx -> 200 1ms
+[2025-08-18T00:17:02.469Z] GET /src/components/ui/input.tsx -> 200 1ms
+[2025-08-18T00:17:02.470Z] GET /src/components/ui/label.tsx -> 200 0ms
+[2025-08-18T00:17:02.491Z] GET /src/components/ui/card.tsx -> 200 0ms
+[2025-08-18T00:17:02.508Z] GET /src/components/ui/table.tsx -> 200 1ms
+[2025-08-18T00:17:02.509Z] GET /src/components/ui/dialog.tsx -> 200 1ms
+[2025-08-18T00:17:02.645Z] GET /src/components/ui/badge.tsx -> 200 1ms
+[2025-08-18T00:17:02.647Z] GET /src/components/ui/select.tsx -> 200 1ms
+[2025-08-18T00:17:02.648Z] GET /src/components/ui/alert.tsx -> 200 0ms
+[2025-08-18T00:17:02.649Z] GET /src/components/ui/skeleton.tsx -> 200 1ms
+[2025-08-18T00:17:02.650Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 200 1ms
+[2025-08-18T00:17:02.697Z] GET /src/components/ui/rb-button.tsx -> 200 1ms
+[2025-08-18T00:17:02.698Z] GET /src/lib/api/organizations.ts -> 304 0ms
+[2025-08-18T00:17:02.699Z] GET /src/hooks/use-debounce.ts -> 200 0ms
+[2025-08-18T00:17:02.700Z] GET /src/components/organization-modal.tsx -> 200 1ms
+[2025-08-18T00:17:02.701Z] GET /src/components/ui/separator.tsx -> 200 0ms
+[2025-08-18T00:17:02.742Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.750Z] GET /src/lib/utils.ts -> 200 0ms
+[2025-08-18T00:17:02.751Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/class-variance-authority.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.752Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.753Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slot.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.791Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-label.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.799Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.800Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.803Z] GET /src/components/ui/scroll-area.tsx -> 200 1ms
+[2025-08-18T00:17:02.804Z] GET /src/components/organization-wizard/primary-step.tsx -> 200 1ms
+[2025-08-18T00:17:02.804Z] GET /src/components/ui/tabs.tsx -> 200 0ms
+[2025-08-18T00:17:02.844Z] GET /src/components/organization-wizard/branding-step.tsx -> 200 0ms
+[2025-08-18T00:17:02.858Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 200 1ms
+[2025-08-18T00:17:02.859Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SM4W46IE.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.859Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-separator.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.860Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3UUOAQ6K.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.861Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XPHGGTPZ.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.893Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-R5YVGTHA.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.909Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U274ZQA2.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.910Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P23V4H6I.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.911Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-KSG7MAB7.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.912Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.912Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-HGVHGKXH.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:02.941Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.961Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/clsx.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.963Z] GET /src/components/edit-organization-form.tsx -> 200 1ms
+[2025-08-18T00:17:02.964Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/tailwind-merge.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:02.965Z] GET /src/components/orders-tab.tsx -> 200 1ms
+[2025-08-18T00:17:02.965Z] GET /src/components/sports-tab.tsx -> 200 0ms
+[2025-08-18T00:17:02.993Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U7P2NEEE.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:03.010Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVUPP2WN.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:03.014Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6ZMM2PAV.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:03.015Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-4RO2SXZU.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:03.016Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PAVZT4VL.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:03.017Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-43G6IMPT.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:03.042Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:03.066Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:03.067Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-hook-form.js?v=0228b704 -> 200 0ms
+[2025-08-18T00:17:03.069Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/zod.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:03.069Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@hookform_resolvers_zod.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:03.070Z] GET /src/components/ui/form.tsx -> 200 1ms
+[2025-08-18T00:17:03.094Z] GET /src/components/ui/switch.tsx -> 200 0ms
+[2025-08-18T00:17:03.122Z] GET /src/constants/us-states.ts -> 304 0ms
+[2025-08-18T00:17:03.123Z] GET /src/components/create-sport-form.tsx -> 200 1ms
+[2025-08-18T00:17:03.125Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 200 0ms
+[2025-08-18T00:17:03.127Z] GET /src/components/edit-sport-form.tsx -> 200 1ms
+[2025-08-18T00:17:03.148Z] GET /src/components/create-order-form.tsx -> 200 1ms
+[2025-08-18T00:17:03.174Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-switch.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:03.175Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-4BFJKWC4.js?v=0228b704 -> 200 1ms
+[2025-08-18T00:17:03.176Z] GET /src/components/ui/textarea.tsx -> 200 1ms
+12:17:03 AM [vite] Skipping frontend handler for static asset: /fonts/Coolvetica.woff2
+[2025-08-18T00:17:03.290Z] GET /fonts/Coolvetica.woff2 -> 404 4ms
+[00f5fc21] GET /
+[00f5fc21] Error listing organizations: PostgresError: column "title_card_url" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42703',
+  position: '34',
+  file: 'parse_relation.c',
+  line: '3665',
+  routine: 'errorMissingColumn'
+}
+[2025-08-18T00:17:17.791Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 500 138ms
+12:17:17 AM [express] GET /api/organizations 500 in 138ms :: {"error":"Failed to list organizations",…
