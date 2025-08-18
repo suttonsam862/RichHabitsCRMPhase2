@@ -1,10 +1,12 @@
 
 import { Router } from "express";
 import { db } from "../db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { organizations } from "../../shared/schema";
 import { z } from "zod";
 import { CreateOrganizationSchema } from "../../shared/supabase-schema";
+import { generateTitleCard, replaceTitleCard } from "../lib/tiles";
+import { getLogoPalette } from "../lib/palette";
 
 const router = Router();
 
@@ -26,9 +28,12 @@ router.get("/", async (_req, res, next) => {
       email: organizations.email,
       notes: organizations.notes,
       logo_url: organizations.logo_url,
+      title_card_url: organizations.title_card_url,
       is_business: organizations.is_business,
       universal_discounts: organizations.universal_discounts,
       created_at: organizations.created_at,
+      brand_primary: organizations.brand_primary,
+      brand_secondary: organizations.brand_secondary,
     }).from(organizations).orderBy(sql`created_at DESC NULLS LAST`);
     console.log("✅ Organizations query successful. Found", rows.length, "organizations");
     console.log("🔍 Sample organization data:", rows.slice(0, 1));
@@ -59,6 +64,8 @@ router.post("/", async (req, res) => {
       logo_url: input.logoUrl ?? null,
       is_business: input.isBusiness ?? false,
       universal_discounts: input.universalDiscounts ?? {}, // Always coalesce to empty object, never null
+      brand_primary: input.brandPrimary ?? null,
+      brand_secondary: input.brandSecondary ?? null,
     };
 
     console.log("🔍 Creating organization with data:", row);
@@ -70,6 +77,7 @@ router.post("/", async (req, res) => {
         id: organizations.id,
         name: organizations.name,
         logo_url: organizations.logo_url,
+        title_card_url: organizations.title_card_url,
         state: organizations.state,
         address: organizations.address,
         phone: organizations.phone,
@@ -78,6 +86,8 @@ router.post("/", async (req, res) => {
         is_business: organizations.is_business,
         universal_discounts: organizations.universal_discounts,
         created_at: organizations.created_at,
+        brand_primary: organizations.brand_primary,
+        brand_secondary: organizations.brand_secondary,
       });
       
       // Try to get user ID from various sources
@@ -108,6 +118,32 @@ router.post("/", async (req, res) => {
         console.log("ℹ️ No user ID available, skipping owner role assignment");
       }
       
+      // Generate title card if we have logo and brand colors, but no existing title card
+      if (org.logo_url && row.brand_primary && row.brand_secondary && !org.title_card_url) {
+        try {
+          console.log("🎨 Generating title card for new organization...");
+          const logoColors = await getLogoPalette(org.logo_url);
+          const titleCardUrl = await generateTitleCard({
+            orgId: org.id,
+            teamName: org.name,
+            logoUrl: org.logo_url,
+            brandPrimaryHex: row.brand_primary,
+            brandSecondaryHex: row.brand_secondary
+          });
+
+          // Update the organization with the title card URL
+          await tx.update(organizations)
+            .set({ title_card_url: titleCardUrl })
+            .where(eq(organizations.id, org.id));
+          
+          org.title_card_url = titleCardUrl;
+          console.log("✅ Title card generated and saved:", titleCardUrl);
+        } catch (titleError) {
+          console.error("⚠️ Could not generate title card:", titleError);
+          // Don't fail the transaction, organization creation is more important
+        }
+      }
+
       return org;
     });
     
@@ -126,6 +162,58 @@ router.post("/", async (req, res) => {
       error: "Internal server error",
       code: err.code,
       detail: err.detail || err.message
+    });
+  }
+});
+
+/** Replace/regenerate title card for an organization (admin only) */
+router.post("/:id/replace-title-card", async (req, res) => {
+  try {
+    const orgId = req.params.id;
+    
+    // Get the organization details
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
+    if (!org) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+    
+    if (!org.logo_url || !org.brand_primary || !org.brand_secondary) {
+      return res.status(400).json({ 
+        error: "Cannot generate title card: missing logo or brand colors" 
+      });
+    }
+    
+    console.log("🎨 Replacing title card for organization:", org.name);
+    
+    try {
+      const titleCardUrl = await replaceTitleCard({
+        orgId: org.id,
+        teamName: org.name,
+        logoUrl: org.logo_url,
+        brandPrimaryHex: org.brand_primary,
+        brandSecondaryHex: org.brand_secondary
+      });
+      
+      // Update the organization with the new title card URL
+      const [updated] = await db.update(organizations)
+        .set({ title_card_url: titleCardUrl })
+        .where(eq(organizations.id, orgId))
+        .returning();
+      
+      console.log("✅ Title card replaced successfully:", titleCardUrl);
+      return res.json(updated);
+    } catch (genError: any) {
+      console.error("❌ Error replacing title card:", genError);
+      return res.status(500).json({ 
+        error: "Failed to generate title card",
+        details: genError.message 
+      });
+    }
+  } catch (err: any) {
+    console.error("❌ Error in replace title card:", err);
+    return res.status(500).json({ 
+      error: "Internal server error",
+      details: err.message
     });
   }
 });

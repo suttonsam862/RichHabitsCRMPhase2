@@ -3,7 +3,7 @@ import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { org_sports } from "../../shared/schema";
-import { sbAdmin as supabaseAdmin } from '../lib/supabaseAdmin';
+import { sb as supabaseAdmin } from '../lib/supabaseAdmin';
 
 const router = Router();
 

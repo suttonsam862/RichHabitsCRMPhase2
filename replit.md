@@ -3,6 +3,17 @@
 ## Overview
 A comprehensive React-TypeScript business management system for Rich Habits Custom Clothing, featuring robust organization management, order tracking, and enhanced data validation.
 
+## Recent Changes (August 18, 2025)
+
+### Title Card Generation System Implementation
+Successfully integrated automatic title card generation for organizations:
+- **OpenAI Integration**: Configured DALL-E 2 API for generating 1024x512 PNG title cards
+- **Palette Extraction**: Initially attempted node-vibrant integration, simplified to default palette for ESM compatibility
+- **Supabase Storage**: Created 'org-tiles' bucket for storing generated title cards with public URLs
+- **Database Schema**: Added title_card_url, brand_primary, and brand_secondary columns to organizations table
+- **Testing**: Validated complete title card generation pipeline with simple-title-test.ts script
+- **API Status**: Title card generation working via OpenAI API, resizing with Sharp, and storing in Supabase
+
 ## Recent Changes (August 17, 2025)
 
 ### Extended Vite Framework Implementation

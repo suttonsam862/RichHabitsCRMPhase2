@@ -40,11 +40,21 @@ export function OrganizationCard({
       className="flex-shrink-0 w-80"
     >
       <div 
-        className={`${getCardClass()} cursor-pointer h-48 group`}
+        className={`${getCardClass()} cursor-pointer h-48 group relative overflow-hidden`}
         onClick={onClick}
         data-testid={`card-organization-${organization.id}`}
+        style={organization.title_card_url ? {
+          backgroundImage: `url(${organization.title_card_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
       >
-        <div className="neon-card-inner h-full flex flex-col justify-between">
+        {/* Overlay for readability when title card is present */}
+        {organization.title_card_url && (
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        )}
+        
+        <div className="neon-card-inner h-full flex flex-col justify-between relative z-10">
           {/* Header */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">

@@ -66,6 +66,8 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
         logoUrl: data.logo_url || "", // camelCase for API
         isBusiness: data.is_business || false, // camelCase boolean
         universalDiscounts: {}, // Always send empty object, never null
+        brandPrimary: data.brand_primary || "", // Brand primary color
+        brandSecondary: data.brand_secondary || "", // Brand secondary color
       };
 
       console.log("🔍 Sending organization payload:", payload);

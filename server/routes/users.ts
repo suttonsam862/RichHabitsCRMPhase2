@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
-import { sbAdmin as supabaseAdmin } from '../lib/supabaseAdmin';
+import { sb as supabaseAdmin } from '../lib/supabaseAdmin';
 import { getRoleIdBySlug, ensureRoleExists } from '../lib/roles';
 
 const router = Router();

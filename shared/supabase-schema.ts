@@ -5,6 +5,7 @@ export interface Organization {
   id: string;
   name: string;
   logo_url?: string;
+  title_card_url?: string;
   state: string;
   address?: string;
   phone?: string;
@@ -13,6 +14,9 @@ export interface Organization {
   updated_at: string;
   notes?: string;
   universal_discounts?: Record<string, any>;
+  is_business?: boolean;
+  brand_primary?: string;
+  brand_secondary?: string;
 }
 
 export interface Sport {
@@ -76,6 +80,8 @@ export const CreateOrganizationSchema = z.object({
   logoUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)), // client camelCase
   isBusiness: z.coerce.boolean().optional().default(false),
   universalDiscounts: z.any().default({}).transform(val => val === null || val === undefined ? {} : val), // we store as JSONB; accept object/array/null but transform to {}
+  brandPrimary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
+  brandSecondary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
 });
 
 // Keep legacy schema for backward compatibility
