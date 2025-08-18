@@ -337,7 +337,23 @@ router.get("/", async (req, res) => {
     const orderDirection = order === "asc" ? asc : desc;
     
     const items = await db
-      .select()
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        state: organizations.state,
+        logo_url: organizations.logo_url,
+        title_card_url: organizations.title_card_url,
+        brand_primary: organizations.brand_primary,
+        brand_secondary: organizations.brand_secondary,
+        is_business: organizations.is_business,
+        created_at: organizations.created_at,
+        updated_at: organizations.updated_at,
+        address: organizations.address,
+        phone: organizations.phone,
+        email: organizations.email,
+        notes: organizations.notes,
+        universal_discounts: organizations.universal_discounts
+      })
       .from(organizations)
       .where(whereClause)
       .orderBy(orderDirection(orderColumn))
@@ -370,7 +386,23 @@ router.get("/:id", async (req, res) => {
   
   try {
     const [org] = await db
-      .select()
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        state: organizations.state,
+        logo_url: organizations.logo_url,
+        title_card_url: organizations.title_card_url,
+        brand_primary: organizations.brand_primary,
+        brand_secondary: organizations.brand_secondary,
+        is_business: organizations.is_business,
+        created_at: organizations.created_at,
+        updated_at: organizations.updated_at,
+        address: organizations.address,
+        phone: organizations.phone,
+        email: organizations.email,
+        notes: organizations.notes,
+        universal_discounts: organizations.universal_discounts
+      })
       .from(organizations)
       .where(eq(organizations.id, id))
       .limit(1);
