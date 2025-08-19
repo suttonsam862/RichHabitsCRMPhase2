@@ -9,6 +9,7 @@ import Home from "./pages/index";
 import Organizations from "./pages/organizations-enhanced";
 import OrderDetails from "./pages/order-details";
 import Users from "./pages/users";
+import QuoteGenerator from "./pages/QuoteGenerator";
 import NotFound from "./pages/not-found";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,9 @@ function Router() {
             
             {/* Users management page */}
             <Route path="/users" component={Users} />
+
+            {/* Quote Generator page */}
+            <Route path="/quote" component={QuoteGenerator} />
 
             {/* Order details page */}
             <Route path="/orders/:id" component={OrderDetails} />

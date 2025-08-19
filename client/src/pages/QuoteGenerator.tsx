@@ -1,0 +1,279 @@
+import { useMemo, useState } from "react";
+
+type Item = { id: string; name: string; price: number; qty: number };
+const currency = (n: number) => n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+
+export default function QuoteGenerator() {
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const [org, setOrg] = useState({ toName: "", toContact: "", toEmail: "", toPhone: "", toAddress: "" });
+  const [quoteMeta, setQuoteMeta] = useState({
+    quoteNo: "Q-" + Math.floor(Math.random() * 100000),
+    date: new Date().toISOString().slice(0, 10),
+    notes: "",
+    taxPct: 0,
+    discount: 0,
+  });
+  const [items, setItems] = useState<Item[]>([{ id: crypto.randomUUID(), name: "", price: 0, qty: 1 }]);
+
+  const totals = useMemo(() => {
+    const subtotal = items.reduce((s, it) => s + (it.price || 0) * (it.qty || 0), 0);
+    const discount = Number(quoteMeta.discount) || 0;
+    const tax = ((Number(quoteMeta.taxPct) || 0) / 100) * Math.max(subtotal - discount, 0);
+    const total = Math.max(subtotal - discount, 0) + tax;
+    return { subtotal, discount, tax, total };
+  }, [items, quoteMeta]);
+
+  const updateItem = (id: string, patch: Partial<Item>) => setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  const addItem = () => setItems((arr) => [...arr, { id: crypto.randomUUID(), name: "", price: 0, qty: 1 }]);
+  const removeItem = (id: string) => setItems((arr) => (arr.length > 1 ? arr.filter((it) => it.id !== id) : arr));
+  const onLogoPick = (f?: File) => { if (!f) return; const r = new FileReader(); r.onload = () => setLogoDataUrl(String(r.result)); r.readAsDataURL(f); };
+
+  return (
+    <div className="min-h-screen bg-neutral-900 text-white p-6 print:p-0">
+      <div className="max-w-5xl mx-auto mb-4 flex flex-wrap gap-2 print:hidden">
+        <label className="inline-flex items-center gap-2 text-sm">
+          <span className="opacity-80">Upload Logo</span>
+          <input 
+            type="file" 
+            accept="image/*,.svg" 
+            onChange={(e) => onLogoPick(e.target.files?.[0])} 
+            data-testid="input-logo-upload"
+          />
+        </label>
+        <button 
+          onClick={() => window.print()} 
+          className="ml-auto px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500"
+          data-testid="button-export-pdf"
+        >
+          Export / Print PDF
+        </button>
+      </div>
+
+      <div className="max-w-5xl mx-auto bg-white text-black rounded-lg shadow print:shadow-none print:rounded-none">
+        <div className="p-8">
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex items-center gap-4">
+              {logoDataUrl ? 
+                <img src={logoDataUrl} alt="Logo" className="h-16 w-16 object-contain" data-testid="img-company-logo" /> :
+                <div className="h-16 w-16 bg-neutral-200 grid place-items-center text-xs text-neutral-500" data-testid="placeholder-logo">LOGO</div>
+              }
+              <div>
+                <h1 className="text-2xl font-semibold" data-testid="text-page-title">Quote Generator</h1>
+                <p className="text-sm text-neutral-600" data-testid="text-company-subtitle">Rich Habits • Official Quote</p>
+              </div>
+            </div>
+            <div className="text-sm text-right">
+              <div className="flex gap-2 items-center justify-end">
+                <span className="text-neutral-500">Quote #</span>
+                <input 
+                  value={quoteMeta.quoteNo} 
+                  onChange={(e) => setQuoteMeta({ ...quoteMeta, quoteNo: e.target.value })} 
+                  className="border px-2 py-1 w-40" 
+                  data-testid="input-quote-number"
+                />
+              </div>
+              <div className="flex gap-2 items-center justify-end mt-1">
+                <span className="text-neutral-500">Date</span>
+                <input 
+                  type="date" 
+                  value={quoteMeta.date} 
+                  onChange={(e) => setQuoteMeta({ ...quoteMeta, date: e.target.value })} 
+                  className="border px-2 py-1" 
+                  data-testid="input-quote-date"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <div>
+              <h2 className="font-medium mb-2">Bill To / Organization</h2>
+              <div className="space-y-2 text-sm">
+                <input 
+                  placeholder="Organization Name" 
+                  value={org.toName} 
+                  onChange={(e) => setOrg({ ...org, toName: e.target.value })} 
+                  className="w-full border px-3 py-2" 
+                  data-testid="input-org-name"
+                />
+                <input 
+                  placeholder="Contact Person" 
+                  value={org.toContact} 
+                  onChange={(e) => setOrg({ ...org, toContact: e.target.value })} 
+                  className="w-full border px-3 py-2" 
+                  data-testid="input-contact-person"
+                />
+                <input 
+                  placeholder="Email" 
+                  value={org.toEmail} 
+                  onChange={(e) => setOrg({ ...org, toEmail: e.target.value })} 
+                  className="w-full border px-3 py-2" 
+                  data-testid="input-contact-email"
+                />
+                <input 
+                  placeholder="Phone" 
+                  value={org.toPhone} 
+                  onChange={(e) => setOrg({ ...org, toPhone: e.target.value })} 
+                  className="w-full border px-3 py-2" 
+                  data-testid="input-contact-phone"
+                />
+                <textarea 
+                  placeholder="Address" 
+                  value={org.toAddress} 
+                  onChange={(e) => setOrg({ ...org, toAddress: e.target.value })} 
+                  className="w-full border px-3 py-2 h-20 resize-y" 
+                  data-testid="input-contact-address"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 content-start">
+              <label className="text-sm">
+                <div className="text-neutral-600 mb-1">Tax %</div>
+                <input 
+                  type="number" 
+                  min={0} 
+                  step="0.01" 
+                  value={quoteMeta.taxPct} 
+                  onChange={(e) => setQuoteMeta({ ...quoteMeta, taxPct: Number(e.target.value) })} 
+                  className="w-full border px-3 py-2" 
+                  data-testid="input-tax-percent"
+                />
+              </label>
+              <label className="text-sm">
+                <div className="text-neutral-600 mb-1">Discount ($)</div>
+                <input 
+                  type="number" 
+                  min={0} 
+                  step="0.01" 
+                  value={quoteMeta.discount} 
+                  onChange={(e) => setQuoteMeta({ ...quoteMeta, discount: Number(e.target.value) })} 
+                  className="w-full border px-3 py-2" 
+                  data-testid="input-discount-amount"
+                />
+              </label>
+              <label className="text-sm col-span-2">
+                <div className="text-neutral-600 mb-1">Notes / Terms</div>
+                <textarea 
+                  value={quoteMeta.notes} 
+                  onChange={(e) => setQuoteMeta({ ...quoteMeta, notes: e.target.value })} 
+                  className="w-full border px-3 py-2 h-24 resize-y" 
+                  data-testid="input-quote-notes"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="font-medium mb-2">Line Items</h2>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-neutral-100">
+                  <tr className="text-left">
+                    <th className="p-3 w-[50%]">Item</th>
+                    <th className="p-3 w-[15%]">Price</th>
+                    <th className="p-3 w-[15%]">Qty</th>
+                    <th className="p-3 w-[15%]">Amount</th>
+                    <th className="p-3 print:hidden"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((it, index) => {
+                    const amount = (Number(it.price) || 0) * (Number(it.qty) || 0);
+                    return (
+                      <tr key={it.id} className="border-t">
+                        <td className="p-2">
+                          <input 
+                            placeholder="Describe the item…" 
+                            value={it.name} 
+                            onChange={(e) => updateItem(it.id, { name: e.target.value })} 
+                            className="w-full border px-3 py-2" 
+                            data-testid={`input-item-name-${index}`}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input 
+                            type="number" 
+                            min={0} 
+                            step="0.01" 
+                            value={it.price} 
+                            onChange={(e) => updateItem(it.id, { price: Number(e.target.value) })} 
+                            className="w-full border px-3 py-2" 
+                            data-testid={`input-item-price-${index}`}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input 
+                            type="number" 
+                            min={0} 
+                            step="1" 
+                            value={it.qty} 
+                            onChange={(e) => updateItem(it.id, { qty: Number(e.target.value) })} 
+                            className="w-full border px-3 py-2" 
+                            data-testid={`input-item-qty-${index}`}
+                          />
+                        </td>
+                        <td className="p-2 align-middle" data-testid={`text-item-amount-${index}`}>{currency(amount)}</td>
+                        <td className="p-2 print:hidden">
+                          <button 
+                            onClick={() => removeItem(it.id)} 
+                            className="px-3 py-1 rounded border hover:bg-neutral-50" 
+                            title="Remove"
+                            data-testid={`button-remove-item-${index}`}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-between items-center mt-3 print:hidden">
+              <button 
+                onClick={addItem} 
+                className="px-4 py-2 rounded-lg border hover:bg-neutral-50"
+                data-testid="button-add-item"
+              >
+                + Add Line
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div />
+            <div className="ml-auto w-full md:w-3/4">
+              <div className="flex justify-between py-1">
+                <span className="text-neutral-600">Subtotal</span>
+                <span data-testid="text-subtotal">{currency(totals.subtotal)}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-neutral-600">Discount</span>
+                <span data-testid="text-discount">-{currency(totals.discount || 0)}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-neutral-600">Tax</span>
+                <span data-testid="text-tax">{currency(totals.tax)}</span>
+              </div>
+              <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-lg">
+                <span>Total</span>
+                <span data-testid="text-total">{currency(totals.total)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-xs text-neutral-500 mt-8">This quote is an estimate based on the information provided and is subject to change.</div>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          body { background: white; }
+          .print\\:hidden { display: none !important; }
+          @page { size: A4; margin: 18mm; }
+        }
+      `}</style>
+    </div>
+  );
+}
