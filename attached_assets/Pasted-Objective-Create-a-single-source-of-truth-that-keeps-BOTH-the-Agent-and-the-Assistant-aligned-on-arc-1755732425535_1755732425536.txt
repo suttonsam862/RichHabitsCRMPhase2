@@ -1,0 +1,98 @@
+Objective
+Create a single source of truth that keeps BOTH the Agent and the Assistant aligned on architecture, file locations, naming, and change protocol—so future prompts don’t drift or “guess.” Add lightweight guardrails and a repo map to make locations obvious before any code edits. Non-destructive.
+
+Deliverables (new/updated files)
+1) docs/ARCHITECTURE_GUIDE.md  ← the master guide (see detailed outline below)
+2) docs/CHANGE_PROTOCOL.md     ← step-by-step checklist to apply before/after any change
+3) docs/ROUTE_SURFACE.md       ← current API surface (generated via tool below)
+4) scripts/repo-map.ts         ← prints structured repo tree with key roots
+5) scripts/route-inventory.ts  ← lists mounted Express routes/methods (if not present yet)
+6) scripts/preflight.ts        ← runs map + route inventory + typecheck quickly
+7) package.json scripts: 
+   - "map": "ts-node scripts/repo-map.ts"
+   - "routes:list": "ts-node scripts/route-inventory.ts"
+   - "preflight": "ts-node scripts/preflight.ts"
+   - "check": "npm run typecheck && npm run lint && npm run preflight"
+8) .editorconfig (if missing): normalize line endings/indent
+9) .eslintrc.* update: add small rule set to prevent cross-root imports into client/src and forbid writing to client/_legacy/*
+10) CODEOWNERS (optional if repo supports): set docs/ and scripts/ owned by “@project-maintainers” (placeholder)
+
+Repository truths (encode these in the docs)
+- Canonical client app: client/src
+- Server API: server/
+- Shared DTOs/types: shared/
+- Express owns /api/*; Vite serves assets + SPA fallback only (never handles /api/*)
+- Router choice on client: React Router v6 (Wouter-era components remain, routed through RRv6)
+- Typed API SDK on client (client/src/lib/api-sdk.ts) is the only way to call APIs
+- Env contract validated at boot (server/lib/env.ts), client API base at client/src/lib/env.ts
+
+A) Implement scripts/repo-map.ts (read-only)
+- Node/TS script that prints a JSON (and Markdown) map of:
+  - Top-level dirs: client/, server/, shared/, tools/, scripts/, docs/
+  - Client subdirs: src/{features,routes,components,layouts,auth,lib,ui}
+  - Server subdirs: routes, services, db, middleware, lib
+  - Shared subdirs: dtos, schemas, constants, index.ts
+- Output:
+  - tmp/repo-map.json (machine-readable)
+  - docs/REPO_MAP.md (Markdown tree with short descriptions)
+- Ignore node_modules, dist/build, .git, client/_legacy
+
+B) Implement scripts/route-inventory.ts (read-only)
+- If not already present, add a TS script that loads server/index.ts (or parses it) to list ALL mounted routes:
+  - For each router: basePath + methods + endpoints (GET/POST/PUT/DELETE)
+- Output to docs/ROUTE_SURFACE.md as a table, and JSON to tmp/route-surface.json
+- The script must refuse to report any non-/api mounts as API (only tables under /api/*)
+
+C) Implement scripts/preflight.ts
+- Runs in order:
+  1) repo-map.ts → docs/REPO_MAP.md
+  2) route-inventory.ts → docs/ROUTE_SURFACE.md
+  3) Short typecheck call ("tsc -p . --noEmit" or existing "typecheck")
+- Prints a concise success/fail summary.
+
+D) Update ESLint for guardrails (low friction)
+- Disallow imports in client/src that reference "../src" at project root or client/_legacy/*
+- Prefer "@/*" alias in client
+- Add a comment explaining how to temporarily bypass in rare migrations (do not enforce on server)
+
+E) Write docs/ARCHITECTURE_GUIDE.md (full content)
+Include the following sections and fill them based on the current repo:
+1) High-level Mental Model
+   - One-liners for client/server/shared, single-page app, API ownership
+2) Directory Layout & Purpose
+   - A table of the canonical dirs and what lives there
+3) Routing Strategy
+   - Client: React Router v6 with routes.tsx as the single route table; Wouter-era components are wrapped/adapted
+   - Server: Express; /api/* only; Vite/static fallback never handles /api/*
+   - Print/No-chrome routes pattern (PrintLayout)
+4) Data Contracts
+   - Shared DTOs (zod) under shared/, client SDK uses them to parse responses
+   - dbToDto / dtoToDb mapping rules (snake_case⇄camelCase)
+5) Environment & Config
+   - server/lib/env.ts (zod-validated) required keys
+   - client/src/lib/env.ts API_BASE rules
+6) Change Rules (Do/Don’t)
+   - DO: add endpoints under server/routes/<domain>, wire through services, update API-SDK and ROUTE_SURFACE
+   - DON’T: call fetch() in React components directly; DON’T mount /api/* anywhere but Express
+7) Testing & Check Gates
+   - Typecheck, lint, route inventory; how to run "npm run check"
+8) Glossary & Conventions
+   - Naming, file suffixes, component/page organization, hooks naming
+9) Onboarding TL;DR
+   - 10 bullets an Agent/Assistant must read before any change
+
+F) Write docs/CHANGE_PROTOCOL.md (the working agreement)
+Sections:
+1) Before You Touch Code
+   - Run: npm run check (or at least preflight)
+   - Open docs/REPO_MAP.md and ROUTE_SURFACE.md
+   - Confirm the file you’re about to edit exists where the guide says it should
+2) When You Implement
+   - If adding API: create server/routes/<domain>/index.ts, export Router, mount under /api/<domain>
+   - If adding UI page: register a route in client/src/routes.tsx; don’t create another router entry point
+   - If touching data: update shared DTO + client SDK together; add dbToDto/dtoToDb mapping if server is involved
+3) After You Implement
+   - Update docs/API-ROUTES.md and ROUTE_SURFACE.md (run routes:list)
+   - Run npm run check
+   - If files moved, re-run npm run map and commit docs/REPO_MAP.md
+4) PR Template (includ

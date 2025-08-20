@@ -1,0 +1,382 @@
+{
+  "generatedAt": "2025-08-20T23:30:17.208Z",
+  "mounts": [
+    {
+      "basePath": "/api",
+      "routerFile": "server/routes/api.ts",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/health",
+          "handler": "handler",
+          "file": "server/routes/api.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "USE",
+          "path": "/api/organizations",
+          "handler": "handler",
+          "file": "server/routes/api.ts",
+          "implemented": true,
+          "validation": false
+        },
+        {
+          "method": "USE",
+          "path": "/api/sales",
+          "handler": "handler",
+          "file": "server/routes/api.ts",
+          "implemented": true,
+          "validation": false
+        },
+        {
+          "method": "USE",
+          "path": "/api/orders",
+          "handler": "handler",
+          "file": "server/routes/api.ts",
+          "implemented": true,
+          "validation": false
+        },
+        {
+          "method": "USE",
+          "path": "/api/manufacturing",
+          "handler": "handler",
+          "file": "server/routes/api.ts",
+          "implemented": true,
+          "validation": false
+        },
+        {
+          "method": "USE",
+          "path": "/api/catalog",
+          "handler": "handler",
+          "file": "server/routes/api.ts",
+          "implemented": true,
+          "validation": false
+        }
+      ]
+    },
+    {
+      "basePath": "/api/catalog",
+      "routerFile": "server/routes/catalog/index.ts",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/catalog",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/:id",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/catalog/:id",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/catalog/:id/status",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": true,
+          "validation": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/:id/images",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/catalog/:id",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/:id/variants",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/:id/variants",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": true,
+          "validation": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/analytics/summary",
+          "handler": "handler",
+          "file": "server/routes/catalog/index.ts",
+          "implemented": false,
+          "validation": false
+        }
+      ]
+    },
+    {
+      "basePath": "/api/manufacturing",
+      "routerFile": "server/routes/manufacturing/index.ts",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/manufacturing/po",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/manufacturing/po/:id",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/manufacturing/po",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/manufacturing/po/:id",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/manufacturing/po/:id/milestones/:milestoneId",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": true,
+          "validation": true
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/manufacturing/po/:id/status",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": true,
+          "validation": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/manufacturing/analytics/dashboard",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/manufacturing/vendors/performance",
+          "handler": "handler",
+          "file": "server/routes/manufacturing/index.ts",
+          "implemented": false,
+          "validation": false
+        }
+      ]
+    },
+    {
+      "basePath": "/api/orders",
+      "routerFile": "server/routes/orders/index.ts",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/orders",
+          "handler": "handler",
+          "file": "server/routes/orders/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/orders/:id",
+          "handler": "handler",
+          "file": "server/routes/orders/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/orders",
+          "handler": "handler",
+          "file": "server/routes/orders/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/orders/:id",
+          "handler": "handler",
+          "file": "server/routes/orders/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/orders/:id/status",
+          "handler": "handler",
+          "file": "server/routes/orders/index.ts",
+          "implemented": true,
+          "validation": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/orders/:id/cancel",
+          "handler": "handler",
+          "file": "server/routes/orders/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/orders/analytics/summary",
+          "handler": "handler",
+          "file": "server/routes/orders/index.ts",
+          "implemented": false,
+          "validation": false
+        }
+      ]
+    },
+    {
+      "basePath": "/api/organizations",
+      "routerFile": "server/routes/organizations/index.ts",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/organizations",
+          "handler": "handler",
+          "file": "server/routes/organizations/index.ts",
+          "implemented": true,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/organizations/:id",
+          "handler": "handler",
+          "file": "server/routes/organizations/index.ts",
+          "implemented": true,
+          "validation": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/organizations",
+          "handler": "handler",
+          "file": "server/routes/organizations/index.ts",
+          "implemented": true,
+          "validation": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/organizations/:id",
+          "handler": "handler",
+          "file": "server/routes/organizations/index.ts",
+          "implemented": true,
+          "validation": true
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/organizations/:id",
+          "handler": "handler",
+          "file": "server/routes/organizations/index.ts",
+          "implemented": true,
+          "validation": false
+        }
+      ]
+    },
+    {
+      "basePath": "/api/sales",
+      "routerFile": "server/routes/sales/index.ts",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/sales",
+          "handler": "handler",
+          "file": "server/routes/sales/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/sales/:id",
+          "handler": "handler",
+          "file": "server/routes/sales/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/sales",
+          "handler": "handler",
+          "file": "server/routes/sales/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/sales/:id",
+          "handler": "handler",
+          "file": "server/routes/sales/index.ts",
+          "implemented": false,
+          "validation": true
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/sales/:id",
+          "handler": "handler",
+          "file": "server/routes/sales/index.ts",
+          "implemented": false,
+          "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/sales/analytics/dashboard",
+          "handler": "handler",
+          "file": "server/routes/sales/index.ts",
+          "implemented": false,
+          "validation": false
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalRoutes": 42,
+    "implemented": 15,
+    "validated": 15
+  }
+}
