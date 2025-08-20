@@ -1,0 +1,40 @@
+Task: Add a local, durable saving mechanism and a History subpage for the Quote Generator with load/duplicate/delete. No backend/database; use browser storage.
+
+Scope:
+- Files:
+  - src/pages/QuoteGenerator.tsx (extend current page)
+  - src/pages/QuoteHistory.tsx (new)
+  - src/App.tsx or routes file (add route /quotes/history)
+  - src/lib/quoteStore.ts (new tiny storage util)
+- Storage design:
+  - Use localStorage only. Keys:
+    - "quote.history.v1" → array of QuoteRecord { id, createdAt, updatedAt, title, org, items, meta, logoDataUrl, total }
+    - "quote.logo.v1" → dataURL for default logo
+  - Add helper in quoteStore.ts:
+    - loadHistory(), saveHistory(list), upsertQuote(record), getQuote(id), deleteQuote(id)
+- Quote schema:
+  - id: string (uuid), title: string (defaults to org.toName || "Untitled Quote")
+  - org: { toName, toContact, toEmail, toPhone, toAddress }
+  - items: [{ name, price, qty }]
+  - meta: { quoteNo, date, taxPct, discount, notes }
+  - logoDataUrl?: string | null
+  - totals: { subtotal, discount, tax, total }
+- QuoteGenerator.tsx changes:
+  - Add "Save Quote" button (print:hidden) → creates/updates QuoteRecord in localStorage, shows toast.
+  - Add "Save As New" (duplicates with new id + timestamp).
+  - Add "Open History" button linking to /quotes/history.
+  - On mount: if URL has ?id=<quoteId>, load that quote and hydrate state.
+  - Auto-save (debounced 1s) to update existing record if it has an id.
+  - When user uploads a logo, also persist it under "quote.logo.v1" as default; pre-fill logoDataUrl from it on new quotes.
+- New page src/pages/QuoteHistory.tsx:
+  - List saved quotes (most recent first) with: Title, Quote #, Date, Total, UpdatedAt.
+  - Actions per row: Open (navigates /quote?id=...), Duplicate, Delete (with confirm), Print (opens generator in new tab with id).
+  - Controls: "New Quote" (go to /quote), "Import JSON" (drop file → merge), "Export All" (download JSON).
+- Non-destructive:
+  - Do not change existing behavior if user never clicks Save. History is optional UX.
+
+Deliverables:
+- New: src/pages/QuoteHistory.tsx, src/lib/quoteStore.ts
+- Edits: src/pages/QuoteGenerator.tsx, routes to add /quotes/history
+- Unified diffs for all files
+- Short note in console/readme describing storage keys and how to import/export
