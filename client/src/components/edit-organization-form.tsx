@@ -16,16 +16,29 @@ interface EditOrganizationFormProps {
   onCancel: () => void;
 }
 
+// Create a partial schema for updates
+const updateOrganizationSchema = insertOrganizationSchema.partial();
+
+type UpdateOrganizationData = {
+  name?: string;
+  state?: string;
+  logoUrl?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+};
+
 export function EditOrganizationForm({ organization, onSuccess, onCancel }: EditOrganizationFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const form = useForm<InsertOrganization>({
-    resolver: zodResolver(insertOrganizationSchema.partial()),
+  const form = useForm<UpdateOrganizationData>({
+    resolver: zodResolver(updateOrganizationSchema),
     defaultValues: {
       name: organization.name,
-      state: organization.state,
-      logo_url: organization.logo_url || "",
+      state: organization.state || "",
+      logoUrl: organization.logo_url || "",
       address: organization.address || "",
       phone: organization.phone || "",
       email: organization.email || "",
@@ -34,15 +47,15 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<InsertOrganization>) =>
+    mutationFn: (data: UpdateOrganizationData) =>
       apiRequest(`/api/organizations/${organization.id}`, {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organization.id] });
+      queryClient.invalidateQueries({ queryKey: ['org', organization.id] });
       toast({
         title: "Organization updated",
         description: "The organization has been successfully updated.",
@@ -58,9 +71,9 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     },
   });
 
-  const onSubmit = (data: InsertOrganization) => {
-    // Clean up empty strings to null for optional fields
-    const cleanedData = {
+  const onSubmit = (data: UpdateOrganizationData) => {
+    // Clean up empty strings to undefined for optional fields
+    const cleanedData: any = {
       ...data,
       logoUrl: data.logoUrl || undefined,
       address: data.address || undefined,
@@ -116,7 +129,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
 
         <FormField
           control={form.control}
-          name="logo_url"
+          name="logoUrl"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Logo URL</FormLabel>

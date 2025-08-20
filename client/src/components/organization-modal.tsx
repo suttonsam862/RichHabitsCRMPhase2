@@ -209,7 +209,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
               </div>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto p-6 pt-4">
+            <div className="flex-1 max-h-[75vh] overflow-y-auto p-6 pt-4">
               <Tabs defaultValue="general" className="space-y-4">
                 <TabsList className="grid w-full grid-cols-5 glass">
                   <TabsTrigger value="general" data-testid="tab-general">
