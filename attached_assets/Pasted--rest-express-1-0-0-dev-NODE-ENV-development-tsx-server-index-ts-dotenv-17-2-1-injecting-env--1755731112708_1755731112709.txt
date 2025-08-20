@@ -1,0 +1,127 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (3) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+11:04:45 PM [express] Server running on 0.0.0.0:5000
+11:04:45 PM [express] 🔍 Testing database connection...
+[2025-08-20T23:04:45.915Z] GET / -> 404 7ms
+Re-optimizing dependencies because lockfile has changed
+11:04:46 PM [express] ✅ Database connection successful!
+11:04:46 PM [{"current_database":"postgres","current_user":"postgres","version":"PostgreSQL 15.8 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit"}] 📊 Database info:
+11:04:46 PM [express] 🔍 Testing organizations table access...
+11:04:46 PM [5] ✅ Organizations table accessible. Row count:
+11:04:46 PM [express] 🔍 Ensuring required roles exist...
+🔍 Checking if required roles exist...
+✅ Owner role already exists
+✅ Owner role verified: {
+  id: '5a8151fd-6894-416f-a35d-479494fc07f7',
+  slug: 'owner',
+  name: 'Owner'
+}
+11:04:46 PM [express] 🔄 Auto-pulling database schema...
+11:04:46 PM [express] ⚠️ Schema auto-pull temporarily disabled during architectural refactor
+11:04:47 PM [vite] Serving SPA route: /
+[2025-08-20T23:04:47.576Z] GET / -> 200 33ms
+[2025-08-20T23:04:48.103Z] GET /src/main.tsx?v=V8xO8oIxJxTGf-M9Q7I2Q -> 200 1ms
+[2025-08-20T23:04:48.130Z] GET /@react-refresh -> 304 26ms
+[2025-08-20T23:04:48.142Z] GET /@vite/client -> 200 58ms
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2025-08-20T23:04:48.670Z] GET /src/App.tsx?v=V8xO8oIxJxTGf-M9Q7I2Q -> 200 4ms
+[2025-08-20T23:04:48.786Z] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs -> 304 0ms
+[2025-08-20T23:04:49.360Z] GET /src/index.css?v=V8xO8oIxJxTGf-M9Q7I2Q -> 200 679ms
+[2025-08-20T23:04:49.369Z] GET /src/routes.tsx -> 200 1ms
+[2025-08-20T23:04:49.479Z] GET /src/components/ui/tooltip.tsx -> 200 1ms
+[2025-08-20T23:04:49.530Z] GET /src/components/ui/toaster.tsx -> 200 1ms
+[2025-08-20T23:04:49.549Z] GET /src/lib/queryClient.ts -> 200 0ms
+[2025-08-20T23:04:49.560Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=2982cb77 -> 200 895ms
+[2025-08-20T23:04:49.561Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-dom_client.js?v=6f78c221 -> 200 884ms
+[2025-08-20T23:04:49.563Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=b269391e -> 200 670ms
+[2025-08-20T23:04:49.564Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-helmet-async.js?v=7e76b4f7 -> 200 196ms
+[2025-08-20T23:04:49.605Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react.js?v=2982cb77 -> 200 1ms
+[2025-08-20T23:04:49.608Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=38267605 -> 200 2ms
+[2025-08-20T23:04:49.631Z] GET /src/layouts/AppLayout.tsx -> 200 1ms
+[2025-08-20T23:04:49.653Z] GET /src/components/ErrorBoundary.tsx -> 200 1ms
+[2025-08-20T23:04:49.657Z] GET /src/layouts/PrintLayout.tsx -> 200 1ms
+[2025-08-20T23:04:49.659Z] GET /src/lib/paths.ts -> 304 0ms
+[2025-08-20T23:04:49.704Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=8c700a4c -> 200 0ms
+[2025-08-20T23:04:49.710Z] GET /src/lib/utils.ts -> 200 0ms
+[2025-08-20T23:04:49.711Z] GET /src/hooks/use-toast.ts -> 200 0ms
+[2025-08-20T23:04:49.730Z] GET /src/components/ui/toast.tsx -> 200 1ms
+[2025-08-20T23:04:49.753Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=5ae837bc -> 200 4ms
+[2025-08-20T23:04:49.754Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QCHXOAYK.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:49.758Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WOOG5QLI.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:49.761Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/lucide-react.js?v=f3414753 -> 200 2ms
+[2025-08-20T23:04:49.762Z] GET /src/components/ui/button.tsx -> 200 0ms
+[2025-08-20T23:04:49.783Z] GET /src/components/ui/card.tsx -> 200 0ms
+[2025-08-20T23:04:49.811Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=7eacb851 -> 200 1ms
+[2025-08-20T23:04:49.816Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7JJCSLRL.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:49.834Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-W5GSA4I5.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.854Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-POAJLH52.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:49.857Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VJI6OVCU.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.865Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SMHTHG2I.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.907Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q4SHEDUE.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.911Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7BOO2T5S.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.915Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TONAP5II.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.930Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-KYDO7B72.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:49.957Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.962Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-KBTYAULA.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:49.963Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/clsx.js?v=98314728 -> 200 0ms
+[2025-08-20T23:04:49.966Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/tailwind-merge.js?v=333ca097 -> 200 0ms
+[2025-08-20T23:04:49.979Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=87413fba -> 200 1ms
+[2025-08-20T23:04:50.011Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/class-variance-authority.js?v=90a2884f -> 200 1ms
+[2025-08-20T23:04:50.017Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U7P2NEEE.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:50.018Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slot.js?v=09ffce1d -> 200 1ms
+[2025-08-20T23:04:50.029Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CHQYSUAB.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:50.181Z] GET /src/pages/index.tsx -> 200 15ms
+[2025-08-20T23:04:50.232Z] GET /src/components/ui/glow-card.tsx -> 200 0ms
+[2025-08-20T23:04:50.233Z] GET /src/components/head-meta.tsx -> 200 0ms
+[2025-08-20T23:04:52.101Z] GET /src/pages/organizations-enhanced.tsx -> 200 80ms
+[2025-08-20T23:04:52.382Z] GET /src/components/ui/input.tsx -> 200 1ms
+[2025-08-20T23:04:52.382Z] GET /src/components/ui/alert.tsx -> 200 1ms
+[2025-08-20T23:04:52.408Z] GET /src/components/ui/skeleton.tsx -> 200 0ms
+[2025-08-20T23:04:52.429Z] GET /src/components/ui/badge.tsx -> 200 0ms
+[2025-08-20T23:04:52.434Z] GET /src/components/organization-wizard/org-wizard-modal.tsx -> 200 1ms
+[2025-08-20T23:04:52.435Z] GET /src/components/organization-modal.tsx -> 200 1ms
+[2025-08-20T23:04:52.436Z] GET /src/components/ui/rb-button.tsx -> 200 2ms
+[2025-08-20T23:04:52.436Z] GET /src/components/ui/select.tsx -> 200 1ms
+[2025-08-20T23:04:52.508Z] GET /src/lib/api/organizations.ts -> 200 1ms
+[2025-08-20T23:04:52.530Z] GET /src/hooks/use-debounce.ts -> 200 0ms
+[2025-08-20T23:04:52.537Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=cf577a78 -> 200 0ms
+[2025-08-20T23:04:52.540Z] GET /src/components/ui/tabs.tsx -> 200 1ms
+[2025-08-20T23:04:52.541Z] GET /src/components/ui/scroll-area.tsx -> 200 2ms
+[2025-08-20T23:04:52.543Z] GET /src/components/ui/dialog.tsx -> 200 1ms
+[2025-08-20T23:04:52.559Z] GET /src/components/organization-wizard/primary-step.tsx -> 200 0ms
+[2025-08-20T23:04:52.579Z] GET /src/components/organization-wizard/branding-step.tsx -> 200 0ms
+[2025-08-20T23:04:52.588Z] GET /src/components/organization-wizard/sports-contacts-step.tsx -> 200 1ms
+[2025-08-20T23:04:52.591Z] GET /src/components/ui/separator.tsx -> 200 0ms
+[2025-08-20T23:04:52.593Z] GET /src/components/edit-organization-form.tsx -> 200 0ms
+[2025-08-20T23:04:52.594Z] GET /src/components/sports-tab.tsx -> 200 0ms
+[2025-08-20T23:04:52.642Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6ZMM2PAV.js?v=5ae837bc -> 200 1ms
+[2025-08-20T23:04:52.644Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-4RO2SXZU.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:52.658Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BYYWPQQY.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:52.678Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-43G6IMPT.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:52.690Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=6158e091 -> 200 0ms
+[2025-08-20T23:04:52.692Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-hook-form.js?v=aaaa3fa8 -> 200 1ms
+[2025-08-20T23:04:52.692Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=2e88df39 -> 200 0ms
+[2025-08-20T23:04:52.693Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=bae17b24 -> 200 0ms
+[2025-08-20T23:04:52.730Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@hookform_resolvers_zod.js?v=618345fc -> 200 0ms
+[2025-08-20T23:04:52.742Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/zod.js?v=2765f0fa -> 200 0ms
+[2025-08-20T23:04:52.744Z] GET /src/components/ui/switch.tsx -> 200 0ms
+[2025-08-20T23:04:52.745Z] GET /src/components/ui/form.tsx -> 200 0ms
+[2025-08-20T23:04:52.746Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-separator.js?v=39402c7e -> 200 1ms
+[2025-08-20T23:04:52.753Z] GET /src/constants/us-states.ts -> 304 0ms
+[2025-08-20T23:04:52.782Z] GET /src/components/ui/textarea.tsx -> 200 0ms
+[2025-08-20T23:04:52.795Z] GET /src/components/create-sport-form.tsx -> 200 1ms
+[2025-08-20T23:04:52.795Z] GET /@fs/home/runner/workspace/shared/supabase-schema.ts -> 200 0ms
+[2025-08-20T23:04:52.796Z] GET /src/components/edit-sport-form.tsx -> 200 0ms
+[2025-08-20T23:04:52.802Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-4BFJKWC4.js?v=5ae837bc -> 200 0ms
+[2025-08-20T23:04:52.832Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-switch.js?v=399a2444 -> 200 0ms
+[2025-08-20T23:04:52.839Z] GET /src/components/ui/label.tsx -> 200 1ms
+[2025-08-20T23:04:52.889Z] GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-label.js?v=b599ae06 -> 200 0ms
+🚧 GET /api/organizations - Using existing implementation
+[2025-08-20T23:04:52.957Z] GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20 -> 200 2ms
+11:04:52 PM [express] GET /api/organizations 200 in 2ms :: {"success":true,"data":[],"count":0,"messa…

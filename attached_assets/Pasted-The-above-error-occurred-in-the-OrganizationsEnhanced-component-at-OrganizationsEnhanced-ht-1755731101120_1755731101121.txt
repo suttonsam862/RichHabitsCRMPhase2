@@ -1,0 +1,31 @@
+The above error occurred in the <OrganizationsEnhanced> component:
+
+    at OrganizationsEnhanced (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/pages/organizations-enhanced.tsx:117:39)
+    at Suspense
+    at ErrorBoundary (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ErrorBoundary.tsx:25:5)
+    at RenderedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=38267605:5653:26)
+    at Outlet (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=38267605:6323:26)
+    at div
+    at MotionComponent (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=7eacb851:6536:40)
+    at div
+    at main
+    at div
+    at AppLayout (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/layouts/AppLayout.tsx:22:29)
+    at AppLayoutWrapper
+    at RenderedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=38267605:5653:26)
+    at Routes (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=38267605:6389:3)
+    at Router (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=38267605:6332:13)
+    at BrowserRouter (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=38267605:9416:3)
+    at AppRoutes
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TONAP5II.js?v=5ae837bc:43:15)
+    at TooltipProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=8c700a4c:61:5)
+    at QueryClientProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=b269391e:2805:3)
+    at _a (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-helmet-async.js?v=7e76b4f7:624:5)
+    at App
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+ErrorBoundary caught an error: 
+TypeError {}
+ 
+Object {componentStack: "↵    at OrganizationsEnhanced…"}
+
