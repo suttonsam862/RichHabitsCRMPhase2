@@ -58,11 +58,7 @@ export const designAssets = pgTable("design_assets", {
 			foreignColumns: [organizations.id],
 			name: "design_assets_org_id_fkey"
 		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.storageObjectId],
-			foreignColumns: [objects.id],
-			name: "design_assets_storage_object_id_fkey"
-		}),
+	
 	pgPolicy("design_assets_delete", { as: "permissive", for: "delete", to: ["authenticated"], using: sql`has_role(auth.uid(), org_id, 'Admin'::text)` }),
 	pgPolicy("design_assets_insert_update", { as: "permissive", for: "insert", to: ["authenticated"] }),
 	pgPolicy("design_assets_select", { as: "permissive", for: "select", to: ["authenticated"] }),
