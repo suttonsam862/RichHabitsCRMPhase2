@@ -1,54 +1,28 @@
-import { Route, Switch } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// DEPRECATED: Old Wouter routing system replaced by centralized routes.tsx
+// See client/src/routes.tsx for all routing configuration
+// import { Route, Switch } from "wouter";
+
+import { QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
-import { AnimatePresence } from "framer-motion";
 import { Toaster } from "@/components/ui/toaster";
-import { RouteTransition } from "@/components/route-transition";
-import { AppLayout } from "@/layouts/AppLayout";
-import Home from "./pages/index";
-import Organizations from "./pages/organizations-enhanced";
-import OrderDetails from "./pages/order-details";
-import Users from "./pages/users";
-import QuoteGenerator from "./pages/QuoteGenerator";
-import NotFound from "./pages/not-found";
+import { AppRoutes } from "./routes";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import QuoteHistory from "./pages/QuoteHistory";
 
-function Router() {
-  return (
-    <AppLayout>
-      <AnimatePresence mode="wait">
-        <RouteTransition>
-          <Switch>
-            {/* Main Organizations page */}
-            <Route path="/" component={Home} />
-            <Route path="/organizations" component={Organizations} />
-
-            {/* Users management page */}
-            <Route path="/users" component={Users} />
-
-            {/* Quote Generator page */}
-            <Route path="/quote" component={QuoteGenerator} />
-
-            {/* Quote History page */}
-            <Route path="/quotes/history" component={QuoteHistory} />
-
-            {/* Order details page */}
-            <Route path="/orders/:id" component={OrderDetails} />
-
-            {/* Future routes - commented for now */}
-            {/* <Route path="/orders" component={Orders}/> */}
-            {/* <Route path="/designs" component={Designs}/> */}
-
-            {/* Fallback to 404 */}
-            <Route component={NotFound} />
-          </Switch>
-        </RouteTransition>
-      </AnimatePresence>
-    </AppLayout>
-  );
-}
+// DEPRECATED: Replaced by centralized routing in routes.tsx
+// function Router() {
+//   return (
+//     <AppLayout>
+//       <AnimatePresence mode="wait">
+//         <RouteTransition>
+//           <Switch>
+//             {/* All routes moved to routes.tsx for centralized management */}
+//           </Switch>
+//         </RouteTransition>
+//       </AnimatePresence>
+//     </AppLayout>
+//   );
+// }
 
 function App() {
   return (
@@ -56,7 +30,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AppRoutes />
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>

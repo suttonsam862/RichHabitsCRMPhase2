@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+// DEPRECATED: Wouter replaced with React Router - see routes.tsx
+// import { useParams, Link } from "wouter";
+import { useParams, Link } from "react-router-dom";
+import { paths } from "@/lib/paths";
 import { ArrowLeft, Calendar, DollarSign, Package, User, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { Order } from "@shared/schema";
+import type { orders } from "@shared/schema";
+type Order = typeof orders.$inferSelect;
 
 export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +37,7 @@ export default function OrderDetails() {
         <Card className="glass">
           <CardContent className="p-8 text-center">
             <p className="text-destructive">Order not found or error loading details.</p>
-            <Link href="/organizations">
+            <Link to={paths.organizations}>
               <Button className="mt-4">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Organizations
@@ -68,7 +72,7 @@ export default function OrderDetails() {
     <div className="container mx-auto py-8 space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/organizations">
+        <Link to={paths.organizations}>
           <Button variant="ghost" size="sm" data-testid="button-back-to-organizations">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Organizations

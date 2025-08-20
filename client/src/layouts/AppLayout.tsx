@@ -1,5 +1,8 @@
 
-import { Link, useLocation } from "wouter";
+// DEPRECATED: Wouter replaced with React Router
+// import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
+import { paths } from "@/lib/paths";
 import { motion } from "framer-motion";
 import { Building2, Home, Users, FileText } from "lucide-react";
 
@@ -9,13 +12,13 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, footer }: AppLayoutProps) {
-  const [location] = useLocation();
+  const location = useLocation();
 
   const navItems = [
-    { path: "/", label: "Home", icon: Home },
-    { path: "/organizations", label: "Organizations", icon: Building2 },
-    { path: "/users", label: "Users", icon: Users },
-    { path: "/quote", label: "Quote Generator", icon: FileText },
+    { path: paths.home, label: "Home", icon: Home },
+    { path: paths.organizations, label: "Organizations", icon: Building2 },
+    { path: paths.users, label: "Users", icon: Users },
+    { path: paths.quotes, label: "Quote Generator", icon: FileText },
   ];
 
   return (
@@ -28,7 +31,7 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/">
+            <Link to={paths.home}>
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 className="flex items-center space-x-2 cursor-pointer"
@@ -45,9 +48,9 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
             {/* Navigation Links */}
             <div className="flex items-center space-x-6">
               {navItems.map(({ path, label, icon: Icon }) => {
-                const isActive = location === path;
+                const isActive = location.pathname === path;
                 return (
-                  <Link key={path} href={path}>
+                  <Link key={path} to={path}>
                     <motion.div
                       whileHover={{ scale: 1.05 }}
                       className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${

@@ -1,0 +1,51 @@
+We’ve completed frontend canonicalization to client/src. Now stabilize routing to eliminate drift and runtime bugs.
+
+Goal
+- Centralize all route declarations in a single source of truth.
+- Add robust error handling and a proper 404.
+- Ensure print/export routes render without app chrome.
+- Document refresh behavior and SPA fallback (no server edits in this prompt).
+
+Scope
+- Front-end only (client/). Do NOT modify server code or shared schema in this prompt.
+
+Tasks
+1) Create a canonical route module
+- Add client/src/routes.tsx that:
+  - Exports a <AppRoutes/> component that renders <BrowserRouter><Routes>…</Routes></BrowserRouter>.
+  - Centralizes all page routes (list existing pages with their paths).
+  - Uses React.lazy for page-level chunks.
+  - Exports a ROUTE_MAP: Array<{ path: string; componentName: string; lazyPath: string }>.
+- If we currently use Wouter or a different router, migrate to React Router v6 (preferred), or create an adapter that re-exports a unified route tree from a single file. Keep changes minimal but consolidate to ONE route table.
+
+2) Integrate Error Boundary + NotFound
+- Create client/src/components/ErrorBoundary.tsx (simple class component or hook-based boundary) to catch render errors in route elements.
+- Create client/src/pages/NotFound.tsx with a concise message and a “Back to Dashboard” button (link to “/”).
+- Wrap each <Route element={…}> with <ErrorBoundary> in routes.tsx (or around <Outlet/> in a layout).
+
+3) Layout & print/export isolation
+- If there is a site-wide Layout (header/sidebar), implement a top-level <AppLayout/> with <Outlet/>.
+- For print/export views (quotes), add a minimal <PrintLayout/> (no nav) and nest print routes under it.
+- Ensure print components do NOT import app shell styles. Use route-level layout to exclude chrome.
+
+4) Wire into App
+- Update client/src/App.tsx to simply render <AppRoutes/>.
+- Remove any other router instances found elsewhere. If duplicates exist, replace with comments referencing routes.tsx. Do NOT delete large files; keep them but deactivated.
+
+5) Type safety & helpers
+- Create client/src/lib/paths.ts that re-exports typed path builders, e.g.:
+  export const paths = { home:"/", orgs:"/organizations", org:(id:string)=>`/organizations/${id}`, quotes:"/quotes", quoteHistory:"/quotes/history" }
+- Replace string literals in navigation calls within client/src with these helpers (safe find/replace).
+
+6) QA checklist & docs
+- Add docs/ROUTING.md explaining:
+  - Where to add new routes (routes.tsx), how to lazy-load pages.
+  - The role of AppLayout vs PrintLayout.
+  - How 404 works and how to link back to home.
+- In the doc, note that production refresh of deep links requires server SPA fallback to index.html (covered in a later server prompt).
+
+Acceptance
+- Single authoritative route file (routes.tsx) consumed by App.tsx.
+- NotFound renders for unknown paths; print/export routes render without app chrome.
+- No second router instances active. Old route setups are commented with a pointer to routes.tsx.
+- Basic navigation smoke-test passes (Home → Orgs → Quote Generator → History → NotFound).

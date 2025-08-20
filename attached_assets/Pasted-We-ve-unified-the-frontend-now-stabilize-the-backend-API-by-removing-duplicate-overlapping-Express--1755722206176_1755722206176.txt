@@ -1,0 +1,67 @@
+We’ve unified the frontend; now stabilize the backend API by removing duplicate/overlapping Express routes and mounting a single canonical router per resource. Keep behavior backward-compatible via thin shims and clear deprecation warnings. Do NOT change SQL schema in this prompt.
+
+Goal
+- One canonical router for each resource (start with organizations; then apply the same pattern to users, roles, quotes if present).
+- Remove double-mounting and route drift.
+- Preserve old paths temporarily via shims (301 or 308 redirect when safe, otherwise 410 Gone with message).
+- Add minimal tests and docs.
+
+Scope
+- Server-only (Express, TypeScript). No DB migrations. No client edits in this prompt.
+
+Tasks
+
+1) Route Inventory (guard against regressions)
+- Create server/tools/route-inventory.ts that introspects the Express app (or parses server/index.ts & server/routes/*) to list mounted paths & methods. 
+- Add npm script: "routes:list": "ts-node server/tools/route-inventory.ts"
+- Run it and save output to docs/API-ROUTES-INVENTORY.md (include before/after table).
+
+2) Canonical Organizations Router
+- Create server/routes/organizations/index.ts exporting a single Router with endpoints:
+  - GET /           → list
+  - GET /:id        → getById
+  - POST /          → create
+  - PUT /:id        → update
+  - DELETE /:id     → remove
+- Move/merge logic from any existing variants (e.g., organizations.ts, organizations-v2.ts) into this index.ts.
+- Use existing validators/mappers if present; otherwise add light runtime validation (zod) inside this router ONLY for shape safety. Keep SQL/query layer intact.
+
+3) Deprecation Shims for Old Paths
+- If server/routes/organizations-v1.ts or -v2.ts exist: replace their exported Routers with ultra-thin shims:
+  - For identical semantics: return 308 Permanent Redirect to the canonical path (preserves method).
+  - For different payloads/params: respond 410 Gone with JSON: { error:"Deprecated endpoint. Use /api/organizations[...]" }.
+  - Log a one-line warn with req.method, req.originalUrl, and “DEPRECATED_ORGS_ROUTE_HIT”.
+
+4) Single Mount Point
+- In server/index.ts (or main bootstrap), ensure ONLY:
+  app.use("/api/organizations", organizationsRouter);
+- Remove (comment out) any other org mounts. Above removed mounts, leave a TODO comment with a removal date.
+- Repeat this “single mount + shim” structure for any other duplicated resources the audit flagged (users, roles, quotes). If doing others, keep their code changes isolated and small.
+
+5) Error/Validation Surface
+- Normalize error responses in the canonical router (e.g., return {error, details?} with proper status).
+- Coerce common input types (e.g., numeric IDs, pagination params) but do NOT change SQL. Reject clearly on invalid input (400).
+
+6) Tests (supertest)
+- Add tests/organizations.routes.test.ts:
+  - GET /api/organizations returns 200 and an array (or object with data).
+  - Hitting a deprecated path returns 308 or 410 per shim policy.
+  - Invalid body on POST/PUT returns 400 with validation message.
+- Add npm script: "test:api": "vitest run -c ./vitest.config.api.ts" (or reuse current test runner).
+
+7) Docs
+- Create docs/API-ROUTES.md:
+  - Table of canonical endpoints for organizations (method, path, purpose, expected payload/response summary).
+  - “Deprecated endpoints” section listing old paths and their status (308→new path or 410 Gone).
+  - Note: Frontend should use only canonical endpoints (will be updated in a separate prompt).
+
+Acceptance
+- routes:list output shows exactly one mount for /api/organizations.
+- Deprecated org endpoints either 308 to canonical or 410 with JSON error and console warn.
+- tests/organizations.routes.test.ts passing locally.
+- docs/API-ROUTES.md and docs/API-ROUTES-INVENTORY.md updated.
+- No SQL or schema changes performed.
+
+Constraints
+- Keep changes minimal and reversible. Do not rename files unless needed; prefer index.ts entries and explicit re-exports.
+- No behavior changes to successful canonical endpoints (same inputs/outputs), beyond validation that returns proper 400s.

@@ -7,7 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateOrderForm } from "@/components/create-order-form";
 import type { Order } from "../../../shared/supabase-schema";
-import { Link } from "wouter";
+// DEPRECATED: Wouter replaced with React Router - see routes.tsx
+// import { Link } from "wouter";
+import { Link } from "react-router-dom";
+import { paths } from "@/lib/paths";
 
 interface OrdersTabProps {
   organizationId: string;
@@ -94,7 +97,7 @@ export function OrdersTab({ organizationId, orders = [] }: OrdersTabProps) {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Link href={`/orders/${order.id}`}>
+                    <Link to={paths.orders(order.id)}>
                       <Button variant="ghost" size="sm" data-testid={`button-view-order-${order.id}`}>
                         <ExternalLink className="h-4 w-4" />
                       </Button>
