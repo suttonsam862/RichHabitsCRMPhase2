@@ -11,6 +11,10 @@ import uploadRoutes from "./routes/upload";
 import orgSportsRouter from "./routes/org-sports";
 import usersAdminRouter from "./routes/users-admin";
 import usersRouter from "./routes/users";
+import { env } from "./lib/env";
+import { apiRouter } from "./routes/api";
+
+// API before static/Vite. Vite never handles /api/*
 
 const app = express();
 app.use(express.json());
@@ -53,41 +57,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// Environment validation with masked logging
-function validateEnvironmentVariables() {
-  console.log('\n=== Environment Variable Check ===');
-  
-  const requiredVars = [
-    { name: 'SUPABASE_URL', value: process.env.SUPABASE_URL },
-    { name: 'SUPABASE_SERVICE_ROLE_KEY', value: process.env.SUPABASE_SERVICE_ROLE_KEY },
-    { name: 'OPENAI_API_KEY', value: process.env.OPENAI_API_KEY }
-  ];
-  
-  let hasErrors = false;
-  
-  for (const { name, value } of requiredVars) {
-    if (!value) {
-      console.error(`🚨 MISSING REQUIRED ENVIRONMENT VARIABLE: ${name}`);
-      hasErrors = true;
-    } else {
-      const masked = value.substring(0, 6) + '*'.repeat(Math.max(0, value.length - 6));
-      console.log(`✓ ${name}: ${masked} (length: ${value.length})`);
-    }
-  }
-  
-  if (hasErrors) {
-    console.error('\n🚨 CRITICAL ERROR: Missing required environment variables!');
-    console.error('Please set the missing variables and restart the server.');
-    console.error('Server cannot start without proper configuration.\n');
-    process.exit(1);
-  }
-  
-  console.log('✓ All required environment variables are set\n');
-}
+// Environment validation now handled by env.ts contract
 
 (async () => {
-  // Validate environment variables before starting server
-  validateEnvironmentVariables();
+  // Environment validation handled by env.ts - variables now available via env object
   
   // ALWAYS serve the app on the port specified in the environment variable PORT
   const port = parseInt(process.env.PORT || '5000', 10);
@@ -121,16 +94,8 @@ function validateEnvironmentVariables() {
       // Auto-pull database schema to keep frontend/backend in sync
       if (process.env.NODE_ENV === 'development') {
         log("🔄 Auto-pulling database schema...");
-        try {
-          const { pullSchema } = await import('../scripts/schema-sync.js') as any;
-          await pullSchema();
-          process.env.SCHEMA_LAST_SYNC = new Date().toISOString();
-          log("✅ Schema auto-pull completed - frontend and backend are in sync");
-        } catch (schemaError: any) {
-          console.warn('⚠️ Schema auto-pull failed:', schemaError.message);
-          console.warn('🔧 You may need to run: npx drizzle-kit introspect manually');
-          // Don't fail server startup for this
-        }
+        // Schema sync disabled during architectural refactor
+        log("⚠️ Schema auto-pull temporarily disabled during architectural refactor");
       }
 
     } catch (error: any) {
@@ -161,8 +126,10 @@ function validateEnvironmentVariables() {
 
 
   // Register routes
-  // Mount canonical routers first to override general routes
-  app.use("/api/organizations", organizationsRouter);
+  // New consolidated API router (includes all business domain routes)
+  app.use("/api", apiRouter);
+  
+  // Legacy route overrides for backward compatibility 
   app.use("/api/debug", debugRouter);
   app.use("/api/upload", uploadRoutes);
   app.use("/api/org-sports", orgSportsRouter);
