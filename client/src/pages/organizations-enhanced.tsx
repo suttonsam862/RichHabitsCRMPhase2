@@ -97,7 +97,7 @@ function normalizeToDefault<T>(value: any, defaultValue: T): T {
 // Helper to get URL params with normalization
 function getInitialStateFromURL() {
   if (typeof window === 'undefined') return SAFE_DEFAULTS;
-  
+
   const params = new URLSearchParams(window.location.search);
   return {
     state: normalizeToDefault(params.get('state'), SAFE_DEFAULTS.state) as StateType,
@@ -111,7 +111,7 @@ function getInitialStateFromURL() {
 
 export default function OrganizationsEnhanced() {
   const initialState = getInitialStateFromURL();
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedState, setSelectedState] = useState<StateType>(initialState.state);
   const [orgType, setOrgType] = useState<"all" | "school" | "business">(initialState.orgType);
@@ -172,7 +172,7 @@ export default function OrganizationsEnhanced() {
     if (sortOrder !== SAFE_DEFAULTS.sortOrder) params.set('order', sortOrder);
     if (page !== SAFE_DEFAULTS.page) params.set('page', page.toString());
     if (pageSize !== SAFE_DEFAULTS.pageSize) params.set('pageSize', pageSize.toString());
-    
+
     const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
     window.history.replaceState(null, '', newUrl);
   }, [selectedState, orgType, sortBy, sortOrder, page, pageSize]);
