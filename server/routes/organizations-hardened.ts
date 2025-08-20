@@ -424,6 +424,55 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// PATCH /api/organizations/:id - Update organization with partial data
+router.patch("/:id", async (req, res) => {
+  const rid = res.locals.rid;
+  const { id } = req.params;
+  
+  try {
+    // Parse and validate partial update data
+    const updateData: any = {};
+    
+    // Only include fields that are present in the request
+    if (req.body.name !== undefined) updateData.name = req.body.name;
+    if (req.body.state !== undefined) updateData.state = req.body.state;
+    if (req.body.logoUrl !== undefined) updateData.logo_url = req.body.logoUrl || null;
+    if (req.body.address !== undefined) updateData.address = req.body.address || null;
+    if (req.body.phone !== undefined) updateData.phone = req.body.phone || null;
+    if (req.body.email !== undefined) updateData.email = req.body.email || null;
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes || null;
+    if (req.body.universalDiscounts !== undefined) updateData.universal_discounts = req.body.universalDiscounts;
+    
+    // Add updated_at timestamp
+    updateData.updated_at = new Date();
+    
+    console.log(`[${rid}] Updating organization ${id} with:`, updateData);
+    
+    // Update the organization
+    const [updated] = await db
+      .update(organizations)
+      .set(updateData)
+      .where(eq(organizations.id, id))
+      .returning();
+    
+    if (!updated) {
+      return res.status(404).json({
+        error: "Organization not found"
+      });
+    }
+    
+    console.log(`[${rid}] Successfully updated organization: ${id}`);
+    res.json(updated);
+    
+  } catch (err: any) {
+    console.error(`[${rid}] Error updating organization:`, err);
+    res.status(500).json({
+      error: "Failed to update organization",
+      requestId: rid
+    });
+  }
+});
+
 // DELETE /api/organizations/:id
 router.delete("/:id", async (req, res) => {
   const rid = res.locals.rid;

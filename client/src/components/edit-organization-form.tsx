@@ -50,8 +50,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     mutationFn: (data: UpdateOrganizationData) =>
       apiRequest(`/api/organizations/${organization.id}`, {
         method: "PATCH",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
+        data: data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });

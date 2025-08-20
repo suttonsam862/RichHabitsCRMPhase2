@@ -51,7 +51,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
     },
     enabled: open,
     staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache
+    gcTime: 0, // Don't garbage collect (TanStack Query v5 renamed cacheTime to gcTime)
   });
 
   const deleteOrgMutation = useMutation({
@@ -211,7 +211,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
 
             <div className="flex-1 max-h-[75vh] overflow-y-auto p-6 pt-4">
               <Tabs defaultValue="general" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-5 glass">
+                <TabsList className="grid w-full grid-cols-4 glass">
                   <TabsTrigger value="general" data-testid="tab-general">
                     <Building2 className="h-4 w-4 mr-2" />
                     General
@@ -224,10 +224,12 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                     <Settings className="h-4 w-4 mr-2" />
                     Discounts
                   </TabsTrigger>
+                  {/* Orders tab disabled until /api/organizations/:id/orders endpoint is implemented
                   <TabsTrigger value="orders" data-testid="tab-orders">
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     Orders
                   </TabsTrigger>
+                  */}
                   <TabsTrigger value="other" data-testid="tab-other">
                     <FileText className="h-4 w-4 mr-2" />
                     Other
@@ -333,12 +335,14 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                   </Card>
                 </TabsContent>
 
+                {/* Orders tab content disabled until /api/organizations/:id/orders endpoint is implemented
                 <TabsContent value="orders" className="space-y-4">
                   <OrdersTab 
                     organizationId={currentOrg.id} 
                     orders={currentOrg.orders || []} 
                   />
                 </TabsContent>
+                */}
 
                 <TabsContent value="other" className="space-y-4">
                   <Card className="glass">

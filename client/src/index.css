@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Coolvetica Font */
+/* Coolvetica Font - Commented out until font file is available
 @font-face {
   font-family: 'Coolvetica';
   src: url('/fonts/Coolvetica.woff2') format('woff2');
@@ -10,6 +10,7 @@
   font-style: normal;
   font-display: swap;
 }
+*/
 
 :root {
   /* Glassmorphism Background Gradient */
