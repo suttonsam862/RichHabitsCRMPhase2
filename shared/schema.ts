@@ -94,11 +94,7 @@ export const designers = pgTable("designers", {
 			foreignColumns: [organizations.id],
 			name: "designers_org_id_fkey"
 		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "designers_user_id_fkey"
-		}),
+	
 	pgPolicy("designers_select", { as: "permissive", for: "select", to: ["authenticated"], using: sql`is_org_member(auth.uid(), org_id)` }),
 	pgPolicy("designers_write", { as: "permissive", for: "all", to: ["authenticated"] }),
 ]);
@@ -131,11 +127,7 @@ export const salespeople = pgTable("salespeople", {
 			foreignColumns: [organizations.id],
 			name: "salespeople_org_id_fkey"
 		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "salespeople_user_id_fkey"
-		}),
+	
 	pgPolicy("salespeople_select", { as: "permissive", for: "select", to: ["authenticated"], using: sql`is_org_member(auth.uid(), org_id)` }),
 	pgPolicy("salespeople_write", { as: "permissive", for: "all", to: ["authenticated"] }),
 ]);
@@ -391,11 +383,7 @@ export const orderEvents = pgTable("order_events", {
 }, (table) => [
 	index("idx_order_events_order").using("btree", table.orderId.asc().nullsLast().op("uuid_ops")),
 	index("idx_order_events_org").using("btree", table.orgId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.actorUserId],
-			foreignColumns: [users.id],
-			name: "order_events_actor_user_id_fkey"
-		}),
+	
 	foreignKey({
 			columns: [table.orderId],
 			foreignColumns: [orders.id],
@@ -433,11 +421,7 @@ export const designJobs = pgTable("design_jobs", {
 			foreignColumns: [designers.id],
 			name: "design_jobs_assignee_designer_id_fkey"
 		}),
-	foreignKey({
-			columns: [table.createdByUserId],
-			foreignColumns: [users.id],
-			name: "design_jobs_created_by_user_id_fkey"
-		}),
+	
 	foreignKey({
 			columns: [table.orderItemId],
 			foreignColumns: [orderItems.id],
@@ -470,11 +454,7 @@ export const designJobEvents = pgTable("design_job_events", {
 	occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("idx_design_job_events_job").using("btree", table.designJobId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.actorUserId],
-			foreignColumns: [users.id],
-			name: "design_job_events_actor_user_id_fkey"
-		}),
+	
 	foreignKey({
 			columns: [table.designJobId],
 			foreignColumns: [designJobs.id],
@@ -537,11 +517,7 @@ export const productionEvents = pgTable("production_events", {
 	occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("idx_production_events_wo").using("btree", table.workOrderId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.actorUserId],
-			foreignColumns: [users.id],
-			name: "production_events_actor_user_id_fkey"
-		}),
+	
 	foreignKey({
 			columns: [table.workOrderId],
 			foreignColumns: [manufacturingWorkOrders.id],
