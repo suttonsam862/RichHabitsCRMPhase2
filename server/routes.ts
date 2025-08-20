@@ -41,8 +41,19 @@ function asyncHandler(fn: Function) {
 router.get("/api/organizations", async (req, res, next) => {
   try {
     const rows = await Orgs.listOrganizations();
-    res.json(rows.map(o => ({ ...o, sports: [] })));
-  } catch (e) { next(e); }
+    res.json({
+      success: true,
+      data: rows,
+      count: rows.length
+    });
+  } catch (e) { 
+    console.error('Error fetching organizations:', e);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch organizations',
+      message: e instanceof Error ? e.message : 'Unknown error'
+    });
+  }
 });
 
 router.get("/api/organizations/:id", asyncHandler(async (req: any, res: any) => {

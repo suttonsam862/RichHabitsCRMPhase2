@@ -1,7 +1,7 @@
 
 import express from 'express';
 import { z } from 'zod';
-import { CreateOrganizationDTO, UpdateOrganizationDTO, OrganizationDTO } from '@shared/dtos';
+import { CreateOrganizationDTO, UpdateOrganizationDTO, OrganizationDTO } from '@shared/dtos/OrganizationDTO';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
@@ -30,7 +30,7 @@ router.get('/', asyncHandler(async (req, res) => {
   const conditions = [];
   
   // Search query
-  if (q && q.trim()) {
+  if (q && typeof q === 'string' && q.trim()) {
     conditions.push(ilike(organizations.name, `%${q.trim()}%`));
   }
   
@@ -42,15 +42,14 @@ router.get('/', asyncHandler(async (req, res) => {
   // Type filter
   if (type && type !== 'all') {
     if (type === 'business') {
-      conditions.push(eq(organizations.is_business, true));
+      conditions.push(eq(organizations.isBusiness, true));
     } else if (type === 'school') {
-      conditions.push(eq(organizations.is_business, false));
+      conditions.push(eq(organizations.isBusiness, false));
     }
   }
 
   // Build order by
-  const sortField = sort === 'name' ? organizations.name : organizations.created_at;
-  const orderDirection = order === 'asc' ? asc : desc;
+  const sortField = sort === 'name' ? organizations.name : organizations.createdAt;
 
   try {
     // Get total count
@@ -66,18 +65,21 @@ router.get('/', asyncHandler(async (req, res) => {
       .select()
       .from(organizations)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(orderDirection(sortField))
+      .orderBy(order === 'asc' ? asc(sortField) : desc(sortField))
       .limit(pageSizeNum)
       .offset(offset);
 
     const totalPages = Math.ceil(total / pageSizeNum);
 
     res.json({
-      items: results,
-      total,
-      page: pageNum,
-      pageSize: pageSizeNum,
-      totalPages
+      success: true,
+      data: results,
+      count: total,
+      pagination: {
+        page: pageNum,
+        limit: pageSizeNum,
+        totalPages
+      }
     });
   } catch (error) {
     console.error('Error fetching organizations:', error);
@@ -101,11 +103,15 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
     if (result.length === 0) {
       return res.status(404).json({
+        success: false,
         error: 'Organization not found'
       });
     }
 
-    res.json(result[0]);
+    res.json({
+      success: true,
+      data: result[0]
+    });
   } catch (error) {
     console.error('Error fetching organization:', error);
     res.status(500).json({
@@ -126,14 +132,14 @@ router.post('/',
         .insert(organizations)
         .values({
           ...orgData,
-          created_at: new Date(),
-          updated_at: new Date()
+          createdAt: new Date(),
+          updatedAt: new Date()
         })
         .returning();
 
       res.status(201).json({
-        ok: true,
-        organization: result[0]
+        success: true,
+        data: result[0]
       });
     } catch (error) {
       console.error('Error creating organization:', error);
@@ -157,20 +163,21 @@ router.put('/:id',
         .update(organizations)
         .set({
           ...updateData,
-          updated_at: new Date()
+          updatedAt: new Date()
         })
         .where(eq(organizations.id, id))
         .returning();
 
       if (result.length === 0) {
         return res.status(404).json({
+          success: false,
           error: 'Organization not found'
         });
       }
 
       res.json({
-        ok: true,
-        organization: result[0]
+        success: true,
+        data: result[0]
       });
     } catch (error) {
       console.error('Error updating organization:', error);
