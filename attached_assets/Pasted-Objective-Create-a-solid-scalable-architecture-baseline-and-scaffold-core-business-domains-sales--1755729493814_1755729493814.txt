@@ -1,0 +1,100 @@
+Objective
+Create a solid, scalable architecture baseline and scaffold core business domains (sales, manufacturing, orders, catalog) with consistent conventions, while keeping existing features working. Migrate toward React Router v6 for routing consistency, enforce Express-first API ownership (/api/*), and add guardrails (env contract, route inventory, typed SDK, CI checks). Non-destructive: quarantine legacy, add docs, avoid breaking current flows.
+
+Constraints
+- Do NOT delete existing code. Quarantine or de-activate with comments.
+- Keep Organizations features working.
+- No DB migrations in this prompt. Only code structure, validation, and scaffolds.
+- Use TypeScript everywhere.
+
+Phases (single PR with logical commits)
+
+Phase A — Guardrails & Source of Truth
+1) Server mount order & SPA fallback
+   - In server/index.ts, ensure:
+     a) All app.use("/api", …) mounts occur BEFORE any static/Vite middlewares.
+     b) Static serving + SPA fallback (app.get("*") -> index.html) comes AFTER API and refuses /api/* by calling next().
+   - Add a banner comment: "API before static/Vite. Vite never handles /api/*".
+   - Provide a quick dev note in docs/DEV-RUN.md.
+
+2) Env contract
+   - Create server/lib/env.ts with zod schema validating at boot:
+     DATABASE_URL, NODE_ENV, (optional) SUPABASE_URL/SERVICE_ROLE, OPENAI_API_KEY.
+   - On failure: log concise reasons and process.exit(1).
+   - Export a typed `env` object for downstream use.
+
+3) Route inventory
+   - Add server/tools/route-inventory.ts that reads server/index.ts/router aggregator and prints a table of method/path/router file.
+   - Add npm scripts:
+     "routes:list": "ts-node server/tools/route-inventory.ts",
+     "typecheck": "tsc -b --pretty false",
+     "lint": "eslint .",
+     "check:circulars": "ts-node scripts/find-circulars.ts",
+     "check": "npm run typecheck && npm run lint && npm run check:circulars && npm run routes:list"
+   - Implement scripts/find-circulars.ts using madge or ts-morph to detect cycles in client/src and server/. Output tmp/audit/circulars.json and fail if cycles > 0 (allowlist empty).
+
+4) Typed API SDK (client)
+   - Create client/src/lib/env.ts with: export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api".
+   - Create client/src/lib/api-sdk.ts with typed functions for organizations (list/get/create/update/delete) using zod to parse responses.
+   - Grep and replace any direct fetch("http://localhost…") or fetch("/api…") in client with SDK calls (leave legacy commented where helpful).
+
+Phase B — Router consolidation (client)
+5) Single route table with React Router v6
+   - Add client/src/routes.tsx exporting <AppRoutes/> with BrowserRouter + Routes; use lazy imports per page.
+   - Add a NotFound page and an ErrorBoundary component.
+   - Keep Wouter-era components working by wrapping or routing to them via RRv6 (do NOT rewrite content now).
+   - Update client/src/App.tsx to only render <AppRoutes/>.
+   - Add docs/ROUTING.md: how to add routes, nested layouts, and print/no-chrome layouts.
+
+Phase C — Domain scaffolds & role-based fronts
+6) Feature directories (client)
+   - Create folders:
+     client/src/features/{sales,orders,manufacturing,catalog}/
+     Each with: index.ts, pages/, components/, hooks/, api/, types.ts, README.md.
+   - Add placeholder pages:
+     Sales: LeadsBoard.tsx (kanban stub), LeadDetails.tsx
+     Orders: OrdersList.tsx, OrderDetails.tsx
+     Manufacturing: ProductionBoard.tsx, PoDetails.tsx
+     Catalog: ProductsList.tsx, ProductDetails.tsx
+   - Wire these into routes.tsx under paths:
+     /sales, /sales/:id, /orders, /orders/:id, /manufacturing, /manufacturing/po/:id, /catalog, /catalog/:id
+
+7) Role-based layouts & guards
+   - Create client/src/auth/roles.ts with enum Role { Admin, Sales, Designer, Manufacturing, Customer } and RoleMap for route access.
+   - Add client/src/auth/guard.tsx with <RequireRole roles=[…]> wrapper that redirects to / for unauthorized.
+   - Create layout shells:
+     client/src/layouts/{AdminLayout,SalesLayout,ManufacturingLayout,DesignerLayout,CustomerLayout}.tsx each rendering <Outlet/>.
+   - In routes.tsx nest domain routes under their layout and wrap with <RequireRole>.
+
+8) Shared types & DTOs
+   - In shared/dtos/ create zod schemas and TS types for:
+     OrganizationDTO, ProductDTO (id, sku, name, variant fields), LeadDTO (id, orgId, contact, stage), OrderDTO (id, quoteId?, status, totals), PoDTO (id, vendor, items, milestones).
+   - Export from shared/index.ts for both client/server usage.
+   - Update client/src/features/*/api modules to import DTOs from shared.
+
+Phase D — Server router stubs (no DB writes)
+9) Canonical routers (stubs only)
+   - Add server/routes/{sales,orders,manufacturing,catalog}/index.ts with Router stubs:
+     GET list, GET by id; return 501 Not Implemented JSON for now with shapes aligned to DTOs.
+   - Mount but behind a feature flag (e.g., if (process.env.ENABLE_DOMAIN_STUBS === "1")) to avoid breaking clients.
+   - Update docs/API-ROUTES.md with the canonical endpoints list and "stub" status.
+
+10) Developer docs & CONTRIBUTING
+    - Add docs/ARCHITECTURE.md describing:
+      - Project layout (client/server/shared)
+      - Routing strategy (Express API first, Vite as SPA fallback only)
+      - React Router v6 usage and role layouts
+      - API SDK pattern and DTO location
+      - Guardrails (env, route inventory, circulars, check script)
+    - Add CONTRIBUTING.md with code style, commit conventions, and "do not add new routes without updating API-ROUTES.md".
+
+Acceptance
+- Dev server still runs; Organizations flow remains functional.
+- routes:list shows one /api mount per resource (organizations canonical; new domains behind stubs).
+- `npm run check` passes (typecheck, lint, circulars, routes inventory).
+- RRv6 in place with a single route table; Wouter-era components still reachable.
+- Feature folders exist with placeholder pages and protected role layouts.
+- Docs present: ARCHITECTURE.md, ROUTING.md, API-ROUTES.md, DEV-RUN.md, CONTRIBUTING.md.
+
+Notes
+- Do not modify SQL or real data paths yet. This is architecture + scaffolding + guardrails, paving the way for later prompts to implement real domain logic and DB integration.
