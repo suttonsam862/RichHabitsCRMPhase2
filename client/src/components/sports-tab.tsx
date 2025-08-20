@@ -27,7 +27,7 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
       apiRequest(`/api/sports/${sportId}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['org', organizationId] });
       toast({
         title: "Sport deleted",
         description: "The sport has been successfully removed.",
@@ -59,7 +59,7 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
               Add Sport
             </Button>
           </DialogTrigger>
-          <DialogContent className="glass-strong max-w-2xl">
+          <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-2xl border-0 shadow-2xl">
             <DialogHeader>
               <DialogTitle>Add New Sport</DialogTitle>
             </DialogHeader>
@@ -72,7 +72,7 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
       </div>
 
       {sports.length === 0 ? (
-        <Card className="glass">
+        <Card className="bg-muted/30 backdrop-blur-sm border-border/50">
           <CardContent className="p-8 text-center">
             <p className="text-muted-foreground">
               No sports configured for this organization.
@@ -82,7 +82,7 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
       ) : (
         <div className="grid gap-4">
           {sports.map((sport) => (
-            <Card key={sport.id} className="glass" data-testid={`card-sport-${sport.id}`}>
+            <Card key={sport.id} className="bg-muted/30 backdrop-blur-sm border-border/50" data-testid={`card-sport-${sport.id}`}>
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
@@ -102,7 +102,7 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
                           <Edit className="h-4 w-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="glass-strong max-w-2xl">
+                      <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-2xl border-0 shadow-2xl">
                         <DialogHeader>
                           <DialogTitle>Edit Sport</DialogTitle>
                         </DialogHeader>
@@ -171,7 +171,7 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
       {/* Edit Sport Modal */}
       {editingSport && (
         <Dialog open={true} onOpenChange={() => setEditingSport(null)}>
-          <DialogContent className="glass-strong max-w-2xl">
+          <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-2xl border-0 shadow-2xl">
             <DialogHeader>
               <DialogTitle>Edit Sport</DialogTitle>
             </DialogHeader>

@@ -77,16 +77,20 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
     },
   });
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirm(`Are you sure you want to delete ${organization.name}? This action cannot be undone.`)) {
-      deleteOrgMutation.mutate();
+      try {
+        await deleteOrgMutation.mutateAsync();
+      } catch (error) {
+        console.error('Delete failed:', error);
+      }
     }
   };
 
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="org-modal-loading-desc">
+        <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-4xl max-h-[90vh] overflow-hidden border-0 shadow-2xl" aria-describedby="org-modal-loading-desc">
           <DialogHeader className="sr-only">
             <DialogTitle>Loading Organization</DialogTitle>
             <DialogDescription id="org-modal-loading-desc">
@@ -106,13 +110,13 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="glass-strong max-w-4xl max-h-[90vh] overflow-hidden" aria-describedby="org-modal-desc">
+      <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-4xl max-h-[90vh] overflow-hidden border-0 shadow-2xl" aria-describedby="org-modal-desc">
         <DialogDescription id="org-modal-desc" className="sr-only">
           {editMode ? "Edit organization details and settings" : "View organization details and management interface"}
         </DialogDescription>
         {editMode ? (
-          <div className="p-6">
-            <DialogHeader className="mb-6">
+          <div className="flex flex-col max-h-[90vh]">
+            <DialogHeader className="px-6 py-4 border-b border-border/50">
               <DialogTitle className="flex items-center justify-between">
                 Edit Organization
                 <Button
@@ -120,32 +124,37 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                   size="sm"
                   onClick={() => setEditMode(false)}
                   data-testid="button-cancel-edit"
+                  className="hover:bg-muted/50"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </DialogTitle>
             </DialogHeader>
-            <EditOrganizationForm 
-              organization={currentOrg}
-              onSuccess={() => {
-                setEditMode(false);
-                toast({
-                  title: "Organization updated",
-                  description: "Changes have been saved successfully.",
-                });
-              }}
-              onCancel={() => setEditMode(false)}
-            />
+            <div className="flex-1 overflow-y-auto p-6">
+              <EditOrganizationForm 
+                organization={currentOrg}
+                onSuccess={() => {
+                  setEditMode(false);
+                  // Refresh the data after successful update
+                  queryClient.invalidateQueries({ queryKey: ['org', organization.id] });
+                  toast({
+                    title: "Organization updated",
+                    description: "Changes have been saved successfully.",
+                  });
+                }}
+                onCancel={() => setEditMode(false)}
+              />
+            </div>
           </div>
         ) : (
           <>
             <DialogHeader className="p-6 pb-0">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  {currentOrg.logoUrl ? (
+                  {(currentOrg.logoUrl || currentOrg.logo_url) ? (
                     <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-primary/20">
                       <img 
-                        src={currentOrg.logoUrl} 
+                        src={currentOrg.logoUrl || currentOrg.logo_url} 
                         alt={`${currentOrg.name} logo`}
                         className="w-full h-full object-cover"
                         data-testid="img-modal-organization-logo"
@@ -183,7 +192,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                     variant="outline"
                     size="sm"
                     onClick={() => setEditMode(true)}
-                    className="glass"
+                    className="bg-background/80 hover:bg-background/90 backdrop-blur-sm border-border/50"
                     data-testid="button-edit-organization"
                   >
                     <Edit className="h-4 w-4" />
@@ -192,16 +201,22 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                     variant="outline"
                     size="sm"
                     onClick={handleDelete}
-                    className="glass text-destructive hover:text-destructive"
+                    disabled={deleteOrgMutation.isPending}
+                    className="bg-background/80 hover:bg-background/90 backdrop-blur-sm border-border/50 text-destructive hover:text-destructive hover:border-destructive/50"
                     data-testid="button-delete-organization"
                   >
-                    <Trash className="h-4 w-4" />
+                    {deleteOrgMutation.isPending ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      <Trash className="h-4 w-4" />
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={onClose}
                     data-testid="button-close-modal"
+                    className="hover:bg-muted/50"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -211,16 +226,16 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
 
             <div className="flex-1 max-h-[75vh] overflow-y-auto p-6 pt-4">
               <Tabs defaultValue="general" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4 glass">
-                  <TabsTrigger value="general" data-testid="tab-general">
+                <TabsList className="grid w-full grid-cols-4 bg-muted/50 backdrop-blur-sm">
+                  <TabsTrigger value="general" data-testid="tab-general" className="data-[state=active]:bg-background/60">
                     <Building2 className="h-4 w-4 mr-2" />
                     General
                   </TabsTrigger>
-                  <TabsTrigger value="sports" data-testid="tab-sports">
+                  <TabsTrigger value="sports" data-testid="tab-sports" className="data-[state=active]:bg-background/60">
                     <Users className="h-4 w-4 mr-2" />
                     Sports
                   </TabsTrigger>
-                  <TabsTrigger value="discounts" data-testid="tab-discounts">
+                  <TabsTrigger value="discounts" data-testid="tab-discounts" className="data-[state=active]:bg-background/60">
                     <Settings className="h-4 w-4 mr-2" />
                     Discounts
                   </TabsTrigger>
@@ -230,67 +245,108 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                     Orders
                   </TabsTrigger>
                   */}
-                  <TabsTrigger value="other" data-testid="tab-other">
+                  <TabsTrigger value="other" data-testid="tab-other" className="data-[state=active]:bg-background/60">
                     <FileText className="h-4 w-4 mr-2" />
                     Other
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="general" className="space-y-4">
-                  <Card className="glass">
+                  <Card className="bg-muted/30 backdrop-blur-sm border-border/50">
                     <CardHeader>
                       <CardTitle>Contact Information</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {currentOrg.address && (
-                        <div className="flex items-start gap-3">
-                          <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                          <div>
-                            <p className="font-medium">Address</p>
-                            <p 
-                              className="text-muted-foreground"
-                              data-testid="text-organization-address"
-                            >
-                              {currentOrg.address}
-                            </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {currentOrg.address && (
+                          <div className="flex items-start gap-3">
+                            <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                              <p className="font-medium">Address</p>
+                              <p 
+                                className="text-muted-foreground"
+                                data-testid="text-organization-address"
+                              >
+                                {currentOrg.address}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {currentOrg.phone && (
-                        <div className="flex items-center gap-3">
-                          <Phone className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">Phone</p>
-                            <p 
-                              className="text-muted-foreground"
-                              data-testid="text-organization-phone"
-                            >
-                              {currentOrg.phone}
-                            </p>
+                        {currentOrg.phone && (
+                          <div className="flex items-center gap-3">
+                            <Phone className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Phone</p>
+                              <p 
+                                className="text-muted-foreground"
+                                data-testid="text-organization-phone"
+                              >
+                                {currentOrg.phone}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {currentOrg.email && (
+                        {currentOrg.email && (
+                          <div className="flex items-center gap-3">
+                            <Mail className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Email</p>
+                              <p 
+                                className="text-muted-foreground"
+                                data-testid="text-organization-email"
+                              >
+                                {currentOrg.email}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {(currentOrg.logoUrl || currentOrg.logo_url) && (
+                          <div className="flex items-center gap-3">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Logo URL</p>
+                              <p 
+                                className="text-muted-foreground text-xs truncate max-w-[200px]"
+                                data-testid="text-organization-logo-url"
+                              >
+                                {currentOrg.logoUrl || currentOrg.logo_url}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-3">
-                          <Mail className="h-5 w-5 text-muted-foreground" />
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
                           <div>
-                            <p className="font-medium">Email</p>
-                            <p 
-                              className="text-muted-foreground"
-                              data-testid="text-organization-email"
-                            >
-                              {currentOrg.email}
+                            <p className="font-medium">Type</p>
+                            <p className="text-muted-foreground">
+                              {currentOrg.is_business ? 'Business' : 'School/Organization'}
                             </p>
                           </div>
                         </div>
-                      )}
+
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">Status</p>
+                            <Badge variant="secondary" className="glass">
+                              Active
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
 
                       <Separator />
 
-                      <div className="text-sm text-muted-foreground">
-                        <p>Created: {new Date(currentOrg.createdAt).toLocaleDateString()}</p>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>Created: {new Date(currentOrg.created_at || currentOrg.createdAt).toLocaleDateString()}</p>
+                        {currentOrg.updated_at && (
+                          <p>Updated: {new Date(currentOrg.updated_at).toLocaleDateString()}</p>
+                        )}
+                        <p>Organization ID: <span className="font-mono text-xs">{currentOrg.id}</span></p>
                       </div>
                     </CardContent>
                   </Card>
@@ -301,7 +357,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                 </TabsContent>
 
                 <TabsContent value="discounts" className="space-y-4">
-                  <Card className="glass">
+                  <Card className="bg-muted/30 backdrop-blur-sm border-border/50">
                     <CardHeader>
                       <CardTitle>Universal Discounts</CardTitle>
                     </CardHeader>
@@ -345,7 +401,7 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
                 */}
 
                 <TabsContent value="other" className="space-y-4">
-                  <Card className="glass">
+                  <Card className="bg-muted/30 backdrop-blur-sm border-border/50">
                     <CardHeader>
                       <CardTitle>Additional Information</CardTitle>
                     </CardHeader>
