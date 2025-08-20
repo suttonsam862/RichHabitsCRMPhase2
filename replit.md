@@ -10,30 +10,35 @@ A React-TypeScript business management system for Rich Habits Custom Clothing, d
 - Advanced API validation and error handling
 - Modular organization and sports contact management system
 
-## Recent Changes (August 18, 2025)
+## Recent Changes (August 20, 2025)
 
-### Database Schema Fixes
-✓ **Fixed missing 'status' column error** - Added required status column to organizations table with default 'active' value
-✓ **Updated organization creation route** - Modified POST /api/organizations to include status field  
-✓ **Fixed Drizzle ORM type mismatch** - Corrected `.values(row)` to `.values([row])` for proper array format
-✓ **Verified database connectivity** - All tables (organizations, users, orders, user_roles, roles, sports, org_sports) exist and are accessible
-✓ **Confirmed role setup** - Required roles (owner, admin, member, customer) are properly configured
+### Organization Modal Fixes
+✓ **Fixed modal scrolling** - Added proper max-h-[75vh] overflow-y-auto container for content
+✓ **Implemented PATCH updates** - Organization edits now save correctly with partial updates
+✓ **Fixed DELETE functionality** - Delete button properly removes organizations and closes modal
+✓ **Enhanced General tab** - Now displays complete organization info including type, status, logo URL, and timestamps
+✓ **Fixed logo display** - Logos now show properly in modal header using both logoUrl and logo_url fields
+✓ **Improved Sports tab** - Sports and contact information display correctly with proper styling
+✓ **Updated modal styling** - Consistent UI with backdrop-blur and proper border styling
+✓ **Disabled Orders tab** - Removed non-functional orders tab until endpoint is implemented
+✓ **Fixed font 404 error** - Commented out missing Coolvetica font reference
 
-### Database Structure
-- **Organizations table**: Contains all required columns including newly added 'status'
-- **Roles table**: Properly configured with owner/admin/member/customer roles
-- **Database connection**: Working with PostgreSQL 16.9 on Neon
-- **API endpoints**: Organization CRUD operations now working correctly
+### API Improvements
+✓ **Fresh data fetching** - Modal always fetches latest data with timestamp cache-busting
+✓ **Proper React Query keys** - Using ['org', id] for better cache invalidation
+✓ **PATCH endpoint** - Added partial update support for organization fields
+✓ **Delete verification** - Tested and confirmed DELETE functionality works correctly
 
-### Issues Resolved
-- Fixed "Failed to create organization" console errors
-- Resolved database type validation issues in organizations.ts route
-- Eliminated missing schema column errors
-- Organization creation now successfully returns proper response with status field
+### Technical Details
+- **Edit form** - Fixed TypeScript issues and proper form validation
+- **Query invalidation** - Both list and detail queries refresh after mutations
+- **Error handling** - Improved error states and loading indicators
+- **UI consistency** - Modal styling matches application theme
 
-### Remaining Minor Issues
-- DialogHeader console warning (non-blocking, component works correctly)
-- One LSP diagnostic in test script (non-critical)
+### Database Schema (Previously Fixed)
+✓ **Organizations table**: All required columns present and working
+✓ **API endpoints**: GET, POST, PATCH, DELETE all functional
+✓ **Database connection**: Stable PostgreSQL connection
 
 ## User Preferences
 *To be updated based on user feedback and preferences*
