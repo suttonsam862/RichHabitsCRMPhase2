@@ -1,0 +1,2257 @@
+{
+  "summary": {
+    "timestamp": "2025-08-20T20:19:16.705Z",
+    "totalFiles": 286,
+    "totalDirectories": 57,
+    "potentialIssues": 39
+  },
+  "frontendTrees": [
+    {
+      "rootPath": "client/src",
+      "type": "primary",
+      "structure": {
+        "pages": [
+          "pages/QuoteGenerator.tsx",
+          "pages/QuoteHistory.tsx",
+          "pages/index.tsx",
+          "pages/not-found.tsx",
+          "pages/order-details.tsx",
+          "pages/organizations-enhanced.tsx",
+          "pages/organizations.tsx",
+          "pages/users.tsx"
+        ],
+        "components": [
+          "components/create-order-form.tsx",
+          "components/create-organization-form.tsx",
+          "components/create-sport-form.tsx",
+          "components/edit-organization-form.tsx",
+          "components/edit-sport-form.tsx",
+          "components/head-meta.tsx",
+          "components/orders-tab.tsx",
+          "components/organization-card.tsx",
+          "components/organization-modal.tsx",
+          "components/organization-wizard/branding-step.tsx",
+          "components/organization-wizard/org-wizard-modal.tsx",
+          "components/organization-wizard/primary-step.tsx",
+          "components/organization-wizard/sports-contacts-step.tsx",
+          "components/organization-wizard/types.ts",
+          "components/route-transition.tsx",
+          "components/sports-tab.tsx",
+          "components/ui/accordion.tsx",
+          "components/ui/alert-dialog.tsx",
+          "components/ui/alert.tsx",
+          "components/ui/aspect-ratio.tsx",
+          "components/ui/avatar.tsx",
+          "components/ui/badge.tsx",
+          "components/ui/breadcrumb.tsx",
+          "components/ui/button.tsx",
+          "components/ui/calendar.tsx",
+          "components/ui/card.tsx",
+          "components/ui/carousel.tsx",
+          "components/ui/chart.tsx",
+          "components/ui/checkbox.tsx",
+          "components/ui/collapsible.tsx",
+          "components/ui/command.tsx",
+          "components/ui/context-menu.tsx",
+          "components/ui/dialog.tsx",
+          "components/ui/drawer.tsx",
+          "components/ui/dropdown-menu.tsx",
+          "components/ui/form.tsx",
+          "components/ui/glow-card.tsx",
+          "components/ui/hover-card.tsx",
+          "components/ui/input-otp.tsx",
+          "components/ui/input.tsx",
+          "components/ui/label.tsx",
+          "components/ui/menubar.tsx",
+          "components/ui/navigation-menu.tsx",
+          "components/ui/page-shell.tsx",
+          "components/ui/pagination.tsx",
+          "components/ui/popover.tsx",
+          "components/ui/progress.tsx",
+          "components/ui/radio-group.tsx",
+          "components/ui/rb-button.tsx",
+          "components/ui/resizable.tsx",
+          "components/ui/scroll-area.tsx",
+          "components/ui/select.tsx",
+          "components/ui/separator.tsx",
+          "components/ui/sheet.tsx",
+          "components/ui/sidebar.tsx",
+          "components/ui/skeleton.tsx",
+          "components/ui/slider.tsx",
+          "components/ui/switch.tsx",
+          "components/ui/table.tsx",
+          "components/ui/tabs.tsx",
+          "components/ui/textarea.tsx",
+          "components/ui/toast.tsx",
+          "components/ui/toaster.tsx",
+          "components/ui/toggle-group.tsx",
+          "components/ui/toggle.tsx",
+          "components/ui/tooltip.tsx"
+        ],
+        "assets": [],
+        "configs": []
+      },
+      "entryPoints": [],
+      "packageJsons": []
+    },
+    {
+      "rootPath": "client/src/pages",
+      "type": "duplicate",
+      "structure": {
+        "pages": [],
+        "components": [],
+        "assets": [],
+        "configs": []
+      },
+      "entryPoints": [],
+      "packageJsons": []
+    },
+    {
+      "rootPath": "src",
+      "type": "primary",
+      "structure": {
+        "pages": [
+          "pages/QuoteGenerator.tsx",
+          "pages/QuoteHistory.tsx"
+        ],
+        "components": [],
+        "assets": [],
+        "configs": []
+      },
+      "entryPoints": [],
+      "packageJsons": []
+    }
+  ],
+  "reactEntryPoints": [
+    {
+      "htmlFile": "client/index.html",
+      "scriptSrc": "/src/main.tsx",
+      "rootElement": "root",
+      "additionalScripts": [
+        "https://replit.com/public/js/replit-dev-banner.js"
+      ]
+    }
+  ],
+  "routingAnalysis": {
+    "routerLibrary": "react-router-dom",
+    "routeDefinitions": [
+      {
+        "path": "/",
+        "component": "Home",
+        "file": "client/src/App.tsx",
+        "line": 25,
+        "isLazy": false
+      },
+      {
+        "path": "/organizations",
+        "component": "Organizations",
+        "file": "client/src/App.tsx",
+        "line": 26,
+        "isLazy": false
+      },
+      {
+        "path": "/users",
+        "component": "Users",
+        "file": "client/src/App.tsx",
+        "line": 29,
+        "isLazy": false
+      },
+      {
+        "path": "/quote",
+        "component": "QuoteGenerator",
+        "file": "client/src/App.tsx",
+        "line": 32,
+        "isLazy": false
+      },
+      {
+        "path": "/quotes/history",
+        "component": "QuoteHistory",
+        "file": "client/src/App.tsx",
+        "line": 35,
+        "isLazy": false
+      },
+      {
+        "path": "/orders/:id",
+        "component": "OrderDetails",
+        "file": "client/src/App.tsx",
+        "line": 38,
+        "isLazy": false
+      },
+      {
+        "path": "/orders",
+        "component": "Orders",
+        "file": "client/src/App.tsx",
+        "line": 41,
+        "isLazy": false
+      },
+      {
+        "path": "/designs",
+        "component": "Designs",
+        "file": "client/src/App.tsx",
+        "line": 42,
+        "isLazy": false
+      },
+      {
+        "path": "/",
+        "component": "Home",
+        "file": "src/App.tsx",
+        "line": 13,
+        "isLazy": false
+      },
+      {
+        "path": "/users",
+        "component": "Users",
+        "file": "src/App.tsx",
+        "line": 14,
+        "isLazy": false
+      },
+      {
+        "path": "/quote",
+        "component": "QuoteGenerator",
+        "file": "src/App.tsx",
+        "line": 15,
+        "isLazy": false
+      },
+      {
+        "path": "/quotes/history",
+        "component": "QuoteHistory",
+        "file": "src/App.tsx",
+        "line": 16,
+        "isLazy": false
+      },
+      {
+        "path": "*",
+        "component": "NotFound",
+        "file": "src/App.tsx",
+        "line": 17,
+        "isLazy": false
+      }
+    ],
+    "routeFiles": [
+      "client/src/App.tsx",
+      "client/src/components/route-transition.tsx",
+      "server/routes/debug.ts",
+      "server/routes/org-sports.ts",
+      "server/routes/organizations-hardened.ts",
+      "server/routes/organizations-v2.ts",
+      "server/routes/organizations.ts",
+      "server/routes/quotes.ts",
+      "server/routes/upload.ts",
+      "server/routes/users-admin.ts",
+      "server/routes/users.ts",
+      "server/routes.ts",
+      "src/App.tsx"
+    ],
+    "lazyRoutes": []
+  },
+  "aliasConfigs": [
+    {
+      "file": "tsconfig.json",
+      "type": "tsconfig",
+      "aliases": {
+        "@/*": "./client/src/*",
+        "@shared/*": "./shared/*"
+      }
+    },
+    {
+      "file": "vite.config.ts",
+      "type": "vite",
+      "aliases": {
+        "@": "src",
+        "@shared": "shared",
+        "@assets": "attached_assets"
+      }
+    }
+  ],
+  "serverRoutes": {
+    "routeFiles": [
+      "server/index.ts",
+      "server/routes/debug.ts",
+      "server/routes/org-sports.ts",
+      "server/routes/organizations-hardened.ts",
+      "server/routes/organizations-v2.ts",
+      "server/routes/organizations.ts",
+      "server/routes/quotes.ts",
+      "server/routes/upload.ts",
+      "server/routes/users-admin.ts",
+      "server/routes/users.ts",
+      "server/routes.ts"
+    ],
+    "apiPaths": [
+      "/api/health",
+      "/api/schema-status",
+      "env",
+      "/db",
+      "/whoami",
+      "/test",
+      "/",
+      "/test-init",
+      "/debug/:orgId",
+      "/:id",
+      "Content-Type",
+      "/:id/replace-title-card",
+      "/__columns",
+      "/logo",
+      "/api/organizations",
+      "/api/organizations/:id",
+      "/api/sports",
+      "/api/sports/:id",
+      "/api/orders",
+      "/api/orders/:id",
+      "/api/search/organizations",
+      "/api/users",
+      "/api/users/:id",
+      "/api/upload-logo",
+      "/api/org-sports"
+    ],
+    "duplicateRoutes": [
+      {
+        "path": "/",
+        "files": [
+          "server/routes/org-sports.ts",
+          "server/routes/org-sports.ts",
+          "server/routes/organizations-hardened.ts",
+          "server/routes/organizations-hardened.ts",
+          "server/routes/organizations-v2.ts",
+          "server/routes/organizations-v2.ts",
+          "server/routes/organizations.ts",
+          "server/routes/organizations.ts",
+          "server/routes/quotes.ts",
+          "server/routes/quotes.ts",
+          "server/routes/users-admin.ts",
+          "server/routes/users-admin.ts",
+          "server/routes/users.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/:id",
+        "files": [
+          "server/routes/organizations-hardened.ts",
+          "server/routes/organizations-hardened.ts",
+          "server/routes/organizations-hardened.ts",
+          "server/routes/organizations-v2.ts",
+          "server/routes/organizations-v2.ts",
+          "server/routes/organizations-v2.ts",
+          "server/routes/quotes.ts",
+          "server/routes/quotes.ts",
+          "server/routes/quotes.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/organizations/:id",
+        "files": [
+          "server/routes.ts",
+          "server/routes.ts",
+          "server/routes.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/sports",
+        "files": [
+          "server/routes.ts",
+          "server/routes.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/sports/:id",
+        "files": [
+          "server/routes.ts",
+          "server/routes.ts",
+          "server/routes.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/orders",
+        "files": [
+          "server/routes.ts",
+          "server/routes.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/orders/:id",
+        "files": [
+          "server/routes.ts",
+          "server/routes.ts",
+          "server/routes.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/users",
+        "files": [
+          "server/routes.ts",
+          "server/routes.ts"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      }
+    ],
+    "mountPoints": [
+      {
+        "file": "server/index.ts",
+        "path": "/api/organizations",
+        "router": "organizationsRouter",
+        "line": 165
+      },
+      {
+        "file": "server/index.ts",
+        "path": "/api/debug",
+        "router": "debugRouter",
+        "line": 166
+      },
+      {
+        "file": "server/index.ts",
+        "path": "/api/upload",
+        "router": "uploadRoutes",
+        "line": 167
+      },
+      {
+        "file": "server/index.ts",
+        "path": "/api/org-sports",
+        "router": "orgSportsRouter",
+        "line": 168
+      },
+      {
+        "file": "server/index.ts",
+        "path": "/api/users/admin",
+        "router": "usersAdminRouter",
+        "line": 169
+      },
+      {
+        "file": "server/index.ts",
+        "path": "/api/users",
+        "router": "usersRouter",
+        "line": 170
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/organizations",
+        "router": "organizationsRouter",
+        "line": 359
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/organizations-hardened",
+        "router": "organizationsHardenedRouter",
+        "line": 360
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/organizations-v2",
+        "router": "organizationsV2Router",
+        "line": 361
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/org-sports",
+        "router": "orgSportsRouter",
+        "line": 362
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/users",
+        "router": "usersRouter",
+        "line": 363
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/admin/users",
+        "router": "usersAdminRouter",
+        "line": 364
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/upload",
+        "router": "uploadRouter",
+        "line": 365
+      },
+      {
+        "file": "server/routes.ts",
+        "path": "/api/debug",
+        "router": "debugRouter",
+        "line": 366
+      }
+    ]
+  },
+  "crossRootImports": [
+    {
+      "file": "client/src/App.tsx",
+      "line": 5,
+      "import": "import { Toaster } from \"@/components/ui/toaster\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/App.tsx",
+      "line": 6,
+      "import": "import { RouteTransition } from \"@/components/route-transition\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/App.tsx",
+      "line": 7,
+      "import": "import { AppLayout } from \"@/layouts/AppLayout\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/App.tsx",
+      "line": 15,
+      "import": "import { TooltipProvider } from \"@/components/ui/tooltip\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 6,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 7,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 8,
+      "import": "import { Textarea } from \"@/components/ui/textarea\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 9,
+      "import": "import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from \"@/components/ui/select\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 10,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 11,
+      "import": "import { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 12,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-order-form.tsx",
+      "line": 13,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-organization-form.tsx",
+      "line": 4,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-organization-form.tsx",
+      "line": 5,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-organization-form.tsx",
+      "line": 6,
+      "import": "import { Textarea } from \"@/components/ui/textarea\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-organization-form.tsx",
+      "line": 7,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-organization-form.tsx",
+      "line": 8,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-organization-form.tsx",
+      "line": 9,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-sport-form.tsx",
+      "line": 4,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-sport-form.tsx",
+      "line": 5,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-sport-form.tsx",
+      "line": 6,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-sport-form.tsx",
+      "line": 7,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/create-sport-form.tsx",
+      "line": 8,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-organization-form.tsx",
+      "line": 4,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-organization-form.tsx",
+      "line": 5,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-organization-form.tsx",
+      "line": 6,
+      "import": "import { Textarea } from \"@/components/ui/textarea\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-organization-form.tsx",
+      "line": 7,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-organization-form.tsx",
+      "line": 8,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-organization-form.tsx",
+      "line": 9,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-sport-form.tsx",
+      "line": 4,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-sport-form.tsx",
+      "line": 5,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-sport-form.tsx",
+      "line": 6,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-sport-form.tsx",
+      "line": 7,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/edit-sport-form.tsx",
+      "line": 8,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/orders-tab.tsx",
+      "line": 4,
+      "import": "import { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/orders-tab.tsx",
+      "line": 5,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/orders-tab.tsx",
+      "line": 6,
+      "import": "import { Badge } from \"@/components/ui/badge\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/orders-tab.tsx",
+      "line": 7,
+      "import": "import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from \"@/components/ui/dialog\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/orders-tab.tsx",
+      "line": 8,
+      "import": "import { CreateOrderForm } from \"@/components/create-order-form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-card.tsx",
+      "line": 4,
+      "import": "import { Badge } from \"@/components/ui/badge\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 16,
+      "import": "import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from \"@/components/ui/dialog\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 17,
+      "import": "import { Tabs, TabsContent, TabsList, TabsTrigger } from \"@/components/ui/tabs\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 18,
+      "import": "import { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 19,
+      "import": "import { Badge } from \"@/components/ui/badge\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 20,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 21,
+      "import": "import { Separator } from \"@/components/ui/separator\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 22,
+      "import": "import { Alert, AlertDescription } from \"@/components/ui/alert\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 23,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 24,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 25,
+      "import": "import { EditOrganizationForm } from \"@/components/edit-organization-form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 26,
+      "import": "import { SportsTab } from \"@/components/sports-tab\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-modal.tsx",
+      "line": 27,
+      "import": "import { OrdersTab } from \"@/components/orders-tab\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/branding-step.tsx",
+      "line": 5,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/branding-step.tsx",
+      "line": 6,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/branding-step.tsx",
+      "line": 7,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/org-wizard-modal.tsx",
+      "line": 2,
+      "import": "import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from \"@/components/ui/dialog\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/org-wizard-modal.tsx",
+      "line": 3,
+      "import": "import { ScrollArea } from \"@/components/ui/scroll-area\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/org-wizard-modal.tsx",
+      "line": 4,
+      "import": "import { Tabs, TabsContent, TabsList, TabsTrigger } from \"@/components/ui/tabs\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/primary-step.tsx",
+      "line": 4,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/primary-step.tsx",
+      "line": 5,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/primary-step.tsx",
+      "line": 6,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/primary-step.tsx",
+      "line": 7,
+      "import": "import { Switch } from \"@/components/ui/switch\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/primary-step.tsx",
+      "line": 8,
+      "import": "import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from \"@/components/ui/select\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/primary-step.tsx",
+      "line": 9,
+      "import": "import { US_STATES } from \"@/constants/us-states\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/sports-contacts-step.tsx",
+      "line": 6,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/sports-contacts-step.tsx",
+      "line": 7,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/sports-contacts-step.tsx",
+      "line": 8,
+      "import": "import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/sports-contacts-step.tsx",
+      "line": 9,
+      "import": "import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from \"@/components/ui/select\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/sports-contacts-step.tsx",
+      "line": 11,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/sports-contacts-step.tsx",
+      "line": 12,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/organization-wizard/types.ts",
+      "line": 1,
+      "import": "import type { USState } from \"@/constants/us-states\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 4,
+      "import": "import { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 5,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 6,
+      "import": "import { Badge } from \"@/components/ui/badge\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 7,
+      "import": "import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from \"@/components/ui/dialog\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 8,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 9,
+      "import": "import { apiRequest } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 10,
+      "import": "import { CreateSportForm } from \"@/components/create-sport-form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/sports-tab.tsx",
+      "line": 11,
+      "import": "import { EditSportForm } from \"@/components/edit-sport-form\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/accordion.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/alert-dialog.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/alert-dialog.tsx",
+      "line": 5,
+      "import": "import { buttonVariants } from \"@/components/ui/button\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/alert.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/avatar.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/badge.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/breadcrumb.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/button.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/calendar.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/calendar.tsx",
+      "line": 6,
+      "import": "import { buttonVariants } from \"@/components/ui/button\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/card.tsx",
+      "line": 3,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/carousel.tsx",
+      "line": 7,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/carousel.tsx",
+      "line": 8,
+      "import": "import { Button } from \"@/components/ui/button\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/chart.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/checkbox.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/command.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/command.tsx",
+      "line": 7,
+      "import": "import { Dialog, DialogContent } from \"@/components/ui/dialog\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/context-menu.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/dialog.tsx",
+      "line": 7,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/drawer.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/dropdown-menu.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/form.tsx",
+      "line": 15,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/form.tsx",
+      "line": 16,
+      "import": "import { Label } from \"@/components/ui/label\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/glow-card.tsx",
+      "line": 2,
+      "import": "import { cn } from \"@/lib/utils\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/hover-card.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/input-otp.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/input.tsx",
+      "line": 3,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/label.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/menubar.tsx",
+      "line": 7,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/navigation-menu.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/page-shell.tsx",
+      "line": 2,
+      "import": "import { cn } from \"@/lib/utils\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/pagination.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/pagination.tsx",
+      "line": 5,
+      "import": "import { ButtonProps, buttonVariants } from \"@/components/ui/button\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/popover.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/progress.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/radio-group.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/rb-button.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/resizable.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/scroll-area.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/select.tsx",
+      "line": 7,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/separator.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/sheet.tsx",
+      "line": 8,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/sidebar.tsx",
+      "line": 6,
+      "import": "import { useIsMobile } from \"@/hooks/use-mobile\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/sidebar.tsx",
+      "line": 7,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/sidebar.tsx",
+      "line": 8,
+      "import": "import { Button } from \"@/components/ui/button\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/sidebar.tsx",
+      "line": 9,
+      "import": "import { Input } from \"@/components/ui/input\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/sidebar.tsx",
+      "line": 10,
+      "import": "import { Separator } from \"@/components/ui/separator\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/sidebar.tsx",
+      "line": 18,
+      "import": "import { Skeleton } from \"@/components/ui/skeleton\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/skeleton.tsx",
+      "line": 1,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/slider.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/switch.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/table.tsx",
+      "line": 3,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/tabs.tsx",
+      "line": 4,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/textarea.tsx",
+      "line": 3,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/toast.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/toaster.tsx",
+      "line": 1,
+      "import": "import { useToast } from \"@/hooks/use-toast\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/toggle-group.tsx",
+      "line": 7,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/toggle-group.tsx",
+      "line": 8,
+      "import": "import { toggleVariants } from \"@/components/ui/toggle\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/toggle.tsx",
+      "line": 5,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/components/ui/tooltip.tsx",
+      "line": 6,
+      "import": "import { cn } from \"@/lib/utils\"",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/index.tsx",
+      "line": 6,
+      "import": "import { GlowCard } from \"@/components/ui/glow-card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/index.tsx",
+      "line": 7,
+      "import": "import { RBButton } from \"@/components/ui/rb-button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/index.tsx",
+      "line": 8,
+      "import": "import { HeadMeta } from \"@/components/head-meta\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/not-found.tsx",
+      "line": 1,
+      "import": "import { Card, CardContent } from \"@/components/ui/card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/order-details.tsx",
+      "line": 4,
+      "import": "import { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/order-details.tsx",
+      "line": 5,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/order-details.tsx",
+      "line": 6,
+      "import": "import { Badge } from \"@/components/ui/badge\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/order-details.tsx",
+      "line": 7,
+      "import": "import { Separator } from \"@/components/ui/separator\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 4,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 5,
+      "import": "import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from \"@/components/ui/select\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 6,
+      "import": "import { Button } from \"@/components/ui/button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 7,
+      "import": "import { Card } from \"@/components/ui/card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 8,
+      "import": "import { Badge } from \"@/components/ui/badge\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 9,
+      "import": "import { Skeleton } from \"@/components/ui/skeleton\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 10,
+      "import": "import { Alert, AlertDescription } from \"@/components/ui/alert\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 11,
+      "import": "import { OrgWizardModal } from \"@/components/organization-wizard/org-wizard-modal\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 12,
+      "import": "import { OrganizationModal } from \"@/components/organization-modal\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 13,
+      "import": "import { GlowCard } from \"@/components/ui/glow-card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 14,
+      "import": "import { RBButton } from \"@/components/ui/rb-button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 15,
+      "import": "import { HeadMeta } from \"@/components/head-meta\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 16,
+      "import": "import { fetchOrganizations, deleteOrganization } from \"@/lib/api/organizations\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 17,
+      "import": "import { queryClient } from \"@/lib/queryClient\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 18,
+      "import": "import { useToast } from \"@/hooks/use-toast\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations-enhanced.tsx",
+      "line": 19,
+      "import": "import { useDebounce } from \"@/hooks/use-debounce\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations.tsx",
+      "line": 6,
+      "import": "import { Input } from \"@/components/ui/input\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations.tsx",
+      "line": 7,
+      "import": "import { OrganizationCard } from \"@/components/organization-card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations.tsx",
+      "line": 8,
+      "import": "import { OrganizationModal } from \"@/components/organization-modal\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations.tsx",
+      "line": 9,
+      "import": "import { OrgWizardModal } from \"@/components/organization-wizard/org-wizard-modal\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations.tsx",
+      "line": 10,
+      "import": "import { GlowCard } from \"@/components/ui/glow-card\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations.tsx",
+      "line": 11,
+      "import": "import { RBButton } from \"@/components/ui/rb-button\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/organizations.tsx",
+      "line": 12,
+      "import": "import { HeadMeta } from \"@/components/head-meta\";",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/users.tsx",
+      "line": 3,
+      "import": "import { Button } from '@/components/ui/button';",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/users.tsx",
+      "line": 4,
+      "import": "import { Input } from '@/components/ui/input';",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/users.tsx",
+      "line": 5,
+      "import": "import { Label } from '@/components/ui/label';",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/users.tsx",
+      "line": 6,
+      "import": "import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/users.tsx",
+      "line": 7,
+      "import": "import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/users.tsx",
+      "line": 8,
+      "import": "import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "client/src/pages/users.tsx",
+      "line": 9,
+      "import": "import { useToast } from '@/hooks/use-toast';",
+      "from": "client",
+      "to": "alias",
+      "severity": "warning"
+    },
+    {
+      "file": "scripts/seed-organizations.ts",
+      "line": 1,
+      "import": "import { db } from \"../server/db\";",
+      "from": "root",
+      "to": "server",
+      "severity": "warning"
+    },
+    {
+      "file": "scripts/seed-organizations.ts",
+      "line": 2,
+      "import": "import { organizations } from \"../shared/schema\";",
+      "from": "root",
+      "to": "shared",
+      "severity": "warning"
+    },
+    {
+      "file": "scripts/smoke-orgs.ts",
+      "line": 2,
+      "import": "import { listOrganizations } from '../server/organizations';",
+      "from": "root",
+      "to": "server",
+      "severity": "warning"
+    },
+    {
+      "file": "server/db.ts",
+      "line": 6,
+      "import": "import * as schema from '../shared/schema';",
+      "from": "server",
+      "to": "shared",
+      "severity": "warning"
+    },
+    {
+      "file": "server/debug-db-test.ts",
+      "line": 2,
+      "import": "import { organizations } from \"../shared/schema\";",
+      "from": "server",
+      "to": "shared",
+      "severity": "warning"
+    },
+    {
+      "file": "server/index.ts",
+      "line": 6,
+      "import": "import { organizations } from '../shared/schema';",
+      "from": "server",
+      "to": "shared",
+      "severity": "warning"
+    },
+    {
+      "file": "server/organizations.ts",
+      "line": 3,
+      "import": "import { organizations } from '../shared/schema';",
+      "from": "server",
+      "to": "shared",
+      "severity": "warning"
+    },
+    {
+      "file": "server/storage.ts",
+      "line": 14,
+      "import": "import { users, organizations, sports, orders, org_sports } from \"../shared/schema\";",
+      "from": "server",
+      "to": "shared",
+      "severity": "warning"
+    },
+    {
+      "file": "server/supabase-storage.ts",
+      "line": 13,
+      "import": "import { TABLES } from '../shared/supabase-schema';",
+      "from": "server",
+      "to": "shared",
+      "severity": "warning"
+    }
+  ],
+  "exportCollisions": [
+    {
+      "exportName": "App",
+      "files": [
+        "client/src/App.tsx",
+        "src/App.tsx"
+      ],
+      "type": "default"
+    },
+    {
+      "exportName": "QuoteGenerator",
+      "files": [
+        "client/src/pages/QuoteGenerator.tsx",
+        "src/pages/QuoteGenerator.tsx"
+      ],
+      "type": "default"
+    },
+    {
+      "exportName": "QuoteHistory",
+      "files": [
+        "client/src/pages/QuoteHistory.tsx",
+        "src/pages/QuoteHistory.tsx"
+      ],
+      "type": "default"
+    },
+    {
+      "exportName": "defineConfig",
+      "files": [
+        "drizzle.config.ts",
+        "vite.config.ts"
+      ],
+      "type": "default"
+    },
+    {
+      "exportName": "router",
+      "files": [
+        "server/routes/org-sports.ts",
+        "server/routes/organizations-hardened.ts",
+        "server/routes/organizations-v2.ts",
+        "server/routes/organizations.ts",
+        "server/routes/quotes.ts",
+        "server/routes/upload.ts",
+        "server/routes/users-admin.ts",
+        "server/routes/users.ts"
+      ],
+      "type": "default"
+    },
+    {
+      "exportName": "useDebounce",
+      "files": [
+        "client/src/hooks/use-debounce.ts",
+        "src/hooks/use-debounce.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "generateId",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "loadHistory",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "saveHistory",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "upsertQuote",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "getQuote",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "deleteQuote",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "saveDefaultLogo",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "getDefaultLogo",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "exportQuotes",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "importQuotes",
+      "files": [
+        "client/src/lib/quoteStore.ts",
+        "src/lib/quoteStore.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "ordersRelations",
+      "files": [
+        "migrations/relations.ts",
+        "shared/relations.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "organizationsRelations",
+      "files": [
+        "migrations/relations.ts",
+        "shared/relations.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "userRolesRelations",
+      "files": [
+        "migrations/relations.ts",
+        "shared/relations.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "rolesRelations",
+      "files": [
+        "migrations/relations.ts",
+        "shared/relations.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "users",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "organizations",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "orders",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "userRoles",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "roles",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "sports",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "orgSports",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "quotes",
+      "files": [
+        "migrations/schema.ts",
+        "shared/schema.ts"
+      ],
+      "type": "named"
+    },
+    {
+      "exportName": "storage",
+      "files": [
+        "server/storage.ts",
+        "server/supabase-storage.ts"
+      ],
+      "type": "named"
+    }
+  ],
+  "recommendations": [
+    "❌ Found 1 duplicate frontend trees. Consider consolidating into a single client/src directory.",
+    "❌ Found 8 duplicate API routes. This can cause routing conflicts.",
+    "⚠️ Found 29 export name collisions that could break lazy loading.",
+    "💡 Consider creating a monorepo structure document to prevent future architectural drift."
+  ]
+}
