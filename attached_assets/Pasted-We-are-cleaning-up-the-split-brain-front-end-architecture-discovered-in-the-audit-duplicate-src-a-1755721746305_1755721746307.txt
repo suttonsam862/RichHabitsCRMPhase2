@@ -1,0 +1,51 @@
+We are cleaning up the split-brain front-end architecture discovered in the audit (duplicate ./src and ./client/src React apps, 29 export collisions, alias drift).
+
+Goal
+- Make client/src the single canonical React app tree.
+- Quarantine the legacy ./src frontend safely, without deleting code.
+- Align Vite + tsconfig aliases so imports resolve consistently.
+- Ensure build/dev runs only from client/.
+
+Scope
+- Front-end only. Server untouched in this prompt.
+
+Steps
+1) Migration Plan
+- Create docs/FRONTEND-CANONICALIZATION.md.
+- List files in ./src not in client/src but still referenced.
+- List files in client/src that supersede ./src.
+- Add a “Post-migration checklist” with checkboxes.
+
+2) Guardrails
+- Add client/src/guard/no-cross-root.ts exporting CANONICAL_ROOT="client/src".
+- Add ESLint rule banning imports from top-level ./src into client/src.
+
+3) Path Aliases
+- In client/tsconfig.json, set baseUrl = "./src".
+- Add paths: { "@/*": ["src/*"] }.
+- In client/vite.config.ts, set resolve.alias { "@": path.resolve(__dirname, "src") }.
+
+4) Entry & Router
+- Ensure only client/index.html, client/src/main.tsx, client/src/App.tsx exist as entrypoints.
+- If duplicate index.html/main.tsx exist in ./src, move them to client/_legacy/src-[timestamp]/.
+
+5) File Sync
+- Copy into client/src any missing files from ./src that are still referenced in routes or imports.
+- Keep client/src versions when conflicts exist.
+- Move legacy ./src files into client/_legacy/src-[timestamp]/ for reference.
+
+6) Verification
+- Update Vite build/dev config so it serves exclusively from client/.
+- Run a grep for imports reaching into top-level ./src from client/ and fail build if any remain.
+- Confirm “npm run dev” launches client (5173) only.
+
+Deliverables
+- docs/FRONTEND-CANONICALIZATION.md with migration notes and checklist.
+- client/_legacy/src-[timestamp]/ containing old frontend.
+- Updated tsconfig.json and vite.config.ts.
+- ESLint rule to ban cross-root imports.
+- Confirm working dev build from client/.
+
+Constraints
+- Do not delete files — only move to _legacy.
+- Do not modify server code in this prompt.
