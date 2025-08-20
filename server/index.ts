@@ -5,7 +5,7 @@ import { db } from './db';
 import { sql } from 'drizzle-orm';
 import { organizations } from '../shared/schema';
 import { errorHandler } from "./middleware/error";
-import organizationsRouter from "./routes/organizations-hardened";
+import organizationsRouter from "./routes/organizations/index";
 import debugRouter from "./routes/debug";
 import uploadRoutes from "./routes/upload";
 import orgSportsRouter from "./routes/org-sports";
@@ -161,14 +161,16 @@ function validateEnvironmentVariables() {
 
 
   // Register routes
-  // Mount specific routers first to override general routes
+  // Mount canonical routers first to override general routes
   app.use("/api/organizations", organizationsRouter);
   app.use("/api/debug", debugRouter);
   app.use("/api/upload", uploadRoutes);
   app.use("/api/org-sports", orgSportsRouter);
   app.use("/api/users/admin", usersAdminRouter);
   app.use("/api/users", usersRouter);
-  // Mount general router last (it has conflicting /api/organizations route that we're overriding)
+  
+  // TODO: Remove legacy route mounting on 2025-09-20 after client migration
+  // Legacy routes now deprecated - /api/organizations conflicts resolved by canonical router
   app.use(router);
 
   // Health check endpoint
