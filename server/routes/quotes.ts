@@ -22,6 +22,7 @@ const CreateQuoteSchema = z.object({
   contact_email: z.string().email().optional().or(z.literal("")),
   contact_phone: z.string().optional(),
   contact_address: z.string().optional(),
+  salesperson: z.string().optional(),
   tax_percent: z.number().min(0).max(100),
   discount: z.number().min(0),
   notes: z.string().optional(),
@@ -108,15 +109,15 @@ router.post('/', async (req, res) => {
     const newQuotes = await db.execute(sql`
       INSERT INTO quotes (
         quote_number, date, organization_name, contact_person,
-        contact_email, contact_phone, contact_address, tax_percent,
-        discount, notes, items, subtotal, total, logo_url
+        contact_email, contact_phone, contact_address, salesperson,
+        tax_percent, discount, notes, items, subtotal, total, logo_url
       ) VALUES (
         ${data.quote_number}, ${data.date}, ${data.organization_name}, 
         ${data.contact_person || null}, ${data.contact_email || null}, 
         ${data.contact_phone || null}, ${data.contact_address || null}, 
-        ${data.tax_percent}, ${data.discount}, ${data.notes || null}, 
-        ${JSON.stringify(data.items)}, ${data.subtotal}, ${data.total}, 
-        ${data.logo_url || null}
+        ${data.salesperson || null}, ${data.tax_percent}, ${data.discount}, 
+        ${data.notes || null}, ${JSON.stringify(data.items)}, ${data.subtotal}, 
+        ${data.total}, ${data.logo_url || null}
       )
       RETURNING *
     `);
@@ -173,6 +174,7 @@ router.put('/:id', async (req, res) => {
         contact_email = ${data.contact_email || null},
         contact_phone = ${data.contact_phone || null},
         contact_address = ${data.contact_address || null},
+        salesperson = ${data.salesperson || null},
         tax_percent = ${data.tax_percent},
         discount = ${data.discount},
         notes = ${data.notes || null},

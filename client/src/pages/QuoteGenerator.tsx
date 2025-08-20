@@ -22,6 +22,7 @@ type Quote = {
   contact_email: string;
   contact_phone: string;
   contact_address: string;
+  salesperson: string;
   tax_percent: number;
   discount: number;
   notes: string;
@@ -36,7 +37,7 @@ const currency = (n: number) => n.toLocaleString(undefined, { style: "currency",
 
 export default function QuoteGenerator() {
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-  const [org, setOrg] = useState({ toName: "", toContact: "", toEmail: "", toPhone: "", toAddress: "" });
+  const [org, setOrg] = useState({ toName: "", toContact: "", toEmail: "", toPhone: "", toAddress: "", salesperson: "" });
   const [quoteMeta, setQuoteMeta] = useState({
     quoteNo: "",
     date: new Date().toISOString().slice(0, 10),
@@ -83,6 +84,7 @@ export default function QuoteGenerator() {
         contact_email: org.toEmail,
         contact_phone: org.toPhone,
         contact_address: org.toAddress,
+        salesperson: org.salesperson,
         tax_percent: quoteMeta.taxPct,
         discount: quoteMeta.discount,
         notes: quoteMeta.notes,
@@ -113,7 +115,8 @@ export default function QuoteGenerator() {
       toContact: quote.contact_person,
       toEmail: quote.contact_email,
       toPhone: quote.contact_phone,
-      toAddress: quote.contact_address
+      toAddress: quote.contact_address,
+      salesperson: quote.salesperson || ""
     });
     setQuoteMeta({
       quoteNo: quote.quote_number,
@@ -336,6 +339,15 @@ export default function QuoteGenerator() {
                           className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black resize-none"
                           placeholder="Enter full address"
                           rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 print:text-gray-600">Salesperson</Label>
+                        <Input 
+                          value={org.salesperson} 
+                          onChange={(e) => setOrg({ ...org, salesperson: e.target.value })} 
+                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                          placeholder="Enter assigned salesperson"
                         />
                       </div>
                     </CardContent>
