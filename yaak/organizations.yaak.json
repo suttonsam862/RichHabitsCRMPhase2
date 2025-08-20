@@ -1,0 +1,209 @@
+{
+  "name": "Organizations API Collection",
+  "description": "Rich Habits Custom Clothing - Organization Management API endpoints",
+  "version": "1.0.0",
+  "environment": {
+    "BASE_URL": "http://localhost:5000",
+    "AUTH_HEADER": ""
+  },
+  "requests": [
+    {
+      "id": "get-organizations",
+      "name": "GET Organizations List",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/organizations",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "enabled": true
+        },
+        {
+          "name": "Authorization",
+          "value": "{{AUTH_HEADER}}",
+          "enabled": false
+        }
+      ],
+      "params": [
+        {
+          "name": "_ts",
+          "value": "{{$timestamp}}",
+          "description": "Cache-busting timestamp",
+          "enabled": true
+        }
+      ],
+      "description": "Retrieve all organizations with optional cache-busting",
+      "tests": [
+        "expect(response.status).toBe(200);",
+        "expect(response.data).toBeInstanceOf(Array);",
+        "if (response.data.length > 0) {",
+        "  expect(response.data[0]).toHaveProperty('id');",
+        "  expect(response.data[0]).toHaveProperty('name');",
+        "  expect(response.data[0]).toHaveProperty('state');",
+        "}"
+      ]
+    },
+    {
+      "id": "get-organization-by-id",
+      "name": "GET Organization by ID",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/organizations/{{ORGANIZATION_ID}}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "enabled": true
+        },
+        {
+          "name": "Authorization",
+          "value": "{{AUTH_HEADER}}",
+          "enabled": false
+        }
+      ],
+      "params": [
+        {
+          "name": "_ts",
+          "value": "{{$timestamp}}",
+          "description": "Cache-busting timestamp",
+          "enabled": true
+        }
+      ],
+      "variables": [
+        {
+          "name": "ORGANIZATION_ID",
+          "value": "e9612de5-f4c5-4283-9584-c23ab8abc7da",
+          "description": "Replace with actual organization ID"
+        }
+      ],
+      "description": "Retrieve a specific organization by ID with sports and contact details",
+      "tests": [
+        "expect(response.status).toBe(200);",
+        "expect(response.data).toHaveProperty('id');",
+        "expect(response.data).toHaveProperty('name');",
+        "expect(response.data).toHaveProperty('state');",
+        "if (response.data.sports) {",
+        "  expect(response.data.sports).toBeInstanceOf(Array);",
+        "}"
+      ]
+    },
+    {
+      "id": "create-organization",
+      "name": "POST Create Organization",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/organizations",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "enabled": true
+        },
+        {
+          "name": "Authorization",
+          "value": "{{AUTH_HEADER}}",
+          "enabled": false
+        }
+      ],
+      "body": {
+        "type": "json",
+        "content": {
+          "name": "Test Organization",
+          "state": "TX",
+          "address": "123 Test Street, Test City, TX 12345",
+          "phone": "(555) 123-4567",
+          "email": "test@example.com",
+          "notes": "Created via Yaak API testing",
+          "is_business": true
+        }
+      },
+      "description": "Create a new organization with all standard fields",
+      "tests": [
+        "expect(response.status).toBe(201);",
+        "expect(response.data).toHaveProperty('id');",
+        "expect(response.data).toHaveProperty('name', 'Test Organization');",
+        "expect(response.data).toHaveProperty('state', 'TX');"
+      ]
+    },
+    {
+      "id": "update-organization",
+      "name": "PATCH Update Organization",
+      "method": "PATCH",
+      "url": "{{BASE_URL}}/api/organizations/{{ORGANIZATION_ID}}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "enabled": true
+        },
+        {
+          "name": "Authorization",
+          "value": "{{AUTH_HEADER}}",
+          "enabled": false
+        }
+      ],
+      "body": {
+        "type": "json",
+        "content": {
+          "phone": "(555) 987-6543",
+          "notes": "Updated via Yaak API testing at {{$timestamp}}",
+          "email": "updated@example.com"
+        }
+      },
+      "variables": [
+        {
+          "name": "ORGANIZATION_ID",
+          "value": "REPLACE_WITH_ACTUAL_ID",
+          "description": "Replace with ID from GET or CREATE response"
+        }
+      ],
+      "description": "Partial update of organization fields (PATCH endpoint)",
+      "tests": [
+        "expect(response.status).toBe(200);",
+        "expect(response.data).toHaveProperty('phone', '(555) 987-6543');",
+        "expect(response.data.notes).toContain('Updated via Yaak');"
+      ]
+    },
+    {
+      "id": "delete-organization",
+      "name": "DELETE Organization",
+      "method": "DELETE",
+      "url": "{{BASE_URL}}/api/organizations/{{ORGANIZATION_ID}}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "{{AUTH_HEADER}}",
+          "enabled": false
+        }
+      ],
+      "variables": [
+        {
+          "name": "ORGANIZATION_ID",
+          "value": "REPLACE_WITH_ACTUAL_ID",
+          "description": "Replace with ID of organization to delete (use test org only!)"
+        }
+      ],
+      "description": "Delete an organization (WARNING: Use only with test data!)",
+      "tests": [
+        "expect(response.status).toBe(204);"
+      ]
+    }
+  ],
+  "folders": [
+    {
+      "name": "Organization Management",
+      "description": "Core CRUD operations for organizations",
+      "requests": ["get-organizations", "get-organization-by-id", "create-organization", "update-organization", "delete-organization"]
+    }
+  ],
+  "scripts": {
+    "pre-request": [
+      "// Auto-generate timestamp for cache busting",
+      "yaak.globals.set('$timestamp', Date.now());"
+    ],
+    "post-response": [
+      "// Log response for debugging",
+      "if (response.status >= 400) {",
+      "  console.log('Error Response:', response.data);",
+      "}"
+    ]
+  }
+}

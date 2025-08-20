@@ -11,7 +11,7 @@ async function ensureRolesExist() {
       SELECT COUNT(*) as count FROM roles WHERE slug = 'owner'
     `);
     
-    const roleCount = Array.isArray(rolesResult) ? rolesResult[0]?.count : rolesResult.rows?.[0]?.count;
+    const roleCount = Array.isArray(rolesResult) ? rolesResult[0]?.count : (rolesResult as any).rows?.[0]?.count;
     
     if (!roleCount || roleCount === 0) {
       console.log("🔧 Creating owner role...");
@@ -39,7 +39,7 @@ async function ensureRolesExist() {
       SELECT id, slug, name FROM roles WHERE slug = 'owner'
     `);
     
-    const ownerRole = Array.isArray(verifyResult) ? verifyResult[0] : verifyResult.rows?.[0];
+    const ownerRole = Array.isArray(verifyResult) ? verifyResult[0] : (verifyResult as any).rows?.[0];
     
     if (ownerRole) {
       console.log("✅ Owner role verified:", ownerRole);
@@ -77,8 +77,8 @@ async function ensureRolesExist() {
   }
 }
 
-// Run if called directly
-if (require.main === module) {
+// Run if called directly (ESM compatible check)
+if (import.meta.url === `file://${process.argv[1]}`) {
   ensureRolesExist()
     .then(() => {
       console.log("🎉 Role setup completed successfully");
