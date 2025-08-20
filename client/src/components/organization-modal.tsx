@@ -38,11 +38,20 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch detailed organization data with orders
+  // Fetch fresh organization data with proper React Query key
   const { data: orgDetails, isLoading } = useQuery({
-    queryKey: ["/api/organizations", organization.id],
+    queryKey: ['org', organization.id],
+    queryFn: async () => {
+      // Add timestamp to prevent 304 caching
+      const response = await fetch(`/api/organizations/${organization.id}?t=${Date.now()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch organization details');
+      }
+      return response.json();
+    },
     enabled: open,
-    select: (data: any) => data || organization,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache
   });
 
   const deleteOrgMutation = useMutation({
@@ -50,7 +59,9 @@ export function OrganizationModal({ organization, open, onClose }: OrganizationM
       method: "DELETE",
     }),
     onSuccess: () => {
+      // Invalidate both list and detail queries
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ['org', organization.id] });
       toast({
         title: "Organization deleted",
         description: "The organization has been successfully deleted.",
