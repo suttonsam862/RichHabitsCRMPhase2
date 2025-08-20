@@ -1,0 +1,76 @@
+We must replace the stubbed Organizations API with real DB integration so the UI loads organizations. Do NOT change DB schema in this prompt. Keep changes minimal and typed.
+
+Scope
+- Server only: server/routes/organizations (this file), server/services/* (create if missing), server/db/* (reuse existing pool/Drizzle).
+- Shared DTOs already exist in @shared/dtos. Use them for validation/shape.
+
+Goals
+1) Implement GET /api/organizations to return real rows with total count.
+2) Implement GET /api/organizations/:id to return a single org or 404.
+3) Implement POST/PUT with validation (still minimal), but keep delete/logo as TODO if needed.
+4) Preserve existing response envelope used by UI: { success: boolean, data, count?, message? } for list endpoint.
+5) Map snake_case DB fields ⇄ camelCase DTO cleanly.
+
+Steps
+
+A) Find the DB access layer
+- Locate the existing DB client (pg Pool or Drizzle). Typical locations to search:
+  - server/db/index.ts, server/db/client.ts, server/db/pool.ts
+  - server/services/organizations.ts (if exists)
+- If no organizations service exists, create: server/services/organizations.ts with functions:
+  - listOrganizations(opts: { limit?: number; offset?: number; search?: string }): Promise<{ rows: DbOrg[]; count: number }>
+  - getOrganizationById(id: string): Promise<DbOrg|null>
+  - createOrganization(input: CreateOrgInput): Promise<DbOrg>
+  - updateOrganization(id: string, input: UpdateOrgInput): Promise<DbOrg>
+
+B) Types & mappers
+- Define DbOrg type in the service (import or declare) reflecting actual DB columns (snake_case, including address_line1, etc).
+- Add mapper: dbToDto(row: DbOrg): OrganizationDTO — convert snake_case → camelCase and coerce nullable numbers to 0 where appropriate (e.g., universalDiscounts if numeric).
+- Add mapper: dtoToDb(input: CreateOrganizationDTO | UpdateOrganizationDTO) that produces DB shape (camel → snake). Do not include columns managed by DB defaults.
+
+C) Implement routes (replace stubs)
+- GET "/":
+  - Accept optional query params: limit (default 25), offset (default 0), search (optional).
+  - Call listOrganizations; map rows via dbToDto.
+  - Return 200 { success: true, data, count }.
+- GET "/:id":
+  - Validate id is uuid-like (basic regex or zod).
+  - If not found, return 404 { error: "Organization not found" }.
+  - Else map and return 200 { success: true, data }.
+- POST "/":
+  - Keep validateRequest({ body: CreateOrganizationDTO }).
+  - Map dtoToDb, call createOrganization, return 201 { success: true, data: dbToDto(created) }.
+- PUT "/:id":
+  - validateRequest({ body: UpdateOrganizationDTO }).
+  - Map dtoToDb, call updateOrganization, return 200 with mapped row.
+- Leave DELETE and POST "/:id/logo" as 501 with clear message for now unless there is an existing working implementation to delegate to.
+
+D) Null/empty safety
+- universal_discounts: If DB uses numeric percent, ensure undefined/null/NaN → 0 on write; if DB uses JSON, normalize to a minimal object {}.
+- String fields: convert "" → null for nullable DB columns via dtoToDb.
+
+E) Errors & logging
+- Use asyncHandler and return consistent JSON shapes on errors: status 400 for validation, 500 for unexpected.
+- Log concise errors with route + message but exclude PII.
+
+F) Tests (lightweight)
+- Add tests/organizations.integration.test.ts (supertest):
+  - GET /api/organizations returns 200 with array and count ≥ 0.
+  - GET /api/organizations/:id not-found returns 404.
+  - (If feasible) POST valid minimal payload returns 201.
+
+G) Docs
+- Update docs/API-ROUTES.md “organizations” section to reflect real behavior (query params, response example).
+- Add a brief “Mapping” note (snake_case DB ⇄ camelCase DTO).
+
+Acceptance
+- GET /api/organizations returns real data (no more data: []) and count reflects total rows.
+- GET /api/organizations/:id returns 200 with org or 404 when missing.
+- POST/PUT accept DTOs and persist changes.
+- UI Organizations page now loads actual orgs without changes on the client.
+- No DB schema changes and no breaking changes to other modules.
+
+Guardrails
+- Do NOT modify unrelated routers.
+- Do NOT rename DTOs or change their external shapes.
+- Keep the response envelope stable to avoid client breakage.
