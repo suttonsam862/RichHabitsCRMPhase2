@@ -10,6 +10,7 @@ import {
   insertOrderSchema,
   insertUserSchema 
 } from "../shared/supabase-schema";
+import quotesRouter from './routes/quotes';
 
 const router = Router();
 
@@ -317,7 +318,7 @@ router.post("/api/upload-logo", upload.single('logo'), asyncHandler(async (req: 
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    
+
     const logoUrl = await uploadLogo(req.file, req.body.orgId);
     res.json({ url: logoUrl });
   } catch (error: any) {
@@ -353,6 +354,17 @@ router.post("/api/org-sports",
     }
   })
 );
+
+// Register all routes
+// app.use('/api/organizations', organizationsRouter);
+// app.use('/api/organizations-hardened', organizationsHardenedRouter);
+// app.use('/api/organizations-v2', organizationsV2Router);
+// app.use('/api/org-sports', orgSportsRouter);
+// app.use('/api/users', usersRouter);
+// app.use('/api/admin/users', usersAdminRouter);
+// app.use('/api/upload', uploadRouter);
+// app.use('/api/debug', debugRouter);
+router.use('/api/quotes', quotesRouter);
 
 // Error handling middleware
 router.use((error: any, req: any, res: any, next: any) => {
