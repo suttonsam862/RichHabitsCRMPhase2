@@ -138,10 +138,23 @@ export default function OrganizationsEnhanced() {
   };
 
   // Fetch organizations
-  const { data, isLoading, error, refetch } = useQuery({
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["organizations", queryParams],
     queryFn: () => fetchOrganizations(queryParams),
   });
+
+  const organizations = response?.data || [];
+  const totalCount = response?.count || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const startIndex = (page - 1) * pageSize + 1;
+  const endIndex = Math.min(page * pageSize, totalCount);
+  const safeOrganizations = organizations || [];
+
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -400,19 +413,19 @@ export default function OrganizationsEnhanced() {
           renderErrorState()
         ) : isLoading ? (
           renderLoadingState()
-        ) : !data || data.items.length === 0 ? (
+        ) : safeOrganizations.length === 0 ? (
           renderEmptyState()
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.items.map(renderOrganizationCard)}
+              {safeOrganizations.map(renderOrganizationCard)}
             </div>
 
             {/* Pagination */}
-            {data.totalPages > 1 && (
+            {totalPages > 1 && (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-text-soft">
-                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, data.total)} of {data.total} organizations
+                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount} organizations
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -428,14 +441,14 @@ export default function OrganizationsEnhanced() {
                   </Button>
 
                   <span className="px-3 text-sm text-white">
-                    Page {page} of {data.totalPages}
+                    Page {page} of {totalPages}
                   </span>
 
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage(p => Math.min(data.totalPages, p + 1))}
-                    disabled={page === data.totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
                     data-testid="button-next-page"
                   >
                     Next
