@@ -1,147 +1,210 @@
 
-import { useMemo, useState, useEffect } from "react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Textarea } from "../components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Separator } from "../components/ui/separator";
-import { Badge } from "../components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Calendar, FileText, Plus, Trash2, Upload, History, Download } from "lucide-react";
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Label } from '../components/ui/label';
+import { Separator } from '../components/ui/separator';
+import { Badge } from '../components/ui/badge';
+import { useToast } from '../hooks/use-toast';
+import { Building2, FileText, Download, Upload, Calculator, Mail, Phone, MapPin, Plus, Trash2, Save, Copy, History } from 'lucide-react';
+import { 
+  upsertQuote, 
+  getQuote, 
+  generateId, 
+  saveDefaultLogo, 
+  getDefaultLogo,
+  QuoteRecord 
+} from '../lib/quoteStore';
 
-type Item = { id: string; name: string; price: number; qty: number };
-type Quote = {
-  id: string;
-  quote_number: string;
-  date: string;
-  organization_name: string;
-  contact_person: string;
-  contact_email: string;
-  contact_phone: string;
-  contact_address: string;
-  salesperson: string;
-  tax_percent: number;
-  discount: number;
-  notes: string;
-  items: Item[];
-  subtotal: number;
-  total: number;
-  created_at: string;
-  logo_url?: string;
-};
+// Custom debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-const currency = (n: number) => n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function QuoteGenerator() {
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-  const [org, setOrg] = useState({ toName: "", toContact: "", toEmail: "", toPhone: "", toAddress: "", salesperson: "" });
-  const [quoteMeta, setQuoteMeta] = useState({
-    quoteNo: "",
-    date: new Date().toISOString().slice(0, 10),
-    notes: "",
-    taxPct: 0,
-    discount: 0,
-  });
-  const [items, setItems] = useState<Item[]>([{ id: crypto.randomUUID(), name: "", price: 0, qty: 1 }]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  const [currentQuoteId, setCurrentQuoteId] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Generate automatic quote number on load
+  // Form state
+  const [toName, setToName] = useState('');
+  const [toContact, setToContact] = useState('');
+  const [toEmail, setToEmail] = useState('');
+  const [toPhone, setToPhone] = useState('');
+  const [toAddress, setToAddress] = useState('');
+
+  // Quote meta
+  const [quoteNo, setQuoteNo] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [taxPct, setTaxPct] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [notes, setNotes] = useState('');
+
+  // Items
+  const [items, setItems] = useState<Array<{ name: string; price: number; qty: number }>>([]);
+
+  // Logo
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(() => getDefaultLogo());
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  // Create a debounced version of form state for auto-saving
+  const debouncedFormState = useDebounce({
+    toName, toContact, toEmail, toPhone, toAddress,
+    items, quoteNo, date, taxPct, discount, notes
+  }, 1000);
+
+  // Calculate totals
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const discountAmount = subtotal * (discount / 100);
+  const taxAmount = (subtotal - discountAmount) * (taxPct / 100);
+  const total = subtotal - discountAmount + taxAmount;
+
+  // Load quote from URL parameter on mount
   useEffect(() => {
-    generateQuoteNumber();
-    fetchQuotes();
+    const quoteId = searchParams.get('id');
+    if (quoteId) {
+      const savedQuote = getQuote(quoteId);
+      if (savedQuote) {
+        setCurrentQuoteId(quoteId);
+        // Hydrate form state
+        setToName(savedQuote.org.toName);
+        setToContact(savedQuote.org.toContact);
+        setToEmail(savedQuote.org.toEmail);
+        setToPhone(savedQuote.org.toPhone);
+        setToAddress(savedQuote.org.toAddress);
+        setItems(savedQuote.items);
+        setQuoteNo(savedQuote.meta.quoteNo);
+        setDate(savedQuote.meta.date);
+        setTaxPct(savedQuote.meta.taxPct);
+        setDiscount(savedQuote.meta.discount);
+        setNotes(savedQuote.meta.notes);
+        setLogoDataUrl(savedQuote.logoDataUrl || getDefaultLogo());
+        setHasUnsavedChanges(false);
+      }
+    }
+  }, [searchParams]);
+
+  const createQuoteRecord = useCallback((id?: string): QuoteRecord => {
+    const title = toName || 'Untitled Quote';
+    return {
+      id: id || generateId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      title,
+      org: { toName, toContact, toEmail, toPhone, toAddress },
+      items: items.map(item => ({
+        name: item.name,
+        price: item.price,
+        qty: item.qty
+      })),
+      meta: { quoteNo, date, taxPct, discount, notes },
+      logoDataUrl,
+      totals: { subtotal, discount: discountAmount, tax: taxAmount, total }
+    };
+  }, [toName, toContact, toEmail, toPhone, toAddress, items, quoteNo, date, taxPct, discount, notes, logoDataUrl, subtotal, discountAmount, taxAmount, total]);
+
+  // Auto-save when form data changes (debounced)
+  useEffect(() => {
+    if (currentQuoteId && !hasUnsavedChanges) {
+      return; // Skip if no changes to save
+    }
+
+    if (currentQuoteId) {
+      const quoteData = createQuoteRecord(currentQuoteId);
+      upsertQuote(quoteData);
+      setHasUnsavedChanges(false);
+    }
+  }, [debouncedFormState, currentQuoteId, hasUnsavedChanges, createQuoteRecord]);
+
+  // Mark as having unsaved changes when form data changes
+  useEffect(() => {
+    if (currentQuoteId) {
+      setHasUnsavedChanges(true);
+    }
+  }, [toName, toContact, toEmail, toPhone, toAddress, items, quoteNo, date, taxPct, discount, notes, logoDataUrl]);
+
+  const handleLogoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          setLogoDataUrl(dataUrl);
+          saveDefaultLogo(dataUrl); // Save as default for future quotes
+        };
+      reader.readAsDataURL(file);
+    }
+    event.target.value = ''; // Clear the input value to allow uploading the same file again
   }, []);
 
-  const generateQuoteNumber = () => {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-    setQuoteMeta(prev => ({ ...prev, quoteNo: `Q-${timestamp}-${random}` }));
-  };
+  const handleAddItem = useCallback(() => {
+    setItems(prev => [...prev, { name: '', price: 0, qty: 1 }]);
+  }, []);
 
-  const fetchQuotes = async () => {
-    try {
-      const response = await fetch('/api/quotes');
-      if (response.ok) {
-        const data = await response.json();
-        setQuotes(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch quotes:', error);
-    }
-  };
+  const handleRemoveItem = useCallback((index: number) => {
+    setItems(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const saveQuote = async () => {
-    try {
-      const quoteData = {
-        quote_number: quoteMeta.quoteNo,
-        date: quoteMeta.date,
-        organization_name: org.toName,
-        contact_person: org.toContact,
-        contact_email: org.toEmail,
-        contact_phone: org.toPhone,
-        contact_address: org.toAddress,
-        salesperson: org.salesperson,
-        tax_percent: quoteMeta.taxPct,
-        discount: quoteMeta.discount,
-        notes: quoteMeta.notes,
-        items: items,
-        subtotal: totals.subtotal,
-        total: totals.total,
-        logo_url: logoDataUrl
-      };
+  const handleItemChange = useCallback((index: number, field: keyof { name: string; price: number; qty: number }, value: string | number) => {
+    setItems(prev => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  }, []);
 
-      const response = await fetch('/api/quotes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(quoteData)
-      });
+  const handleSaveQuote = useCallback(() => {
+    const id = currentQuoteId || generateId();
+    const quoteData = createQuoteRecord(id);
 
-      if (response.ok) {
-        fetchQuotes();
-        generateQuoteNumber(); // Generate new quote number
-      }
-    } catch (error) {
-      console.error('Failed to save quote:', error);
-    }
-  };
+    upsertQuote(quoteData);
+    setCurrentQuoteId(id);
+    setHasUnsavedChanges(false);
 
-  const loadQuote = (quote: Quote) => {
-    setOrg({
-      toName: quote.organization_name,
-      toContact: quote.contact_person,
-      toEmail: quote.contact_email,
-      toPhone: quote.contact_phone,
-      toAddress: quote.contact_address,
-      salesperson: quote.salesperson || ""
+    toast({
+      title: "Quote saved",
+      description: "Your quote has been saved to local storage.",
     });
-    setQuoteMeta({
-      quoteNo: quote.quote_number,
-      date: quote.date,
-      notes: quote.notes,
-      taxPct: quote.tax_percent,
-      discount: quote.discount
+  }, [currentQuoteId, createQuoteRecord, toast]);
+
+  const handleSaveAsNew = useCallback(() => {
+    const newId = generateId();
+    const quoteData = createQuoteRecord(newId);
+    quoteData.title = `${quoteData.title} (Copy)`;
+
+    upsertQuote(quoteData);
+    setCurrentQuoteId(newId);
+    setHasUnsavedChanges(false);
+
+    toast({
+      title: "Quote duplicated",
+      description: "A new copy of your quote has been saved.",
     });
-    setItems(quote.items);
-    setLogoDataUrl(quote.logo_url || null);
-    setIsHistoryOpen(false);
-  };
+  }, [createQuoteRecord, toast]);
 
-  const totals = useMemo(() => {
-    const subtotal = items.reduce((s, it) => s + (it.price || 0) * (it.qty || 0), 0);
-    const discount = Number(quoteMeta.discount) || 0;
-    const tax = ((Number(quoteMeta.taxPct) || 0) / 100) * Math.max(subtotal - discount, 0);
-    const total = Math.max(subtotal - discount, 0) + tax;
-    return { subtotal, discount, tax, total };
-  }, [items, quoteMeta]);
-
-  const updateItem = (id: string, patch: Partial<Item>) => setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
-  const addItem = () => setItems((arr) => [...arr, { id: crypto.randomUUID(), name: "", price: 0, qty: 1 }]);
-  const removeItem = (id: string) => setItems((arr) => (arr.length > 1 ? arr.filter((it) => it.id !== id) : arr));
-  const onLogoPick = (f?: File) => { if (!f) return; const r = new FileReader(); r.onload = () => setLogoDataUrl(String(r.result)); r.readAsDataURL(f); };
+  const handlePrint = useCallback(() => {
+    const printContents = printRef.current?.innerHTML;
+    const originalContents = document.body.innerHTML;
+    if (printContents) {
+      document.body.innerHTML = printContents;
+      window.print();
+      document.body.innerHTML = originalContents;
+      window.location.reload(); // Reload to restore original state and event listeners
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white print:bg-white print:text-black">
@@ -161,58 +224,27 @@ export default function QuoteGenerator() {
           </div>
           
           <div className="flex items-center gap-3">
-            <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="border-slate-600 bg-slate-800 hover:bg-slate-700">
-                  <History className="w-4 h-4 mr-2" />
-                  Quote History
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl bg-slate-900 border-slate-700">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Quote History</DialogTitle>
-                </DialogHeader>
-                <div className="max-h-96 overflow-y-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-slate-700">
-                        <TableHead className="text-slate-300">Quote #</TableHead>
-                        <TableHead className="text-slate-300">Date</TableHead>
-                        <TableHead className="text-slate-300">Organization</TableHead>
-                        <TableHead className="text-slate-300">Total</TableHead>
-                        <TableHead className="text-slate-300">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {quotes.map((quote) => (
-                        <TableRow key={quote.id} className="border-slate-700 hover:bg-slate-800">
-                          <TableCell className="text-white">{quote.quote_number}</TableCell>
-                          <TableCell className="text-slate-300">{new Date(quote.date).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-slate-300">{quote.organization_name}</TableCell>
-                          <TableCell className="text-slate-300">{currency(quote.total)}</TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => loadQuote(quote)}
-                              className="text-blue-400 hover:text-blue-300 hover:bg-slate-800"
-                            >
-                              Load
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Link to="/quotes/history">
+              <Button variant="outline" className="border-slate-600 bg-slate-800 hover:bg-slate-700">
+                <History className="w-4 h-4 mr-2" />
+                Quote History
+              </Button>
+            </Link>
             
-            <Button onClick={saveQuote} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleSaveQuote} className="bg-green-600 hover:bg-green-700">
+              <Save className="w-4 h-4 mr-2" />
               Save Quote
+              {hasUnsavedChanges && <span className="ml-1 text-yellow-400">*</span>}
             </Button>
+
+            {currentQuoteId && (
+              <Button onClick={handleSaveAsNew} variant="outline" className="border-slate-600 bg-slate-800 hover:bg-slate-700">
+                <Copy className="w-4 h-4 mr-2" />
+                Save As New
+              </Button>
+            )}
             
-            <Button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
               <Download className="w-4 h-4 mr-2" />
               Export PDF
             </Button>
@@ -220,7 +252,7 @@ export default function QuoteGenerator() {
         </div>
 
         {/* Quote Content */}
-        <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm print:bg-white print:border-gray-300 print:shadow-none">
+        <Card ref={printRef} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm print:bg-white print:border-gray-300 print:shadow-none">
           <CardHeader className="border-b border-slate-700 print:border-gray-300">
             <div className="flex items-start justify-between gap-6">
               <div className="flex items-center gap-4">
@@ -240,8 +272,8 @@ export default function QuoteGenerator() {
                 <div className="flex items-center gap-3">
                   <Label className="text-slate-300 print:text-gray-600">Quote #</Label>
                   <Input 
-                    value={quoteMeta.quoteNo} 
-                    onChange={(e) => setQuoteMeta({ ...quoteMeta, quoteNo: e.target.value })} 
+                    value={quoteNo} 
+                    onChange={(e) => setQuoteNo(e.target.value)}
                     className="w-40 bg-slate-700 border-slate-600 text-white print:bg-white print:border-gray-300 print:text-black"
                   />
                 </div>
@@ -249,8 +281,8 @@ export default function QuoteGenerator() {
                   <Label className="text-slate-300 print:text-gray-600">Date</Label>
                   <Input 
                     type="date" 
-                    value={quoteMeta.date} 
-                    onChange={(e) => setQuoteMeta({ ...quoteMeta, date: e.target.value })} 
+                    value={date} 
+                    onChange={(e) => setDate(e.target.value)} 
                     className="bg-slate-700 border-slate-600 text-white print:bg-white print:border-gray-300 print:text-black"
                   />
                 </div>
@@ -266,248 +298,218 @@ export default function QuoteGenerator() {
                 <Input 
                   type="file" 
                   accept="image/*,.svg" 
-                  onChange={(e) => onLogoPick(e.target.files?.[0])} 
+                  onChange={handleLogoUpload} 
                   className="bg-slate-700 border-slate-600 text-white file:bg-slate-600 file:text-white file:border-0 file:mr-3"
                 />
                 <Upload className="w-4 h-4 absolute right-3 top-3 text-slate-400" />
               </div>
             </div>
 
-            <Tabs defaultValue="details" className="space-y-6">
-              <TabsList className="bg-slate-700 border-slate-600 print:hidden">
-                <TabsTrigger value="details" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-                  Quote Details
-                </TabsTrigger>
-                <TabsTrigger value="items" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-                  Line Items
-                </TabsTrigger>
-              </TabsList>
+            {/* Organization Details */}
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
+                <CardHeader>
+                  <CardTitle className="text-white print:text-black flex items-center gap-2">
+                    <Building2 className="w-5 h-5" />
+                    Bill To / Organization
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-slate-300 print:text-gray-600">Organization Name</Label>
+                    <Input 
+                      value={toName} 
+                      onChange={(e) => setToName(e.target.value)} 
+                      placeholder="Enter organization name"
+                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-300 print:text-gray-600">Contact Person</Label>
+                    <Input 
+                      value={toContact} 
+                      onChange={(e) => setToContact(e.target.value)} 
+                      placeholder="Enter contact person"
+                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-300 print:text-gray-600">Email</Label>
+                    <Input 
+                      type="email"
+                      value={toEmail} 
+                      onChange={(e) => setToEmail(e.target.value)} 
+                      placeholder="Enter email address"
+                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-300 print:text-gray-600">Phone</Label>
+                    <Input 
+                      type="tel"
+                      value={toPhone} 
+                      onChange={(e) => setToPhone(e.target.value)} 
+                      placeholder="Enter phone number"
+                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-300 print:text-gray-600">Address</Label>
+                    <Textarea 
+                      value={toAddress} 
+                      onChange={(e) => setToAddress(e.target.value)} 
+                      placeholder="Enter full address"
+                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black resize-none"
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-              <TabsContent value="details" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Bill To Section */}
-                  <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
-                    <CardHeader>
-                      <CardTitle className="text-white print:text-black flex items-center gap-2">
-                        <Calendar className="w-5 h-5" />
-                        Bill To / Organization
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label className="text-slate-300 print:text-gray-600">Organization Name</Label>
-                        <Input 
-                          value={org.toName} 
-                          onChange={(e) => setOrg({ ...org, toName: e.target.value })} 
-                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                          placeholder="Enter organization name"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 print:text-gray-600">Contact Person</Label>
-                        <Input 
-                          value={org.toContact} 
-                          onChange={(e) => setOrg({ ...org, toContact: e.target.value })} 
-                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                          placeholder="Enter contact person"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 print:text-gray-600">Email</Label>
-                        <Input 
-                          type="email"
-                          value={org.toEmail} 
-                          onChange={(e) => setOrg({ ...org, toEmail: e.target.value })} 
-                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                          placeholder="Enter email address"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 print:text-gray-600">Phone</Label>
-                        <Input 
-                          value={org.toPhone} 
-                          onChange={(e) => setOrg({ ...org, toPhone: e.target.value })} 
-                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                          placeholder="Enter phone number"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 print:text-gray-600">Address</Label>
-                        <Textarea 
-                          value={org.toAddress} 
-                          onChange={(e) => setOrg({ ...org, toAddress: e.target.value })} 
-                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black resize-none"
-                          placeholder="Enter full address"
-                          rows={3}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 print:text-gray-600">Salesperson</Label>
-                        <Input 
-                          value={org.salesperson} 
-                          onChange={(e) => setOrg({ ...org, salesperson: e.target.value })} 
-                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                          placeholder="Enter assigned salesperson"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Quote Settings */}
-                  <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
-                    <CardHeader>
-                      <CardTitle className="text-white print:text-black">Quote Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-slate-300 print:text-gray-600">Tax (%)</Label>
-                          <Input 
-                            type="number" 
-                            min={0} 
-                            step="0.01" 
-                            value={quoteMeta.taxPct} 
-                            onChange={(e) => setQuoteMeta({ ...quoteMeta, taxPct: Number(e.target.value) })} 
-                            className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-slate-300 print:text-gray-600">Discount ($)</Label>
-                          <Input 
-                            type="number" 
-                            min={0} 
-                            step="0.01" 
-                            value={quoteMeta.discount} 
-                            onChange={(e) => setQuoteMeta({ ...quoteMeta, discount: Number(e.target.value) })} 
-                            className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 print:text-gray-600">Notes / Terms</Label>
-                        <Textarea 
-                          value={quoteMeta.notes} 
-                          onChange={(e) => setQuoteMeta({ ...quoteMeta, notes: e.target.value })} 
-                          className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black resize-none"
-                          placeholder="Add any additional notes or terms"
-                          rows={6}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="items" className="space-y-6">
-                {/* Line Items */}
-                <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-white print:text-black">Line Items</CardTitle>
-                    <Button 
-                      onClick={addItem} 
-                      variant="outline"
-                      size="sm"
-                      className="border-slate-600 bg-slate-600 hover:bg-slate-500 text-white print:hidden"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Item
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="border border-slate-600 rounded-lg overflow-hidden print:border-gray-300">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-slate-600 border-slate-500 print:bg-gray-100 print:border-gray-300">
-                            <TableHead className="text-slate-200 print:text-gray-800">Item Description</TableHead>
-                            <TableHead className="text-slate-200 print:text-gray-800 w-24">Price</TableHead>
-                            <TableHead className="text-slate-200 print:text-gray-800 w-20">Qty</TableHead>
-                            <TableHead className="text-slate-200 print:text-gray-800 w-24">Amount</TableHead>
-                            <TableHead className="print:hidden w-16"></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {items.map((item, index) => {
-                            const amount = (Number(item.price) || 0) * (Number(item.qty) || 0);
-                            return (
-                              <TableRow key={item.id} className="border-slate-600 print:border-gray-300">
-                                <TableCell className="p-2">
-                                  <Input 
-                                    placeholder="Describe the item…" 
-                                    value={item.name} 
-                                    onChange={(e) => updateItem(item.id, { name: e.target.value })} 
-                                    className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                                  />
-                                </TableCell>
-                                <TableCell className="p-2">
-                                  <Input 
-                                    type="number" 
-                                    min={0} 
-                                    step="0.01" 
-                                    value={item.price} 
-                                    onChange={(e) => updateItem(item.id, { price: Number(e.target.value) })} 
-                                    className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                                  />
-                                </TableCell>
-                                <TableCell className="p-2">
-                                  <Input 
-                                    type="number" 
-                                    min={0} 
-                                    step="1" 
-                                    value={item.qty} 
-                                    onChange={(e) => updateItem(item.id, { qty: Number(e.target.value) })} 
-                                    className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                                  />
-                                </TableCell>
-                                <TableCell className="p-2 text-white print:text-black font-medium">
-                                  {currency(amount)}
-                                </TableCell>
-                                <TableCell className="p-2 print:hidden">
-                                  <Button 
-                                    onClick={() => removeItem(item.id)} 
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-red-400 hover:text-red-300 hover:bg-slate-600"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
+              {/* Quote Settings */}
+              <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
+                <CardHeader>
+                  <CardTitle className="text-white print:text-black">Quote Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-slate-300 print:text-gray-600">Tax (%)</Label>
+                      <Input 
+                        type="number" 
+                        min={0} 
+                        step="0.01" 
+                        value={taxPct} 
+                        onChange={(e) => setTaxPct(Number(e.target.value))} 
+                        className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <Label className="text-slate-300 print:text-gray-600">Discount (%)</Label>
+                      <Input 
+                        type="number" 
+                        min={0} 
+                        step="0.01" 
+                        value={discount} 
+                        onChange={(e) => setDiscount(Number(e.target.value))}
+                        className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-slate-300 print:text-gray-600">Notes / Terms</Label>
+                    <Textarea 
+                      value={notes} 
+                      onChange={(e) => setNotes(e.target.value)} 
+                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black resize-none"
+                      placeholder="Add any additional notes or terms"
+                      rows={6}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                {/* Totals */}
-                <div className="flex justify-end">
-                  <Card className="w-full max-w-md bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
-                    <CardContent className="p-6">
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-slate-300 print:text-gray-600">
-                          <span>Subtotal</span>
-                          <span>{currency(totals.subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between text-slate-300 print:text-gray-600">
-                          <span>Discount</span>
-                          <span>-{currency(totals.discount || 0)}</span>
-                        </div>
-                        <div className="flex justify-between text-slate-300 print:text-gray-600">
-                          <span>Tax</span>
-                          <span>{currency(totals.tax)}</span>
-                        </div>
-                        <Separator className="bg-slate-600 print:bg-gray-300" />
-                        <div className="flex justify-between text-xl font-bold text-white print:text-black">
-                          <span>Total</span>
-                          <span>{currency(totals.total)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+            {/* Line Items */}
+            <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300 mb-8">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white print:text-black">Line Items</CardTitle>
+                <Button 
+                  onClick={handleAddItem} 
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 print:hidden"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Item
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-600 print:border-gray-300">
+                        <th className="text-left p-3 text-slate-300 print:text-gray-600">Item</th>
+                        <th className="text-right p-3 text-slate-300 print:text-gray-600">Price</th>
+                        <th className="text-center p-3 text-slate-300 print:text-gray-600">Qty</th>
+                        <th className="text-right p-3 text-slate-300 print:text-gray-600">Total</th>
+                        <th className="p-3 print:hidden"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item, index) => (
+                        <tr key={index} className="border-b border-slate-600/50 print:border-gray-200">
+                          <td className="p-3">
+                            <Input 
+                              value={item.name} 
+                              onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                              placeholder="Item description"
+                              className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Input 
+                              type="number" 
+                              value={item.price} 
+                              onChange={(e) => handleItemChange(index, 'price', parseFloat(e.target.value) || 0)}
+                              className="bg-slate-600 border-slate-500 text-white text-right print:bg-white print:border-gray-300 print:text-black"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Input 
+                              type="number" 
+                              value={item.qty} 
+                              onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 0)}
+                              className="bg-slate-600 border-slate-500 text-white text-center print:bg-white print:border-gray-300 print:text-black"
+                              min="0"
+                            />
+                          </td>
+                          <td className="p-3 text-right text-white print:text-black">
+                            ${(item.price * item.qty).toFixed(2)}
+                          </td>
+                          <td className="p-3 print:hidden">
+                            <Button 
+                              onClick={() => handleRemoveItem(index)} 
+                              size="sm" 
+                              variant="ghost"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </TabsContent>
-            </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Totals */}
+            <div className="flex justify-end">
+              <Card className="w-80 bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-slate-300 print:text-gray-600">
+                      <span>Subtotal:</span>
+                      <span>${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-300 print:text-gray-600">
+                      <span>Discount ({discount}%):</span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-300 print:text-gray-600">
+                      <span>Tax ({taxPct}%):</span>
+                      <span>${taxAmount.toFixed(2)}</span>
+                    </div>
+                    <Separator className="bg-slate-600 print:bg-gray-300" />
+                    <div className="flex justify-between text-xl font-bold text-white print:text-black">
+                      <span>Total:</span>
+                      <span>${total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             <div className="text-xs text-slate-500 mt-8 print:text-gray-500">
               This quote is an estimate based on the information provided and is subject to change.

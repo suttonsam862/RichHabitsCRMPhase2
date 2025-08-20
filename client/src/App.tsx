@@ -13,6 +13,7 @@ import QuoteGenerator from "./pages/QuoteGenerator";
 import NotFound from "./pages/not-found";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import QuoteHistory from "./pages/QuoteHistory";
 
 function Router() {
   return (
@@ -23,12 +24,15 @@ function Router() {
             {/* Main Organizations page */}
             <Route path="/" component={Home} />
             <Route path="/organizations" component={Organizations} />
-            
+
             {/* Users management page */}
             <Route path="/users" component={Users} />
 
             {/* Quote Generator page */}
             <Route path="/quote" component={QuoteGenerator} />
+
+            {/* Quote History page */}
+            <Route path="/quotes/history" component={QuoteHistory} />
 
             {/* Order details page */}
             <Route path="/orders/:id" component={OrderDetails} />
