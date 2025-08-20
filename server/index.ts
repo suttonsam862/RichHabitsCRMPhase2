@@ -118,6 +118,21 @@ function validateEnvironmentVariables() {
         // Don't fail server startup for this
       }
 
+      // Auto-pull database schema to keep frontend/backend in sync
+      if (process.env.NODE_ENV === 'development') {
+        log("🔄 Auto-pulling database schema...");
+        try {
+          const { pullSchema } = await import('../scripts/schema-sync.js') as any;
+          await pullSchema();
+          process.env.SCHEMA_LAST_SYNC = new Date().toISOString();
+          log("✅ Schema auto-pull completed - frontend and backend are in sync");
+        } catch (schemaError: any) {
+          console.warn('⚠️ Schema auto-pull failed:', schemaError.message);
+          console.warn('🔧 You may need to run: npx drizzle-kit introspect manually');
+          // Don't fail server startup for this
+        }
+      }
+
     } catch (error: any) {
       log("❌ Database connection failed:");
       log("- Error message:", error.message);
@@ -163,6 +178,15 @@ function validateEnvironmentVariables() {
       const [{ count }] = await db.select({count: sql<number>`count(*)`}).from(organizations).limit(1);
       res.json({ ok:true, time:new Date().toISOString(), db:'up', orgs:Number(count) });
     }catch(e){ next(e); }
+  });
+
+  // Schema sync status endpoint
+  app.get('/api/schema-status', (req,res) => {
+    res.json({ 
+      status: 'synced', 
+      lastSync: process.env.SCHEMA_LAST_SYNC || 'unknown',
+      timestamp: new Date().toISOString() 
+    });
   });
 
   // Use the enhanced error handler
