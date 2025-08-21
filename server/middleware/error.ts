@@ -1,15 +1,31 @@
+/**
+ * Global error handling middleware
+ * Provides consistent error responses and logging
+ */
 
-import type { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
-export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
-  const payload = {
-    message: err?.message || "Internal server error",
-    code: err?.code,
-    detail: err?.detail,
-    table: err?.table,
-    column: err?.column,
-    stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
-  };
-  console.error("API Error:", payload);
-  res.status(500).json({ error: "Internal server error", details: payload });
+export function errorHandler(
+  err: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  console.error('Server Error:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+
+  // Don't expose internal errors in production
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: isDevelopment ? err.message : 'Something went wrong',
+    ...(isDevelopment && { stack: err.stack })
+  });
 }

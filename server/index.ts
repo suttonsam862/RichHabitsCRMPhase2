@@ -1,134 +1,76 @@
 /**
- * Organizations API routes
- * Uses existing organizations functionality from the project
+ * Main server entry point
+ * Configures Express app with API routes and Vite integration
  */
 
-import express from "express";
-import { z } from "zod";
-import {
-  CreateOrganizationDTO,
-  UpdateOrganizationDTO,
-  OrganizationDTO,
-} from "@shared/dtos";
-import { validateRequest } from "../middleware/validation";
-import { asyncHandler } from "../middleware/asyncHandler";
+import express from 'express';
+import { createServer } from 'http';
+import { apiRouter } from './routes/api';
+import { setupVite, serveStatic } from './vite';
+import { errorHandler } from './middleware/error';
+import dotenv from 'dotenv';
 
-const router = express.Router();
+// Load environment variables
+dotenv.config();
 
-// List all organizations (existing endpoint)
-router.get(
-  "/",
-  asyncHandler(async (req, res) => {
-    // TODO: Use existing organizations query functionality
-    console.log("🚧 GET /api/organizations - Using existing implementation");
+const app = express();
+const server = createServer(app);
 
-    // For now, delegate to existing endpoint structure
-    res.json({
-      success: true,
-      data: [],
-      count: 0,
-      message:
-        "Organizations endpoint exists but needs integration with new DTO schema",
-    });
-  }),
-);
+const PORT = parseInt(process.env.PORT || '5000', 10);
+const isDevelopment = process.env.NODE_ENV === 'development';
 
-// Get organization by ID (existing endpoint)
-router.get(
-  "/:id",
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
+// Basic middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-    // TODO: Use existing organization retrieval
-    console.log(
-      `🚧 GET /api/organizations/${id} - Using existing implementation`,
-    );
+// Request logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+  next();
+});
 
-    res.status(404).json({
-      error: "Organization not found",
-      message:
-        "Organization endpoint exists but needs integration with new DTO schema",
-    });
-  }),
-);
+// Mount API routes at /api
+app.use('/api', apiRouter);
 
-// Create new organization (existing endpoint)
-router.post(
-  "/",
-  validateRequest({ body: CreateOrganizationDTO }),
-  asyncHandler(async (req, res) => {
-    const orgData = req.body;
+// Error handling middleware
+app.use(errorHandler);
 
-    // TODO: Use existing organization creation logic
-    console.log(
-      "🚧 POST /api/organizations - Using existing implementation",
-      orgData,
-    );
+// Setup Vite in development or static serving in production
+if (isDevelopment) {
+  setupVite(app, server).then(() => {
+    console.log('✅ Vite dev server configured');
+  }).catch(err => {
+    console.error('❌ Failed to setup Vite:', err);
+    process.exit(1);
+  });
+} else {
+  try {
+    serveStatic(app);
+    console.log('✅ Static file serving configured');
+  } catch (err) {
+    console.error('❌ Failed to setup static serving:', err);
+    process.exit(1);
+  }
+}
 
-    res.status(501).json({
-      error: "Integration needed",
-      message:
-        "Organization creation endpoint exists but needs integration with new DTO schema",
-    });
-  }),
-);
+// Start server
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📁 API routes available at: http://0.0.0.0:${PORT}/api`);
+});
 
-// Update organization (existing endpoint)
-router.put(
-  "/:id",
-  validateRequest({ body: UpdateOrganizationDTO }),
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const updateData = req.body;
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
+});
 
-    // TODO: Use existing organization update logic
-    console.log(
-      `🚧 PUT /api/organizations/${id} - Using existing implementation`,
-      updateData,
-    );
-
-    res.status(501).json({
-      error: "Integration needed",
-      message:
-        "Organization update endpoint exists but needs integration with new DTO schema",
-    });
-  }),
-);
-
-// Upload organization logo (existing functionality)
-router.post(
-  "/:id/logo",
-  // TODO: Add multer middleware for file upload (existing in project)
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    // TODO: Use existing logo upload functionality
-    console.log(
-      `🚧 POST /api/organizations/${id}/logo - Using existing implementation`,
-    );
-
-    res.status(501).json({
-      error: "Integration needed",
-      message:
-        "Logo upload endpoint exists but needs integration with new route structure",
-    });
-  }),
-);
-
-// Delete organization
-router.delete(
-  "/:id",
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    // TODO: Implement organization deletion (if needed)
-    console.log(`🚧 DELETE /api/organizations/${id} - Not implemented yet`);
-
-    res.status(501).json({
-      error: "Not implemented",
-      message: "Organization deletion API not implemented yet",
-    });
-  }),
-);
-
-export { router as organizationsRouter };
+process.on('SIGINT', () => {
+  console.log('\nSIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
+});
