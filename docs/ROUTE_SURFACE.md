@@ -1,6 +1,6 @@
 # API Route Surface
 
-Generated on: 2025-08-20T23:30:17.207Z
+Generated on: 2025-08-21T18:20:25.804Z
 
 This document catalogs all mounted API routes to track the public API surface.
 
@@ -76,6 +76,7 @@ Source: `server/routes/organizations/index.ts`
 | POST | /api/organizations | ✅ Implemented | ✅ |
 | PUT | /api/organizations/:id | ✅ Implemented | ✅ |
 | DELETE | /api/organizations/:id | ✅ Implemented | ❌ |
+| GET | /api/organizations/__columns | ✅ Implemented | ❌ |
 
 ### /api/sales
 
@@ -92,8 +93,8 @@ Source: `server/routes/sales/index.ts`
 
 ## Statistics
 
-- Total routes: 42
-- Implemented: 15
+- Total routes: 43
+- Implemented: 16
 - Stubbed: 27
 - With validation: 15
 
@@ -104,4 +105,4 @@ Source: `server/routes/sales/index.ts`
 3. Implement proper validation using Zod schemas
 4. Return consistent response envelopes: `{ success, data, error, message }`
 
-Last updated: 2025-08-20T23:30:17.208Z
+Last updated: 2025-08-21T18:20:25.805Z

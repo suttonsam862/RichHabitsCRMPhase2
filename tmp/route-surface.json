@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-08-20T23:30:17.208Z",
+  "generatedAt": "2025-08-21T18:20:25.805Z",
   "mounts": [
     {
       "basePath": "/api",
@@ -316,6 +316,14 @@
           "file": "server/routes/organizations/index.ts",
           "implemented": true,
           "validation": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/organizations/__columns",
+          "handler": "handler",
+          "file": "server/routes/organizations/index.ts",
+          "implemented": true,
+          "validation": false
         }
       ]
     },
@@ -375,8 +383,8 @@
     }
   ],
   "summary": {
-    "totalRoutes": 42,
-    "implemented": 15,
+    "totalRoutes": 43,
+    "implemented": 16,
     "validated": 15
   }
 }

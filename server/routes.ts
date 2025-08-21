@@ -37,40 +37,42 @@ function asyncHandler(fn: Function) {
   };
 }
 
-// Organizations routes
-router.get("/api/organizations", async (req, res, next) => {
-  try {
-    const rows = await Orgs.listOrganizations();
-    res.json({
-      success: true,
-      data: rows,
-      count: rows.length
-    });
-  } catch (e) { 
-    console.error('Error fetching organizations:', e);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch organizations',
-      message: e instanceof Error ? e.message : 'Unknown error'
-    });
-  }
-});
+// TODO: Legacy organizations route - Remove after confirming server/routes/organizations/index.ts is active
+// Organizations routes handled by server/routes/api.ts -> server/routes/organizations/index.ts
+// router.get("/api/organizations", async (req, res, next) => {
+//   try {
+//     const rows = await Orgs.listOrganizations();
+//     res.json({
+//       success: true,
+//       data: rows,
+//       count: rows.length
+//     });
+//   } catch (e) { 
+//     console.error('Error fetching organizations:', e);
+//     res.status(500).json({
+//       success: false,
+//       error: 'Failed to fetch organizations',
+//       message: e instanceof Error ? e.message : 'Unknown error'
+//     });
+//   }
+// });
 
-router.get("/api/organizations/:id", asyncHandler(async (req: any, res: any) => {
-  try {
-    const organization = await storage.getOrganization(req.params.id);
-    if (!organization) {
-      return res.status(404).json({ error: "Organization not found" });
-    }
-    res.json(organization);
-  } catch (error: any) {
-    console.error("Error fetching organization:", error);
-    res.status(500).json({ 
-      error: "Failed to fetch organization", 
-      details: error.message 
-    });
-  }
-}));
+// TODO: Legacy organizations/:id route - Remove after confirming server/routes/organizations/index.ts is active
+// router.get("/api/organizations/:id", asyncHandler(async (req: any, res: any) => {
+//   try {
+//     const organization = await storage.getOrganization(req.params.id);
+//     if (!organization) {
+//       return res.status(404).json({ error: "Organization not found" });
+//     }
+//     res.json(organization);
+//   } catch (error: any) {
+//     console.error("Error fetching organization:", error);
+//     res.status(500).json({ 
+//       error: "Failed to fetch organization", 
+//       details: error.message 
+//     });
+//   }
+// }));
 
 // POST /api/organizations route moved to server/routes/organizations.ts for better validation and payload mapping
 

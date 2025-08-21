@@ -1,166 +1,185 @@
 /**
- * Typed API SDK for client-side API calls
- * Centralizes all API interactions with proper typing and validation
+ * Typed API SDK for server communication
+ * Centralizes all API calls with proper error handling and type safety
  */
 
-import { z } from "zod";
-import { API_BASE } from "./env";
+import { z } from 'zod';
+import { API_BASE } from './env';
+import { OrganizationDTO } from '@shared/dtos/OrganizationDTO';
 
-// Base response schema
-const baseResponseSchema = z.object({
-  success: z.boolean().optional(),
+// API Response envelope schema
+const ApiResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.any(),
+  count: z.number().optional(),
   message: z.string().optional(),
+  warning: z.string().optional(),
   error: z.string().optional(),
 });
 
-// Organization schemas (from existing backend)
-export const organizationSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  type: z.string().optional(),
-  website: z.string().optional(),
-  logo_url: z.string().optional(),
-  title_card_url: z.string().optional(),
-  created_at: z.string(),
-  updated_at: z.string(),
-});
+type ApiResponse<T> = {
+  success: boolean;
+  data: T;
+  count?: number;
+  message?: string;
+  warning?: string;
+  error?: string;
+};
 
-export type Organization = z.infer<typeof organizationSchema>;
-
-// List response wrapper
-const listResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
-  baseResponseSchema.extend({
-    data: z.array(itemSchema),
-    count: z.number().optional(),
-    total: z.number().optional(),
-  });
-
-// Single item response wrapper  
-const itemResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
-  baseResponseSchema.extend({
-    data: itemSchema,
-  });
-
-// Create organization payload
-export const createOrganizationSchema = organizationSchema.omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
-
-export type CreateOrganizationPayload = z.infer<typeof createOrganizationSchema>;
-
-// API SDK class
-export class ApiSDK {
-  private baseUrl: string;
-
-  constructor(baseUrl: string = API_BASE) {
-    this.baseUrl = baseUrl;
-  }
-
-  /**
-   * Generic request method with error handling
-   */
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {},
-    schema?: z.ZodSchema<T>
-  ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    
-    const defaultOptions: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    };
-
-    const response = await fetch(url, { ...defaultOptions, ...options });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    // Validate response if schema provided
-    if (schema) {
-      try {
-        return schema.parse(data);
-      } catch (validationError) {
-        console.error('API Response validation failed:', validationError);
-        console.error('Raw response:', data);
-        throw new Error('Invalid API response format');
-      }
-    }
-
-    return data as T;
-  }
-
-  // Organizations API methods
-  async getOrganizations(): Promise<Organization[]> {
-    const response = await this.request(
-      '/organizations',
-      {},
-      listResponseSchema(organizationSchema)
-    );
-    return response.data;
-  }
-
-  async getOrganization(id: string): Promise<Organization> {
-    const response = await this.request(
-      `/organizations/${id}`,
-      {},
-      itemResponseSchema(organizationSchema)
-    );
-    return response.data;
-  }
-
-  async createOrganization(payload: CreateOrganizationPayload): Promise<Organization> {
-    const response = await this.request(
-      '/organizations',
-      {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      },
-      itemResponseSchema(organizationSchema)
-    );
-    return response.data;
-  }
-
-  async updateOrganization(id: string, payload: Partial<CreateOrganizationPayload>): Promise<Organization> {
-    const response = await this.request(
-      `/organizations/${id}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      },
-      itemResponseSchema(organizationSchema)
-    );
-    return response.data;
-  }
-
-  async deleteOrganization(id: string): Promise<void> {
-    await this.request(`/organizations/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Health check
-  async healthCheck(): Promise<{ ok: boolean; db: string; orgs: number }> {
-    return this.request('/health');
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public response?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
   }
 }
 
-// Default SDK instance
-export const apiSDK = new ApiSDK();
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  const url = `${API_BASE}${endpoint}`;
+  
+  const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
 
-// Legacy fetch replacements (commented for migration)
-/*
-// Replace these patterns:
-// fetch("/api/organizations") -> apiSDK.getOrganizations()
-// fetch(`/api/organizations/${id}`) -> apiSDK.getOrganization(id)
-// fetch("/api/organizations", { method: "POST", body: JSON.stringify(data) }) -> apiSDK.createOrganization(data)
-*/
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new ApiError(
+        `HTTP ${response.status}: ${response.statusText}`,
+        response.status
+      );
+    }
+
+    const data = await response.json();
+    
+    // Validate response structure
+    const parsed = ApiResponseSchema.safeParse(data);
+    if (!parsed.success) {
+      console.warn('Invalid API response format:', data);
+      // Still return the data for compatibility
+      return data;
+    }
+
+    return parsed.data as ApiResponse<T>;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Network error',
+      0
+    );
+  }
+}
+
+// Organizations API methods
+export interface ListOrganizationsParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  state?: string;
+  type?: 'all' | 'business' | 'school';
+  sort?: 'name' | 'created_at';
+  order?: 'asc' | 'desc';
+}
+
+export async function listOrganizations(
+  params: ListOrganizationsParams = {}
+): Promise<{ data: OrganizationDTO[]; count: number; warning?: string }> {
+  const searchParams = new URLSearchParams();
+  
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined) {
+      searchParams.append(key, String(value));
+    }
+  });
+
+  const queryString = searchParams.toString();
+  const endpoint = `/organizations${queryString ? `?${queryString}` : ''}`;
+  
+  const response = await apiRequest<OrganizationDTO[]>(endpoint);
+  
+  return {
+    data: response.data || [],
+    count: response.count || 0,
+    warning: response.warning
+  };
+}
+
+export async function getOrganization(id: string): Promise<OrganizationDTO> {
+  const response = await apiRequest<OrganizationDTO>(`/organizations/${id}`);
+  
+  if (!response.success) {
+    throw new ApiError(response.error || 'Failed to fetch organization', 404);
+  }
+  
+  return response.data;
+}
+
+export async function createOrganization(data: Partial<OrganizationDTO>): Promise<OrganizationDTO> {
+  const response = await apiRequest<OrganizationDTO>('/organizations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.success) {
+    throw new ApiError(response.error || 'Failed to create organization', 400);
+  }
+  
+  return response.data;
+}
+
+export async function updateOrganization(
+  id: string, 
+  data: Partial<OrganizationDTO>
+): Promise<OrganizationDTO> {
+  const response = await apiRequest<OrganizationDTO>(`/organizations/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.success) {
+    throw new ApiError(response.error || 'Failed to update organization', 400);
+  }
+  
+  return response.data;
+}
+
+export async function deleteOrganization(id: string): Promise<void> {
+  const response = await apiRequest<void>(`/organizations/${id}`, {
+    method: 'DELETE',
+  });
+  
+  if (!response.success) {
+    throw new ApiError(response.error || 'Failed to delete organization', 400);
+  }
+}
+
+// Debug method to check available columns
+export async function getOrganizationColumns(): Promise<{
+  columns: string[];
+  required: string[];
+  optional: string[];
+}> {
+  const response = await apiRequest<{
+    columns: string[];
+    required: string[];
+    optional: string[];
+  }>('/organizations/__columns');
+  return response.data;
+}
+
+// Export the main API client
+export { apiRequest, ApiError };
