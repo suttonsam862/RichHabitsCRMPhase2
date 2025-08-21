@@ -247,7 +247,6 @@ export default function OrganizationsEnhanced() {
 
   const renderOrganizationCard = (org: OrganizationDTO) => (
     <div
-      key={org.id}
       className="cursor-pointer hover:scale-[1.02] transition-transform"
       onClick={() => setSelectedOrg(org)}
       data-testid={`card-organization-${org.id}`}

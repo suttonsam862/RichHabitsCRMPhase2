@@ -56,14 +56,14 @@ class ApiError extends Error {
 // Helper to format dates safely
 export function formatDateSafe(dateString?: string): string {
   if (!dateString) return '—';
-  
+
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '—';
-    
+
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
-      day: 'numeric', 
+      day: 'numeric',
       year: 'numeric'
     }).format(date);
   } catch {
@@ -73,7 +73,7 @@ export function formatDateSafe(dateString?: string): string {
 
 async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  
+
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
 
   try {
     const response = await fetch(url, config);
-    
+
     if (!response.ok) {
       throw new ApiError(`HTTP ${response.status}: ${response.statusText}`, response.status);
     }
@@ -104,7 +104,7 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     throw new ApiError(
       error instanceof Error ? error.message : 'Network error',
       0
@@ -126,7 +126,7 @@ export async function listOrganizations(
   params: ListOrganizationsParams = {}
 ): Promise<{ data: Organization[]; count: number; warning?: string }> {
   const searchParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined) {
       searchParams.append(key, String(value));
@@ -135,10 +135,10 @@ export async function listOrganizations(
 
   const queryString = searchParams.toString();
   const endpoint = `/organizations${queryString ? `?${queryString}` : ''}`;
-  
+
   const response = await makeRequest<typeof ListResponseSchema._type>(endpoint);
   const validated = ListResponseSchema.parse(response);
-  
+
   return {
     data: validated.data,
     count: validated.count,
@@ -153,7 +153,7 @@ export async function getOrganization(id: string): Promise<Organization> {
 
   const response = await makeRequest<typeof ItemResponseSchema._type>(`/organizations/${id}`);
   const validated = ItemResponseSchema.parse(response);
-  
+
   return validated.data;
 }
 
@@ -165,9 +165,9 @@ export async function deleteOrganization(id: string): Promise<{ success: boolean
   const response = await makeRequest<typeof DeleteResponseSchema._type>(`/organizations/${id}`, {
     method: 'DELETE',
   });
-  
+
   const validated = DeleteResponseSchema.parse(response);
-  
+
   return {
     success: validated.success,
     id: validated.id

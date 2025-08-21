@@ -310,35 +310,35 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                     <CardHeader>
                       <CardTitle className="text-foreground">Organization Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="font-medium text-sm text-foreground/70">Organization Name</p>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm text-foreground/70 mb-1">Organization Name</p>
                           <p className="font-semibold text-foreground" data-testid="text-org-name">{organization.name}</p>
                         </div>
                         
                         {organization.isBusiness !== undefined && (
-                          <div>
-                            <p className="font-medium text-sm text-foreground/70">Type</p>
+                          <div className="space-y-1">
+                            <p className="font-medium text-sm text-foreground/70 mb-1">Type</p>
                             <p className="font-semibold text-foreground" data-testid="text-org-type">{organization.isBusiness ? 'Business' : 'School'}</p>
                           </div>
                         )}
 
                         {organization.status && (
-                          <div>
-                            <p className="font-medium text-sm text-foreground/70">Status</p>
+                          <div className="space-y-1">
+                            <p className="font-medium text-sm text-foreground/70 mb-1">Status</p>
                             <Badge variant="default" className="bg-primary text-primary-foreground" data-testid="badge-org-status">{organization.status}</Badge>
                           </div>
                         )}
 
-                        <div>
-                          <p className="font-medium text-sm text-foreground/70">Created</p>
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm text-foreground/70 mb-1">Created</p>
                           <p className="font-semibold text-foreground" data-testid="text-org-created">{formatDateSafe(organization.createdAt)}</p>
                         </div>
 
                         {organization.updatedAt && (
-                          <div>
-                            <p className="font-medium text-sm text-foreground/70">Last Updated</p>
+                          <div className="space-y-1">
+                            <p className="font-medium text-sm text-foreground/70 mb-1">Last Updated</p>
                             <p className="font-semibold text-foreground" data-testid="text-org-updated">{formatDateSafe(organization.updatedAt)}</p>
                           </div>
                         )}
@@ -346,13 +346,13 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
                       <Separator />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {organization.email && (
                           <div className="flex items-start gap-3">
-                            <Mail className="h-5 w-5 text-primary mt-0.5" />
-                            <div>
-                              <p className="font-medium text-sm text-foreground/70">Email</p>
-                              <p className="text-foreground font-semibold" data-testid="text-org-email">
+                            <Mail className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm text-foreground/70 mb-1">Email</p>
+                              <p className="text-foreground font-semibold break-all" data-testid="text-org-email">
                                 {organization.email}
                               </p>
                             </div>
@@ -361,9 +361,9 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
                         {organization.phone && (
                           <div className="flex items-start gap-3">
-                            <Phone className="h-5 w-5 text-primary mt-0.5" />
-                            <div>
-                              <p className="font-medium text-sm text-foreground/70">Phone</p>
+                            <Phone className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm text-foreground/70 mb-1">Phone</p>
                               <p className="text-foreground font-semibold" data-testid="text-org-phone">
                                 {organization.phone}
                               </p>
@@ -376,10 +376,10 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                         <>
                           <Separator />
                           <div className="flex items-start gap-3">
-                            <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                            <div>
-                              <p className="font-medium text-sm text-foreground/70">Address</p>
-                              <div className="text-foreground font-semibold" data-testid="text-org-address">
+                            <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm text-foreground/70 mb-1">Address</p>
+                              <div className="text-foreground font-semibold space-y-1" data-testid="text-org-address">
                                 {organization.addressLine1 && <p>{organization.addressLine1}</p>}
                                 {(organization.city || organization.state || organization.postalCode) && (
                                   <p>
