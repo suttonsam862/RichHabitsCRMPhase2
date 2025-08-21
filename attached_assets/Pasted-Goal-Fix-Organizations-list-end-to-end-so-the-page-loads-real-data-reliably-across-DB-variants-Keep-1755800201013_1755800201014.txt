@@ -1,0 +1,49 @@
+Goal
+Fix Organizations list end-to-end so the page loads real data reliably across DB variants. Keep code minimal and non-destructive.
+
+Scope
+- Server: ensure single mount for /api/organizations; make list endpoint tolerant to missing optional columns.
+- Client: use a typed SDK + API_BASE for orgs list (no ad-hoc fetch).
+
+Tasks — Server
+1) Single mount
+   - In server/index.ts ensure ONLY:
+     app.use("/api/organizations", organizationsRouter);
+   - Comment out any legacy mounts in server/routes.ts (organizations, -v2, -hardened), leaving TODO removal notes. Keep shims if present but they must 308/410, not duplicate handlers.
+
+2) Schema-compatible list
+   - In server/routes/organizations/index.ts (canonical):
+     - Create a helper getAvailableOrgColumns() that queries information_schema.columns once on boot, caches a Set of column names.
+     - Build the SELECT list from REQUIRED: [id, name, created_at] + OPTIONALS that exist in the Set: [address, phone, email, notes, state, logo_url, is_business, universal_discounts, title_card_url, brand_primary, brand_secondary, updated_at].
+     - With Drizzle: construct a columns object by filtering organizations.* with the Set; then db.select(columns).from(organizations).orderBy(sql`created_at DESC NULLS LAST`);
+     - Map snake_case → camelCase in a small dbToDto(row) that omits undefined props.
+     - Return { success:true, data, count } where count is from a separate COUNT(*) query.
+
+   - Add GET /api/organizations/__columns returning { columns: string[] } for quick debugging.
+
+3) Errors
+   - If any runtime column mismatch still occurs, catch and respond 200 with reduced row shape (id, name, created_at) and include { warning: "Some columns missing" }.
+
+Tasks — Client
+4) SDK + hook
+   - Create client/src/lib/env.ts: export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api".
+   - Create client/src/lib/api-sdk.ts with:
+       export async function listOrganizations(params?: { page?:number; pageSize?:number; search?:string }) 
+         -> Promise<{ data: OrganizationDTO[]; count:number }>;
+     Use API_BASE and zod to parse the envelope { success, data, count }.
+   - Update the Organizations page/query hook to call listOrganizations(...) instead of direct fetch; show empty-state when data.length===0; render inline error on 4xx and retry banner on 5xx.
+
+5) Dev parity
+   - In client/vite.config.ts ensure dev proxy: server: { proxy: { "/api": "http://localhost:5000" } }.
+   - Replace any hardcoded localhost URLs for orgs with API_BASE.
+
+Deliverables
+- server/index.ts: only the canonical organizations mount active.
+- server/routes/organizations/index.ts: schema-compatible list + __columns helper + dbToDto mapping.
+- client/src/lib/env.ts and client/src/lib/api-sdk.ts created; Organizations page updated to use SDK.
+- docs/ROUTE_SURFACE.md refreshed (run routes:list) and note the __columns helper.
+
+Acceptance
+- GET /api/organizations returns real rows (no 500) even if some optional columns don’t exist yet; page shows orgs.
+- routes:list shows one mount for /api/organizations (no duplicate handlers).
+- Frontend loads orgs; no direct fetches for orgs outside the SDK.
