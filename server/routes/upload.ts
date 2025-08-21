@@ -130,6 +130,12 @@ router.post('/logo', upload.single('file'), async (req, res) => {
 
   } catch (error: any) {
     console.error('Logo upload error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name
+    });
     
     // Handle specific multer errors with fieldErrors format
     if (error.code === 'LIMIT_FILE_SIZE') {
@@ -151,6 +157,7 @@ router.post('/logo', upload.single('file'), async (req, res) => {
     // Generic error response
     res.status(500).json({ 
       error: 'Failed to upload logo', 
+      message: error.message,
       details: error.message 
     });
   }

@@ -158,7 +158,7 @@ router.post('/',
 
     try {
       // Prepare the organization data with proper date handling
-      const now = new Date().toISOString();
+      const now = new Date();
       const orgData = {
         name: validatedData.name,
         logo_url: validatedData.logoUrl || null,
@@ -168,18 +168,18 @@ router.post('/',
         is_business: validatedData.isBusiness || false,
         notes: validatedData.notes || null,
         universal_discounts: validatedData.universalDiscounts || {},
-        address_line_1: validatedData.addressLine1 || null,
-        address_line_2: validatedData.addressLine2 || null,
-        city: validatedData.city || null,
-        postal_code: validatedData.postalCode || null,
-        contact_email: validatedData.contactEmail || null,
-        website: validatedData.website || null,
-        country: validatedData.country || null,
-        billing_email: validatedData.billingEmail || null,
-        brand_primary: validatedData.brandPrimary || null,
-        brand_secondary: validatedData.brandSecondary || null,
-        email_domain: validatedData.emailDomain || null,
-        title_card_url: validatedData.titleCardUrl || null,
+        address_line_1: validatedData.address || null,
+        address_line_2: null,
+        city: null,
+        postal_code: null,
+        contact_email: validatedData.email || null,
+        website: null,
+        country: null,
+        billing_email: null,
+        brand_primary: null,
+        brand_secondary: null,
+        email_domain: null,
+        title_card_url: null,
         created_at: now,
         updated_at: now,
       };
@@ -195,6 +195,11 @@ router.post('/',
       });
     } catch (error) {
       console.error('Error creating organization:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        validatedData
+      });
 
       // Handle specific database errors
       if (error instanceof Error) {
@@ -218,7 +223,7 @@ router.post('/',
       return res.status(500).json({
         success: false,
         error: 'Internal server error',
-        message: 'Failed to create organization'
+        message: error instanceof Error ? error.message : 'Failed to create organization'
       });
     }
   })

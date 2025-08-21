@@ -247,7 +247,7 @@ export default function OrganizationsEnhanced() {
 
   const renderOrganizationCard = (org: OrganizationDTO) => (
     <GlowCard
-      key={org.id}
+      key={`org-card-${org.id}`}
       className="cursor-pointer hover:scale-[1.02] transition-transform"
       onClick={() => setSelectedOrg(org)}
       data-testid={`card-organization-${org.id}`}
@@ -288,8 +288,8 @@ export default function OrganizationsEnhanced() {
 
   return (
     <>
-      <HeadMeta 
-        title="Organizations - Rich Habits Custom Clothing" 
+      <HeadMeta
+        title="Organizations - Rich Habits Custom Clothing"
         desc="Manage your custom clothing business relationships. Create, edit, and organize your school and business partnerships."
       />
 
@@ -320,8 +320,8 @@ export default function OrganizationsEnhanced() {
             </div>
 
             {/* State Filter */}
-            <Select 
-              value={selectedState} 
+            <Select
+              value={selectedState}
               onValueChange={(value) => setSelectedState(normalizeToDefault(value, SAFE_DEFAULTS.state) as StateType)}
             >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-state-filter">
@@ -338,8 +338,8 @@ export default function OrganizationsEnhanced() {
             </Select>
 
             {/* Type Filter */}
-            <Select 
-              value={orgType} 
+            <Select
+              value={orgType}
               onValueChange={(value) => setOrgType(normalizeToDefault(value, SAFE_DEFAULTS.orgType) as "all" | "school" | "business")}
             >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-type-filter">
@@ -353,8 +353,8 @@ export default function OrganizationsEnhanced() {
             </Select>
 
             {/* Sort By */}
-            <Select 
-              value={sortBy} 
+            <Select
+              value={sortBy}
               onValueChange={(value) => setSortBy(normalizeToDefault(value, SAFE_DEFAULTS.sortBy) as "name" | "created_at")}
             >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-sort">
@@ -367,8 +367,8 @@ export default function OrganizationsEnhanced() {
             </Select>
 
             {/* Sort Order */}
-            <Select 
-              value={sortOrder} 
+            <Select
+              value={sortOrder}
               onValueChange={(value) => setSortOrder(normalizeToDefault(value, SAFE_DEFAULTS.sortOrder) as "asc" | "desc")}
             >
               <SelectTrigger className="bg-white/5 border-white/20 text-white" data-testid="select-order">
@@ -382,8 +382,8 @@ export default function OrganizationsEnhanced() {
           </div>
 
           <div className="flex justify-between items-center mt-4">
-            <Select 
-              value={pageSize.toString()} 
+            <Select
+              value={pageSize.toString()}
               onValueChange={(value) => {
                 const numValue = parseInt(normalizeToDefault(value, SAFE_DEFAULTS.pageSize.toString()));
                 setPageSize(isNaN(numValue) ? SAFE_DEFAULTS.pageSize : numValue);
@@ -416,7 +416,7 @@ export default function OrganizationsEnhanced() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {safeOrganizations.map((org) => 
+              {safeOrganizations.map((org) =>
                 renderOrganizationCard(org)
               )}
             </div>

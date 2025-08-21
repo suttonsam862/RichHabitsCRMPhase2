@@ -9,20 +9,41 @@ async function throwIfResNotOk(res: Response) {
 
 export type HttpMethod = 'GET'|'POST'|'PATCH'|'DELETE';
 
-export async function apiRequest(
-  url: string,
-  opts: { method?: HttpMethod; data?: any } = {}
-) {
-  const method = opts.method ?? 'GET';
-  const data = opts.data;
-  const res = await fetch(url, {
+export async function apiRequest(endpoint: string, options: { method?: string; data?: any; headers?: Record<string, string> } = {}) {
+  const { method = 'GET', data, headers = {} } = options;
+
+  const config: RequestInit = {
     method,
-    headers: data ? { 'Content-Type': 'application/json' } : undefined,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} on ${method} ${url}`);
-  return res.json();
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+  };
+
+  if (data && method !== 'GET') {
+    config.body = JSON.stringify(data);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, config);
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        // If we can't parse error as JSON, use the status text
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error(`API request failed for ${endpoint}:`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -57,4 +78,3 @@ export const queryClient = new QueryClient({
     },
   },
 });
-
