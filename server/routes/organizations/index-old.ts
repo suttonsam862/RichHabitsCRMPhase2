@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { z } from 'zod';
 import { CreateOrganizationDTO, UpdateOrganizationDTO, OrganizationDTO } from '@shared/dtos/OrganizationDTO';
@@ -96,29 +97,6 @@ function dbToDto(row: any): any {
 
 const router = express.Router();
 
-// Debug endpoint to check available columns - MUST be before /:id route
-router.get('/__columns', asyncHandler(async (req, res) => {
-  try {
-    const columns = await getAvailableOrgColumns();
-    res.json({
-      success: true,
-      data: {
-        columns: Array.from(columns).sort(),
-        required: REQUIRED_COLUMNS,
-        preferred: PREFERRED_COLUMNS,
-        optional: OPTIONAL_COLUMNS
-      }
-    });
-  } catch (error) {
-    console.error('Columns debug error:', error);
-    res.json({
-      success: false,
-      error: 'Failed to get columns info',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-}));
-
 // List all organizations with filtering, sorting, and pagination
 router.get('/', asyncHandler(async (req, res) => {
   const {
@@ -157,29 +135,27 @@ router.get('/', asyncHandler(async (req, res) => {
     }
   }
 
+  // Build order by
+  const sortField = sort === 'name' ? organizations.name : organizations.createdAt;
+
   try {
     // Get available columns and build select fields
     const availableCols = await getAvailableOrgColumns();
     const selectColumns: any = {};
     
-    // If no columns detected, use fallback approach
-    if (availableCols.size === 0) {
-      console.warn('No columns detected, using fallback minimal select');
-      selectColumns.id = organizations.id;
-      selectColumns.name = organizations.name;
-      selectColumns.created_at = organizations.createdAt;
-    } else {
-      // Build SELECT = REQUIRED + (PREFERRED+OPTIONAL that exist)
-      const allColumns = [...REQUIRED_COLUMNS, ...PREFERRED_COLUMNS, ...OPTIONAL_COLUMNS];
-      
-      allColumns.forEach(col => {
-        if (availableCols.has(col)) {
-          selectColumns[col] = organizations[col as keyof typeof organizations];
-        }
-      });
-    }
+    // Always include required columns
+    REQUIRED_COLUMNS.forEach(col => {
+      if (availableCols.has(col)) {
+        selectColumns[col] = organizations[col as keyof typeof organizations];
+      }
+    });
     
-    console.log('Using select columns:', Object.keys(selectColumns));
+    // Include optional columns that exist
+    OPTIONAL_COLUMNS.forEach(col => {
+      if (availableCols.has(col)) {
+        selectColumns[col] = organizations[col as keyof typeof organizations];
+      }
+    });
 
     // Get total count
     const countResult = await db
@@ -201,7 +177,6 @@ router.get('/', asyncHandler(async (req, res) => {
     // Map database rows to DTOs
     const data = results.map(dbToDto);
 
-    // Always return 200 JSON envelope
     res.json({
       success: true,
       data,
@@ -247,7 +222,7 @@ router.get('/', asyncHandler(async (req, res) => {
   }
 }));
 
-// Get organization by ID
+// Get organization by ID  
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
   
@@ -256,30 +231,34 @@ router.get('/:id', asyncHandler(async (req, res) => {
     const availableCols = await getAvailableOrgColumns();
     const selectColumns: any = {};
     
-    // Build SELECT = REQUIRED + (PREFERRED+OPTIONAL that exist)
-    const allColumns = [...REQUIRED_COLUMNS, ...PREFERRED_COLUMNS, ...OPTIONAL_COLUMNS];
+    // Always include required columns
+    REQUIRED_COLUMNS.forEach(col => {
+      if (availableCols.has(col)) {
+        selectColumns[col] = organizations[col as keyof typeof organizations];
+      }
+    });
     
-    allColumns.forEach(col => {
+    // Include optional columns that exist
+    OPTIONAL_COLUMNS.forEach(col => {
       if (availableCols.has(col)) {
         selectColumns[col] = organizations[col as keyof typeof organizations];
       }
     });
 
-    const result = await db
+    const results = await db
       .select(selectColumns)
       .from(organizations)
       .where(eq(organizations.id, id))
       .limit(1);
 
-    if (result.length === 0) {
+    if (results.length === 0) {
       return res.status(404).json({
-        success: false,
         error: 'Organization not found'
       });
     }
 
-    const data = dbToDto(result[0]);
-
+    const data = dbToDto(results[0]);
+    
     res.json({
       success: true,
       data
@@ -287,9 +266,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Error fetching organization:', error);
     
-    // Fallback to minimal fields
+    // Fallback: try with minimal required columns only
     try {
-      const fallbackResult = await db
+      const minimalResults = await db
         .select({
           id: organizations.id,
           name: organizations.name,
@@ -299,27 +278,74 @@ router.get('/:id', asyncHandler(async (req, res) => {
         .where(eq(organizations.id, id))
         .limit(1);
 
-      if (fallbackResult.length === 0) {
+      if (minimalResults.length === 0) {
         return res.status(404).json({
-          success: false,
           error: 'Organization not found'
         });
       }
 
-      const data = dbToDto(fallbackResult[0]);
-
+      const data = dbToDto(minimalResults[0]);
+      
       res.json({
         success: true,
         data,
         warning: 'reduced shape - some columns unavailable'
       });
     } catch (fallbackError) {
-      console.error('Fallback get query also failed:', fallbackError);
+      console.error('Fallback query also failed:', fallbackError);
       res.status(404).json({
-        success: false,
         error: 'Organization not found'
       });
     }
+  }
+}));
+
+// Delete organization by ID
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const results = await db
+      .delete(organizations)
+      .where(eq(organizations.id, id))
+      .returning({ id: organizations.id });
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        error: 'Organization not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      id: results[0].id
+    });
+  } catch (error) {
+    console.error('Error deleting organization:', error);
+    res.status(500).json({
+      error: 'Failed to delete organization',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}));
+
+// Debug endpoint for column information
+router.get('/__columns', asyncHandler(async (req, res) => {
+  try {
+    const availableCols = await getAvailableOrgColumns();
+    res.json({
+      success: true,
+      data: {
+        columns: Array.from(availableCols),
+        required: REQUIRED_COLUMNS,
+        optional: OPTIONAL_COLUMNS
+      }
+    });
+  } catch (error) {
+    console.error('Error getting columns:', error);
+    res.status(500).json({
+      error: 'Failed to get column information'
+    });
   }
 }));
 
@@ -346,7 +372,6 @@ router.post('/',
     } catch (error) {
       console.error('Error creating organization:', error);
       res.status(500).json({
-        success: false,
         error: 'Failed to create organization',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -355,12 +380,12 @@ router.post('/',
 );
 
 // Update organization
-router.patch('/:id',
+router.put('/:id',
   validateRequest({ body: UpdateOrganizationDTO }),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
-
+    
     try {
       const result = await db
         .update(organizations)
@@ -385,7 +410,6 @@ router.patch('/:id',
     } catch (error) {
       console.error('Error updating organization:', error);
       res.status(500).json({
-        success: false,
         error: 'Failed to update organization',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -405,7 +429,6 @@ router.delete('/:id', asyncHandler(async (req, res) => {
 
     if (result.length === 0) {
       return res.status(404).json({
-        success: false,
         error: 'Organization not found'
       });
     }
@@ -414,11 +437,20 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Error deleting organization:', error);
     res.status(500).json({
-      success: false,
       error: 'Failed to delete organization',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
+}));
+
+// Debug endpoint to check available columns
+router.get('/__columns', asyncHandler(async (req, res) => {
+  const columns = await getAvailableOrgColumns();
+  res.json({
+    columns: Array.from(columns).sort(),
+    required: REQUIRED_COLUMNS,
+    optional: OPTIONAL_COLUMNS
+  });
 }));
 
 export { router as organizationsRouter };

@@ -1,0 +1,51 @@
+Objective
+Fix current regressions:
+- Orgs list shows nothing (server returns minimal shape; client expects richer).
+- Users page not loading.
+- Smooth page transitions stopped.
+Do NOT change DB schema. Keep changes small.
+
+Scope
+- Server: /api/organizations and /api/users list/get
+- Client: orgs/users API SDK + pages
+- Layout: restore framer route transitions
+
+SERVER
+1) Organizations list/get
+- In server/routes/organizations/index.ts:
+  a) getAvailableOrgColumns(): return [] on any error; log once.
+  b) REQUIRED = ["id","name","created_at"]; PREFERRED = ["status","logo_url","title_card_url"];
+     OPTIONAL = ["email","phone","address_line1","city","state","zip","updated_at","universal_discounts"];
+  c) Build SELECT = REQUIRED + (PREFERRED+OPTIONAL that exist).
+  d) Always return 200 JSON envelope {success:true, data, count, warning?}.
+  e) dbToDto(row): map snake→camel; coerce dates to ISO; drop undefined.
+- Ensure GET /api/organizations returns at least id,name,createdAt,status?,logoUrl?,titleCardUrl?.
+- GET /api/organizations/:id uses same mapping; 404 JSON if missing.
+
+2) Users list/get
+- Add server/routes/users/index.ts (if missing). Implement minimal list/get using existing users table/service; return {success:true, data, count}.
+- Mount once: app.use("/api/users", usersRouter). Remove duplicate mounts.
+
+CLIENT
+3) API SDK
+- Create/extend client/src/lib/api-sdk.ts:
+  - API_BASE = import.meta.env.VITE_API_BASE ?? "/api".
+  - listOrganizations(), getOrganization(id); listUsers(), getUser(id).
+  - Parse envelopes; if non-JSON, throw ApiError("Non-JSON response").
+- Update pages to use SDK (no direct fetch). On org card click, fetch detail for modal.
+- Render with null-safe helpers: formatDateSafe(val) => string|"—"; imageUrlOrFallback(url).
+
+4) Orgs page fallback
+- If list returns reduced shape (warning present OR missing status/logo/titleCard): still render rows with available fields; show skeletons/placeholders.
+
+LAYOUT / ANIMATIONS
+5) Restore transitions
+- In client/src/layouts/AppLayout.tsx (or App.tsx if used):
+  - Use <AnimatePresence mode="wait"> and <motion.main key={location.pathname}> around <Outlet/>.
+  - Add simple fade/slide variants (opacity/translateY). Keep existing theme; no visual changes otherwise.
+
+ACCEPTANCE
+- /organizations shows rows again; modal loads full detail; createdAt not "Invalid Date".
+- /users list renders (even if minimal).
+- Page transitions are smooth again.
+- routes:list shows exactly one mount for /api/organizations and /api/users.

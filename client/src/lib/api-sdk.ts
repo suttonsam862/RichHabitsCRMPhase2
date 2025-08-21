@@ -181,5 +181,54 @@ export async function getOrganizationColumns(): Promise<{
   return response.data;
 }
 
+// Users API methods
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ListUsersParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export async function listUsers(
+  params: ListUsersParams = {}
+): Promise<{ data: User[]; count: number; warning?: string }> {
+  const searchParams = new URLSearchParams();
+  
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined) {
+      searchParams.append(key, String(value));
+    }
+  });
+
+  const queryString = searchParams.toString();
+  const endpoint = `/users${queryString ? `?${queryString}` : ''}`;
+  
+  const response = await apiRequest<User[]>(endpoint);
+  
+  return {
+    data: response.data || [],
+    count: response.count || 0,
+    warning: response.warning
+  };
+}
+
+export async function getUser(id: string): Promise<User> {
+  const response = await apiRequest<User>(`/users/${id}`);
+  
+  if (!response.success) {
+    throw new ApiError(response.error || 'Failed to fetch user', 404);
+  }
+  
+  return response.data;
+}
+
 // Export the main API client
 export { apiRequest, ApiError };

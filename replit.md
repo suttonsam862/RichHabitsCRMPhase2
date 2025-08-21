@@ -32,14 +32,15 @@ A React-TypeScript business management system for Rich Habits Custom Clothing, d
 
 ## Recent Changes (August 21, 2025)
 
-### Organizations Modal End-to-End Fix (Latest)
-✓ **Server Export Error Fixed** - Resolved duplicate organizationsRouter export causing startup failure
-✓ **Modal Props Updated** - Changed from organization object to organizationId for dynamic data fetching
-✓ **API Integration Fixed** - Updated imports from fetchOrganizations to listOrganizations
-✓ **Type Compatibility** - Added field mappings for both camelCase API responses and snake_case database fields
-✓ **Error Handling Enhanced** - Added comprehensive states for loading, network errors, and missing data
-✓ **UI Components Updated** - Fixed EditOrganizationForm and SportsTab integration with proper props
-✓ **Modal Display Complete** - Shows full organization details including logos, contact info, and timestamps
+### Organizations & Users API Regression Fixes (Latest - August 21, 2025)
+✓ **Server Startup Fixed** - Resolved duplicate organizationsRouter export, server now runs on port 5000
+✓ **Organizations API Enhanced** - Improved column detection with fallback to minimal data set when introspection fails
+✓ **Users API Added** - Implemented basic users list/get endpoints with raw SQL queries (pending schema addition)
+✓ **API SDK Updated** - Client now uses centralized api-sdk.ts with proper error handling and type safety
+✓ **Smooth Transitions Restored** - Added AnimatePresence with fade/slide effects in AppLayout
+✓ **Type Safety Improved** - Fixed organizations page to use OrganizationDTO types consistently
+✓ **JSON Envelope Compliance** - All APIs return consistent {success, data, count, warning?} format
+✓ **Fallback Data Strategy** - Organizations page gracefully handles reduced data shapes with appropriate UI
 
 ### Organizations API End-to-End Implementation (Latest)
 ✓ **Single Route Mount** - Eliminated duplicate routes, server/routes/organizations/index.ts is canonical
