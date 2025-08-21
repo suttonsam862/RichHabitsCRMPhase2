@@ -41,6 +41,11 @@ const upload = multer({
 
 const BUCKET_NAME = 'logos';
 
+// Test endpoint to verify route is working
+router.get('/test', (req, res) => {
+  res.json({ message: 'Upload route is working', timestamp: new Date().toISOString() });
+});
+
 // Ensure the logos bucket exists
 async function ensureBucketExists() {
   try {
@@ -78,12 +83,21 @@ async function ensureBucketExists() {
 
 // POST /api/upload/logo
 router.post('/logo', upload.single('file'), async (req, res) => {
+  console.log('🔍 Logo upload request received:', {
+    hasFile: !!req.file,
+    fileName: req.file?.originalname,
+    fileSize: req.file?.size,
+    mimeType: req.file?.mimetype
+  });
+
   try {
     if (!req.file) {
+      console.error('❌ No file uploaded');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     // Ensure bucket exists
+    console.log('🪣 Ensuring bucket exists...');
     await ensureBucketExists();
 
     // Get file extension from original name or default to .png
@@ -101,6 +115,7 @@ router.post('/logo', upload.single('file'), async (req, res) => {
     }
 
     // Upload to Supabase Storage
+    console.log('☁️ Uploading to Supabase:', { filePath, contentType, size: req.file.buffer.length });
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .upload(filePath, req.file.buffer, {
@@ -109,7 +124,7 @@ router.post('/logo', upload.single('file'), async (req, res) => {
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      console.error('❌ Upload error:', uploadError);
       return res.status(500).json({ 
         error: 'Failed to upload file', 
         details: uploadError.message 
@@ -121,6 +136,8 @@ router.post('/logo', upload.single('file'), async (req, res) => {
       .from(BUCKET_NAME)
       .getPublicUrl(filePath);
 
+    console.log('✅ Upload successful:', { filePath, publicUrl });
+
     // Return success response with consistent JSON format
     res.status(200).json({
       path: filePath,
@@ -129,8 +146,8 @@ router.post('/logo', upload.single('file'), async (req, res) => {
     });
 
   } catch (error: any) {
-    console.error('Logo upload error:', error);
-    console.error('Error details:', {
+    console.error('❌ Logo upload error:', error);
+    console.error('❌ Error details:', {
       message: error.message,
       stack: error.stack,
       code: error.code,

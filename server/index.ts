@@ -9,6 +9,8 @@ import { apiRouter } from './routes/api';
 import { setupVite, serveStatic } from './vite';
 import { errorHandler } from './middleware/error';
 import dotenv from 'dotenv';
+import organizationsRouter from './routes/organizations.js';
+import uploadRouter from './routes/upload.js';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +33,10 @@ app.use((req, res, next) => {
 
 // Mount API routes at /api
 app.use('/api', apiRouter);
+
+// API Routes
+app.use('/api/organizations', organizationsRouter);
+app.use('/api/upload', uploadRouter);
 
 // Error handling middleware
 app.use(errorHandler);

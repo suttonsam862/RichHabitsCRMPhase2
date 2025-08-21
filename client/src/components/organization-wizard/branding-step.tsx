@@ -46,10 +46,17 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
         body: formData,
       });
 
-      const json = await response.json().catch(() => null);
+      const json = await response.json().catch((parseError) => {
+        console.error('❌ Failed to parse response JSON:', parseError);
+        return null;
+      });
+      
+      console.log('🔍 Upload response:', { status: response.status, json });
       
       if (!response.ok || !json || json.error) {
-        throw new Error(json?.error || `Upload failed (${response.status})`);
+        const errorMsg = json?.error || json?.details || `Upload failed (${response.status})`;
+        console.error('❌ Upload failed:', errorMsg);
+        throw new Error(errorMsg);
       }
 
       setLogoPreview(json.url);
@@ -58,8 +65,15 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
         logo_file: file 
       });
     } catch (error: any) {
-      console.error('Logo upload failed:', error);
+      console.error('❌ Logo upload failed:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      
       // Show error to user but allow fallback to local preview
+      console.log('📁 Falling back to local preview');
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
