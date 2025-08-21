@@ -5,7 +5,7 @@
 
 import express from 'express';
 import { organizationsRouter } from './organizations/index';
-// TODO: Fix missing DTO exports before enabling these routers
+// TODO: Fix TypeScript type imports in sales router before enabling
 // import { salesRouter } from './sales/index';
 // import { ordersRouter } from './orders/index';
 // import { manufacturingRouter } from './manufacturing/index';
@@ -25,7 +25,7 @@ router.get('/health', (req, res) => {
 
 // Feature routers
 router.use('/organizations', organizationsRouter);
-// TODO: Enable these routers after fixing DTO exports
+// TODO: Enable sales router after fixing TypeScript type import issues
 // router.use('/sales', salesRouter);
 // router.use('/orders', ordersRouter);
 // router.use('/manufacturing', manufacturingRouter);

@@ -5,8 +5,8 @@
 
 // Re-export all DTOs from individual modules
 export * from './OrganizationDTO';
+export * from './LeadDTO';
 // export * from './ProductDTO';
-// export * from './LeadDTO';
 // export * from './OrderDTO';
 // export * from './PoDTO';
 
