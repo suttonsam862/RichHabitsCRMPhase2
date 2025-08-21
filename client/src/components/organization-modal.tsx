@@ -24,7 +24,26 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { getOrganization, deleteOrganization, formatDateSafe, type Organization } from "@/lib/api/organizations";
+import { getOrganization, deleteOrganization } from "@/lib/api-sdk";
+import type { OrganizationDTO as Organization } from "@shared/dtos/OrganizationDTO";
+
+// Helper to format dates safely
+function formatDateSafe(dateString?: string | null): string {
+  if (!dateString) return '—';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '—';
+    
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric', 
+      year: 'numeric'
+    }).format(date);
+  } catch {
+    return '—';
+  }
+}
 import { EditOrganizationForm } from "@/components/edit-organization-form";
 import { SportsTab } from "@/components/sports-tab";
 
@@ -300,10 +319,10 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                           <p className="text-sm" data-testid="text-org-name">{organization.name}</p>
                         </div>
                         
-                        {organization.type && (
+                        {organization.isBusiness !== undefined && (
                           <div>
                             <p className="font-medium text-sm text-muted-foreground">Type</p>
-                            <p className="text-sm" data-testid="text-org-type">{organization.type}</p>
+                            <p className="text-sm" data-testid="text-org-type">{organization.isBusiness ? 'Business' : 'School'}</p>
                           </div>
                         )}
 
@@ -355,7 +374,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                         )}
                       </div>
 
-                      {(organization.addressLine1 || organization.city || organization.state || organization.zip) && (
+                      {(organization.addressLine1 || organization.city || organization.state || organization.postalCode) && (
                         <>
                           <Separator />
                           <div className="flex items-start gap-3">
@@ -364,9 +383,9 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                               <p className="font-medium text-sm">Address</p>
                               <div className="text-muted-foreground text-sm" data-testid="text-org-address">
                                 {organization.addressLine1 && <p>{organization.addressLine1}</p>}
-                                {(organization.city || organization.state || organization.zip) && (
+                                {(organization.city || organization.state || organization.postalCode) && (
                                   <p>
-                                    {[organization.city, organization.state, organization.zip]
+                                    {[organization.city, organization.state, organization.postalCode]
                                       .filter(Boolean)
                                       .join(', ')}
                                   </p>
