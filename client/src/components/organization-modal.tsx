@@ -164,7 +164,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-4xl max-h-[90vh] overflow-hidden border-0 shadow-2xl" aria-describedby="org-modal-desc">
+      <DialogContent className="bg-background border max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl" aria-describedby="org-modal-desc">
         <DialogDescription id="org-modal-desc" className="sr-only">
           {editMode ? "Edit organization details and settings" : "View organization details and management interface"}
         </DialogDescription>
@@ -202,23 +202,23 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
           </div>
         ) : (
           <>
-            <DialogHeader className="p-6 pb-0">
+            <DialogHeader className="p-6 pb-0 border-b">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   {organization.logoUrl ? (
-                    <Avatar className="w-16 h-16 ring-2 ring-primary/20">
+                    <Avatar className="w-16 h-16 ring-2 ring-primary/20 bg-muted">
                       <AvatarImage 
                         src={organization.logoUrl} 
                         alt={`${organization.name} logo`}
                         data-testid="img-modal-organization-logo"
                       />
-                      <AvatarFallback className="text-lg font-bold">
+                      <AvatarFallback className="text-lg font-bold bg-primary text-primary-foreground">
                         {organization.name?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   ) : (
-                    <Avatar className="w-16 h-16">
-                      <AvatarFallback className="text-lg font-bold">
+                    <Avatar className="w-16 h-16 bg-primary">
+                      <AvatarFallback className="text-lg font-bold bg-primary text-primary-foreground">
                         {organization.name?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -226,18 +226,18 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
                   <div className="space-y-2">
                     <DialogTitle 
-                      className="text-2xl font-bold"
+                      className="text-2xl font-bold text-foreground"
                       data-testid="text-modal-organization-name"
                     >
                       {organization.name}
                     </DialogTitle>
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex items-center gap-2 text-foreground/70">
                       <MapPin className="h-4 w-4" />
-                      <span data-testid="text-modal-organization-state">
+                      <span data-testid="text-modal-organization-state" className="font-medium">
                         {organization.state || 'No state'}
                       </span>
                       {organization.universalDiscounts && (
-                        <Badge variant="secondary">
+                        <Badge variant="default" className="bg-primary text-primary-foreground">
                           Universal Discounts Available
                         </Badge>
                       )}
@@ -250,7 +250,6 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                     variant="outline"
                     size="sm"
                     onClick={() => setEditMode(true)}
-                    className="bg-background/80 hover:bg-background/90 backdrop-blur-sm border-border/50"
                     data-testid="button-edit-organization"
                   >
                     <Edit className="h-4 w-4" />
@@ -260,7 +259,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                     size="sm"
                     onClick={handleDelete}
                     disabled={deleteOrgMutation.isPending}
-                    className="bg-background/80 hover:bg-background/90 backdrop-blur-sm border-border/50 text-destructive hover:text-destructive hover:border-destructive/50"
+                    className="text-destructive hover:text-destructive hover:border-destructive"
                     data-testid="button-delete-organization"
                   >
                     {deleteOrgMutation.isPending ? (
@@ -274,7 +273,6 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                     size="sm"
                     onClick={onClose}
                     data-testid="button-close-modal"
-                    className="hover:bg-muted/50"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -292,56 +290,56 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
             <div className="flex-1 max-h-[75vh] overflow-y-auto p-6 pt-4">
               <Tabs defaultValue="general" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3 bg-muted/50 backdrop-blur-sm">
-                  <TabsTrigger value="general" data-testid="tab-general" className="data-[state=active]:bg-background/60">
+                <TabsList className="grid w-full grid-cols-3 bg-muted">
+                  <TabsTrigger value="general" data-testid="tab-general" className="data-[state=active]:bg-background data-[state=active]:text-foreground">
                     <Building2 className="h-4 w-4 mr-2" />
                     General
                   </TabsTrigger>
-                  <TabsTrigger value="sports" data-testid="tab-sports" className="data-[state=active]:bg-background/60">
+                  <TabsTrigger value="sports" data-testid="tab-sports" className="data-[state=active]:bg-background data-[state=active]:text-foreground">
                     <Users className="h-4 w-4 mr-2" />
                     Sports
                   </TabsTrigger>
-                  <TabsTrigger value="other" data-testid="tab-other" className="data-[state=active]:bg-background/60">
+                  <TabsTrigger value="other" data-testid="tab-other" className="data-[state=active]:bg-background data-[state=active]:text-foreground">
                     <FileText className="h-4 w-4 mr-2" />
                     Other
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="general" className="space-y-4">
-                  <Card className="bg-muted/30 backdrop-blur-sm border-border/50">
+                  <Card className="border">
                     <CardHeader>
-                      <CardTitle>Organization Details</CardTitle>
+                      <CardTitle className="text-foreground">Organization Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <p className="font-medium text-sm text-muted-foreground">Organization Name</p>
-                          <p className="text-sm" data-testid="text-org-name">{organization.name}</p>
+                          <p className="font-medium text-sm text-foreground/70">Organization Name</p>
+                          <p className="font-semibold text-foreground" data-testid="text-org-name">{organization.name}</p>
                         </div>
                         
                         {organization.isBusiness !== undefined && (
                           <div>
-                            <p className="font-medium text-sm text-muted-foreground">Type</p>
-                            <p className="text-sm" data-testid="text-org-type">{organization.isBusiness ? 'Business' : 'School'}</p>
+                            <p className="font-medium text-sm text-foreground/70">Type</p>
+                            <p className="font-semibold text-foreground" data-testid="text-org-type">{organization.isBusiness ? 'Business' : 'School'}</p>
                           </div>
                         )}
 
                         {organization.status && (
                           <div>
-                            <p className="font-medium text-sm text-muted-foreground">Status</p>
-                            <Badge variant="outline" data-testid="badge-org-status">{organization.status}</Badge>
+                            <p className="font-medium text-sm text-foreground/70">Status</p>
+                            <Badge variant="default" className="bg-primary text-primary-foreground" data-testid="badge-org-status">{organization.status}</Badge>
                           </div>
                         )}
 
                         <div>
-                          <p className="font-medium text-sm text-muted-foreground">Created</p>
-                          <p className="text-sm" data-testid="text-org-created">{formatDateSafe(organization.createdAt)}</p>
+                          <p className="font-medium text-sm text-foreground/70">Created</p>
+                          <p className="font-semibold text-foreground" data-testid="text-org-created">{formatDateSafe(organization.createdAt)}</p>
                         </div>
 
                         {organization.updatedAt && (
                           <div>
-                            <p className="font-medium text-sm text-muted-foreground">Last Updated</p>
-                            <p className="text-sm" data-testid="text-org-updated">{formatDateSafe(organization.updatedAt)}</p>
+                            <p className="font-medium text-sm text-foreground/70">Last Updated</p>
+                            <p className="font-semibold text-foreground" data-testid="text-org-updated">{formatDateSafe(organization.updatedAt)}</p>
                           </div>
                         )}
                       </div>
@@ -351,10 +349,10 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {organization.email && (
                           <div className="flex items-start gap-3">
-                            <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Mail className="h-5 w-5 text-primary mt-0.5" />
                             <div>
-                              <p className="font-medium text-sm">Email</p>
-                              <p className="text-muted-foreground text-sm" data-testid="text-org-email">
+                              <p className="font-medium text-sm text-foreground/70">Email</p>
+                              <p className="text-foreground font-semibold" data-testid="text-org-email">
                                 {organization.email}
                               </p>
                             </div>
@@ -363,10 +361,10 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
                         {organization.phone && (
                           <div className="flex items-start gap-3">
-                            <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Phone className="h-5 w-5 text-primary mt-0.5" />
                             <div>
-                              <p className="font-medium text-sm">Phone</p>
-                              <p className="text-muted-foreground text-sm" data-testid="text-org-phone">
+                              <p className="font-medium text-sm text-foreground/70">Phone</p>
+                              <p className="text-foreground font-semibold" data-testid="text-org-phone">
                                 {organization.phone}
                               </p>
                             </div>
@@ -378,10 +376,10 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                         <>
                           <Separator />
                           <div className="flex items-start gap-3">
-                            <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <MapPin className="h-5 w-5 text-primary mt-0.5" />
                             <div>
-                              <p className="font-medium text-sm">Address</p>
-                              <div className="text-muted-foreground text-sm" data-testid="text-org-address">
+                              <p className="font-medium text-sm text-foreground/70">Address</p>
+                              <div className="text-foreground font-semibold" data-testid="text-org-address">
                                 {organization.addressLine1 && <p>{organization.addressLine1}</p>}
                                 {(organization.city || organization.state || organization.postalCode) && (
                                   <p>
@@ -400,8 +398,8 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                         <>
                           <Separator />
                           <div>
-                            <p className="font-medium text-sm text-muted-foreground mb-2">Logo URL</p>
-                            <p className="text-muted-foreground text-xs break-all" data-testid="text-org-logo-url">
+                            <p className="font-medium text-sm text-foreground/70 mb-2">Logo URL</p>
+                            <p className="text-foreground text-xs break-all font-mono bg-muted p-2 rounded" data-testid="text-org-logo-url">
                               {organization.logoUrl}
                             </p>
                           </div>
@@ -412,8 +410,8 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                         <>
                           <Separator />
                           <div>
-                            <p className="font-medium text-sm text-muted-foreground mb-2">Title Card Background</p>
-                            <p className="text-muted-foreground text-xs break-all" data-testid="text-org-titlecard-url">
+                            <p className="font-medium text-sm text-foreground/70 mb-2">Title Card Background</p>
+                            <p className="text-foreground text-xs break-all font-mono bg-muted p-2 rounded" data-testid="text-org-titlecard-url">
                               {organization.titleCardUrl}
                             </p>
                             {organization.titleCardUrl && (
@@ -439,17 +437,21 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                 </TabsContent>
 
                 <TabsContent value="other" className="space-y-4">
-                  <Card className="bg-muted/30 backdrop-blur-sm border-border/50">
+                  <Card className="border">
                     <CardHeader>
-                      <CardTitle>Additional Settings</CardTitle>
+                      <CardTitle className="text-foreground">Additional Settings</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div>
-                          <p className="font-medium text-sm text-muted-foreground">Universal Discounts</p>
-                          <p className="text-sm" data-testid="text-org-discounts">
+                          <p className="font-medium text-sm text-foreground/70">Universal Discounts</p>
+                          <Badge 
+                            variant={organization.universalDiscounts ? "default" : "secondary"} 
+                            className={organization.universalDiscounts ? "bg-primary text-primary-foreground" : ""}
+                            data-testid="text-org-discounts"
+                          >
                             {organization.universalDiscounts ? 'Enabled' : 'Disabled'}
-                          </p>
+                          </Badge>
                         </div>
                       </div>
                     </CardContent>
