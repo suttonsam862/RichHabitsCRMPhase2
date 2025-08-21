@@ -1,33 +1,60 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash, User, Mail, Phone } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Edit, Trash, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { CreateSportForm } from "@/components/create-sport-form";
 import { EditSportForm } from "@/components/edit-sport-form";
-import type { Sport } from "../../../shared/supabase-schema";
+import { apiRequest } from "@/lib/queryClient";
+
+interface Sport {
+  id: string;
+  name: string;
+  season?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  notes?: string;
+}
 
 interface SportsTabProps {
   organizationId: string;
   sports: Sport[];
 }
 
-export function SportsTab({ organizationId, sports }: SportsTabProps) {
+export function SportsTab({ organizationId, sports = [] }: SportsTabProps) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingSport, setEditingSport] = useState<Sport | null>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const deleteSportMutation = useMutation({
-    mutationFn: (sportId: string) =>
-      apiRequest(`/api/sports/${sportId}`, { method: "DELETE" }),
+  // Fetch sports for the organization
+  const { data: sportsData = [], isLoading } = useQuery({
+    queryKey: ['sports', organizationId],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest(`/api/organizations/${organizationId}/sports`);
+        return response.data || [];
+      } catch (error) {
+        console.error('Failed to fetch sports:', error);
+        return [];
+      }
+    },
+    enabled: !!organizationId,
+  });
+
+  // Delete sport mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (sportId: string) => {
+      await apiRequest(`/api/organizations/${organizationId}/sports/${sportId}`, {
+        method: 'DELETE',
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
-      queryClient.invalidateQueries({ queryKey: ['org', organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['sports', organizationId] });
       toast({
         title: "Sport deleted",
         description: "The sport has been successfully removed.",
@@ -42,152 +69,164 @@ export function SportsTab({ organizationId, sports }: SportsTabProps) {
     },
   });
 
-  const handleDeleteSport = (sport: Sport) => {
+  const handleDelete = async (sport: Sport) => {
     if (confirm(`Are you sure you want to delete ${sport.name}?`)) {
-      deleteSportMutation.mutate(sport.id);
+      deleteMutation.mutate(sport.id);
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Sports Management</h3>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm" data-testid="button-add-sport">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Sport
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-2xl border-0 shadow-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Sport</DialogTitle>
-            </DialogHeader>
-            <CreateSportForm
-              organizationId={organizationId}
-              onSuccess={() => setShowCreateDialog(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
+  if (isLoading) {
+    return (
+      <Card className="border-gray-700 bg-gray-800/50">
+        <CardHeader>
+          <CardTitle className="text-white">Sports & Contacts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-300">Loading sports...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-      {sports.length === 0 ? (
-        <Card className="bg-muted/30 backdrop-blur-sm border-border/50">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">
-              No sports configured for this organization.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {sports.map((sport) => (
-            <Card key={sport.id} className="bg-muted/30 backdrop-blur-sm border-border/50" data-testid={`card-sport-${sport.id}`}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <CardTitle className="flex items-center gap-2">
-                      {sport.name}
-                      {sport.assigned_salesperson && (
-                        <Badge variant="secondary" className="text-xs">
-                          {sport.assigned_salesperson}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                  </div>
-                  <div className="flex gap-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" data-testid={`button-edit-sport-${sport.id}`}>
+  return (
+    <Card className="border-gray-700 bg-gray-800/50">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Users className="h-5 w-5" />
+            Sports & Contacts
+          </CardTitle>
+          <Button
+            size="sm"
+            onClick={() => setShowCreateForm(true)}
+            data-testid="button-add-sport"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Sport
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {showCreateForm ? (
+          <CreateSportForm
+            organizationId={organizationId}
+            onSuccess={() => {
+              setShowCreateForm(false);
+              queryClient.invalidateQueries({ queryKey: ['sports', organizationId] });
+            }}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        ) : editingSport ? (
+          <EditSportForm
+            sport={editingSport}
+            organizationId={organizationId}
+            onSuccess={() => {
+              setEditingSport(null);
+              queryClient.invalidateQueries({ queryKey: ['sports', organizationId] });
+            }}
+            onCancel={() => setEditingSport(null)}
+          />
+        ) : (
+          <>
+            {sportsData.length === 0 ? (
+              <div className="text-center py-8 text-gray-300">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No sports added yet.</p>
+                <p className="text-sm">Click "Add Sport" to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {sportsData.map((sport: Sport) => (
+                  <div
+                    key={sport.id}
+                    className="border border-gray-600 bg-gray-800/30 rounded-lg p-4 space-y-3"
+                    data-testid={`sport-card-${sport.id}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-lg text-white" data-testid={`sport-name-${sport.id}`}>
+                          {sport.name}
+                        </h4>
+                        {sport.season && (
+                          <Badge variant="secondary" className="bg-blue-600 text-white" data-testid={`sport-season-${sport.id}`}>
+                            {sport.season}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingSport(sport)}
+                          data-testid={`button-edit-sport-${sport.id}`}
+                          className="border-gray-600 text-white hover:bg-gray-700"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-2xl border-0 shadow-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Edit Sport</DialogTitle>
-                        </DialogHeader>
-                        <EditSportForm
-                          sport={sport}
-                          onSuccess={() => {
-                            toast({
-                              title: "Sport updated",
-                              description: "The sport has been successfully updated.",
-                            });
-                          }}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteSport(sport)}
-                      className="text-destructive hover:text-destructive"
-                      data-testid={`button-delete-sport-${sport.id}`}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {(sport.contact_name || sport.contact_email || sport.contact_phone) && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-muted-foreground">Contact Information</h4>
-                    
-                    {sport.contact_name && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span data-testid={`text-contact-name-${sport.id}`}>
-                          {sport.contact_name}
-                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(sport)}
+                          disabled={deleteMutation.isPending}
+                          className="text-red-400 hover:text-red-300 border-gray-600 hover:bg-gray-700"
+                          data-testid={`button-delete-sport-${sport.id}`}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                    
-                    {sport.contact_email && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span data-testid={`text-contact-email-${sport.id}`}>
-                          {sport.contact_email}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {sport.contact_phone && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span data-testid={`text-contact-phone-${sport.id}`}>
-                          {sport.contact_phone}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                    </div>
 
-      {/* Edit Sport Modal */}
-      {editingSport && (
-        <Dialog open={true} onOpenChange={() => setEditingSport(null)}>
-          <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-2xl border-0 shadow-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Sport</DialogTitle>
-            </DialogHeader>
-            <EditSportForm
-              sport={editingSport}
-              onSuccess={() => {
-                setEditingSport(null);
-                toast({
-                  title: "Sport updated",
-                  description: "The sport has been successfully updated.",
-                });
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+                    {(sport.contact_name || sport.contact_email || sport.contact_phone) && (
+                      <>
+                        <Separator className="bg-gray-600" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {sport.contact_name && (
+                            <div>
+                              <p className="text-sm text-gray-400">Contact Name</p>
+                              <p className="font-medium text-white" data-testid={`sport-contact-name-${sport.id}`}>
+                                {sport.contact_name}
+                              </p>
+                            </div>
+                          )}
+                          {sport.contact_email && (
+                            <div>
+                              <p className="text-sm text-gray-400">Email</p>
+                              <p className="font-medium text-sm text-white" data-testid={`sport-contact-email-${sport.id}`}>
+                                {sport.contact_email}
+                              </p>
+                            </div>
+                          )}
+                          {sport.contact_phone && (
+                            <div>
+                              <p className="text-sm text-gray-400">Phone</p>
+                              <p className="font-medium text-white" data-testid={`sport-contact-phone-${sport.id}`}>
+                                {sport.contact_phone}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {sport.notes && (
+                      <>
+                        <Separator className="bg-gray-600" />
+                        <div>
+                          <p className="text-sm text-gray-400">Notes</p>
+                          <p className="text-sm text-white" data-testid={`sport-notes-${sport.id}`}>
+                            {sport.notes}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

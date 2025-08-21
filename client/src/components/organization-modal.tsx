@@ -105,7 +105,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-4xl max-h-[90vh] overflow-hidden border-0 shadow-2xl" aria-describedby="org-modal-loading-desc">
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl" aria-describedby="org-modal-loading-desc">
           <DialogHeader>
             <DialogTitle>Loading Organization</DialogTitle>
             <DialogDescription id="org-modal-loading-desc">
@@ -125,7 +125,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
   if (error) {
     return (
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-md" aria-describedby="org-modal-error-desc">
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md" aria-describedby="org-modal-error-desc">
           <DialogHeader>
             <DialogTitle>Error Loading Organization</DialogTitle>
             <DialogDescription id="org-modal-error-desc">
@@ -147,7 +147,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
   if (!organization) {
     return (
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-md" aria-describedby="org-modal-notfound-desc">
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md" aria-describedby="org-modal-notfound-desc">
           <DialogHeader>
             <DialogTitle>Organization Not Found</DialogTitle>
             <DialogDescription id="org-modal-notfound-desc">
@@ -164,13 +164,13 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="bg-background border max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
+      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
         <DialogDescription className="sr-only">
           {editMode ? "Edit organization details and settings" : "View organization details and management interface"}
         </DialogDescription>
         {editMode ? (
           <div className="flex flex-col max-h-[90vh]">
-            <DialogHeader className="px-6 py-4 border-b border-border/50">
+            <DialogHeader className="px-6 py-4 border-b border-gray-700">
               <DialogTitle className="flex items-center justify-between">
                 Edit Organization
                 <Button
@@ -178,7 +178,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                   size="sm"
                   onClick={() => setEditMode(false)}
                   data-testid="button-cancel-edit"
-                  className="hover:bg-muted/50"
+                  className="hover:bg-gray-800/50"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -202,7 +202,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
           </div>
         ) : (
           <>
-            <DialogHeader className="p-6 pb-0 border-b">
+            <DialogHeader className="p-6 pb-0 border-b border-gray-700">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   {organization.logoUrl ? (
@@ -433,7 +433,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                 </TabsContent>
 
                 <TabsContent value="sports" className="space-y-4">
-                  <SportsTab organizationId={organizationId} sports={[]} />
+                  <SportsTab organizationId={organizationId} sports={organization.sports || []} />
                 </TabsContent>
 
                 <TabsContent value="other" className="space-y-4">

@@ -428,9 +428,11 @@ export default function OrganizationsEnhanced() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {safeOrganizations.map((org, index) =>
-                renderOrganizationCard(org, index)
-              )}
+              {safeOrganizations.map((org, index) => (
+                <div key={`org-${org.id}-${index}`}>
+                  {renderOrganizationCard(org, index)}
+                </div>
+              ))}
             </div>
 
             {/* Pagination */}

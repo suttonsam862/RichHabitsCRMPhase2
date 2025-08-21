@@ -98,8 +98,17 @@ router.get('/', asyncHandler(async (req, res) => {
       .limit(pageSizeNum)
       .offset(offset);
 
+    // Get full organization data for mapping
+    const fullResults = await db
+      .select()
+      .from(organizations)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(organizations.createdAt))
+      .limit(pageSizeNum)
+      .offset(offset);
+
     // Map database rows to DTOs
-    const data = results.map((org: any) => ({
+    const data = fullResults.map((org: any) => ({
       id: org.id,
       name: org.name,
       state: org.state,
@@ -111,13 +120,17 @@ router.get('/', asyncHandler(async (req, res) => {
       status: org.is_business ? 'Business' : 'School',
       email: org.email,
       phone: org.phone,
-      addressLine1: org.address,
+      addressLine1: org.address_line_1,
+      addressLine2: org.address_line_2,
       city: org.city,
       postalCode: org.postal_code,
       notes: org.notes,
       universalDiscounts: org.universal_discounts || {},
       brandPrimary: org.brand_primary,
-      brandSecondary: org.brand_secondary
+      brandSecondary: org.brand_secondary,
+      contactEmail: org.contact_email,
+      website: org.website,
+      billingEmail: org.billing_email
     }));
 
     // Return response envelope
@@ -142,7 +155,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
   try {
     const result = await db
-      .select(cols)
+      .select()
       .from(organizations)
       .where(eq(organizations.id, id))
       .limit(1);
@@ -153,7 +166,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
       });
     }
 
-    const org = result[0]; // Corrected to get the single organization object
+    const org = result[0];
 
     const mappedOrg = {
       id: org.id,
@@ -166,13 +179,17 @@ router.get('/:id', asyncHandler(async (req, res) => {
       updatedAt: org.updated_at,
       email: org.email,
       phone: org.phone,
-      addressLine1: org.address,
+      addressLine1: org.address_line_1,
+      addressLine2: org.address_line_2,
       city: org.city,
       postalCode: org.postal_code,
       notes: org.notes,
       universalDiscounts: org.universal_discounts || {},
       brandPrimary: org.brand_primary,
-      brandSecondary: org.brand_secondary
+      brandSecondary: org.brand_secondary,
+      contactEmail: org.contact_email,
+      website: org.website,
+      billingEmail: org.billing_email
     };
 
     res.json({
