@@ -247,6 +247,7 @@ export default function OrganizationsEnhanced() {
 
   const renderOrganizationCard = (org: OrganizationDTO) => (
     <GlowCard
+      key={org.id}
       className="cursor-pointer hover:scale-[1.02] transition-transform"
       onClick={() => setSelectedOrg(org)}
       data-testid={`card-organization-${org.id}`}
@@ -415,11 +416,9 @@ export default function OrganizationsEnhanced() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {safeOrganizations.map((org) => (
-                <div key={org.id}>
-                  {renderOrganizationCard(org)}
-                </div>
-              ))}
+              {safeOrganizations.map((org) => 
+                renderOrganizationCard(org)
+              )}
             </div>
 
             {/* Pagination */}

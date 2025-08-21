@@ -20,7 +20,7 @@ const cols = {
 
 function dbToDto(row: any): any {
   if (!row) return null;
-  
+
   return {
     id: row.id,
     name: row.name,
@@ -60,17 +60,17 @@ router.get('/', asyncHandler(async (req, res) => {
 
   // Build where conditions
   const conditions = [];
-  
+
   // Search query
   if (q && typeof q === 'string' && q.trim()) {
     conditions.push(ilike(organizations.name, `%${q.trim()}%`));
   }
-  
+
   // State filter
   if (state && state !== 'any') {
     conditions.push(eq(organizations.state, state as string));
   }
-  
+
   // Type filter
   if (type && type !== 'all') {
     if (type === 'business') {
@@ -86,7 +86,7 @@ router.get('/', asyncHandler(async (req, res) => {
       .select({ count: sql`count(*)` })
       .from(organizations)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
-    
+
     const total = Number(countResult[0]?.count || 0);
 
     // Get paginated results with explicit column selection
@@ -120,7 +120,7 @@ router.get('/', asyncHandler(async (req, res) => {
 // Get organization by ID
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const result = await db
       .select(cols)
@@ -154,16 +154,39 @@ router.get('/:id', asyncHandler(async (req, res) => {
 router.post('/', 
   validateRequest({ body: CreateOrganizationDTO }),
   asyncHandler(async (req, res) => {
-    const orgData = req.body;
-    
+    const validatedData = req.body; // Assuming validateRequest populates req.body with validated data
+
     try {
+      // Prepare the organization data with proper date handling
+      const now = new Date().toISOString();
+      const orgData = {
+        name: validatedData.name,
+        logo_url: validatedData.logoUrl || null,
+        state: validatedData.state || null,
+        phone: validatedData.phone || null,
+        email: validatedData.email || null,
+        is_business: validatedData.isBusiness || false,
+        notes: validatedData.notes || null,
+        universal_discounts: validatedData.universalDiscounts || {},
+        address_line_1: validatedData.addressLine1 || null,
+        address_line_2: validatedData.addressLine2 || null,
+        city: validatedData.city || null,
+        postal_code: validatedData.postalCode || null,
+        contact_email: validatedData.contactEmail || null,
+        website: validatedData.website || null,
+        country: validatedData.country || null,
+        billing_email: validatedData.billingEmail || null,
+        brand_primary: validatedData.brandPrimary || null,
+        brand_secondary: validatedData.brandSecondary || null,
+        email_domain: validatedData.emailDomain || null,
+        title_card_url: validatedData.titleCardUrl || null,
+        created_at: now,
+        updated_at: now,
+      };
+
       const result = await db
         .insert(organizations)
-        .values({
-          ...orgData,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
+        .values(orgData)
         .returning();
 
       res.status(201).json({
@@ -172,10 +195,30 @@ router.post('/',
       });
     } catch (error) {
       console.error('Error creating organization:', error);
-      res.status(500).json({
+
+      // Handle specific database errors
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate key') || error.message.includes('already exists')) {
+          return res.status(409).json({
+            success: false,
+            error: 'Duplicate organization name',
+            message: `An organization with the name "${validatedData.name}" already exists`
+          });
+        }
+
+        if (error.message.includes('invalid input syntax') || error.message.includes('ERR_INVALID_ARG_TYPE')) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid data format',
+            message: 'One or more fields contain invalid data format'
+          });
+        }
+      }
+
+      return res.status(500).json({
         success: false,
-        error: 'Failed to create organization',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Internal server error',
+        message: 'Failed to create organization'
       });
     }
   })
@@ -223,7 +266,7 @@ router.patch('/:id',
 // Delete organization
 router.delete('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const result = await db
       .delete(organizations)

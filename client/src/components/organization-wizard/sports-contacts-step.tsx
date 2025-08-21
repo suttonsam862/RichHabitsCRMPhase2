@@ -94,19 +94,21 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
       return orgResponse;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Organization created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
       toast({
-        title: "Organization created",
-        description: "The organization has been successfully created.",
+        title: "Organization created!",
+        description: "Your organization has been created successfully.",
       });
       onSuccess();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create organization:', error);
+      const message = error?.response?.data?.message || error?.message || "Failed to create organization. Please try again.";
       toast({
-        title: "Error",
-        description: "Failed to create organization. Please try again.",
+        title: "Error", 
+        description: message,
         variant: "destructive",
       });
     },
