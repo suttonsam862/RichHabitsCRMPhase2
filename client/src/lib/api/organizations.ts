@@ -162,15 +162,45 @@ export async function deleteOrganization(id: string): Promise<{ success: boolean
     throw new ApiError('Organization ID is required', 400);
   }
 
-  const response = await makeRequest<typeof DeleteResponseSchema._type>(`/organizations/${id}`, {
+  const url = `${API_BASE}/organizations/${id}`;
+
+  const response = await fetch(url, {
     method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
 
-  const validated = DeleteResponseSchema.parse(response);
+  if (!response.ok) {
+    throw new ApiError(`HTTP ${response.status}: ${response.statusText}`, response.status);
+  }
 
+  // Handle 204 No Content responses (successful deletion)
+  if (response.status === 204) {
+    return {
+      success: true,
+      id: id
+    };
+  }
+
+  // Handle other successful responses with JSON body
+  const contentType = response.headers.get('Content-Type');
+  if (contentType?.includes('application/json')) {
+    const text = await response.text();
+    if (text) {
+      const data = JSON.parse(text);
+      const validated = DeleteResponseSchema.parse(data);
+      return {
+        success: validated.success,
+        id: validated.id
+      };
+    }
+  }
+
+  // Fallback for successful response without JSON
   return {
-    success: validated.success,
-    id: validated.id
+    success: true,
+    id: id
   };
 }
 
