@@ -1,0 +1,72 @@
+Goal
+Make the Organizations modal reliably show full org info (logo, bg, dates), and make delete/edit work. Fix server errors seen in logs (“Cannot read properties of undefined (reading 'map')”, “Unexpected end of JSON input”), and remove the Dialog aria warning.
+
+Scope
+- Server: server/routes/organizations/index.ts (canonical only). No DB migrations.
+- Client: client/src/lib/api/organizations.ts (or api-sdk), modal/components under client/src/components/*, page client/src/pages/organizations-enhanced.tsx.
+
+SERVER — stabilize and always return JSON
+1) Defensive column detection:
+   - In getAvailableOrgColumns(): wrap info_schema query in try/catch. If rows undefined/null, return [].
+   - Cache result in module scope. If empty, log once “Org column detection unavailable; using minimal set”.
+
+2) Minimal fallback select:
+   - Define REQUIRED = ['id','name','created_at'].
+   - Define OPTIONAL = ['logo_url','title_card_url','status','type','email','phone','address_line1','city','state','zip','updated_at','universal_discounts'].
+   - Build SELECT list as REQUIRED + OPTIONAL.filter(c => available.has(c)).
+   - If available empty, select only REQUIRED to avoid Drizzle `orderSelectedFields` error.
+
+3) GET /api/organizations:
+   - Return 200 { success:true, data, count } always.
+   - On any error, catch and return minimal rows (id,name,created_at) with 200 and { warning:"reduced shape" }.
+   - Content-Type: application/json.
+
+4) GET /api/organizations/:id:
+   - Select by id with same column strategy; 404 {error:"Organization not found"} if none.
+   - Map snake_case→camelCase (e.g., logo_url→logoUrl, title_card_url→titleCardUrl, created_at→createdAt).
+
+5) DELETE /api/organizations/:id:
+   - Perform delete with RETURNING id. If 0 rows: 404 { error:"Not found"}.
+   - On success: 200 { success:true, id }.
+   - Never send an empty body (prevents client “Unexpected end of JSON input”).
+
+6) Utilities:
+   - Add dbToDto(row) that drops undefined, converts dates to ISO string.
+   - Add once-only logger for column fallback.
+
+CLIENT — ensure modal fetch + robust parsing
+7) SDK:
+   - In client/src/lib/api/organizations.ts (or api-sdk):
+     - export async function listOrganizations(params) -> { data, count } using API_BASE.
+     - export async function getOrganization(id) -> OrganizationDTO.
+     - export async function deleteOrganization(id) -> { success:true, id }.
+     - Parse envelopes with zod; if Content-Type missing or empty body, throw a typed ApiError.
+
+8) Page & Modal:
+   - On card click, call getOrganization(id) (do NOT rely on list item) and store in modal state.
+   - Render fields with null-safety.
+   - Logo: prefer org.logoUrl; fallback to initials avatar.
+   - Background image: use org.titleCardUrl; fallback to gradient.
+   - Dates: use formatDateSafe(createdAt). Implement helper that returns "—" on invalid/empty.
+
+9) Delete:
+   - Wire delete button to await deleteOrganization(id); on success: close modal, invalidate org list query, toast “Deleted”.
+   - If error: show inline Alert with status/message.
+
+10) A11y / warning:
+   - In <DialogContent>, add a hidden <p id="org-dialog-desc">…</p> and set aria-describedby="org-dialog-desc".
+   - Ensure the UI lib component passes Description when provided.
+
+Docs/Tests
+11) Add short notes to docs/ROUTE_SURFACE.md for /api/organizations (list, get, delete) and the “reduced shape” warning.
+12) Add minimal supertest:
+   - list returns 200 + success true
+   - get invalid id → 404 JSON
+   - delete missing id → 404 JSON; delete existing → 200 JSON
+13) Smoke check: open modal shows name, status, createdAt (valid), logo/bg when present; delete works.
+
+Acceptance
+- Modal loads full org data; no “Invalid Date”.
+- Logo/background display when URLs exist; graceful fallback otherwise.
+- Delete succeeds; client no longer throws “Unexpected end of JSON input”.
+- Server logs no column-detection map error; GET list works with minimal fallback.

@@ -10,6 +10,7 @@ import { sql, eq, and, or, ilike, desc, asc } from 'drizzle-orm';
 
 // Cache for available database columns
 let availableColumns: Set<string> | null = null;
+let columnDetectionLogged = false;
 
 // Required columns that must exist
 const REQUIRED_COLUMNS = ['id', 'name', 'created_at'];
@@ -33,26 +34,45 @@ async function getAvailableOrgColumns(): Promise<Set<string>> {
       AND table_schema = 'public'
     `);
     
-    availableColumns = new Set(
-      (result as any).rows.map((row: any) => row.column_name)
-    );
+    // Defensive check for rows
+    const rows = (result as any)?.rows;
+    if (!rows || !Array.isArray(rows)) {
+      throw new Error('Invalid result structure from information_schema query');
+    }
+    
+    availableColumns = new Set(rows.map((row: any) => row.column_name));
     console.log('Available org columns:', Array.from(availableColumns));
     return availableColumns;
   } catch (error) {
-    console.warn('Could not detect org columns:', error);
-    // Fallback to required columns only
-    availableColumns = new Set(REQUIRED_COLUMNS);
+    console.error('Failed to get available columns:', error);
+    
+    // Log once-only fallback message
+    if (!columnDetectionLogged) {
+      console.warn('Org column detection unavailable; using minimal set');
+      columnDetectionLogged = true;
+    }
+    
+    // Return empty set to trigger minimal fallback
+    availableColumns = new Set([]);
     return availableColumns;
   }
 }
 
 function dbToDto(row: any): any {
+  if (!row) return null;
+  
   const dto: any = {};
   
   // Always include required fields
   dto.id = row.id;
   dto.name = row.name;
-  dto.createdAt = row.created_at || row.createdAt;
+  
+  // Convert dates to ISO string format, handle null/undefined
+  if (row.created_at) {
+    dto.createdAt = new Date(row.created_at).toISOString();
+  } else if (row.createdAt) {
+    dto.createdAt = new Date(row.createdAt).toISOString();
+  }
   
   // Map optional fields with snake_case -> camelCase conversion
   const fieldMap: Record<string, string> = {
@@ -73,9 +93,13 @@ function dbToDto(row: any): any {
   
   // Add fields that exist in row and are not undefined
   Object.keys(row).forEach(key => {
-    if (row[key] !== undefined && key !== 'id' && key !== 'name' && key !== 'created_at') {
+    if (row[key] !== undefined && key !== 'id' && key !== 'name' && key !== 'created_at' && key !== 'createdAt') {
       const dtoKey = fieldMap[key] || key;
-      dto[dtoKey] = row[key];
+      if (key === 'updated_at' && row[key]) {
+        dto[dtoKey] = new Date(row[key]).toISOString();
+      } else {
+        dto[dtoKey] = row[key];
+      }
     }
   });
   
@@ -177,65 +201,166 @@ router.get('/', asyncHandler(async (req, res) => {
       const minimalResults = await db
         .select({
           id: organizations.id,
-          name: organizations.name,
+          name: organizations.name, 
           created_at: organizations.createdAt
         })
         .from(organizations)
-        .orderBy(sql`created_at DESC NULLS LAST`)
+        .orderBy(desc(organizations.createdAt))
         .limit(pageSizeNum)
         .offset(offset);
 
-      const data = minimalResults.map(row => ({
-        id: row.id,
-        name: row.name,
-        createdAt: row.created_at
-      }));
+      const minimalCount = await db
+        .select({ count: sql`count(*)` })
+        .from(organizations);
 
+      const data = minimalResults.map(dbToDto);
+      
       res.json({
         success: true,
         data,
-        count: minimalResults.length,
-        warning: 'Some columns missing - using minimal data set'
+        count: Number(minimalCount[0]?.count || 0),
+        warning: 'reduced shape - some columns unavailable'
       });
     } catch (fallbackError) {
-      res.status(500).json({
-        error: 'Failed to fetch organizations',
-        message: error instanceof Error ? error.message : 'Unknown error'
+      console.error('Fallback query also failed:', fallbackError);
+      res.json({
+        success: true,
+        data: [],
+        count: 0,
+        warning: 'database query failed - returning empty result'
       });
     }
   }
 }));
 
-// Get organization by ID
+// Get organization by ID  
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
   
   try {
-    const result = await db
-      .select()
+    // Get available columns and build select fields
+    const availableCols = await getAvailableOrgColumns();
+    const selectColumns: any = {};
+    
+    // Always include required columns
+    REQUIRED_COLUMNS.forEach(col => {
+      if (availableCols.has(col)) {
+        selectColumns[col] = organizations[col as keyof typeof organizations];
+      }
+    });
+    
+    // Include optional columns that exist
+    OPTIONAL_COLUMNS.forEach(col => {
+      if (availableCols.has(col)) {
+        selectColumns[col] = organizations[col as keyof typeof organizations];
+      }
+    });
+
+    const results = await db
+      .select(selectColumns)
       .from(organizations)
       .where(eq(organizations.id, id))
       .limit(1);
 
-    if (result.length === 0) {
+    if (results.length === 0) {
       return res.status(404).json({
-        success: false,
+        error: 'Organization not found'
+      });
+    }
+
+    const data = dbToDto(results[0]);
+    
+    res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    console.error('Error fetching organization:', error);
+    
+    // Fallback: try with minimal required columns only
+    try {
+      const minimalResults = await db
+        .select({
+          id: organizations.id,
+          name: organizations.name,
+          created_at: organizations.createdAt
+        })
+        .from(organizations)
+        .where(eq(organizations.id, id))
+        .limit(1);
+
+      if (minimalResults.length === 0) {
+        return res.status(404).json({
+          error: 'Organization not found'
+        });
+      }
+
+      const data = dbToDto(minimalResults[0]);
+      
+      res.json({
+        success: true,
+        data,
+        warning: 'reduced shape - some columns unavailable'
+      });
+    } catch (fallbackError) {
+      console.error('Fallback query also failed:', fallbackError);
+      res.status(404).json({
+        error: 'Organization not found'
+      });
+    }
+  }
+}));
+
+// Delete organization by ID
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const results = await db
+      .delete(organizations)
+      .where(eq(organizations.id, id))
+      .returning({ id: organizations.id });
+
+    if (results.length === 0) {
+      return res.status(404).json({
         error: 'Organization not found'
       });
     }
 
     res.json({
       success: true,
-      data: result[0]
+      id: results[0].id
     });
   } catch (error) {
-    console.error('Error fetching organization:', error);
+    console.error('Error deleting organization:', error);
     res.status(500).json({
-      error: 'Failed to fetch organization',
+      error: 'Failed to delete organization',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }));
+
+// Debug endpoint for column information
+router.get('/__columns', asyncHandler(async (req, res) => {
+  try {
+    const availableCols = await getAvailableOrgColumns();
+    res.json({
+      success: true,
+      data: {
+        columns: Array.from(availableCols),
+        required: REQUIRED_COLUMNS,
+        optional: OPTIONAL_COLUMNS
+      }
+    });
+  } catch (error) {
+    console.error('Error getting columns:', error);
+    res.status(500).json({
+      error: 'Failed to get column information'
+    });
+  }
+}));
+
+export { router as organizationsRouter };
 
 // Create new organization
 router.post('/', 

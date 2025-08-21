@@ -13,11 +13,12 @@ import { OrganizationModal } from "@/components/organization-modal";
 import { GlowCard } from "@/components/ui/glow-card";
 import { RBButton } from "@/components/ui/rb-button";
 import { HeadMeta } from "@/components/head-meta";
-import { fetchOrganizations, deleteOrganization } from "@/lib/api/organizations";
+import { listOrganizations, deleteOrganization } from "@/lib/api/organizations";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import type { Org, OrgQueryParams } from "../../../shared/schemas/organization";
+import type { Organization } from "@/lib/api/organizations";
 
 // US States for dropdown (without "All States" in the array - handled separately)
 const US_STATES = [
@@ -119,7 +120,7 @@ export default function OrganizationsEnhanced() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(initialState.sortOrder);
   const [page, setPage] = useState(initialState.page);
   const [pageSize, setPageSize] = useState(initialState.pageSize);
-  const [selectedOrg, setSelectedOrg] = useState<Org | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
 
@@ -145,7 +146,7 @@ export default function OrganizationsEnhanced() {
     refetch,
   } = useQuery({
     queryKey: ["organizations", queryParams],
-    queryFn: () => fetchOrganizations(queryParams),
+    queryFn: () => listOrganizations(queryParams),
   });
 
   const organizations = response?.data || [];
@@ -245,7 +246,7 @@ export default function OrganizationsEnhanced() {
     </Alert>
   );
 
-  const renderOrganizationCard = (org: Org) => (
+  const renderOrganizationCard = (org: Organization) => (
     <div
       key={org.id}
       className="cursor-pointer hover:scale-[1.02] transition-transform"
@@ -265,9 +266,9 @@ export default function OrganizationsEnhanced() {
               </p>
             )}
           </div>
-          {org.logo_url && (
+          {(org.logoUrl || org.logo_url) && (
             <img
-              src={org.logo_url}
+              src={org.logoUrl || org.logo_url}
               alt={`${org.name} logo`}
               className="w-12 h-12 object-contain rounded"
               data-testid={`img-logo-${org.id}`}
@@ -276,11 +277,11 @@ export default function OrganizationsEnhanced() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant={org.is_business ? "default" : "secondary"}>
-            {org.is_business ? "Business" : "School"}
+          <Badge variant={(org.isBusiness ?? org.is_business) ? "default" : "secondary"}>
+            {(org.isBusiness ?? org.is_business) ? "Business" : "School"}
           </Badge>
           <span className="text-xs text-text-soft">
-            Created {new Date(org.created_at).toLocaleDateString()}
+            Created {new Date(org.createdAt || org.created_at).toLocaleDateString()}
           </span>
         </div>
         </div>
@@ -463,7 +464,7 @@ export default function OrganizationsEnhanced() {
         {/* Organization Detail Modal */}
         {selectedOrg && (
           <OrganizationModal
-            organization={selectedOrg as any}
+            organizationId={selectedOrg.id}
             open={!!selectedOrg}
             onClose={() => setSelectedOrg(null)}
           />

@@ -1,90 +1,177 @@
-import { apiRequest } from "../queryClient";
-import type { OrgCreate, OrgUpdate, OrgQueryParams, Org } from "../../../../shared/schemas/organization";
+/**
+ * Organizations API client with robust error handling
+ */
 
-export interface OrganizationsResponse {
-  items: Org[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import { z } from 'zod';
 
-// Fetch organizations with filtering, sorting, and pagination
-export async function fetchOrganizations(params?: OrgQueryParams): Promise<OrganizationsResponse> {
-  const queryParams = new URLSearchParams();
-  
-  if (params) {
-    if (params.q) queryParams.append('q', params.q);
-    if (params.state) queryParams.append('state', params.state);
-    if (params.type) queryParams.append('type', params.type);
-    if (params.sort) queryParams.append('sort', params.sort);
-    if (params.order) queryParams.append('order', params.order);
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+// API base URL from environment
+const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
+
+// Organization schema for validation
+const OrganizationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+  logoUrl: z.string().optional(),
+  titleCardUrl: z.string().optional(),
+  status: z.string().optional(),
+  type: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  addressLine1: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
+  universalDiscounts: z.boolean().optional(),
+});
+
+const ListResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.array(OrganizationSchema),
+  count: z.number(),
+  warning: z.string().optional(),
+});
+
+const ItemResponseSchema = z.object({
+  success: z.boolean(),
+  data: OrganizationSchema,
+  warning: z.string().optional(),
+});
+
+const DeleteResponseSchema = z.object({
+  success: z.boolean(),
+  id: z.string(),
+});
+
+export type Organization = z.infer<typeof OrganizationSchema>;
+
+class ApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = 'ApiError';
   }
+}
+
+// Helper to format dates safely
+export function formatDateSafe(dateString?: string): string {
+  if (!dateString) return '—';
   
-  const url = `/api/organizations${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch organizations');
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '—';
+    
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric', 
+      year: 'numeric'
+    }).format(date);
+  } catch {
+    return '—';
   }
+}
+
+async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}${endpoint}`;
   
-  return response.json();
+  const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new ApiError(`HTTP ${response.status}: ${response.statusText}`, response.status);
+    }
+
+    const contentType = response.headers.get('Content-Type');
+    if (!contentType?.includes('application/json')) {
+      throw new ApiError('Expected JSON response', response.status);
+    }
+
+    const text = await response.text();
+    if (!text) {
+      throw new ApiError('Empty response body', response.status);
+    }
+
+    return JSON.parse(text);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Network error',
+      0
+    );
+  }
 }
 
-// Create a new organization
-export async function createOrganization(data: OrgCreate): Promise<{ ok: boolean; organization: Org }> {
-  return apiRequest('/api/organizations', {
-    method: 'POST',
-    data: data,
+export interface ListOrganizationsParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  state?: string;
+  type?: 'all' | 'business' | 'school';
+  sort?: 'name' | 'created_at';
+  order?: 'asc' | 'desc';
+}
+
+export async function listOrganizations(
+  params: ListOrganizationsParams = {}
+): Promise<{ data: Organization[]; count: number; warning?: string }> {
+  const searchParams = new URLSearchParams();
+  
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined) {
+      searchParams.append(key, String(value));
+    }
   });
+
+  const queryString = searchParams.toString();
+  const endpoint = `/organizations${queryString ? `?${queryString}` : ''}`;
+  
+  const response = await makeRequest<typeof ListResponseSchema._type>(endpoint);
+  const validated = ListResponseSchema.parse(response);
+  
+  return {
+    data: validated.data,
+    count: validated.count,
+    warning: validated.warning
+  };
 }
 
-// Update an existing organization
-export async function updateOrganization(id: string, data: OrgUpdate): Promise<{ ok: boolean; organization: Org }> {
-  return apiRequest(`/api/organizations/${id}`, {
-    method: 'PATCH',
-    data: data,
-  });
+export async function getOrganization(id: string): Promise<Organization> {
+  if (!id) {
+    throw new ApiError('Organization ID is required', 400);
+  }
+
+  const response = await makeRequest<typeof ItemResponseSchema._type>(`/organizations/${id}`);
+  const validated = ItemResponseSchema.parse(response);
+  
+  return validated.data;
 }
 
-// Delete an organization
-export async function deleteOrganization(id: string): Promise<void> {
-  await apiRequest(`/api/organizations/${id}`, {
+export async function deleteOrganization(id: string): Promise<{ success: boolean; id: string }> {
+  if (!id) {
+    throw new ApiError('Organization ID is required', 400);
+  }
+
+  const response = await makeRequest<typeof DeleteResponseSchema._type>(`/organizations/${id}`, {
     method: 'DELETE',
   });
+  
+  const validated = DeleteResponseSchema.parse(response);
+  
+  return {
+    success: validated.success,
+    id: validated.id
+  };
 }
 
-// Get a single organization
-export async function fetchOrganization(id: string): Promise<Org> {
-  const response = await fetch(`/api/organizations/${id}`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch organization');
-  }
-  
-  return response.json();
-}
-
-// Upload organization logo
-export async function uploadOrganizationLogo(file: File): Promise<{ url: string; path: string; mime?: string; size?: number }> {
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  const response = await fetch('/api/upload/logo', {
-    method: 'POST',
-    body: formData,
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    // Check for field errors (validation errors)
-    if (error.fieldErrors?.file) {
-      throw new Error(error.fieldErrors.file);
-    }
-    throw new Error(error.error || 'Failed to upload logo');
-  }
-  
-  return response.json();
-}
+export { ApiError };
