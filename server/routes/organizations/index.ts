@@ -360,8 +360,6 @@ router.get('/__columns', asyncHandler(async (req, res) => {
   }
 }));
 
-export { router as organizationsRouter };
-
 // Create new organization
 router.post('/', 
   validateRequest({ body: CreateOrganizationDTO }),
