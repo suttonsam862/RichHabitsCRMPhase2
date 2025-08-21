@@ -256,13 +256,11 @@ export default function OrganizationsEnhanced() {
     return (
       <GlowCard
         key={`org-card-${org.id}`}
-        className="cursor-pointer hover:scale-[1.02] transition-transform"
         onClick={() => {
           console.log('🔍 Card clicked, org:', org);
           setSelectedOrg(org);
         }}
         data-testid={`card-organization-${org.id}`}
-        variant={gradientVariant}
       >
         <div className="p-6 space-y-4">
           <div className="flex items-start justify-between">
@@ -276,10 +274,10 @@ export default function OrganizationsEnhanced() {
                 </p>
               )}
             </div>
-            {(org.logoUrl || org.logo_url) && (
+            {org.logoUrl && (
               <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg">
                 <img
-                  src={org.logoUrl || org.logo_url}
+                  src={org.logoUrl}
                   alt={`${org.name} logo`}
                   className="w-full h-full object-cover"
                   data-testid={`img-logo-${org.id}`}
@@ -289,11 +287,11 @@ export default function OrganizationsEnhanced() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant={(org.isBusiness || org.is_business) ? "default" : "secondary"}>
-              {(org.isBusiness || org.is_business) ? "Business" : "School"}
+            <Badge variant={org.isBusiness ? "default" : "secondary"}>
+              {org.isBusiness ? "Business" : "School"}
             </Badge>
             <span className="text-xs text-text-soft">
-              Created {(org.createdAt || org.created_at) ? new Date(org.createdAt || org.created_at).toLocaleDateString() : 'Unknown'}
+              Created {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : 'Unknown'}
             </span>
           </div>
         </div>

@@ -10,6 +10,7 @@ interface GlowCardProps {
     primary: string;
     secondary: string;
   };
+  onClick?: () => void;
 }
 
 const variantStyles = {
@@ -19,7 +20,7 @@ const variantStyles = {
   orange: 'bg-gradient-to-br from-orange-900/40 via-red-800/30 to-pink-900/40 border-orange-400/50 shadow-orange-500/20'
 };
 
-export function GlowCard({ children, className = "", glowColor = "blue", gradient, brandColors }: GlowCardProps) {
+export function GlowCard({ children, className = "", glowColor = "blue", gradient, brandColors, onClick }: GlowCardProps) {
   const cardStyle = gradient ? { backgroundImage: gradient } : {};
   const borderStyle = brandColors ? {
     borderImage: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary}) 1`
@@ -36,9 +37,11 @@ export function GlowCard({ children, className = "", glowColor = "blue", gradien
         "hover:bg-gray-900/70",
         "hover:border-white/20",
         "hover:shadow-lg hover:shadow-blue-500/20",
+        onClick && "cursor-pointer hover:scale-[1.02] transition-transform",
         className
       )}
       style={{ ...cardStyle, ...borderStyle }}
+      onClick={onClick}
     >
       {children}
     </div>

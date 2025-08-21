@@ -6,6 +6,7 @@
 import express from 'express';
 import { organizationsRouter } from './organizations/index';
 import { usersRouter } from './users/index';
+import uploadRouter from './upload';
 // TODO: Fix TypeScript type imports in sales router before enabling
 // import { salesRouter } from './sales/index';
 // import { ordersRouter } from './orders/index';
@@ -27,6 +28,7 @@ router.get('/health', (req, res) => {
 // Feature routers
 router.use('/organizations', organizationsRouter);
 router.use('/users', usersRouter);
+router.use('/upload', uploadRouter);
 // TODO: Enable sales router after fixing TypeScript type import issues
 // router.use('/sales', salesRouter);
 // router.use('/orders', ordersRouter);
