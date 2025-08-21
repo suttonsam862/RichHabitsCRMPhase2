@@ -99,7 +99,26 @@ router.get('/', asyncHandler(async (req, res) => {
       .offset(offset);
 
     // Map database rows to DTOs
-    const data = results.map(dbToDto);
+    const data = results.map((org: any) => ({
+      id: org.id,
+      name: org.name,
+      state: org.state,
+      isBusiness: org.is_business || false,
+      logoUrl: org.logo_url,
+      titleCardUrl: org.title_card_url,
+      createdAt: org.created_at,
+      updatedAt: org.updated_at,
+      status: org.is_business ? 'Business' : 'School',
+      email: org.email,
+      phone: org.phone,
+      addressLine1: org.address,
+      city: org.city,
+      postalCode: org.postal_code,
+      notes: org.notes,
+      universalDiscounts: org.universal_discounts || {},
+      brandPrimary: org.brand_primary,
+      brandSecondary: org.brand_secondary
+    }));
 
     // Return response envelope
     res.json({
@@ -134,11 +153,31 @@ router.get('/:id', asyncHandler(async (req, res) => {
       });
     }
 
-    const data = dbToDto(result[0]);
+    const org = result[0]; // Corrected to get the single organization object
+
+    const mappedOrg = {
+      id: org.id,
+      name: org.name,
+      state: org.state,
+      isBusiness: org.is_business || false,
+      logoUrl: org.logo_url,
+      titleCardUrl: org.title_card_url,
+      createdAt: org.created_at,
+      updatedAt: org.updated_at,
+      email: org.email,
+      phone: org.phone,
+      addressLine1: org.address,
+      city: org.city,
+      postalCode: org.postal_code,
+      notes: org.notes,
+      universalDiscounts: org.universal_discounts || {},
+      brandPrimary: org.brand_primary,
+      brandSecondary: org.brand_secondary
+    };
 
     res.json({
       success: true,
-      data
+      data: mappedOrg
     });
   } catch (error) {
     console.error('Error fetching organization:', error);

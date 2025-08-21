@@ -1,22 +1,29 @@
-
 import { cn } from "@/lib/utils";
 
-interface GlowCardProps {
+interface GlowCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-  className?: string;
-  variant?: "default" | "intense";
+  variant?: 'default' | 'blue' | 'green' | 'orange';
 }
 
-export function GlowCard({ children, className, variant = "default" }: GlowCardProps) {
+export function GlowCard({ children, className, variant = 'default', ...props }: GlowCardProps) {
+  const getVariantClass = () => {
+    switch (variant) {
+      case 'blue': return 'neon-card-blue';
+      case 'green': return 'neon-card-green';
+      case 'orange': return 'neon-card-orange';
+      default: return 'neon-card';
+    }
+  };
+
   return (
-    <div className={cn(
-      "glow-border card-hover",
-      variant === "intense" && "hover:shadow-[0_0_40px_rgba(147,51,234,0.4)]",
-      className
-    )}>
-      <div className="glass rounded-lg p-6 h-full w-full">
-        {children}
-      </div>
+    <div
+      className={cn(
+        getVariantClass(),
+        className
+      )}
+      {...props}
+    >
+      {children}
     </div>
   );
 }

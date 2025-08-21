@@ -245,46 +245,58 @@ export default function OrganizationsEnhanced() {
     </Alert>
   );
 
-  const renderOrganizationCard = (org: OrganizationDTO) => (
-    <GlowCard
-      key={`org-card-${org.id}`}
-      className="cursor-pointer hover:scale-[1.02] transition-transform"
-      onClick={() => setSelectedOrg(org)}
-      data-testid={`card-organization-${org.id}`}
-    >
-      <div className="p-6 space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h3 className="text-xl font-semibold text-white" data-testid={`text-org-name-${org.id}`}>
-              {org.name}
-            </h3>
-            {org.state && (
-              <p className="text-sm text-text-soft">
-                {US_STATES.find(s => s.value === org.state)?.label || org.state}
-              </p>
+  const getGradientVariant = (index: number): 'default' | 'blue' | 'green' | 'orange' => {
+    const variants = ['default', 'blue', 'green', 'orange'] as const;
+    return variants[index % variants.length];
+  };
+
+  const renderOrganizationCard = (org: OrganizationDTO, index: number) => {
+    const gradientVariant = getGradientVariant(index);
+    
+    return (
+      <GlowCard
+        key={`org-card-${org.id}`}
+        className="cursor-pointer hover:scale-[1.02] transition-transform"
+        onClick={() => setSelectedOrg(org)}
+        data-testid={`card-organization-${org.id}`}
+        variant={gradientVariant}
+      >
+        <div className="p-6 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <h3 className="text-xl font-semibold text-white" data-testid={`text-org-name-${org.id}`}>
+                {org.name}
+              </h3>
+              {org.state && (
+                <p className="text-sm text-text-soft">
+                  {US_STATES.find(s => s.value === org.state)?.label || org.state}
+                </p>
+              )}
+            </div>
+            {org.logoUrl && (
+              <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg">
+                <img
+                  src={org.logoUrl}
+                  alt={`${org.name} logo`}
+                  className="w-full h-full object-cover"
+                  data-testid={`img-logo-${org.id}`}
+                />
+              </div>
             )}
           </div>
-          {org.logoUrl && (
-            <img
-              src={org.logoUrl}
-              alt={`${org.name} logo`}
-              className="w-12 h-12 object-contain rounded"
-              data-testid={`img-logo-${org.id}`}
-            />
-          )}
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Badge variant={org.status ? "default" : "secondary"}>
-            {org.status || "School"}
-          </Badge>
-          <span className="text-xs text-text-soft">
-            Created {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : 'Unknown'}
-          </span>
+          <div className="flex items-center gap-2">
+            <Badge variant={org.isBusiness ? "default" : "secondary"}>
+              {org.isBusiness ? "Business" : "School"}
+            </Badge>
+            <span className="text-xs text-text-soft">
+              Created {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : 'Unknown'}
+            </span>
+          </div>
         </div>
-      </div>
-    </GlowCard>
-  );
+      </GlowCard>
+    );
+  };
 
   return (
     <>
@@ -416,8 +428,8 @@ export default function OrganizationsEnhanced() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {safeOrganizations.map((org) =>
-                renderOrganizationCard(org)
+              {safeOrganizations.map((org, index) =>
+                renderOrganizationCard(org, index)
               )}
             </div>
 
