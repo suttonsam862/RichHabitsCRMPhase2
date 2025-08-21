@@ -210,10 +210,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
 router.post('/', 
   validateRequest({ body: CreateOrganizationDTO }),
   asyncHandler(async (req, res) => {
-    const validatedData = req.body; // Assuming validateRequest populates req.body with validated data
+    const validatedData = req.body;
 
     try {
-      // Prepare the organization data with proper date handling
+      // Prepare the organization data with proper field mapping
       const now = new Date();
       const orgData = {
         name: validatedData.name,
@@ -224,18 +224,22 @@ router.post('/',
         is_business: validatedData.isBusiness || false,
         notes: validatedData.notes || null,
         universal_discounts: validatedData.universalDiscounts || {},
-        address_line_1: validatedData.address || null,
-        address_line_2: null,
-        city: null,
-        postal_code: null,
-        contact_email: validatedData.email || null,
-        website: null,
-        country: null,
-        billing_email: null,
-        brand_primary: null,
-        brand_secondary: null,
-        email_domain: null,
-        title_card_url: null,
+        // Address fields
+        address_line_1: validatedData.addressLine1 || validatedData.address || null,
+        address_line_2: validatedData.addressLine2 || null,
+        city: validatedData.city || null,
+        postal_code: validatedData.postalCode || null,
+        country: validatedData.country || 'United States',
+        // Contact fields
+        contact_email: validatedData.contactEmail || validatedData.email || null,
+        billing_email: validatedData.billingEmail || null,
+        website: validatedData.website || null,
+        // Branding fields
+        brand_primary: validatedData.brandPrimary || '#3B82F6',
+        brand_secondary: validatedData.brandSecondary || '#8B5CF6',
+        email_domain: validatedData.emailDomain || null,
+        title_card_url: validatedData.titleCardUrl || null,
+        status: 'active',
         created_at: now,
         updated_at: now,
       };
@@ -245,9 +249,62 @@ router.post('/',
         .values(orgData)
         .returning();
 
+      const createdOrg = result[0];
+      let createdUser = null;
+
+      // Create owner user if requested
+      if (validatedData.createOwnerUser && validatedData.userEmail && validatedData.userFullName) {
+        try {
+          const userResult = await db.execute(sql`
+            INSERT INTO users (email, full_name, phone)
+            VALUES (${validatedData.userEmail}, ${validatedData.userFullName}, ${validatedData.userPhone || null})
+            ON CONFLICT (email) DO UPDATE SET 
+              full_name = EXCLUDED.full_name,
+              phone = EXCLUDED.phone,
+              updated_at = NOW()
+            RETURNING id, email, full_name, phone
+          `);
+          
+          createdUser = userResult.rows[0];
+
+          // Assign owner role
+          const ownerRoleResult = await db.execute(sql`
+            SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
+          `);
+
+          if (ownerRoleResult.rows.length > 0) {
+            await db.execute(sql`
+              INSERT INTO user_roles (user_id, org_id, role_id)
+              VALUES (${createdUser.id}, ${createdOrg.id}, ${ownerRoleResult.rows[0].id})
+              ON CONFLICT (user_id, org_id, role_id) DO NOTHING
+            `);
+          }
+        } catch (userError) {
+          console.warn('Failed to create user or assign role:', userError);
+        }
+      }
+
+      // Create sports contacts
+      if (validatedData.sports && validatedData.sports.length > 0) {
+        try {
+          for (const sport of validatedData.sports) {
+            await db.execute(sql`
+              INSERT INTO org_sports (organization_id, sport_id, contact_name, contact_email, contact_phone)
+              VALUES (${createdOrg.id}, ${sport.sportId}, ${sport.contactName}, ${sport.contactEmail}, ${sport.contactPhone || null})
+            `);
+          }
+        } catch (sportsError) {
+          console.warn('Failed to create sports contacts:', sportsError);
+        }
+      }
+
       res.status(201).json({
         success: true,
-        data: result[0]
+        data: {
+          organization: createdOrg,
+          user: createdUser,
+          sportsCount: validatedData.sports?.length || 0
+        }
       });
     } catch (error) {
       console.error('Error creating organization:', error);

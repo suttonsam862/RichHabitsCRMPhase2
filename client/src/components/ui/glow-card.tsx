@@ -4,8 +4,12 @@ import { cn } from '@/lib/utils';
 interface GlowCardProps {
   children: React.ReactNode;
   className?: string;
-  variant?: 'default' | 'blue' | 'green' | 'orange';
-  onClick?: () => void;
+  glowColor?: string;
+  gradient?: string;
+  brandColors?: {
+    primary: string;
+    secondary: string;
+  };
 }
 
 const variantStyles = {
@@ -15,19 +19,26 @@ const variantStyles = {
   orange: 'bg-gradient-to-br from-orange-900/40 via-red-800/30 to-pink-900/40 border-orange-400/50 shadow-orange-500/20'
 };
 
-export function GlowCard({ children, className, variant = 'default', onClick }: GlowCardProps) {
+export function GlowCard({ children, className = "", glowColor = "blue", gradient, brandColors }: GlowCardProps) {
+  const cardStyle = gradient ? { backgroundImage: gradient } : {};
+  const borderStyle = brandColors ? {
+    borderImage: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary}) 1`
+  } : {};
+
   return (
-    <div
+    <div 
       className={cn(
-        'relative rounded-xl border backdrop-blur-sm shadow-2xl',
-        'hover:border-opacity-80 transition-all duration-300',
-        'before:absolute before:inset-0 before:rounded-xl before:opacity-0 before:transition-opacity',
-        'hover:before:opacity-30 before:bg-gradient-to-r before:from-white/5 before:to-white/10',
-        variantStyles[variant],
-        onClick && 'cursor-pointer hover:scale-[1.02] hover:shadow-xl',
+        "relative group",
+        "bg-gray-900/50 backdrop-blur-sm",
+        "border border-white/10",
+        "rounded-xl p-6",
+        "transition-all duration-300",
+        "hover:bg-gray-900/70",
+        "hover:border-white/20",
+        "hover:shadow-lg hover:shadow-blue-500/20",
         className
       )}
-      onClick={onClick}
+      style={{ ...cardStyle, ...borderStyle }}
     >
       {children}
     </div>

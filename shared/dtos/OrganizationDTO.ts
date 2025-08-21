@@ -37,6 +37,19 @@ export const CreateOrganizationDTO = OrganizationDTO.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  // User creation fields
+  userFullName: z.string().optional(),
+  userEmail: z.string().email().optional(),
+  userPhone: z.string().optional(),
+  createOwnerUser: z.boolean().default(false),
+  // Sports contacts
+  sports: z.array(z.object({
+    sportId: z.string(),
+    contactName: z.string(),
+    contactEmail: z.string().email(),
+    contactPhone: z.string().optional(),
+  })).optional(),
 });
 
 export const UpdateOrganizationDTO = CreateOrganizationDTO.partial();

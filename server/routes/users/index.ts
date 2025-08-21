@@ -2,8 +2,17 @@ import express from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
-import { sql } from 'drizzle-orm';
-// TODO: Add users table to schema - using minimal approach for now
+import { sql, eq } from 'drizzle-orm';
+
+// User schema
+const CreateUserSchema = z.object({
+  email: z.string().email(),
+  full_name: z.string().min(1),
+  phone: z.string().optional(),
+  avatar_url: z.string().url().optional(),
+});
+
+const UpdateUserSchema = CreateUserSchema.partial();
 
 const router = express.Router();
 
@@ -24,12 +33,12 @@ router.get('/', asyncHandler(async (req, res) => {
     let query = 'SELECT id, name, email, role, created_at, updated_at FROM users';
     let countQuery = 'SELECT COUNT(*) as count FROM users';
     let params: any[] = [];
-    
+
     if (q && typeof q === 'string' && q.trim()) {
       query += ` WHERE name ILIKE '%${q.trim()}%'`;
       countQuery += ` WHERE name ILIKE '%${q.trim()}%'`;
     }
-    
+
     query += ` ORDER BY created_at DESC LIMIT ${pageSizeNum} OFFSET ${offset}`;
 
     const countResult = await db.execute(sql.raw(countQuery));
@@ -64,43 +73,138 @@ router.get('/', asyncHandler(async (req, res) => {
   }
 }));
 
+// Create user
+router.post('/', asyncHandler(async (req, res) => {
+  const parseResult = CreateUserSchema.safeParse(req.body);
+
+  if (!parseResult.success) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      issues: parseResult.error.issues
+    });
+  }
+
+  const userData = parseResult.data;
+
+  try {
+    // Check if user already exists
+    const existingUser = await db.execute(sql`
+      SELECT id FROM users WHERE email = ${userData.email}
+    `);
+
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'User with this email already exists'
+      });
+    }
+
+    // Create user
+    const result = await db.execute(sql`
+      INSERT INTO users (email, full_name, phone, avatar_url)
+      VALUES (${userData.email}, ${userData.full_name}, ${userData.phone || null}, ${userData.avatar_url || null})
+      RETURNING id, email, full_name, avatar_url, phone, created_at, updated_at, is_active
+    `);
+
+    res.status(201).json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create user',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}));
+
 // Get user by ID
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  
-  try {
-    const query = 'SELECT id, name, email, role, created_at, updated_at FROM users WHERE id = $1 LIMIT 1';
-    const result = await db.execute(sql.raw(query.replace('$1', `'${id}'`)));
-    const rows = (result as any).rows || [];
 
-    if (rows.length === 0) {
+  try {
+    const result = await db.execute(sql`
+      SELECT id, email, full_name, avatar_url, phone, created_at, updated_at, is_active, last_login, preferences
+      FROM users 
+      WHERE id = ${id}
+    `);
+
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'User not found'
       });
     }
 
-    // Map to camelCase
-    const data = {
-      id: rows[0].id,
-      name: rows[0].name,
-      email: rows[0].email,
-      role: rows[0].role,
-      createdAt: rows[0].created_at ? new Date(rows[0].created_at).toISOString() : undefined,
-      updatedAt: rows[0].updated_at ? new Date(rows[0].updated_at).toISOString() : undefined
-    };
-
     res.json({
       success: true,
-      data
+      data: result.rows[0]
     });
   } catch (error) {
     console.error('Error fetching user:', error);
-    res.status(404).json({
+    res.status(500).json({
       success: false,
-      error: 'User not found'
+      error: 'Failed to fetch user',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }));
 
-export { router as usersRouter };
+// Update user
+router.patch('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const parseResult = UpdateUserSchema.safeParse(req.body);
+
+  if (!parseResult.success) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      issues: parseResult.error.issues
+    });
+  }
+
+  const updateData = parseResult.data;
+
+  try {
+    // Build dynamic update query
+    const setClause = Object.entries(updateData)
+      .map(([key, value]) => `${key} = ${value === null ? 'NULL' : `'${value}'`}`)
+      .join(', ');
+
+    if (!setClause) {
+      return res.status(400).json({
+        success: false,
+        error: 'No valid fields to update'
+      });
+    }
+
+    const result = await db.execute(sql`
+      UPDATE users 
+      SET ${sql.raw(setClause)}, updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING id, email, full_name, avatar_url, phone, created_at, updated_at, is_active
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update user',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}));
