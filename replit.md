@@ -32,7 +32,15 @@ A React-TypeScript business management system for Rich Habits Custom Clothing, d
 
 ## Recent Changes (August 21, 2025)
 
-### Organizations & Users API Regression Fixes (Latest - August 21, 2025)
+### Organizations API Core Fixes (Latest - August 21, 2025)
+✓ **Empty Objects Eliminated** - Fixed organizations API returning empty {} objects by implementing explicit column selection
+✓ **Route Order Fixed** - GET "/__columns" now properly accessible before /:id route, returns Object.keys(organizations)
+✓ **Explicit Column Selection** - Implemented cols object with proper schema import and snake_case to camelCase mapping
+✓ **Consistent Response Envelopes** - List returns {success, data, count}, Get returns {success, data} or 404 {error: "Not found"}
+✓ **DTO Mapper Enhanced** - Proper dbToDto function with date handling and field mapping (logo_url → logoUrl)
+✓ **Schema Import Fixed** - Using @shared/schema instead of mixed imports for consistent column access
+
+### Organizations & Users API Regression Fixes (August 21, 2025)
 ✓ **Server Startup Fixed** - Resolved duplicate organizationsRouter export, server now runs on port 5000
 ✓ **Organizations API Enhanced** - Improved column detection with fallback to minimal data set when introspection fails
 ✓ **Users API Added** - Implemented basic users list/get endpoints with raw SQL queries (pending schema addition)

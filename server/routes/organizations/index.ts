@@ -4,119 +4,42 @@ import { CreateOrganizationDTO, UpdateOrganizationDTO, OrganizationDTO } from '@
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
-import { organizations } from '../../../shared/schema';
+import { organizations } from '@shared/schema';
 import { sql, eq, and, or, ilike, desc, asc } from 'drizzle-orm';
 
-// Cache for available database columns
-let availableColumns: Set<string> | null = null;
-let columnDetectionLogged = false;
-
-// Required columns that must exist
-const REQUIRED_COLUMNS = ['id', 'name', 'created_at'];
-
-// Preferred columns for better display
-const PREFERRED_COLUMNS = ['status', 'logo_url', 'title_card_url'];
-
-// Optional columns to include if available
-const OPTIONAL_COLUMNS = [
-  'email', 'phone', 'address_line1', 'city', 'state', 'zip', 'updated_at', 'universal_discounts'
-];
-
-async function getAvailableOrgColumns(): Promise<Set<string>> {
-  if (availableColumns) return availableColumns;
-  
-  try {
-    const result = await db.execute(sql`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'organizations' 
-      AND table_schema = 'public'
-    `);
-    
-    // Defensive check for rows
-    const rows = (result as any)?.rows;
-    if (!rows || !Array.isArray(rows)) {
-      throw new Error('Invalid result structure from information_schema query');
-    }
-    
-    availableColumns = new Set(rows.map((row: any) => row.column_name));
-    console.log('Available org columns:', Array.from(availableColumns));
-    return availableColumns;
-  } catch (error) {
-    // Log once and return empty set on any error
-    if (!columnDetectionLogged) {
-      console.warn('Org column detection unavailable; using minimal set');
-      columnDetectionLogged = true;
-    }
-    
-    availableColumns = new Set([]);
-    return availableColumns;
-  }
-}
+// Explicit column selection for consistent API responses
+const cols = {
+  id: organizations.id,
+  name: organizations.name,
+  status: organizations.status,
+  logo_url: organizations.logoUrl,
+  title_card_url: organizations.titleCardUrl,
+  created_at: organizations.createdAt,
+  updated_at: organizations.updatedAt,
+};
 
 function dbToDto(row: any): any {
   if (!row) return null;
   
-  const dto: any = {};
-  
-  // Always include required fields
-  dto.id = row.id;
-  dto.name = row.name;
-  
-  // Convert dates to ISO string format, coerce properly
-  if (row.created_at) {
-    dto.createdAt = new Date(row.created_at).toISOString();
-  } else if (row.createdAt) {
-    dto.createdAt = new Date(row.createdAt).toISOString();
-  }
-  
-  // Map snake_case -> camelCase conversion
-  const fieldMap: Record<string, string> = {
-    'address_line1': 'addressLine1',
-    'logo_url': 'logoUrl',
-    'title_card_url': 'titleCardUrl',
-    'updated_at': 'updatedAt',
-    'universal_discounts': 'universalDiscounts'
+  return {
+    id: row.id,
+    name: row.name,
+    status: row.status,
+    logoUrl: row.logo_url,
+    titleCardUrl: row.title_card_url,
+    createdAt: row.created_at?.toISOString?.() ?? null,
+    updatedAt: row.updated_at?.toISOString?.() ?? null,
   };
-  
-  // Add fields that exist in row and are not undefined, drop undefined
-  Object.keys(row).forEach(key => {
-    if (row[key] !== undefined && key !== 'id' && key !== 'name' && key !== 'created_at' && key !== 'createdAt') {
-      const dtoKey = fieldMap[key] || key;
-      if (key === 'updated_at' && row[key]) {
-        dto[dtoKey] = new Date(row[key]).toISOString();
-      } else {
-        dto[dtoKey] = row[key];
-      }
-    }
-  });
-  
-  return dto;
 }
 
 const router = express.Router();
 
 // Debug endpoint to check available columns - MUST be before /:id route
 router.get('/__columns', asyncHandler(async (req, res) => {
-  try {
-    const columns = await getAvailableOrgColumns();
-    res.json({
-      success: true,
-      data: {
-        columns: Array.from(columns).sort(),
-        required: REQUIRED_COLUMNS,
-        preferred: PREFERRED_COLUMNS,
-        optional: OPTIONAL_COLUMNS
-      }
-    });
-  } catch (error) {
-    console.error('Columns debug error:', error);
-    res.json({
-      success: false,
-      error: 'Failed to get columns info',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+  res.json({
+    success: true,
+    data: Object.keys(organizations)
+  });
 }));
 
 // List all organizations with filtering, sorting, and pagination
@@ -158,29 +81,6 @@ router.get('/', asyncHandler(async (req, res) => {
   }
 
   try {
-    // Get available columns and build select fields
-    const availableCols = await getAvailableOrgColumns();
-    const selectColumns: any = {};
-    
-    // If no columns detected, use fallback approach
-    if (availableCols.size === 0) {
-      console.warn('No columns detected, using fallback minimal select');
-      selectColumns.id = organizations.id;
-      selectColumns.name = organizations.name;
-      selectColumns.created_at = organizations.createdAt;
-    } else {
-      // Build SELECT = REQUIRED + (PREFERRED+OPTIONAL that exist)
-      const allColumns = [...REQUIRED_COLUMNS, ...PREFERRED_COLUMNS, ...OPTIONAL_COLUMNS];
-      
-      allColumns.forEach(col => {
-        if (availableCols.has(col)) {
-          selectColumns[col] = organizations[col as keyof typeof organizations];
-        }
-      });
-    }
-    
-    console.log('Using select columns:', Object.keys(selectColumns));
-
     // Get total count
     const countResult = await db
       .select({ count: sql`count(*)` })
@@ -189,19 +89,19 @@ router.get('/', asyncHandler(async (req, res) => {
     
     const total = Number(countResult[0]?.count || 0);
 
-    // Get paginated results with dynamic column selection
+    // Get paginated results with explicit column selection
     const results = await db
-      .select(selectColumns)
+      .select(cols)
       .from(organizations)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(sql`created_at DESC NULLS LAST`)
+      .orderBy(desc(organizations.createdAt))
       .limit(pageSizeNum)
       .offset(offset);
 
     // Map database rows to DTOs
     const data = results.map(dbToDto);
 
-    // Always return 200 JSON envelope
+    // Return response envelope
     res.json({
       success: true,
       data,
@@ -209,41 +109,11 @@ router.get('/', asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching organizations:', error);
-    
-    // Fallback: try with minimal required columns only
-    try {
-      const minimalResults = await db
-        .select({
-          id: organizations.id,
-          name: organizations.name, 
-          created_at: organizations.createdAt
-        })
-        .from(organizations)
-        .orderBy(desc(organizations.createdAt))
-        .limit(pageSizeNum)
-        .offset(offset);
-
-      const minimalCount = await db
-        .select({ count: sql`count(*)` })
-        .from(organizations);
-
-      const data = minimalResults.map(dbToDto);
-      
-      res.json({
-        success: true,
-        data,
-        count: Number(minimalCount[0]?.count || 0),
-        warning: 'reduced shape - some columns unavailable'
-      });
-    } catch (fallbackError) {
-      console.error('Fallback query also failed:', fallbackError);
-      res.json({
-        success: true,
-        data: [],
-        count: 0,
-        warning: 'database query failed - returning empty result'
-      });
-    }
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch organizations',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }));
 
@@ -252,29 +122,15 @@ router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
   
   try {
-    // Get available columns and build select fields
-    const availableCols = await getAvailableOrgColumns();
-    const selectColumns: any = {};
-    
-    // Build SELECT = REQUIRED + (PREFERRED+OPTIONAL that exist)
-    const allColumns = [...REQUIRED_COLUMNS, ...PREFERRED_COLUMNS, ...OPTIONAL_COLUMNS];
-    
-    allColumns.forEach(col => {
-      if (availableCols.has(col)) {
-        selectColumns[col] = organizations[col as keyof typeof organizations];
-      }
-    });
-
     const result = await db
-      .select(selectColumns)
+      .select(cols)
       .from(organizations)
       .where(eq(organizations.id, id))
       .limit(1);
 
     if (result.length === 0) {
       return res.status(404).json({
-        success: false,
-        error: 'Organization not found'
+        error: 'Not found'
       });
     }
 
@@ -286,40 +142,11 @@ router.get('/:id', asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching organization:', error);
-    
-    // Fallback to minimal fields
-    try {
-      const fallbackResult = await db
-        .select({
-          id: organizations.id,
-          name: organizations.name,
-          created_at: organizations.createdAt
-        })
-        .from(organizations)
-        .where(eq(organizations.id, id))
-        .limit(1);
-
-      if (fallbackResult.length === 0) {
-        return res.status(404).json({
-          success: false,
-          error: 'Organization not found'
-        });
-      }
-
-      const data = dbToDto(fallbackResult[0]);
-
-      res.json({
-        success: true,
-        data,
-        warning: 'reduced shape - some columns unavailable'
-      });
-    } catch (fallbackError) {
-      console.error('Fallback get query also failed:', fallbackError);
-      res.status(404).json({
-        success: false,
-        error: 'Organization not found'
-      });
-    }
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch organization',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }));
 
