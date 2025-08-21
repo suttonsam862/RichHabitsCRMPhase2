@@ -246,13 +246,12 @@ export default function OrganizationsEnhanced() {
   );
 
   const renderOrganizationCard = (org: OrganizationDTO) => (
-    <div
+    <GlowCard
       className="cursor-pointer hover:scale-[1.02] transition-transform"
       onClick={() => setSelectedOrg(org)}
       data-testid={`card-organization-${org.id}`}
     >
-      <GlowCard>
-        <div className="p-6 space-y-4">
+      <div className="p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <h3 className="text-xl font-semibold text-white" data-testid={`text-org-name-${org.id}`}>
@@ -282,9 +281,8 @@ export default function OrganizationsEnhanced() {
             Created {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : 'Unknown'}
           </span>
         </div>
-        </div>
-      </GlowCard>
-    </div>
+      </div>
+    </GlowCard>
   );
 
   return (
@@ -417,7 +415,11 @@ export default function OrganizationsEnhanced() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {safeOrganizations.map(renderOrganizationCard)}
+              {safeOrganizations.map((org) => (
+                <div key={org.id}>
+                  {renderOrganizationCard(org)}
+                </div>
+              ))}
             </div>
 
             {/* Pagination */}

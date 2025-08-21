@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  Building2, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Users, 
-  ShoppingBag, 
+import {
+  Building2,
+  MapPin,
+  Phone,
+  Mail,
+  Users,
+  ShoppingBag,
   FileText,
   Settings,
   X,
@@ -30,14 +30,14 @@ import type { OrganizationDTO as Organization } from "@shared/dtos/OrganizationD
 // Helper to format dates safely
 function formatDateSafe(dateString?: string | null): string {
   if (!dateString) return '—';
-  
+
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '—';
-    
+
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
-      day: 'numeric', 
+      day: 'numeric',
       year: 'numeric'
     }).format(date);
   } catch {
@@ -84,7 +84,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
       setDeleteError(error instanceof Error ? error.message : 'Failed to delete organization');
       toast({
         variant: "destructive",
-        title: "Delete failed", 
+        title: "Delete failed",
         description: "Could not delete organization. Please try again.",
       });
     },
@@ -92,7 +92,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
   const handleDelete = async () => {
     if (!organization) return;
-    
+
     if (confirm(`Are you sure you want to delete ${organization.name}? This action cannot be undone.`)) {
       try {
         await deleteOrgMutation.mutateAsync();
@@ -164,8 +164,8 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="bg-background border max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl" aria-describedby="org-modal-desc">
-        <DialogDescription id="org-modal-desc" className="sr-only">
+      <DialogContent className="bg-background border max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
+        <DialogDescription className="sr-only">
           {editMode ? "Edit organization details and settings" : "View organization details and management interface"}
         </DialogDescription>
         {editMode ? (
@@ -185,7 +185,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
               </DialogTitle>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto p-6">
-              <EditOrganizationForm 
+              <EditOrganizationForm
                 organization={organization as any}
                 onSuccess={() => {
                   setEditMode(false);
@@ -207,8 +207,8 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                 <div className="flex items-center gap-4">
                   {organization.logoUrl ? (
                     <Avatar className="w-16 h-16 ring-2 ring-primary/20 bg-muted">
-                      <AvatarImage 
-                        src={organization.logoUrl} 
+                      <AvatarImage
+                        src={organization.logoUrl}
                         alt={`${organization.name} logo`}
                         data-testid="img-modal-organization-logo"
                       />
@@ -225,7 +225,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                   )}
 
                   <div className="space-y-2">
-                    <DialogTitle 
+                    <DialogTitle
                       className="text-2xl font-bold text-foreground"
                       data-testid="text-modal-organization-name"
                     >
@@ -316,7 +316,7 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                           <p className="font-medium text-sm text-foreground/70 mb-1">Organization Name</p>
                           <p className="font-semibold text-foreground" data-testid="text-org-name">{organization.name}</p>
                         </div>
-                        
+
                         {organization.isBusiness !== undefined && (
                           <div className="space-y-1">
                             <p className="font-medium text-sm text-foreground/70 mb-1">Type</p>
@@ -415,8 +415,8 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                               {organization.titleCardUrl}
                             </p>
                             {organization.titleCardUrl && (
-                              <div className="mt-2 p-4 rounded-lg bg-muted/50" 
-                                   style={{ 
+                              <div className="mt-2 p-4 rounded-lg bg-muted/50"
+                                   style={{
                                      backgroundImage: `url(${organization.titleCardUrl})`,
                                      backgroundSize: 'cover',
                                      backgroundPosition: 'center',
@@ -445,8 +445,8 @@ export function OrganizationModal({ organizationId, open, onClose }: Organizatio
                       <div className="space-y-4">
                         <div>
                           <p className="font-medium text-sm text-foreground/70">Universal Discounts</p>
-                          <Badge 
-                            variant={organization.universalDiscounts ? "default" : "secondary"} 
+                          <Badge
+                            variant={organization.universalDiscounts ? "default" : "secondary"}
                             className={organization.universalDiscounts ? "bg-primary text-primary-foreground" : ""}
                             data-testid="text-org-discounts"
                           >
