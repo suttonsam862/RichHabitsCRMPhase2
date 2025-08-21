@@ -42,10 +42,10 @@ router.get('/', asyncHandler(async (req, res) => {
     query += ` ORDER BY created_at DESC LIMIT ${pageSizeNum} OFFSET ${offset}`;
 
     const countResult = await db.execute(sql.raw(countQuery));
-    const total = Number((countResult as any).rows?.[0]?.count || 0);
+    const total = Number((countResult as any)[0]?.count || 0);
 
     const results = await db.execute(sql.raw(query));
-    const rows = (results as any).rows || [];
+    const rows = (results as any) || [];
 
     // Map to camelCase
     const data = rows.map((row: any) => ({
@@ -93,7 +93,7 @@ router.post('/', asyncHandler(async (req, res) => {
       SELECT id FROM users WHERE email = ${userData.email}
     `);
 
-    if (existingUser.rows.length > 0) {
+    if ((existingUser as any).length > 0) {
       return res.status(409).json({
         success: false,
         error: 'User with this email already exists'
@@ -109,7 +109,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: result.rows[0]
+      data: (result as any)[0]
     });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -132,7 +132,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
       WHERE id = ${id}
     `);
 
-    if (result.rows.length === 0) {
+    if ((result as any).length === 0) {
       return res.status(404).json({
         success: false,
         error: 'User not found'
@@ -141,7 +141,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: (result as any)[0]
     });
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -188,7 +188,7 @@ router.patch('/:id', asyncHandler(async (req, res) => {
       RETURNING id, email, full_name, avatar_url, phone, created_at, updated_at, is_active
     `);
 
-    if (result.rows.length === 0) {
+    if ((result as any).length === 0) {
       return res.status(404).json({
         success: false,
         error: 'User not found'
@@ -197,7 +197,7 @@ router.patch('/:id', asyncHandler(async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: (result as any)[0]
     });
   } catch (error) {
     console.error('Error updating user:', error);
@@ -208,3 +208,5 @@ router.patch('/:id', asyncHandler(async (req, res) => {
     });
   }
 }));
+
+export { router as usersRouter };

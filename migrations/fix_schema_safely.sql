@@ -37,6 +37,12 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS brand_primary TEXT;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS brand_secondary TEXT;
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS logo_url TEXT;
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+-- Create indexes for performance (check if columns exist first)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email') THEN
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_organizations_name ON organizations(name);
