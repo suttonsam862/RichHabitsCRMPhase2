@@ -257,7 +257,10 @@ export default function OrganizationsEnhanced() {
       <GlowCard
         key={`org-card-${org.id}`}
         className="cursor-pointer hover:scale-[1.02] transition-transform"
-        onClick={() => setSelectedOrg(org)}
+        onClick={() => {
+          console.log('🔍 Card clicked, org:', org);
+          setSelectedOrg(org);
+        }}
         data-testid={`card-organization-${org.id}`}
         variant={gradientVariant}
       >
@@ -273,10 +276,10 @@ export default function OrganizationsEnhanced() {
                 </p>
               )}
             </div>
-            {org.logoUrl && (
+            {(org.logoUrl || org.logo_url) && (
               <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg">
                 <img
-                  src={org.logoUrl}
+                  src={org.logoUrl || org.logo_url}
                   alt={`${org.name} logo`}
                   className="w-full h-full object-cover"
                   data-testid={`img-logo-${org.id}`}
@@ -286,11 +289,11 @@ export default function OrganizationsEnhanced() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant={org.isBusiness ? "default" : "secondary"}>
-              {org.isBusiness ? "Business" : "School"}
+            <Badge variant={(org.isBusiness || org.is_business) ? "default" : "secondary"}>
+              {(org.isBusiness || org.is_business) ? "Business" : "School"}
             </Badge>
             <span className="text-xs text-text-soft">
-              Created {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : 'Unknown'}
+              Created {(org.createdAt || org.created_at) ? new Date(org.createdAt || org.created_at).toLocaleDateString() : 'Unknown'}
             </span>
           </div>
         </div>
@@ -428,11 +431,9 @@ export default function OrganizationsEnhanced() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {safeOrganizations.map((org, index) => (
-                <div key={`org-${org.id}-${index}`}>
-                  {renderOrganizationCard(org, index)}
-                </div>
-              ))}
+              {safeOrganizations.map((org, index) => 
+                renderOrganizationCard(org, index)
+              )}
             </div>
 
             {/* Pagination */}
@@ -479,8 +480,18 @@ export default function OrganizationsEnhanced() {
           <OrganizationModal
             organizationId={selectedOrg.id}
             open={!!selectedOrg}
-            onClose={() => setSelectedOrg(null)}
+            onClose={() => {
+              console.log('🔍 Modal closing');
+              setSelectedOrg(null);
+            }}
           />
+        )}
+        
+        {/* Debug: Show selected org */}
+        {selectedOrg && (
+          <div className="fixed bottom-4 right-4 p-2 bg-black/80 text-white text-xs rounded z-50">
+            Selected: {selectedOrg.name} ({selectedOrg.id})
+          </div>
         )}
 
         {/* Organization Creation Wizard */}

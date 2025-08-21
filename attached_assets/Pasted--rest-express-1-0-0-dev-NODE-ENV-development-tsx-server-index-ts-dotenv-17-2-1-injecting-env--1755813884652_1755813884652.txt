@@ -1,0 +1,114 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (3) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+🚀 Server running on http://0.0.0.0:5000
+📊 Environment: development
+📁 API routes available at: http://0.0.0.0:5000/api
+✅ Vite dev server configured
+2025-08-21T22:00:57.911Z GET /
+10:00:57 PM [vite] Serving SPA route: /
+2025-08-21T22:00:58.372Z GET /@vite/client
+2025-08-21T22:00:58.376Z GET /src/main.tsx?v=hj-0xEHsDsgTuA3qvwUnR
+2025-08-21T22:00:58.377Z GET /@react-refresh
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-08-21T22:00:58.929Z GET /src/index.css?v=hj-0xEHsDsgTuA3qvwUnR
+2025-08-21T22:00:58.930Z GET /src/App.tsx?v=hj-0xEHsDsgTuA3qvwUnR
+2025-08-21T22:00:58.938Z GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs
+2025-08-21T22:00:59.604Z GET /src/routes.tsx
+2025-08-21T22:00:59.604Z GET /src/components/ui/tooltip.tsx
+2025-08-21T22:00:59.606Z GET /src/lib/queryClient.ts
+2025-08-21T22:00:59.608Z GET /src/components/ui/toaster.tsx
+2025-08-21T22:00:59.731Z GET /src/hooks/use-toast.ts
+2025-08-21T22:00:59.732Z GET /src/components/ErrorBoundary.tsx
+2025-08-21T22:00:59.745Z GET /src/components/ui/toast.tsx
+2025-08-21T22:00:59.747Z GET /src/layouts/AppLayout.tsx
+2025-08-21T22:00:59.754Z GET /src/layouts/PrintLayout.tsx
+2025-08-21T22:00:59.802Z GET /src/lib/paths.ts
+2025-08-21T22:00:59.803Z GET /src/lib/utils.ts
+2025-08-21T22:00:59.812Z GET /src/components/ui/button.tsx
+2025-08-21T22:00:59.813Z GET /src/components/ui/card.tsx
+2025-08-21T22:00:59.896Z GET /src/pages/index.tsx
+2025-08-21T22:00:59.965Z GET /src/components/ui/glow-card.tsx
+2025-08-21T22:00:59.969Z GET /src/components/head-meta.tsx
+2025-08-21T22:01:01.478Z GET /src/pages/organizations-enhanced.tsx
+2025-08-21T22:01:01.729Z GET /src/components/ui/skeleton.tsx
+2025-08-21T22:01:01.730Z GET /src/components/organization-wizard/org-wizard-modal.tsx
+2025-08-21T22:01:01.733Z GET /src/components/ui/badge.tsx
+2025-08-21T22:01:01.734Z GET /src/components/ui/select.tsx
+2025-08-21T22:01:01.739Z GET /src/components/ui/alert.tsx
+2025-08-21T22:01:01.800Z GET /src/components/ui/input.tsx
+2025-08-21T22:01:01.871Z GET /src/components/organization-modal.tsx
+2025-08-21T22:01:01.871Z GET /src/components/ui/rb-button.tsx
+2025-08-21T22:01:01.893Z GET /src/components/ui/tabs.tsx
+2025-08-21T22:01:01.894Z GET /src/lib/api-sdk.ts
+2025-08-21T22:01:01.905Z GET /src/hooks/use-debounce.ts
+2025-08-21T22:01:01.912Z GET /src/components/ui/dialog.tsx
+2025-08-21T22:01:01.987Z GET /src/components/organization-wizard/primary-step.tsx
+2025-08-21T22:01:01.988Z GET /src/components/organization-wizard/branding-step.tsx
+2025-08-21T22:01:02.034Z GET /src/components/organization-wizard/sports-contacts-step.tsx
+2025-08-21T22:01:02.042Z GET /src/components/ui/separator.tsx
+2025-08-21T22:01:02.043Z GET /src/components/edit-organization-form.tsx
+2025-08-21T22:01:02.043Z GET /src/components/sports-tab.tsx
+2025-08-21T22:01:02.044Z GET /src/components/ui/scroll-area.tsx
+2025-08-21T22:01:02.050Z GET /src/components/ui/avatar.tsx
+2025-08-21T22:01:02.084Z GET /src/lib/env.ts
+2025-08-21T22:01:02.090Z GET /src/components/ui/form.tsx
+2025-08-21T22:01:02.091Z GET /src/components/ui/switch.tsx
+2025-08-21T22:01:02.091Z GET /src/constants/us-states.ts
+2025-08-21T22:01:02.095Z GET /src/components/edit-sport-form.tsx
+2025-08-21T22:01:02.096Z GET /src/components/create-sport-form.tsx
+2025-08-21T22:01:02.133Z GET /src/components/ui/textarea.tsx
+2025-08-21T22:01:02.138Z GET /@fs/home/runner/workspace/shared/supabase-schema.ts
+2025-08-21T22:01:02.139Z GET /src/components/ui/label.tsx
+2025-08-21T22:01:02.210Z GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20
+2025-08-21T22:02:09.631Z GET /src/pages/users.tsx
+2025-08-21T22:02:09.824Z GET /src/components/ui/table.tsx
+2025-08-21T22:02:09.876Z GET /api/users/admin
+Error fetching user: PostgresError: relation "users" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '126',
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+2025-08-21T22:02:10.179Z GET /api/users/admin
+Error fetching user: PostgresError: relation "users" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '126',
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+2025-08-21T22:02:10.960Z GET /src/pages/QuoteGenerator.tsx
+2025-08-21T22:02:11.144Z GET /src/lib/quoteStore.ts
+2025-08-21T22:02:16.963Z GET /api/organizations?search=Oak+Mountain+High+School&type=all&sort=created_at&order=desc&page=1&pageSize=20
+2025-08-21T22:02:56.709Z POST /api/upload/logo
+10:03:21 PM [vite] hmr update /src/pages/organizations-enhanced.tsx, /src/index.css?v=hj-0xEHsDsgTuA3qvwUnR
+2025-08-21T22:03:21.949Z GET /src/index.css?t=1755813801727&v=hj-0xEHsDsgTuA3qvwUnR
+2025-08-21T22:03:21.950Z GET /src/pages/organizations-enhanced.tsx?t=1755813801727
