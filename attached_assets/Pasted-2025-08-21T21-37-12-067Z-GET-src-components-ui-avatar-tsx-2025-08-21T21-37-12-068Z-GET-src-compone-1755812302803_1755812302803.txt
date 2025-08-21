@@ -1,0 +1,32 @@
+2025-08-21T21:37:12.067Z GET /src/components/ui/avatar.tsx
+2025-08-21T21:37:12.068Z GET /src/components/sports-tab.tsx
+2025-08-21T21:37:12.068Z GET /src/components/edit-organization-form.tsx
+2025-08-21T21:37:12.070Z GET /src/components/ui/form.tsx
+2025-08-21T21:37:12.121Z GET /src/components/ui/switch.tsx
+2025-08-21T21:37:12.122Z GET /src/constants/us-states.ts
+2025-08-21T21:37:12.124Z GET /src/components/edit-sport-form.tsx
+2025-08-21T21:37:12.125Z GET /src/components/create-sport-form.tsx
+2025-08-21T21:37:12.126Z GET /@fs/home/runner/workspace/shared/supabase-schema.ts
+2025-08-21T21:37:12.127Z GET /src/components/ui/textarea.tsx
+2025-08-21T21:37:12.179Z GET /src/components/ui/label.tsx
+2025-08-21T21:37:12.245Z GET /api/organizations?type=all&sort=created_at&order=desc&page=1&pageSize=20
+2025-08-21T21:37:34.093Z GET /api/organizations?search=Oak+Mountain+High+School&type=all&sort=created_at&order=desc&page=1&pageSize=20
+2025-08-21T21:37:48.787Z POST /api/upload/logo
+2025-08-21T21:37:58.429Z POST /api/organizations
+Error creating organization: TypeError [ERR_INVALID_ARG_TYPE]: The "string" argument must be of type string or an instance of Buffer or ArrayBuffer. Received an instance of Date
+    at Function.byteLength (node:buffer:776:11)
+    at Function.str (file:///home/runner/workspace/node_modules/postgres/src/bytes.js:22:27)
+    at file:///home/runner/workspace/node_modules/postgres/src/connection.js:944:16
+    at Array.forEach (<anonymous>)
+    at Bind (file:///home/runner/workspace/node_modules/postgres/src/connection.js:934:16)
+    at prepared (file:///home/runner/workspace/node_modules/postgres/src/connection.js:204:7)
+    at ParameterDescription (file:///home/runner/workspace/node_modules/postgres/src/connection.js:613:58)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
