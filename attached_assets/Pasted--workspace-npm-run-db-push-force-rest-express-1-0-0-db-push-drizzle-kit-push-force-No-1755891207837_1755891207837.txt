@@ -1,0 +1,79 @@
+~/workspace$ npm run db:push -- --force
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push --force
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/home/runner/workspace/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
++ accounting_invoices table will be created
++ accounting_payments table will be created
++ audit_logs table will be created
++ catalog_item_images table will be created
++ catalog_item_manufacturers table will be created
++ catalog_items table will be created
++ categories table will be created
++ commissions table will be created
++ customers table will be created
++ design_assets table will be created
++ design_job_events table will be created
++ design_jobs table will be created
++ designers table will be created
++ manufacturers table will be created
++ manufacturing_work_orders table will be created
++ order_events table will be created
++ order_item_sizes table will be created
++ order_items table will be created
++ permissions table will be created
++ production_events table will be created
++ role_permissions table will be created
++ salespeople table will be created
++ status_design_jobs table will be created
++ status_order_items table will be created
++ status_orders table will be created
++ status_work_orders table will be created
+--- all table conflicts resolved ---
+
+
++ org_id column will be created
+
++ customer_id column will be created
+
++ code column will be created
+
++ customer_contact_name column will be created
+
++ customer_contact_email column will be created
+
++ due_date column will be created
+
++ revenue_estimate column will be created
+
++ status_code column will be created
+--- all columns conflicts in orders table resolved ---
+
+error: column "id" cannot be cast automatically to type uuid
+    at /home/runner/workspace/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:66575:26)
+    at async pgPush (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:70117:13)
+    at async Object.handler (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:79124:9)
+    at async run (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:78381:7) {
+  length: 169,
+  severity: 'ERROR',
+  code: '42804',
+  detail: undefined,
+  hint: 'You might need to specify "USING id::uuid".',
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'tablecmds.c',
+  line: '12561',
+  routine: 'ATPrepAlterColumnType'
