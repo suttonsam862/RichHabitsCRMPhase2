@@ -7,7 +7,7 @@
 export * from './OrganizationDTO';
 export * from './LeadDTO';
 // export * from './ProductDTO';
-// export * from './OrderDTO';
+export * from './OrderDTO';
 // export * from './PoDTO';
 
 // Common response wrappers

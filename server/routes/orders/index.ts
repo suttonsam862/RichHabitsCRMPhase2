@@ -74,15 +74,15 @@ router.put('/:id',
 router.patch('/:id/status', 
   validateRequest({ 
     body: z.object({ 
-      status: z.enum(['draft', 'pending', 'confirmed', 'in_production', 'ready_for_delivery', 'delivered', 'cancelled']) 
+      status_code: z.enum(['consultation', 'design', 'manufacturing', 'shipped', 'completed']) 
     }) 
   }),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status_code } = req.body;
     
     // TODO: Implement order status update with notifications
-    console.log(`🚧 PATCH /api/orders/${id}/status - Not implemented yet`, status);
+    console.log(`🚧 PATCH /api/orders/${id}/status - Not implemented yet`, status_code);
     
     res.status(501).json({
       error: 'Not implemented',

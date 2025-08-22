@@ -4,15 +4,6 @@ import { z } from "zod";
  * Order DTO schemas for order management API
  */
 
-export enum OrderStatus {
-  DRAFT = "draft",
-  PENDING = "pending",
-  CONFIRMED = "confirmed", 
-  IN_PRODUCTION = "in_production",
-  READY_FOR_DELIVERY = "ready_for_delivery",
-  DELIVERED = "delivered",
-  CANCELLED = "cancelled",
-}
 
 export const OrderItemDTO = z.object({
   id: z.string(),
@@ -24,6 +15,7 @@ export const OrderItemDTO = z.object({
   quantity: z.number(),
   unitPrice: z.number(),
   totalPrice: z.number(),
+  status_code: z.enum(['pending', 'design', 'approved', 'manufacturing', 'shipped', 'done']),
   customizations: z.record(z.string(), z.string()).optional(),
 });
 
@@ -43,7 +35,7 @@ export const OrderDTO = z.object({
   customerName: z.string(),
   customerEmail: z.string().email(),
   customerPhone: z.string().optional(),
-  status: z.nativeEnum(OrderStatus),
+  status_code: z.enum(['consultation', 'design', 'manufacturing', 'shipped', 'completed']),
   items: z.array(OrderItemDTO),
   totals: OrderTotalsDTO,
   shippingAddress: z.object({

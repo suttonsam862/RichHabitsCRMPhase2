@@ -8,13 +8,11 @@ import { OrderStatus } from "../types";
 // Status badge colors
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {
-    case OrderStatus.DRAFT: return "bg-gray-500";
-    case OrderStatus.PENDING: return "bg-yellow-500";
-    case OrderStatus.CONFIRMED: return "bg-blue-500";
-    case OrderStatus.IN_PRODUCTION: return "bg-purple-500";
-    case OrderStatus.READY_FOR_DELIVERY: return "bg-orange-500";
-    case OrderStatus.DELIVERED: return "bg-green-500";
-    case OrderStatus.CANCELLED: return "bg-red-500";
+    case OrderStatus.CONSULTATION: return "bg-gray-500";
+    case OrderStatus.DESIGN: return "bg-blue-500";
+    case OrderStatus.MANUFACTURING: return "bg-purple-500";
+    case OrderStatus.SHIPPED: return "bg-orange-500";
+    case OrderStatus.COMPLETED: return "bg-green-500";
     default: return "bg-gray-500";
   }
 };
@@ -29,7 +27,7 @@ export default function OrdersList() {
     {
       id: "ORD-001",
       customerName: "Acme Corp",
-      status: OrderStatus.IN_PRODUCTION,
+      status_code: OrderStatus.MANUFACTURING,
       total: 1500.00,
       createdAt: "2024-01-15",
       items: [{ productName: "Custom T-Shirt", quantity: 50 }]
@@ -37,7 +35,7 @@ export default function OrdersList() {
     {
       id: "ORD-002", 
       customerName: "Tech Startup",
-      status: OrderStatus.CONFIRMED,
+      status_code: OrderStatus.DESIGN,
       total: 750.00,
       createdAt: "2024-01-14",
       items: [{ productName: "Polo Shirts", quantity: 25 }]
@@ -93,8 +91,8 @@ export default function OrdersList() {
                     <p className="text-gray-600 dark:text-gray-400">{order.customerName}</p>
                   </div>
                   
-                  <Badge className={`${getStatusColor(order.status)} text-white`}>
-                    {formatStatus(order.status)}
+                  <Badge className={`${getStatusColor(order.status_code)} text-white`}>
+                    {formatStatus(order.status_code)}
                   </Badge>
                 </div>
 
@@ -164,7 +162,7 @@ export default function OrdersList() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">
-              {mockOrders.filter(o => o.status === OrderStatus.IN_PRODUCTION).length}
+              {mockOrders.filter(o => o.status_code === OrderStatus.MANUFACTURING).length}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">In Production</p>
           </CardContent>
@@ -172,7 +170,7 @@ export default function OrdersList() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-purple-600">
-              {mockOrders.filter(o => o.status === OrderStatus.DELIVERED).length}
+              {mockOrders.filter(o => o.status_code === OrderStatus.COMPLETED).length}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Delivered</p>
           </CardContent>

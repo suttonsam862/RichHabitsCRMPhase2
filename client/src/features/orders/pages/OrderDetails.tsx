@@ -8,13 +8,11 @@ import { OrderStatus } from "../types";
 
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {
-    case OrderStatus.DRAFT: return "bg-gray-500";
-    case OrderStatus.PENDING: return "bg-yellow-500";
-    case OrderStatus.CONFIRMED: return "bg-blue-500";
-    case OrderStatus.IN_PRODUCTION: return "bg-purple-500";
-    case OrderStatus.READY_FOR_DELIVERY: return "bg-orange-500";
-    case OrderStatus.DELIVERED: return "bg-green-500";
-    case OrderStatus.CANCELLED: return "bg-red-500";
+    case OrderStatus.CONSULTATION: return "bg-gray-500";
+    case OrderStatus.DESIGN: return "bg-blue-500";
+    case OrderStatus.MANUFACTURING: return "bg-purple-500";
+    case OrderStatus.SHIPPED: return "bg-orange-500";
+    case OrderStatus.COMPLETED: return "bg-green-500";
     default: return "bg-gray-500";
   }
 };
@@ -32,7 +30,7 @@ export default function OrderDetails() {
     quoteId: "QUO-001",
     customerName: "Acme Corporation",
     customerEmail: "orders@acme.com",
-    status: OrderStatus.IN_PRODUCTION,
+    status_code: OrderStatus.MANUFACTURING,
     items: [
       {
         id: "1",
@@ -83,8 +81,8 @@ export default function OrderDetails() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Badge className={`${getStatusColor(mockOrder.status)} text-white`}>
-            {formatStatus(mockOrder.status)}
+          <Badge className={`${getStatusColor(mockOrder.status_code)} text-white`}>
+            {formatStatus(mockOrder.status_code)}
           </Badge>
           <Button data-testid="button-edit-order">
             <Edit className="w-4 h-4 mr-2" />
@@ -186,9 +184,9 @@ export default function OrderDetails() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Object.values(OrderStatus).filter(s => s !== OrderStatus.CANCELLED).map((status, index) => {
-                  const isCompleted = Object.values(OrderStatus).indexOf(mockOrder.status) >= index;
-                  const isCurrent = mockOrder.status === status;
+                {Object.values(OrderStatus).map((status, index) => {
+                  const isCompleted = Object.values(OrderStatus).indexOf(mockOrder.status_code) >= index;
+                  const isCurrent = mockOrder.status_code === status;
                   
                   return (
                     <div key={status} className="flex items-center gap-3">

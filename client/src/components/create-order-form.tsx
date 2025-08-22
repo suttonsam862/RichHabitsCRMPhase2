@@ -141,7 +141,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="status"
+            name="status_code"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
@@ -152,10 +152,11 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_production">In Production</SelectItem>
+                    <SelectItem value="consultation">Consultation</SelectItem>
+                    <SelectItem value="design">Design</SelectItem>
+                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

@@ -2,13 +2,11 @@ import { z } from "zod";
 
 // Order status enum
 export enum OrderStatus {
-  DRAFT = "draft",
-  PENDING = "pending",
-  CONFIRMED = "confirmed",
-  IN_PRODUCTION = "in_production",
-  READY_FOR_DELIVERY = "ready_for_delivery",
-  DELIVERED = "delivered",
-  CANCELLED = "cancelled",
+  CONSULTATION = "consultation",
+  DESIGN = "design",
+  MANUFACTURING = "manufacturing",
+  SHIPPED = "shipped",
+  COMPLETED = "completed",
 }
 
 // Order schema
@@ -18,7 +16,7 @@ export const orderSchema = z.object({
   customerName: z.string(),
   customerEmail: z.string().email(),
   organizationId: z.string().optional(),
-  status: z.nativeEnum(OrderStatus),
+  status_code: z.enum(['consultation', 'design', 'manufacturing', 'shipped', 'completed']),
   items: z.array(z.object({
     id: z.string(),
     productId: z.string(),
@@ -26,6 +24,7 @@ export const orderSchema = z.object({
     quantity: z.number(),
     unitPrice: z.number(),
     totalPrice: z.number(),
+    status_code: z.enum(['pending', 'design', 'approved', 'manufacturing', 'shipped', 'done']),
   })),
   totals: z.object({
     subtotal: z.number(),
