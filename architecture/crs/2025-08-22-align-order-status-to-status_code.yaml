@@ -1,0 +1,62 @@
+cr:
+  title: "Align Orders/OrderItems to status_code only"
+  rationale: "DB uses lookup tables via status_code; app still references removed enum columns. Prevent runtime errors and drift."
+  domain_delta:
+    - entity: Order
+      replace_field:
+        from: status (enum)
+        to: status_code (string; FK to status_orders.code)
+    - entity: OrderItem
+      replace_field:
+        from: status (enum)
+        to: status_code (string; FK to status_order_items.code)
+  db_migration:
+    id: "NO_DB_CHANGE"   # DB already migrated
+    sql: []
+  api_delta:
+    - path: "POST /api/orders"
+      request_body_patch:
+        replace: "status -> status_code (string; one of status_orders.code)"
+      response_patch:
+        replace: "status -> status_code"
+    - path: "PATCH /api/orders/:id"
+      request_body_patch:
+        replace: "status -> status_code"
+    - path: "GET /api/orders"
+      response_patch:
+        replace: "status -> status_code"
+    - path: "GET /api/orders/:id"
+      response_patch:
+        replace: "status -> status_code"
+    - path: "PATCH /api/order-items/:id"
+      request_body_patch:
+        replace: "status -> status_code"
+      response_patch:
+        replace: "status -> status_code"
+  ui_delta:
+    - form: "orders.create"
+      replace_field:
+        from: "status (enum select)"
+        to: "status_code (select populated from status_orders)"
+    - form: "orders.edit"
+      replace_field:
+        from: "status"
+        to: "status_code"
+    - grid: "orders.list"
+      replace_column:
+        from: "status"
+        to: "status_code"
+    - grid: "order_items.list"
+      replace_column:
+        from: "status"
+        to: "status_code"
+  tests:
+    - "API: create order with status_code='design'; GET returns status_code"
+    - "API: patch order -> status_code='manufacturing' persists"
+    - "UI: order create/edit uses status_code; lists show status_code"
+  safety_checks:
+    - "TypeScript compile clean (no references to .status on Order/OrderItem)"
+    - "ESLint clean"
+    - "Preflight passes"
+notes: |
+  Ensure Zod/validator checks status_code is among status_* tables.
