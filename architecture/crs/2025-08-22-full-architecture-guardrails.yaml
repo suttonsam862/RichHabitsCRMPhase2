@@ -1,0 +1,504 @@
+cr:
+title: "Full Codebase Cleanup + Architecture Guardrails (DB, API, UI, Tooling)"
+rationale: >
+  Stabilize the entire stack, eliminate drift and duplicates, standardize contracts (DTO↔DB),
+  harden RLS + audit, and bake in guardrails so future AI changes are safe and append-only.
+  After this CR, we can add conceptual features via CR-first workflow without regressions.
+
+#
+# 1) DOMAIN (SINGLE SOURCE OF TRUTH)
+#
+domain_delta:
+  # --- Organizations
+  - entity: Organization
+    changes:
+      - add_field:
+          name: color_palette
+          type: string[]    # stored as jsonb array in DB
+          semantics: "list of hex or HSL color strings; max 12"
+      - ensure_field:
+          name: universal_discounts
+          type: object      # jsonb
+          default: {}
+          semantics: "map of discount keys to numeric percentages"
+      - mapping:
+          db: snake_case    # color_palette (jsonb), universal_discounts (jsonb)
+          dto: camelCase    # colorPalette, universalDiscounts
+
+  # --- Orders
+  - entity: Order
+    changes:
+      - replace_field:
+          from: status (enum)
+          to: status_code (string; FK = status_orders.code)
+      - mapping:
+          db: snake_case (status_code)
+          dto: camelCase (statusCode)
+
+  # --- OrderItem
+  - entity: OrderItem
+    changes:
+      - replace_field:
+          from: status (enum)
+          to: status_code (string; FK = status_order_items.code)
+      - mapping:
+          db: snake_case (status_code)
+          dto: camelCase (statusCode)
+
+  # --- User
+  - entity: User
+    changes:
+      - ensure_field:
+          name: full_name
+          type: string
+          semantics: "display name"
+      - mapping:
+          db: snake_case (full_name)
+          dto: camelCase (fullName)
+
+  # --- Role
+  - entity: Role
+    changes:
+      - ensure_field:
+          name: slug
+          type: string
+          unique: true
+          semantics: "lowercase stable key (e.g., admin, sales, design)"
+      - seed:
+          values:
+            - { name: "Admin",          slug: "admin" }
+            - { name: "Sales",          slug: "sales" }
+            - { name: "Design",         slug: "design" }
+            - { name: "Manufacturing",  slug: "manufacturing" }
+            - { name: "Accounting",     slug: "accounting" }
+            - { name: "Customer",       slug: "customer" }
+
+  # --- Status lookups (canonical, extensible)
+  - entity: StatusOrders
+    changes:
+      - seed:
+          values:
+            - { code: "consultation",   sort_order: 1, is_terminal: false }
+            - { code: "design",         sort_order: 2, is_terminal: false }
+            - { code: "manufacturing",  sort_order: 3, is_terminal: false }
+            - { code: "shipped",        sort_order: 4, is_terminal: false }
+            - { code: "completed",      sort_order: 5, is_terminal: true  }
+
+  - entity: StatusOrderItems
+    changes:
+      - create_if_missing: true
+      - seed:
+          values:
+            - { code: "pending",        sort_order: 1, is_terminal: false }
+            - { code: "design",         sort_order: 2, is_terminal: false }
+            - { code: "approved",       sort_order: 3, is_terminal: false }
+            - { code: "manufacturing",  sort_order: 4, is_terminal: false }
+            - { code: "shipped",        sort_order: 5, is_terminal: false }
+            - { code: "done",           sort_order: 6, is_terminal: true  }
+
+#
+# 2) DATABASE MIGRATION (SAFE / IDEMPOTENT)
+#
+db_migration:
+  id: "2025_08_22_full_cleanup_guardrails"
+  sql:
+    # --- Roles (slug upsert) ----------------------------------------------
+    - |
+      INSERT INTO public.roles (id, name, slug)
+      VALUES
+        (gen_random_uuid(), 'Admin', 'admin'),
+        (gen_random_uuid(), 'Sales', 'sales'),
+        (gen_random_uuid(), 'Design', 'design'),
+        (gen_random_uuid(), 'Manufacturing', 'manufacturing'),
+        (gen_random_uuid(), 'Accounting', 'accounting'),
+        (gen_random_uuid(), 'Customer', 'customer')
+      ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name;
+
+    # --- Status seeds ------------------------------------------------------
+    - |
+      INSERT INTO public.status_orders (code, sort_order, is_terminal) VALUES
+        ('consultation', 1, false),
+        ('design', 2, false),
+        ('manufacturing', 3, false),
+        ('shipped', 4, false),
+        ('completed', 5, true)
+      ON CONFLICT (code) DO NOTHING;
+
+    - |
+      CREATE TABLE IF NOT EXISTS public.status_order_items (
+        code text PRIMARY KEY,
+        sort_order integer NOT NULL,
+        is_terminal boolean NOT NULL DEFAULT false
+      );
+
+    - |
+      INSERT INTO public.status_order_items (code, sort_order, is_terminal) VALUES
+        ('pending', 1, false),
+        ('design', 2, false),
+        ('approved', 3, false),
+        ('manufacturing', 4, false),
+        ('shipped', 5, false),
+        ('done', 6, true)
+      ON CONFLICT (code) DO NOTHING;
+
+    # --- Orders / OrderItems: status_code only (already applied; idempotent) ----
+    - |
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='orders' AND column_name='status'
+        ) THEN
+          UPDATE public.orders SET status_code = status::text WHERE status_code IS NULL;
+          ALTER TABLE public.orders DROP COLUMN status;
+        END IF;
+      END$$;
+
+    - |
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='order_items' AND column_name='status_code'
+        ) THEN
+          ALTER TABLE public.order_items ADD COLUMN status_code text;
+        END IF;
+        UPDATE public.order_items SET status_code = status::text WHERE status_code IS NULL AND EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='order_items' AND column_name='status'
+        );
+        BEGIN
+          ALTER TABLE public.order_items
+            ADD CONSTRAINT order_items_status_code_fkey FOREIGN KEY (status_code)
+            REFERENCES public.status_order_items(code);
+        EXCEPTION WHEN duplicate_object THEN
+          -- FK already exists
+          NULL;
+        END;
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='order_items' AND column_name='status'
+        ) THEN
+          ALTER TABLE public.order_items DROP COLUMN status;
+        END IF;
+      END$$;
+
+    # --- Drop old enum types if orphaned -----------------------------------
+    - |
+      DO $$
+      DECLARE r_cnt int; oi_cnt int;
+      BEGIN
+        SELECT COUNT(*) INTO r_cnt
+        FROM pg_type t LEFT JOIN pg_depend d ON d.refobjid = t.oid
+        WHERE t.typname = 'order_status';
+        IF r_cnt=0 THEN
+          BEGIN
+            DROP TYPE IF EXISTS public.order_status;
+          EXCEPTION WHEN others THEN NULL;
+          END;
+        END IF;
+
+        SELECT COUNT(*) INTO oi_cnt
+        FROM pg_type t LEFT JOIN pg_depend d ON d.refobjid = t.oid
+        WHERE t.typname = 'order_item_status';
+        IF oi_cnt=0 THEN
+          BEGIN
+            DROP TYPE IF EXISTS public.order_item_status;
+          EXCEPTION WHEN others THEN NULL;
+          END;
+        END IF;
+      END$$;
+
+    # --- Organizations shape hardening -------------------------------------
+    - |
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='organizations' AND column_name='color_palette'
+        ) THEN
+          ALTER TABLE public.organizations
+            ADD COLUMN color_palette jsonb NOT NULL DEFAULT '[]'::jsonb;
+        END IF;
+      END$$;
+
+    - |
+      DO $$
+      BEGIN
+        -- Ensure universal_discounts exists, NOT NULL with default {}
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='organizations' AND column_name='universal_discounts'
+        ) THEN
+          ALTER TABLE public.organizations ADD COLUMN universal_discounts jsonb;
+        END IF;
+        UPDATE public.organizations
+        SET universal_discounts = '{}'::jsonb
+        WHERE universal_discounts IS NULL;
+        ALTER TABLE public.organizations
+          ALTER COLUMN universal_discounts SET DEFAULT '{}'::jsonb,
+          ALTER COLUMN universal_discounts SET NOT NULL;
+      END$$;
+
+    # --- Role helpers (slug-based) -----------------------------------------
+    - |
+      CREATE OR REPLACE FUNCTION public.has_role_slug(
+        uid uuid,
+        org uuid,
+        role_slug text
+      ) RETURNS boolean
+      LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (
+          SELECT 1
+          FROM public.user_roles ur
+          JOIN public.roles r ON r.id = ur.role_id
+          WHERE ur.user_id = uid
+            AND ur.org_id = org
+            AND r.slug = role_slug
+        );
+      $$;
+
+    - |
+      -- Keep legacy signature but map to slug; do NOT change parameter names
+      CREATE OR REPLACE FUNCTION public.has_role(
+        uid uuid,
+        org uuid,
+        role_name text
+      ) RETURNS boolean
+      LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (
+          SELECT 1
+          FROM public.user_roles ur
+          JOIN public.roles r ON r.id = ur.role_id
+          WHERE ur.user_id = uid
+            AND ur.org_id = org
+            AND (r.slug = lower(role_name) OR r.name = role_name)
+        );
+      $$;
+
+    - |
+      CREATE OR REPLACE FUNCTION public.is_org_admin(uid uuid, org uuid)
+      RETURNS boolean
+      LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT public.has_role_slug(uid, org, 'admin');
+      $$;
+
+    # --- Org bootstrap trigger: SECURITY DEFINER + slug-only ---------------
+    - |
+      CREATE OR REPLACE FUNCTION public.handle_org_insert()
+      RETURNS trigger
+      LANGUAGE plpgsql SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+      DECLARE
+        admin_role_id uuid;
+        v_user uuid;
+      BEGIN
+        BEGIN v_user := auth.uid(); EXCEPTION WHEN others THEN v_user := NULL; END;
+        IF v_user IS NULL THEN RETURN NEW; END IF;
+
+        SELECT id INTO admin_role_id FROM public.roles WHERE slug = 'admin' LIMIT 1;
+        IF admin_role_id IS NOT NULL THEN
+          INSERT INTO public.user_roles (user_id, org_id, role_id)
+          VALUES (v_user, NEW.id, admin_role_id)
+          ON CONFLICT DO NOTHING;
+        END IF;
+        RETURN NEW;
+      END $$;
+
+    # --- Storage bucket expected by policies -------------------------------
+    - |
+      INSERT INTO storage.buckets (id, name, public)
+      VALUES ('app', 'app', false)
+      ON CONFLICT (id) DO NOTHING;
+
+    # --- Indexes (FKs & hot filters) ---------------------------------------
+    - "CREATE INDEX IF NOT EXISTS idx_orders_org_id       ON public.orders(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_customer_id  ON public.orders(customer_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_status_code  ON public.orders(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_order   ON public.order_items(order_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_org     ON public.order_items(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_status  ON public.order_items(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_item_sizes_it ON public.order_item_sizes(order_item_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orgs_name           ON public.organizations(name);"
+    - "CREATE INDEX IF NOT EXISTS idx_user_roles_org_user ON public.user_roles(org_id, user_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_design_jobs_org     ON public.design_jobs(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_design_jobs_item    ON public.design_jobs(order_item_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_design_jobs_status  ON public.design_jobs(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_mwo_org             ON public.manufacturing_work_orders(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_mwo_order           ON public.manufacturing_work_orders(order_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_mwo_status          ON public.manufacturing_work_orders(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_prod_events_wo      ON public.production_events(work_order_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_catalog_items_org   ON public.catalog_items(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_ci_images_item      ON public.catalog_item_images(catalog_item_id);"
+
+    # --- RLS (enable; leave existing policies in place) --------------------
+    - |
+      DO $$ BEGIN
+        EXECUTE 'ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.catalog_items ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.design_jobs ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.manufacturing_work_orders ENABLE ROW LEVEL SECURITY';
+      EXCEPTION WHEN others THEN NULL; END $$;
+
+#
+# 3) API (SERVER) DELTA
+#
+api_delta:
+  # Canonical routing: use Express sub-routers under server/routes/<domain>/; mount once under /api
+  - router: "server/routes/index.ts"
+    actions:
+      - "Ensure a single apiRouter is mounted with app.use('/api', apiRouter)."
+      - "Attach: apiRouter.use('/organizations', organizationsRouter)."
+      - "Attach: apiRouter.use('/users', usersRouter)."
+      - "Attach: apiRouter.use('/orders', ordersRouter)."
+      - "Remove any legacy mounts, commented doubles, or duplicate paths."
+
+  # Organizations API
+  - router: "server/routes/organizations/index.ts"
+    changes:
+      - "Request DTO: accept { name, brandPrimary, brandSecondary, emailDomain?, billingEmail?, colorPalette?: string[], universalDiscounts?: object }."
+      - "Map dtoToDb on insert/select: brand_primary, brand_secondary, email_domain, billing_email, color_palette, universal_discounts."
+      - "Default universal_discounts: {} if null/undefined."
+      - "Validate colorPalette: array length ≤ 12; each item hex (#RGB/#RRGGBB) or HSL 'H S% L%'."
+      - "Response shape (all endpoints): { success:boolean, data?:T, count?:number, error?:{ code, message, details? } }."
+      - "Auth optional on create: if auth.uid() is null, skip owner role assignment (trigger handles when present)."
+      - "List endpoint supports ?q, ?limit, ?offset; returns { success, data, count }."
+
+  # Users API (fix full_name/name, avoid raw SQL drift)
+  - router: "server/routes/users/index.ts"
+    changes:
+      - "Select: id, full_name as fullName, email, role(s), created_at as createdAt."
+      - "Insert/Update: upsert full_name; no references to non-existent 'name' column."
+      - "Use parameterized queries/Drizzle; remove brittle raw SQL string building."
+      - "Standardize response shape per contract."
+
+  # Orders API (status_code only)
+  - router: "server/routes/orders/index.ts"  # create if missing
+    changes:
+      - "POST /: accept statusCode string (must exist in status_orders)."
+      - "PATCH /:id: accept statusCode string."
+      - "GET endpoints return statusCode; never 'status'."
+      - "Validate statusCode against status_orders."
+
+  # Storage of data access
+  - rule: "Do not use Supabase JS client for DB queries in routes; use Drizzle/pg. Keep Supabase client only for Storage (files) where needed."
+
+  # Common error handling
+  - rule: "Introduce a shared helper (server/lib/http.ts) to send {success:false,error:{code,message,details}} consistently; update above routers to use it."
+
+  # Route inventory check tool
+  - tooling:
+      add_file: "scripts/verify-routes.cjs"
+      content: |
+        #!/usr/bin/env node
+        // naive static check: ensure no duplicate route filenames or mounts under server/routes
+        const { execSync } = require('child_process');
+        const fs = require('fs'); const path = require('path');
+        const root = path.join(process.cwd(), 'server', 'routes');
+        function walk(dir){ return fs.readdirSync(dir).flatMap(f=>{
+          const p=path.join(dir,f); return fs.statSync(p).isDirectory()?walk(p):[p]; });}
+        const files = walk(root).filter(f=>f.endsWith('.ts')||f.endsWith('.js'));
+        const names = new Map();
+        let dup = false;
+        for (const f of files){
+          const key = path.relative(root, f).replace(/\\/g,'/');
+          if (names.has(key)){ console.error('Duplicate route file:', key); dup=true; }
+          else names.set(key,true);
+        }
+        if (dup){ process.exit(1); }
+        console.log('Routes verified OK');
+
+#
+# 4) UI (CLIENT) DELTA
+#
+ui_delta:
+  - routing:
+      file: "client/src/routes.tsx"
+      actions:
+        - "Ensure single React Router v6 setup; remove Wouter/legacy imports."
+        - "Define canonical routes for Organizations, Users, Orders (list/create/edit)."
+        - "Use a shared <AppLayout> with error boundary."
+
+  - org_form:
+      file: "client/src/pages/organizations/OrganizationCreateForm.tsx"
+      changes:
+        - "Add chips-multi input for colorPalette (max 12)."
+        - "Zod validation: array of hex/HSL strings."
+        - "Bind to API DTO camelCase; let api-sdk map to DB."
+        - "Ensure universalDiscounts initializes to {} when user leaves it blank."
+
+  - users_list:
+      file: "client/src/pages/users/UsersPage.tsx"
+      changes:
+        - "Render fullName; remove references to 'name'."
+        - "Use shared API SDK; no inline fetch."
+
+  - orders_pages:
+      files:
+        - "client/src/pages/orders/OrderCreatePage.tsx"
+        - "client/src/pages/orders/OrderListPage.tsx"
+      changes:
+        - "Replace 'status' with 'statusCode' everywhere."
+        - "Populate status options from /api/orders/status-codes (or hard-code from status_orders as interim)."
+
+  - ui_rules:
+      enforce:
+        - "Use shadcn + Tailwind components; no arbitrary third-party UI for forms."
+        - "Use react-hook-form + zod for all forms."
+        - "Never call fetch directly in components; use shared API client."
+        - "Do not import from client/_legacy."
+
+#
+# 5) TESTS
+#
+tests:
+  - name: "RLS probe (authenticated vs unauthenticated)"
+    steps:
+      - "As anon: POST /api/organizations → allowed (owner optional)."
+      - "As anon: GET /api/organizations → should see only public/own? (depending on policies); if policies require membership, expect 200 with empty data."
+      - "As authed: create org; expect membership via trigger; GET returns it."
+
+  - name: "Orders statusCode flow"
+    steps:
+      - "POST /api/orders with statusCode=design → 201; GET shows statusCode=design."
+      - "PATCH → manufacturing; GET shows change."
+
+  - name: "Users fullName"
+    steps:
+      - "Create user with fullName; GET returns fullName (not 'name')."
+
+  - name: "Organizations colorPalette"
+    steps:
+      - "Create org with 3 colors; GET returns colorPalette array; UI renders chips."
+
+#
+# 6) SAFETY CHECKS (CI / PREFLIGHT)
+#
+safety_checks:
+  - "Update package.json 'check': run preflight, tsc --noEmit, eslint ."
+  - "Extend preflight to run: node scripts/verify-routes.cjs"
+  - "Fail if any files modified under client/_legacy/"
+  - "TypeScript must compile clean across server + client."
+  - "ESLint must be clean (including no-restricted-imports on _legacy)."
+  - "No references to deprecated fields: Order.status, OrderItem.status, User.name."
+  - "All API responses conform to {success,data?,count?,error?} contract."
+
+#
+# 7) NOTES / RULES FOR AGENTS & CONTRIBUTORS
+#
+notes: |
+  - CR-FIRST only: every change to db/schema, DTOs, or routes requires a CR YAML in /architecture/crs/.
+  - Keep DTO↔DB mapping centralized; never hand-roll camel↔snake in random places.
+  - One route module per domain under server/routes/<domain>/; mount once under /api.
+  - Use Drizzle/pg for DB; Supabase JS only for Storage.
+  - UI: React Router v6 only, shadcn components, react-hook-form + zod, shared API client.
+  - Never touch client/_legacy or create duplicate pages/routes.
+  - After applying changes: run `npm run preflight` then `npm run check` and fix all failures.
