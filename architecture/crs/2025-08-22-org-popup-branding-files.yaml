@@ -1,0 +1,384 @@
+cr:
+title: "Organization Quick View: full profile, branding, contacts/sports, and file uploads"
+rationale: >
+  The current popup card is cramped and broken. We need a clean, scrollable Overview dialog that
+  shows all org info (branding, colors, logo/profile, contacts & sports, notes) and supports
+  uploading/previewing branding files. This uses our Storage bucket 'app' (org/{org_id}/branding/*)
+  with existing RLS. UI uses shadcn Dialog + Tabs + ScrollArea.
+
+#
+# 1) DOMAIN (no new critical schema; reuse)
+#
+domain_delta:
+  - entity: Organization
+    changes:
+      - reuse_fields:
+          - { name: logo_url, type: string, nullable: true }        # profile image
+          - { name: title_card_url, type: string, nullable: true }  # cover/banner
+          - { name: brand_primary, type: string }
+          - { name: brand_secondary, type: string }
+          - { name: color_palette, type: string[] }                 # already added in prior CR
+          - { name: universal_discounts, type: object }             # jsonb
+          - { name: notes, type: string, nullable: true }
+      - semantics: >
+          Branding files live under storage path: app/org/{org_id}/branding/*. Public URLs are NOT
+          required; we list by storage API and render with signed URLs.
+
+  - entity: OrgSport
+    changes:
+      - reuse_fields:
+          - { name: sport_id, type: uuid }
+          - { name: contact_email, type: string }
+          - { name: contact_user_id, type: uuid, nullable: true }
+      - semantics: "Display sports with contact email and link to user if contact_user_id set."
+
+#
+# 2) DB MIGRATION (none required)
+#
+db_migration:
+  id: "NO_DB_CHANGE"
+  sql: []
+
+#
+# 3) API (SERVER)
+#
+api_delta:
+  - router: "server/routes/organizations/index.ts"
+    changes:
+      - "GET /:id/summary → returns a normalized view model:"
+      - "  { success, data: {"
+      - "      organization: { id, name, logoUrl, titleCardUrl, brandPrimary, brandSecondary, colorPalette, universalDiscounts, notes },"
+      - "      sports: [ { sportId, sportName, contactEmail, contactUserId, contactUserEmail? } ],"
+      - "      brandingFiles: [ { id, name, updatedAt, size, signedUrl } ]"
+      - "    }, count }"
+      - "Implementation:"
+      - "  - Load org by id; map db→dto."
+      - "  - Join org_sports + sports; enrich contact user email if contact_user_id present."
+      - "  - List branding files from storage bucket 'app' under prefix `org/{org_id}/branding/`;"
+      - "    return lightweight file metadata; generate short-lived signed URLs."
+      - "  - Standard error contract on failures."
+      - ""
+      - "POST /:id/logo → multipart or signed-URL workflow:"
+      - "  - Accept file (if using multipart) or { filename } to mint a presigned upload URL."
+      - "  - On success, update organizations.logo_url (and return new value)."
+      - ""
+      - "POST /:id/title-card → same as logo, but updates title_card_url."
+      - ""
+      - "POST /:id/branding-files/sign → body: { files: [{name:string,size?:number}], ttlSeconds?:number }"
+      - "  - Return array of { name, uploadUrl (PUT), accessUrl (GET signed), expiresAt }."
+      - ""
+      - "GET /:id/branding-files → list with pagination; return lightweight metadata with signed URLs."
+      - ""
+      - "DELETE /:id/branding-files → body: { names: string[] } deletes matching keys under org/{id}/branding/."
+      - ""
+      - "SECURITY: Only org members can view; only Admin can upload/delete. Enforce via has_role_slug."
+  - util: "server/lib/storage.ts"
+    actions:
+      - "Add helpers wrapping Supabase Storage for list, create-signed-url (upload/download), and delete for org branding path."
+      - "All functions validate orgId UUID and enforce path: `org/${orgId}/branding/...`"
+
+#
+# 4) UI (CLIENT)
+#
+ui_delta:
+  - component: "client/src/components/OrgQuickViewDialog.tsx"
+    changes:
+      - "Rebuild with shadcn Dialog + Tabs + ScrollArea:"
+      - "  <Dialog> → <DialogContent class='max-w-4xl w-[95vw] p-0 overflow-hidden'>"
+      - "   <Tabs defaultValue='overview'>"
+      - "     <TabsList>Overview • Branding • Contacts</TabsList>"
+      - "     <TabsContent value='overview'>"
+      - "        • Header: logo (avatar), name, small badge pills for brandPrimary/brandSecondary color."
+      - "        • ColorPalette chips (render as swatches with hex/hsl tooltip)."
+      - "        • Universal discounts (key/value list)."
+      - "        • Notes (read-only block; multiline clamp with Expand link)."
+      - "     </TabsContent>"
+      - "     <TabsContent value='branding'>"
+      - "        • Upload controls: Dropzone (accepts images/svg/pdf/ai/psd), shows queued + uploaded."
+      - "        • Grid of brandingFiles (thumb or file icon) with name, updatedAt, size, and actions (download/delete)."
+      - "        • Title Card + Logo uploaders with image preview + 'Set as...' buttons."
+      - "     </TabsContent>"
+      - "     <TabsContent value='contacts'>"
+      - "        • Table of sports: Sport Name • Contact Email • Linked User (chip, if any) • 'Go to user' link."
+      - "     </TabsContent>"
+      - "   </Tabs>"
+      - "  Keyboard/Accessibility: ESC closes, focus trap enforced, scroll within content only."
+      - "  Mobile: responsive stacks; actions visible; no horizontal overflow."
+      - "Data source: call GET /api/organizations/:id/summary on open; refetch after uploads/deletes."
+      - "Error handling: standardized toast for {error} with code/message."
+  - component: "client/src/components/BrandingDropzone.tsx"
+    new: true
+    changes:
+      - "Encapsulate upload workflow:"
+      - "  - Request signed URLs for batch of files."
+      - "  - PUT to uploadUrl; on success, refresh branding list."
+      - "  - Accept types: image/*, application/pdf, image/svg+xml, application/postscript, application/vnd.adobe.illustrator"
+      - "  - Limit: 50MB per file (configurable)."
+
+  - page: "client/src/pages/organizations/OrganizationDetailPage.tsx"
+    changes:
+      - "Use the same Summary fetch for consistency; include a 'Open Quick View' button."
+
+#
+# 5) TESTS
+#
+tests:
+  - name: "Summary endpoint"
+    steps:
+      - "GET /api/organizations/:id/summary returns 200 with organization, sports, and brandingFiles."
+      - "Non-members → 403; members → 200; Admin → 200 with branding signed URLs."
+  - name: "Branding uploads"
+    steps:
+      - "sign → PUT upload → list shows new file; delete removes it; title_card and logo endpoints update org fields."
+  - name: "Dialog UX"
+    steps:
+      - "Open, scroll, tab-switching; ESC and overlay click behavior; mobile layout; no console errors."
+
+#
+# 6) SAFETY CHECKS
+#
+safety_checks:
+  - "preflight + tsc --noEmit + eslint clean."
+  - "No imports from client/_legacy."
+  - "Server side validates file names (no ../ etc); enforces `org/${orgId}/branding/` prefix."
+  - "Role checks: Admin required for upload/delete/title-card/logo; members can view."
+  - "Signed URLs have short TTL (e.g., 5–10 min)."
+  - "Large uploads do not block request; UI shows progress and handles retry."
+
+notes: |
+  - Storage bucket: 'app' is assumed present (created earlier). All branding assets live under org/<org_id>/branding/.
+  - Prefer preview for common image types; otherwise show a file icon. Use filename extension to render icon.
+  - Consider future: tag files (e.g. 'logo', 'pattern', 'sponsor') via filename prefix or metadata.
+cr:
+title: "Healthcheck Hardening: structure, API consolidation, security, config, tests, docs"
+rationale: >
+  Resolve all items from the health check: remove split-brain folders and legacy code, consolidate and secure API,
+  standardize config (tsconfig/vite aliases), improve DB/RLS and uploads safety, add performance guarding,
+  expand tests and documentation, unify error handling/logging, and enforce CR-first guardrails.
+
+# 1) DOMAIN (no new business entities beyond prior CRs)
+domain_delta:
+  - entity: Organization
+    changes:
+      - ensure_fields:
+          - { name: color_palette, type: string[] }         # jsonb in DB
+          - { name: universal_discounts, type: object }     # jsonb default {}
+          - { name: logo_url, type: string, nullable: true }
+          - { name: title_card_url, type: string, nullable: true }
+      - mapping: { db: snake_case, dto: camelCase }
+  - entity: Order
+    changes:
+      - replace_field: { from: status (enum), to: status_code (string FK) }
+      - mapping: { db: status_code, dto: statusCode }
+  - entity: OrderItem
+    changes:
+      - replace_field: { from: status (enum), to: status_code (string FK) }
+      - mapping: { db: status_code, dto: statusCode }
+  - entity: User
+    changes:
+      - ensure_field: { name: full_name, type: string, nullable: true }
+      - mapping: { db: full_name, dto: fullName }
+
+# 2) DB MIGRATION (idempotent)
+db_migration:
+  id: "2025_08_22_healthcheck_hardening"
+  sql:
+    # Indexes (perf) — safe if they already exist
+    - "CREATE INDEX IF NOT EXISTS idx_orders_org_id       ON public.orders(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_customer_id  ON public.orders(customer_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_status_code  ON public.orders(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_order   ON public.order_items(order_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_org     ON public.order_items(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_status  ON public.order_items(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_item_sizes_it ON public.order_item_sizes(order_item_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orgs_name           ON public.organizations(name);"
+    - "CREATE INDEX IF NOT EXISTS idx_user_roles_org_user ON public.user_roles(org_id, user_id);"
+    # RLS enable (no-op if enabled)
+    - |
+      DO $$ BEGIN
+        EXECUTE 'ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.catalog_items ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.design_jobs ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.manufacturing_work_orders ENABLE ROW LEVEL SECURITY';
+      EXCEPTION WHEN others THEN NULL; END $$;
+    # Bucket existence for uploads
+    - |
+      INSERT INTO storage.buckets (id, name, public)
+      VALUES ('app', 'app', false)
+      ON CONFLICT (id) DO NOTHING;
+
+# 3) API (SERVER) CONSOLIDATION + SECURITY
+api_delta:
+  - router: "server/index.ts"
+    changes:
+      - "Install/enable middleware: helmet (sane defaults), cors (allow only expected origins), compression, express.json limit 2MB."
+      - "Install express-rate-limit for /api (e.g., 200 req/15min/IP; tune later)."
+      - "Add global error handler using sendErr helper."
+      - "Mount a single apiRouter '/api'; remove any duplicate/legacy mounts."
+
+  - router: "server/routes/index.ts"
+    changes:
+      - "Attach exactly once: /organizations, /users, /orders, /files (branding)."
+      - "Export route inventory for verify-routes tool."
+
+  - router: "server/routes/organizations/index.ts"
+    changes:
+      - "Ensure only the canonical file exposes Org endpoints (list/create/get/update/delete, summary, branding)."
+      - "Validate DTO with zod (max 12 colors, hex/HSL); coerce universal_discounts to {}."
+      - "Standardize responses to { success, data?, count?, error? }."
+      - "Auth: members can GET; Admin required for write/upload/delete."
+      - "DELETE returns 200/204 success — no error object on success."
+
+  - router: "server/routes/users/index.ts"
+    changes:
+      - "Fix list to use full_name→fullName; include roles per org."
+      - "Admin-only: update email, reset password (via Supabase Admin), set roles (slug-based)."
+      - "Standardize responses."
+
+  - router: "server/routes/orders/index.ts"
+    changes:
+      - "Expose CRUD with statusCode only; validate against status_orders; standardized responses; pagination defaults."
+
+  - uploads: "server/routes/files/branding.ts"
+    changes:
+      - "Endpoints: sign uploads, list, delete, set logo/title card. Path prefix: org/${orgId}/branding/."
+      - "Validate file names (no ../), limit mime/types, size, and TTL for signed URLs."
+      - "Role checks: Admin for mutate; members for read."
+
+  - util: "server/lib/http.ts"
+    actions:
+      - "sendOk(res,data,count?) and sendErr(res,code,message,details?) (shared use across routes)."
+
+  - util: "server/lib/log.ts"
+    actions:
+      - "Add pino logger with req-id; log errors centrally in error middleware."
+
+  - util: "server/lib/supabaseAdmin.ts"
+    actions:
+      - "Wrap SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY to create/update users and passwords; never log secrets."
+
+  - tool: "scripts/verify-routes.cjs"
+    actions:
+      - "Ensure no duplicate route files/mounts; extend to fail if more than one file matches same domain path."
+
+# 4) CLIENT (UI) CLEANUP + ALIASES + NO LEGACY
+ui_delta:
+  - structure:
+      changes:
+        - "Delete or archive /client/_legacy and any duplicate /src trees out of build; enforce with ESLint no-restricted-imports."
+        - "Ensure all pages/components live under client/src; routing = React Router v6 only."
+  - config:
+      files:
+        - "tsconfig.json"
+        - "vite.config.ts"
+      changes:
+        - "Align path alias: '@/*' → client/src/* (tsconfig paths + vite resolve.alias)."
+        - "Add preflight check to diff tsconfig/vite alias; fail if drift."
+  - api_client:
+      file: "client/src/lib/api.ts"
+      changes:
+        - "Single shared API client; no raw fetch in components; wraps error contracts."
+  - org_popup:
+      file: "client/src/components/OrgQuickViewDialog.tsx"
+      changes:
+        - "Replace with shadcn Dialog + Tabs + ScrollArea; sections: Overview, Branding (dropzone), Contacts/Sports."
+        - "Clean responsive layout; keyboard a11y; no overflow issues."
+  - deletes_handling:
+      changes:
+        - "Treat HTTP 200/204 as success (no error toast)."
+
+# 5) CONFIG MGMT (lint, preflight, env validation)
+config_delta:
+  - eslint:
+      changes:
+        - "Add rule no-restricted-imports: block client/_legacy/*, */_legacy/*."
+        - "Add import/resolver to respect tsconfig paths."
+  - preflight:
+      file: "scripts/preflight.cjs"
+      changes:
+        - "Run scripts/verify-routes.cjs."
+        - "Block edits to client/_legacy."
+        - "Require CR YAML when touching server/routes, shared/dtos, shared/schema, db/migrations."
+        - "Compare vite alias vs tsconfig paths; fail on mismatch."
+  - env:
+      file: "server/env.ts"
+      changes:
+        - "zod-validated env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (required server-side), NODE_ENV, ORIGINS."
+        - "Fail fast if missing in production."
+
+# 6) TEST COVERAGE (unit + integration)
+tests:
+  - tooling:
+      add:
+        - "server/tests/setup.ts (vitest/supertest setup)"
+        - "client/src/tests/setup.ts (vitest + @testing-library/react)"
+  - server_unit:
+      cases:
+        - "http helpers (sendOk/sendErr)."
+        - "validators (org schema, color array)."
+        - "supabaseAdmin (mocked)."
+  - server_integration:
+      cases:
+        - "Organizations: create/list/get/edit/delete with standard responses; RLS member vs admin."
+        - "Orders: statusCode flow create→patch→get."
+        - "Users: list, update email, reset password (mock admin), role patch."
+  - client_tests:
+      cases:
+        - "OrgQuickViewDialog renders tabs; overview/branding/contacts switch; a11y (escape/backdrop)."
+        - "Create Wizard Step 3 validate email, dedupe contacts."
+        - "Delete UX: success toast only, no error on 204."
+  - coverage:
+      thresholds: { lines: 60, statements: 60, branches: 50, functions: 60 }
+
+# 7) DOCS (clarity + API reference)
+documentation:
+  - files:
+      - "ARCHITECTURE.md"
+      - "API.md"
+      - "CONTRIBUTING.md"
+  - ARCHITECTURE.md:
+      sections:
+        - "Stack overview: Express + React + Drizzle + Supabase Storage; RLS strategy."
+        - "Folder layout: client/src, server/routes/<domain>, shared/*."
+        - "DTO↔DB mapping (camel↔snake) and examples."
+        - "CR-first workflow and preflight rules."
+  - API.md:
+      sections:
+        - "Response contract { success, data?, count?, error? }."
+        - "Organizations, Users, Orders endpoints with request/response samples."
+        - "Branding file operations + role requirements."
+  - CONTRIBUTING.md:
+      sections:
+        - "How to write a CR YAML."
+        - "Running preflight/check/tests; adding routes/pages correctly."
+        - "Security notes: uploads, roles, signed URLs, env vars."
+
+# 8) SECURITY HARDENING
+security:
+  - middlewares:
+      - "helmet() with sane defaults (disable x-powered-by)."
+      - "cors({ origin: ORIGINS, credentials:false }) — restrict in prod."
+      - "express-rate-limit for /api."
+      - "json body limit 2MB; file upload limits where applicable."
+  - uploads:
+      - "Validate filename (no path traversal), mime/size allow-list, signed URL TTL 5–10 min."
+      - "Storage path locked to org/${orgId}/branding."
+  - authz:
+      - "All destructive endpoints require Admin; member-only read where intended."
+  - secrets:
+      - "Never log admin keys or passwords; mask sensitive data in logs."
+
+safety_checks:
+  - "preflight must pass (route verify, alias parity, CR enforcement, legacy block)."
+  - "tsc --noEmit and eslint clean."
+  - "Server boots with validated env (zod)."
+  - "No duplicate route mounts; no imports from _legacy."
+  - "All DELETE endpoints return pure success (no error payload)."
+
+notes: |
+  - This CR is structural; it does not change business logic beyond contract/security/perf fixes.
+  - Future features must follow CR-first, DTO↔DB mapping, and standardized responses.
