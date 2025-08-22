@@ -25,7 +25,7 @@ export async function apiRequest(endpoint: string, options: { method?: string; d
   }
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
+    const response = await fetch(`/api${endpoint}`, config);
 
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;

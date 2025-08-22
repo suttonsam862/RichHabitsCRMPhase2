@@ -5,7 +5,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
 import { users } from '@shared/schema';
 import { sql, eq, ilike, desc } from 'drizzle-orm';
-import { sendSuccess, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { sendSuccess, sendOk, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 
 const router = express.Router();
 
@@ -79,7 +79,7 @@ router.get('/', asyncHandler(async (req, res) => {
     // Map database rows to DTOs
     const data = results.map(dbRowToDto);
 
-    sendSuccess(res, data, total);
+    sendOk(res, data, total);
   } catch (error) {
     handleDatabaseError(res, error, 'list users');
   }
@@ -101,7 +101,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     }
 
     const mappedUser = dbRowToDto(result[0]);
-    sendSuccess(res, mappedUser);
+    sendOk(res, mappedUser);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch user');
   }
@@ -129,13 +129,14 @@ router.post('/',
       const mappedData = mapDtoToDb(validatedData, DTO_TO_DB_MAPPING);
       
       // Prepare user data
-      const now = new Date();
+      const now = new Date().toISOString();
       const userData = {
         email: validatedData.email,
         phone: validatedData.phone || null,
+        fullName: validatedData.fullName || validatedData.email.split('@')[0],
         preferences: {},
-        created_at: now,
-        updated_at: now,
+        createdAt: now,
+        updatedAt: now,
         ...mappedData
       };
 
@@ -145,7 +146,7 @@ router.post('/',
         .returning();
 
       const createdUser = dbRowToDto(result[0]);
-      sendSuccess(res, createdUser, undefined, 201);
+      sendOk(res, createdUser, undefined, 201);
     } catch (error) {
       handleDatabaseError(res, error, 'create user');
     }
@@ -167,7 +168,7 @@ router.patch('/:id',
         .update(users)
         .set({
           ...mappedData,
-          updated_at: new Date()
+          updatedAt: new Date().toISOString()
         })
         .where(eq(users.id, id))
         .returning();
@@ -177,7 +178,7 @@ router.patch('/:id',
       }
 
       const mappedResult = dbRowToDto(result[0]);
-      sendSuccess(res, mappedResult);
+      sendOk(res, mappedResult);
     } catch (error) {
       handleDatabaseError(res, error, 'update user');
     }

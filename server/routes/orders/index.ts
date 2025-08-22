@@ -6,7 +6,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
 import { orders, orderItems, statusOrders, statusOrderItems, customers, organizations } from '@shared/schema';
 import { sql, eq, and, ilike, desc, inArray } from 'drizzle-orm';
-import { sendSuccess, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { sendSuccess, sendOk, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 
 const router = express.Router();
 
@@ -194,7 +194,7 @@ router.get('/', asyncHandler(async (req, res) => {
     // Map database rows to DTOs
     const data = results.map(orderDbRowToDto);
 
-    sendSuccess(res, data, total);
+    sendOk(res, data, total);
   } catch (error) {
     handleDatabaseError(res, error, 'list orders');
   }
@@ -216,7 +216,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     }
 
     const mappedOrder = orderDbRowToDto(result[0]);
-    sendSuccess(res, mappedOrder);
+    sendOk(res, mappedOrder);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch order');
   }
@@ -260,7 +260,7 @@ router.post('/',
         .returning();
 
       const createdOrder = orderDbRowToDto(result[0]);
-      sendSuccess(res, createdOrder, undefined, 201);
+      sendOk(res, createdOrder, undefined, 201);
     } catch (error) {
       handleDatabaseError(res, error, 'create order');
     }
@@ -289,7 +289,7 @@ router.patch('/:id/status',
         .update(orders)
         .set({
           statusCode: statusCode,
-          updatedAt: new Date()
+          updatedAt: new Date().toISOString()
         })
         .where(eq(orders.id, id))
         .returning();
@@ -299,7 +299,7 @@ router.patch('/:id/status',
       }
 
       const mappedResult = orderDbRowToDto(result[0]);
-      sendSuccess(res, mappedResult);
+      sendOk(res, mappedResult);
     } catch (error) {
       handleDatabaseError(res, error, 'update order status');
     }
@@ -329,7 +329,7 @@ router.patch('/:id',
         .update(orders)
         .set({
           ...mappedData,
-          updatedAt: new Date()
+          updatedAt: new Date().toISOString()
         })
         .where(eq(orders.id, id))
         .returning();
@@ -339,7 +339,7 @@ router.patch('/:id',
       }
 
       const mappedResult = orderDbRowToDto(result[0]);
-      sendSuccess(res, mappedResult);
+      sendOk(res, mappedResult);
     } catch (error) {
       handleDatabaseError(res, error, 'update order');
     }

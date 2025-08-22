@@ -5,6 +5,10 @@
 
 import express from 'express';
 import { createServer } from 'http';
+import helmet from 'helmet';
+import cors from 'cors';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import { apiRouter } from './routes/index';
 import { setupVite, serveStatic } from './vite';
 import { errorHandler } from './middleware/error';
@@ -19,9 +23,40 @@ const server = createServer(app);
 const PORT = parseInt(process.env.PORT || '5000', 10);
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+// Security middleware
+app.use(helmet({
+  crossOriginEmbedderPolicy: false, // Allow Vite in development
+  contentSecurityPolicy: isDevelopment ? false : undefined
+}));
+
+// CORS configuration
+const allowedOrigins = process.env.ORIGINS ? process.env.ORIGINS.split(',') : ['http://localhost:5000', 'http://0.0.0.0:5000'];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: false
+}));
+
+// Compression middleware
+app.use(compression());
+
+// Rate limiting for API routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Limit each IP to 200 requests per windowMs
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests from this IP, please try again later.'
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Basic middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Request logging
 app.use((req, res, next) => {
@@ -29,8 +64,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mount canonical API router at /api - single source of truth
-app.use('/api', apiRouter);
+// Mount canonical API router at /api with rate limiting
+app.use('/api', apiLimiter, apiRouter);
 
 // Error handling middleware
 app.use(errorHandler);

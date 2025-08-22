@@ -41,7 +41,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <Link to={paths.organizations}>
-              <GlowCard className="max-w-md mx-auto cursor-pointer group" variant="intense">
+              <GlowCard className="max-w-md mx-auto cursor-pointer group">
                 <div className="text-center space-y-4 transition-transform duration-300 group-hover:scale-[1.02]">
                   <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-glow-1/20 to-glow-3/20 border border-white/10 flex items-center justify-center">
                     <Building2 className="h-8 w-8 text-white/80" />

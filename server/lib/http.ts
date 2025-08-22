@@ -139,3 +139,9 @@ export function mapDbToDto(dbRow: Record<string, any>, mapping: Record<string, s
   
   return mapped;
 }
+
+/**
+ * CR-specified aliases for sendSuccess/sendError
+ */
+export const sendOk = sendSuccess;
+export const sendErr = sendError;

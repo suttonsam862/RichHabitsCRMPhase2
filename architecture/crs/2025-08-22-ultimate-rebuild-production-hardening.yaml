@@ -1,0 +1,814 @@
+cr:
+title: "ULTIMATE REBUILD & PRODUCTION HARDENING (Routing • Auth • DB • API • UI • Tests • Security • Perf • CI/CD • Docs)"
+rationale: >
+  The app is barely functional, insecure, and inconsistent. This CR restores full routing and core UX,
+  implements real Supabase Auth + role enforcement, consolidates migrations, standardizes API contracts,
+  fixes validation and error handling, secures uploads and CORS, resolves N+1/perf issues, unifies
+  configuration, introduces logging/metrics/health checks, installs complete test infra (unit/integration/E2E),
+  and ships CI/CD, backups, and truthful documentation. After this, the app is ship‑ready.
+
+########################################################################################################
+# 0) EXECUTION MODE (AGENT PROTOCOL) — do not skip
+########################################################################################################
+agent_protocol:
+  rules:
+    - "CR-FIRST: implement exactly what is here before any other edits."
+    - "PLAN-FIRST: update architecture/context/.PLAN.md (goal, files, risks, rollback) before coding."
+    - "One atomic logical change-set; but all sub-steps here are required for a green build."
+    - "All responses follow { success, data?, count?, error? } with proper HTTP codes."
+    - "Run: npm run preflight && npm run check && npm test && npm run test:e2e ; fix until green."
+    - "Never touch client/_legacy/ (delete from build path); do not create duplicate routes/pages."
+    - "No raw SQL string interpolation; use parameterized queries or SQL functions. No path traversal in names."
+    - "No secrets in logs. Redact Authorization and keys. Production CORS locked to ORIGINS."
+    - "Document diffs in architecture/context/.IMPACT.md and tick architecture/context/.CHECKLIST.md."
+
+########################################################################################################
+# 1) DOMAIN DELTA — canonical models & mapping
+########################################################################################################
+domain_delta:
+  - entity: Organization
+    mapping: { db: snake_case, dto: camelCase }
+    ensure_fields:
+      - { name: name, type: string }
+      - { name: brand_primary, type: string }
+      - { name: brand_secondary, type: string }
+      - { name: logo_url, type: string, nullable: true }
+      - { name: title_card_url, type: string, nullable: true }
+      - { name: universal_discounts, type: object, default: {} } # jsonb
+      - { name: color_palette, type: string[] }                  # jsonb
+      - { name: notes, type: string, nullable: true }
+  - entity: OrgSport
+    mapping: { db: snake_case, dto: camelCase }
+    ensure_fields:
+      - { name: org_id, type: uuid, fk: "organizations(id)" }
+      - { name: sport_id, type: uuid }
+      - { name: contact_email, type: string, nullable: true }
+      - { name: contact_user_id, type: uuid, nullable: true, fk: "auth.users(id)" }
+  - entity: Order
+    mapping: { db: snake_case, dto: camelCase }
+    replace_field: { from: status (enum), to: status_code (string; FK status_orders.code) }
+  - entity: OrderItem
+    mapping: { db: snake_case, dto: camelCase }
+    replace_field: { from: status (enum), to: status_code (string; FK status_order_items.code) }
+  - entity: User
+    mapping: { db: snake_case, dto: camelCase }
+    ensure_fields:
+      - { name: full_name, type: string, nullable: true }
+      - { name: email, type: string }
+  - entity: Role
+    ensure_field: { name: slug, type: string, unique: true }
+    seed:
+      - { name: "Admin", slug: "admin" }
+      - { name: "Sales", slug: "sales" }
+      - { name: "Design", slug: "design" }
+      - { name: "Manufacturing", slug: "manufacturing" }
+      - { name: "Accounting", slug: "accounting" }
+      - { name: "Customer", slug: "customer" }
+  - entity: StatusOrders
+    seed:
+      - { code: "consultation",   sort_order: 1, is_terminal: false }
+      - { code: "design",         sort_order: 2, is_terminal: false }
+      - { code: "manufacturing",  sort_order: 3, is_terminal: false }
+      - { code: "shipped",        sort_order: 4, is_terminal: false }
+      - { code: "completed",      sort_order: 5, is_terminal: true  }
+  - entity: StatusOrderItems
+    create_if_missing: true
+    seed:
+      - { code: "pending",        sort_order: 1, is_terminal: false }
+      - { code: "design",         sort_order: 2, is_terminal: false }
+      - { code: "approved",       sort_order: 3, is_terminal: false }
+      - { code: "manufacturing",  sort_order: 4, is_terminal: false }
+      - { code: "shipped",        sort_order: 5, is_terminal: false }
+      - { code: "done",           sort_order: 6, is_terminal: true  }
+
+########################################################################################################
+# 2) DATABASE MIGRATION — consolidate, secure, index, functions
+########################################################################################################
+db_migration:
+  id: "2025_08_22_ultimate_rebuild"
+  sql:
+    # --- CONSOLODATE MIGRATIONS STRATEGY (documentation flag) -------------
+    - |
+      -- This CR consolidates on db/migrations only. Supabase SQL and any drizzle
+      -- duplicates are deprecated. Preflight will fail if new files appear under
+      -- ./migrations or ./supabase/migrations after this date.
+      -- Idempotent seeds & DDL below.
+
+    # --- ROLE SEEDS --------------------------------------------------------
+    - |
+      INSERT INTO public.roles (id, name, slug)
+      VALUES
+        (gen_random_uuid(), 'Admin', 'admin'),
+        (gen_random_uuid(), 'Sales', 'sales'),
+        (gen_random_uuid(), 'Design', 'design'),
+        (gen_random_uuid(), 'Manufacturing', 'manufacturing'),
+        (gen_random_uuid(), 'Accounting', 'accounting'),
+        (gen_random_uuid(), 'Customer', 'customer')
+      ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name;
+
+    # --- STATUS LOOKUPS ----------------------------------------------------
+    - |
+      INSERT INTO public.status_orders (code, sort_order, is_terminal) VALUES
+        ('consultation', 1, false),
+        ('design', 2, false),
+        ('manufacturing', 3, false),
+        ('shipped', 4, false),
+        ('completed', 5, true)
+      ON CONFLICT (code) DO NOTHING;
+
+    - |
+      CREATE TABLE IF NOT EXISTS public.status_order_items (
+        code text PRIMARY KEY,
+        sort_order integer NOT NULL,
+        is_terminal boolean NOT NULL DEFAULT false
+      );
+
+    - |
+      INSERT INTO public.status_order_items (code, sort_order, is_terminal) VALUES
+        ('pending', 1, false),
+        ('design', 2, false),
+        ('approved', 3, false),
+        ('manufacturing', 4, false),
+        ('shipped', 5, false),
+        ('done', 6, true)
+      ON CONFLICT (code) DO NOTHING;
+
+    # --- ORG SHAPE (defaults) ---------------------------------------------
+    - |
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='organizations' AND column_name='color_palette'
+        ) THEN
+          ALTER TABLE public.organizations ADD COLUMN color_palette jsonb NOT NULL DEFAULT '[]'::jsonb;
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='organizations' AND column_name='universal_discounts'
+        ) THEN
+          ALTER TABLE public.organizations ADD COLUMN universal_discounts jsonb;
+        END IF;
+        UPDATE public.organizations SET universal_discounts='{}'::jsonb WHERE universal_discounts IS NULL;
+        ALTER TABLE public.organizations
+          ALTER COLUMN universal_discounts SET DEFAULT '{}'::jsonb,
+          ALTER COLUMN universal_discounts SET NOT NULL;
+      END$$;
+
+    # --- ORG SPORTS: CONTACT USER LINK ------------------------------------
+    - |
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='org_sports' AND column_name='contact_user_id'
+        ) THEN
+          ALTER TABLE public.org_sports
+            ADD COLUMN contact_user_id uuid NULL REFERENCES auth.users(id) ON DELETE SET NULL;
+        END IF;
+      END$$;
+
+    # --- ORDERS/ITEMS: STATUS_CODE ONLY -----------------------------------
+    - |
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='orders' AND column_name='status') THEN
+          UPDATE public.orders SET status_code = status::text WHERE status_code IS NULL;
+          ALTER TABLE public.orders DROP COLUMN status;
+        END IF;
+      END $$;
+
+    - |
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                       WHERE table_schema='public' AND table_name='order_items' AND column_name='status_code') THEN
+          ALTER TABLE public.order_items ADD COLUMN status_code text;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='order_items' AND column_name='status') THEN
+          UPDATE public.order_items SET status_code = status::text WHERE status_code IS NULL;
+          ALTER TABLE public.order_items DROP COLUMN status;
+        END IF;
+        BEGIN
+          ALTER TABLE public.order_items
+            ADD CONSTRAINT order_items_status_code_fkey
+            FOREIGN KEY (status_code) REFERENCES public.status_order_items(code);
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+      END $$;
+
+    # --- DROP ORPHAN ENUM TYPES -------------------------------------------
+    - |
+      DO $$ DECLARE r int; i int;
+      BEGIN
+        SELECT COUNT(*) INTO r FROM pg_type t LEFT JOIN pg_depend d ON d.refobjid=t.oid WHERE t.typname='order_status';
+        IF r=0 THEN BEGIN DROP TYPE IF EXISTS public.order_status; EXCEPTION WHEN others THEN NULL; END; END IF;
+        SELECT COUNT(*) INTO i FROM pg_type t LEFT JOIN pg_depend d ON d.refobjid=t.oid WHERE t.typname='order_item_status';
+        IF i=0 THEN BEGIN DROP TYPE IF EXISTS public.order_item_status; EXCEPTION WHEN others THEN NULL; END; END IF;
+      END $$;
+
+    # --- ROLE CHECK HELPERS ------------------------------------------------
+    - |
+      CREATE OR REPLACE FUNCTION public.has_role_slug(uid uuid, org uuid, role_slug text)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (
+          SELECT 1 FROM public.user_roles ur
+          JOIN public.roles r ON r.id=ur.role_id
+          WHERE ur.user_id=uid AND ur.org_id=org AND r.slug=role_slug
+        );
+      $$;
+
+    - |
+      -- Keep legacy param names
+      CREATE OR REPLACE FUNCTION public.has_role(uid uuid, org uuid, role_name text)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (
+          SELECT 1 FROM public.user_roles ur
+          JOIN public.roles r ON r.id=ur.role_id
+          WHERE ur.user_id=uid AND ur.org_id=org
+            AND (r.slug=lower(role_name) OR r.name=role_name)
+        );
+      $$;
+
+    - |
+      CREATE OR REPLACE FUNCTION public.is_org_member(uid uuid, org uuid)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=uid AND org_id=org);
+      $$;
+
+    - |
+      CREATE OR REPLACE FUNCTION public.is_org_admin(uid uuid, org uuid)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT public.has_role_slug(uid, org, 'admin');
+      $$;
+
+    # --- ORG OWNER BOOTSTRAP TRIGGER --------------------------------------
+    - |
+      CREATE OR REPLACE FUNCTION public.handle_org_insert()
+      RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+      DECLARE admin_role_id uuid; v_user uuid;
+      BEGIN
+        BEGIN v_user := auth.uid(); EXCEPTION WHEN others THEN v_user := NULL; END;
+        IF v_user IS NULL THEN RETURN NEW; END IF;
+        SELECT id INTO admin_role_id FROM public.roles WHERE slug='admin' LIMIT 1;
+        IF admin_role_id IS NOT NULL THEN
+          INSERT INTO public.user_roles (user_id, org_id, role_id)
+          VALUES (v_user, NEW.id, admin_role_id)
+          ON CONFLICT DO NOTHING;
+        END IF;
+        RETURN NEW;
+      END $$;
+
+    # --- STORAGE BUCKET ----------------------------------------------------
+    - |
+      INSERT INTO storage.buckets (id, name, public) VALUES ('app', 'app', false)
+      ON CONFLICT (id) DO NOTHING;
+
+    # --- RLS ENABLE (respect existing policies) ----------------------------
+    - |
+      DO $$ BEGIN
+        EXECUTE 'ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.catalog_items ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.org_sports ENABLE ROW LEVEL SECURITY';
+      EXCEPTION WHEN others THEN NULL; END $$;
+
+    # --- SUMMARY RPC (eliminate N+1; one trip) -----------------------------
+    - |
+      CREATE OR REPLACE FUNCTION public.org_summary(p_org_id uuid, p_requester uuid)
+      RETURNS jsonb
+      LANGUAGE plpgsql SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+      DECLARE result jsonb;
+      BEGIN
+        -- Authorization: allow if member or admin
+        IF NOT public.is_org_member(p_requester, p_org_id) AND NOT public.is_org_admin(p_requester, p_org_id) THEN
+          RAISE EXCEPTION 'forbidden' USING ERRCODE='42501';
+        END IF;
+
+        SELECT jsonb_build_object(
+          'organization', to_jsonb(o) - 'universal_discounts' || jsonb_build_object(
+              'universalDiscounts', COALESCE(o.universal_discounts, '{}'::jsonb),
+              'colorPalette', COALESCE(o.color_palette, '[]'::jsonb)
+          ),
+          'sports', COALESCE((
+             SELECT jsonb_agg(
+               jsonb_build_object(
+                 'sportId', os.sport_id,
+                 'contactEmail', os.contact_email,
+                 'contactUserId', os.contact_user_id,
+                 'contactUserEmail', au.email
+               )
+             )
+             FROM public.org_sports os
+             LEFT JOIN auth.users au ON au.id=os.contact_user_id
+             WHERE os.org_id=o.id
+          ), '[]'::jsonb)
+        ) INTO result
+        FROM public.organizations o
+        WHERE o.id=p_org_id;
+
+        RETURN COALESCE(result, '{}'::jsonb);
+      END $$;
+
+    # --- INDEXES (perf) ----------------------------------------------------
+    - "CREATE INDEX IF NOT EXISTS idx_orders_org_id       ON public.orders(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_customer_id  ON public.orders(customer_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_status_code  ON public.orders(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_order   ON public.order_items(order_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_org     ON public.order_items(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_status  ON public.order_items(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_orgs_name           ON public.organizations(name);"
+    - "CREATE INDEX IF NOT EXISTS idx_user_roles_org_user ON public.user_roles(org_id, user_id);"
+
+########################################################################################################
+# 3) API DELTA — v1 namespace; routing; auth; contracts; uploads security; logging; health; metrics
+########################################################################################################
+api_delta:
+  - router: "server/index.ts"
+    changes:
+      - "Add helmet(), compression(), express.json({limit:'2mb'}), cors({ origin: ORIGINS, credentials:false })"
+      - "Add express-rate-limit: global (200 req/15m/IP); stricter for /api/v1/auth/login (10/min)."
+      - "Add requestId middleware; attach X-Request-Id on responses."
+      - "Mount /api/v1 with a single apiRouter; remove duplicate/legacy mounts."
+      - "Add global error middleware using sendErr(); ensure sanitized errors."
+  - util: "server/lib/http.ts"
+    content: |
+      export function sendOk(res, data, count) {
+        const body = count !== undefined ? { success:true, data, count } : { success:true, data };
+        return res.status(200).json(body);
+      }
+      export function sendCreated(res, data) {
+        return res.status(201).json({ success:true, data });
+      }
+      export function sendNoContent(res) {
+        return res.status(204).send();
+      }
+      export function sendErr(res, code, message, details) {
+        const status = code || 500;
+        return res.status(status).json({ success:false, error:{ code:status, message, details }});
+      }
+  - util: "server/lib/log.ts"
+    content: |
+      import pino from 'pino';
+      export const logger = pino({
+        level: process.env.LOG_LEVEL || 'info',
+        redact: ['req.headers.authorization','res.headers.authorization','process.env','config.db.password','config.supabase.serviceKey']
+      });
+  - util: "server/env.ts"
+    content: |
+      import { z } from 'zod';
+      export const Env = z.object({
+        NODE_ENV: z.enum(['development','test','production']),
+        PORT: z.string().default('3000'),
+        ORIGINS: z.string().default('http://localhost:5173'),
+        SUPABASE_URL: z.string().url(),
+        SUPABASE_ANON_KEY: z.string(),
+        SUPABASE_SERVICE_ROLE_KEY: z.string(),
+        JWT_SECRET: z.string().min(32)  // used for optional server-only tokens
+      });
+      export const env = Env.parse(process.env);
+  - util: "server/lib/supabase.ts"
+    content: |
+      import { createClient } from '@supabase/supabase-js';
+      import { env } from '../env';
+      export function supabaseForUser(accessToken?: string) {
+        return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+          global: { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} }
+        });
+      }
+      export const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+  - middleware: "server/middleware/auth.ts"
+    content: |
+      import { Request, Response, NextFunction } from 'express';
+      import { supabaseForUser } from '../lib/supabase';
+      export interface AuthedRequest extends Request { user?: { id: string, email?: string } }
+      export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+        const hdr = req.headers['authorization'];
+        if (!hdr?.startsWith('Bearer ')) return res.status(401).json({ success:false, error:{ code:401, message:'Unauthorized' }});
+        const token = hdr.slice('Bearer '.length);
+        // lightweight verify via /user
+        const sb = supabaseForUser(token);
+        const { data: { user }, error } = await sb.auth.getUser();
+        if (error || !user) return res.status(401).json({ success:false, error:{ code:401, message:'Unauthorized' }});
+        (req as AuthedRequest).user = { id: user.id, email: user.email ?? undefined };
+        return next();
+      }
+  - router: "server/routes/index.ts"
+    changes:
+      - "Export apiRouter; mount subrouters under /v1: /auth, /organizations, /users, /orders, /files."
+      - "No duplicate imports; inventory consumed by scripts/verify-routes.cjs."
+  - router: "server/routes/auth/index.ts"
+    content: |
+      import { Router } from 'express';
+      import { supabaseAdmin } from '../../lib/supabase';
+      import { sendOk, sendErr } from '../../lib/http';
+      const r = Router();
+      r.post('/login', async (req, res) => {
+        const { email, password } = req.body || {};
+        if (!email || !password) return sendErr(res, 400, 'Email and password required');
+        const { data, error } = await supabaseAdmin.auth.signInWithPassword({ email, password });
+        if (error) return sendErr(res, 401, 'Invalid credentials');
+        return sendOk(res, { accessToken: data.session?.access_token, user: data.user });
+      });
+      r.post('/register', async (req, res) => {
+        const { email, password, fullName } = req.body || {};
+        if (!email || !password) return sendErr(res, 400, 'Email and password required');
+        const { data, error } = await supabaseAdmin.auth.signUp({ email, password, options:{ data:{ full_name: fullName } }});
+        if (error) return sendErr(res, 400, error.message);
+        return sendOk(res, { user: data.user });
+      });
+      r.post('/logout', (_req, res) => sendOk(res, { ok:true }));
+      export default r;
+  - router: "server/routes/organizations/index.ts"
+    changes:
+      - "All endpoints under /api/v1/organizations use requireAuth (except list if intended public)."
+      - "DTO validation via zod for create/update; coerce universalDiscounts {}; colorPalette length ≤ 12; hex/hsl format."
+      - "Create: insert org; trigger assigns admin role if user is authed (RLS path when using supabaseForUser)."
+      - "List: supports ?q ?limit ?offset; returns { success, data, count }."
+      - "Summary: call RPC org_summary(orgId, requesterId) to avoid N+1."
+      - "Sport contacts: create/link users via supabaseAdmin; set contact_user_id; assign Customer role (user_roles)."
+      - "Branding: sign/list/delete with path prefix org/${orgId}/branding, validate filenames (no '../'), limit mime/size."
+      - "DELETE: return 200 or 204 with no error object."
+  - router: "server/routes/users/index.ts"
+    changes:
+      - "GET list: id, fullName (from full_name), email, roles (by org)."
+      - "PATCH /:id/email: supabaseAdmin.auth.admin.updateUserById; server returns success."
+      - "POST /:id/reset-password: generate random password, set via admin; DO NOT return the full password (only mask tail)."
+      - "PATCH /:id/roles: upsert/delete user_roles by slug; admin-only."
+      - "All routes require requireAuth + server-side role checks."
+  - router: "server/routes/orders/index.ts"
+    changes:
+      - "CRUD; accept/return statusCode only; validate against status_orders; all responses standardized."
+  - router: "server/routes/files/branding.ts"
+    content: |
+      import { Router } from 'express';
+      import { requireAuth } from '../../middleware/auth';
+      import { sendOk, sendErr, sendNoContent } from '../../lib/http';
+      import { supabaseForUser, supabaseAdmin } from '../../lib/supabase';
+      import path from 'path';
+      const ALLOWED = ['image/png','image/jpeg','image/webp','image/svg+xml','application/pdf'];
+      function safeName(name:string){ if(name.includes('..')||name.startsWith('/')||name.includes('\\')) throw new Error('invalid_name'); return name.replace(/[^a-zA-Z0-9._-]/g,'_'); }
+      const r = Router();
+      r.use(requireAuth);
+      r.post('/:id/branding-files/sign', async (req:any, res) => {
+        try {
+          const { files=[], ttlSeconds=600 } = req.body||{};
+          const orgId = req.params.id;
+          const sb = supabaseForUser(req.headers.authorization?.slice(7));
+          const out = [];
+          for (const f of files) {
+            const name = safeName(f.name);
+            const key = `org/${orgId}/branding/${name}`;
+            const { data, error } = await sb.storage.from('app').createSignedUploadUrl(key, { upsert:true, expiresIn: ttlSeconds });
+            if (error) return sendErr(res, 400, error.message);
+            out.push({ name, uploadUrl: data?.signedUrl, accessPath: key });
+          }
+          return sendOk(res, out);
+        } catch(e:any){ return sendErr(res, 400, e.message); }
+      });
+      r.get('/:id/branding-files', async (req:any, res) => {
+        const orgId = req.params.id;
+        const sb = supabaseForUser(req.headers.authorization?.slice(7));
+        const { data, error } = await sb.storage.from('app').list(`org/${orgId}/branding`, { limit: 100 });
+        if (error) return sendErr(res, 400, error.message);
+        return sendOk(res, data?.map(f=>({ name:f.name, size:f.metadata?.size, updatedAt:f.updated_at })));
+      });
+      r.delete('/:id/branding-files', async (req:any, res) => {
+        const orgId = req.params.id;
+        const { names=[] } = req.body||{};
+        const keys = names.map((n:string)=>`org/${orgId}/branding/${safeName(n)}`);
+        const { error } = await supabaseAdmin.storage.from('app').remove(keys);
+        if (error) return sendErr(res, 400, error.message);
+        return sendNoContent(res);
+      });
+      export default r;
+  - health_metrics:
+      add_routes:
+        - path: "/healthz"   # liveness
+          behavior: "return 200 { status:'ok', version, uptimeSec } and DB ping if possible"
+        - path: "/metrics"   # Prometheus (optional stub)
+          behavior: "expose basic process metrics; histogram for http durations"
+  - logging_tracing:
+      requirements:
+        - "attach X-Request-Id; log at request start/end with duration"
+        - "redact Authorization and secrets; never log passwords or tokens"
+
+########################################################################################################
+# 4) UI DELTA — restore routing; error boundaries; auth; organizational UX; users admin; quotes; 404
+########################################################################################################
+ui_delta:
+  - files:
+      - "client/src/App.tsx"
+      - "client/src/routes.tsx"
+      - "client/src/layouts/AppLayout.tsx"
+      - "client/src/components/ErrorBoundary.tsx"
+      - "client/src/auth/AuthProvider.tsx"
+      - "client/src/auth/ProtectedRoute.tsx"
+      - "client/src/lib/api.ts"
+      - "client/src/lib/queryClient.ts"
+    changes:
+      - "Replace broken App.tsx — mount <BrowserRouter><AppRoutes/></BrowserRouter> with <ErrorBoundary> and <AppLayout>."
+      - "AppRoutes: React Router v6 lazy routes for Home, Organizations (list/create/edit/detail), Users (admin), Quotes, 404."
+      - "AuthProvider: manage Supabase auth session; expose user + token; persist session."
+      - "ProtectedRoute: redirects unauthenticated users to /login."
+      - "api.ts: single fetch wrapper that attaches Authorization bearer, adds X-Request-Id, decodes unified errors, retries safe GET 1x."
+      - "queryClient.ts: TanStack Query config (staleTime defaults, retry:2 for GET, proper cache invalidation hooks)."
+      - "Install global toasts for success/error feedback."
+  - organizations:
+      files:
+        - "client/src/pages/organizations/List.tsx"
+        - "client/src/pages/organizations/CreateWizard.tsx"
+        - "client/src/pages/organizations/Detail.tsx"
+        - "client/src/components/OrgQuickViewDialog.tsx"
+        - "client/src/components/BrandingDropzone.tsx"
+      changes:
+        - "List: paginated table; search q; quick view button opens dialog."
+        - "CreateWizard: 3 steps; colorPalette chips-multi (≤12, hex/hsl validation); universalDiscounts defaults to {}; Step 3 sport contacts emails with dedupe; on submit, API creates org and Customer-role users as needed."
+        - "Detail: uses /api/v1/organizations/:id/summary; renders brand colors, color chips, universalDiscounts, notes."
+        - "OrgQuickViewDialog: shadcn Dialog + Tabs (Overview, Branding, Contacts) with ScrollArea; mobile responsive; ESC/backdrop; no overflow."
+        - "BrandingDropzone: requests signed URLs; uploads via PUT; shows grid list; delete action; previews images; pdf/svg icon fallback."
+  - users_admin:
+      files:
+        - "client/src/pages/users/UsersPage.tsx"
+        - "client/src/pages/users/EditUserDrawer.tsx"
+      changes:
+        - "Users grid: fullName, email, roles chips; actions Edit (drawer)."
+        - "Edit email (PATCH); Reset Password (POST) with masked confirmation; Roles tab toggles Customer/Admin per org."
+  - quotes:
+      files:
+        - "client/src/pages/quotes/QuotesPage.tsx"
+      changes:
+        - "Restore basic quotes list/create stub using API contract; lazy route."
+  - auth_pages:
+      files:
+        - "client/src/pages/auth/LoginPage.tsx"
+        - "client/src/pages/auth/RegisterPage.tsx"
+      changes:
+        - "Forms with react-hook-form + zod; on success, save session in AuthProvider and redirect."
+  - errors:
+      files:
+        - "client/src/pages/misc/NotFound.tsx"
+      changes:
+        - "Return friendly 404 page."
+  - style_rules:
+      enforce:
+        - "Use shadcn + Tailwind; forms use react-hook-form + zod."
+        - "No raw fetch in components; always use lib/api.ts."
+        - "ESLint rule to ban imports from client/_legacy."
+
+########################################################################################################
+# 5) CONFIG & BUILD — ts/vite alias parity; env validation; preflight hardening
+########################################################################################################
+config_delta:
+  - tsconfig:
+      actions:
+        - "Ensure paths: '@/*' -> ['client/src/*'] and '@server/*' -> ['server/*'] and '@shared/*' -> ['shared/*']"
+  - vite:
+      actions:
+        - "vite.config.ts: align resolve.alias with tsconfig; SPA 404 fallback; gzip plugin for prod if used."
+  - env:
+      actions:
+        - "Use server/env.ts zod schema to validate required env at boot; crash early if missing in production."
+  - preflight:
+      file: "scripts/preflight.cjs"
+      append_rules: |
+        // Block legacy edits
+        if (files.some(p => p.startsWith('client/_legacy/'))) {
+          console.error('❌ Preflight: edits to client/_legacy are forbidden.'); process.exit(1);
+        }
+        // Require CR for sensitive changes
+        const sensitive = files.some(p => p.startsWith('server/routes/') || p.startsWith('shared/') || p.startsWith('db/migrations'));
+        if (sensitive && !files.some(p => p.startsWith('architecture/crs/') && p.endsWith('.yaml'))) {
+          console.error('❌ Preflight: provide a CR YAML in /architecture/crs/ for server/schema changes.'); process.exit(1);
+        }
+        // Verify routes (no duplicates)
+        try { require('child_process').execSync('node scripts/verify-routes.cjs', {stdio:'inherit'}); } catch { process.exit(1); }
+        // Alias parity check (tsconfig vs vite)
+        // (Implement a small comparator or reuse existing script if present)
+
+  - route_verify:
+      file: "scripts/verify-routes.cjs"
+      content: |
+        #!/usr/bin/env node
+        const fs=require('fs'), path=require('path');
+        const root=path.join(process.cwd(),'server','routes');
+        function walk(d){return fs.readdirSync(d).flatMap(f=>{const p=path.join(d,f);return fs.statSync(p).isDirectory()?walk(p):[p];});}
+        const files = fs.existsSync(root)?walk(root).filter(f=>/\.(ts|js)$/.test(f)):[];
+        const set=new Set(); let dup=false;
+        for (const f of files){ const key=path.relative(root,f).replace(/\\/g,'/'); if(set.has(key)){ console.error('Duplicate route file',key); dup=true;} set.add(key); }
+        if (dup) process.exit(1); console.log('Routes verified OK');
+
+########################################################################################################
+# 6) TESTS — unit, integration, E2E; mocks; coverage thresholds
+########################################################################################################
+tests:
+  setup:
+    - "server/tests/setup.ts (vitest+supertest): spin ephemeral test DB or use Supabase test proj; seed roles/status; mock supabaseAdmin with local stubs."
+    - "client/src/tests/setup.ts (vitest + @testing-library/react): install MSW for API mocking."
+  unit:
+    - "server: http helpers (sendOk/sendErr), validators (zod schemas), storage filename sanitizer."
+    - "client: api.ts error decoding; AuthProvider session transitions; OrgQuickView rendering."
+  integration_api:
+    - "Auth: /api/v1/auth/login, protected route returns 401 w/out token, 200 w/ token."
+    - "Organizations: create/list/summary; sport contacts create/link users; Customer role assigned; delete returns 204."
+    - "Users: list; patch email; reset password (mock); roles patch."
+    - "Orders: statusCode create/patch/get path happy & invalid code errors."
+  e2e:
+    - "Login → create org with colors → add sport contacts → open Quick View → upload branding → verify list refresh."
+    - "Users admin: edit email; reset password; toggle roles; verify list updates."
+    - "Quotes page basic flow opens and submits stub form."
+  coverage_thresholds:
+    lines: 60
+    statements: 60
+    branches: 50
+    functions: 60
+
+########################################################################################################
+# 7) SECURITY — headers, cors, rate limits, injection, file types, secrets
+########################################################################################################
+security:
+  headers:
+    - "helmet() enabled; HSTS in production; disable x-powered-by."
+    - "CSP (report-only initially) with self origins; tighten after QA."
+  cors:
+    - "development: http://localhost:5173 only; production: ORIGINS env (comma-separated). No wildcard."
+  rate_limit:
+    - "global 200/15m/IP; auth/login 10/min/IP; file-upload 60/15m/IP."
+  input_validation:
+    - "zod validation for all request bodies and query params; reject unexpected fields; sanitize filenames."
+  sql_safety:
+    - "Use parameterized queries or RPC; forbid string concatenated SQL. ESLint rule if feasible."
+  uploads:
+    - "MIME allowlist: image/png, image/jpeg, image/webp, image/svg+xml, application/pdf; max 10MB; signed URLs TTL 5–10 min."
+    - "Optional malware-scanning hook (documented stub)."
+  secrets:
+    - "No secrets in logs; Pino redact list includes Authorization and env keys."
+  audit:
+    - "Write to audit_logs (future); at minimum log sensitive actions with userId and requestId."
+
+########################################################################################################
+# 8) PERFORMANCE — N+1 elimination, caching, compression, pooling
+########################################################################################################
+performance:
+  db:
+    - "Use org_summary RPC to replace N+1; add indexes (above)."
+    - "Ensure connection pooling (via supabase-js/PostgREST) for RLS-bound data; avoid raw pg connections for user-scoped requests."
+  server:
+    - "Enable compression(); paginate all list endpoints with sane defaults; avoid loading full tables."
+  client:
+    - "Route-based code splitting; lazy() + Suspense; tree-shake unused components; avoid legacy imports."
+  images:
+    - "Downscale previews client-side where possible; store originals in Storage; (optional future: thumbnail lambda)."
+  caching:
+    - "Set TanStack cache times by entity; invalidate on mutations via query keys; send ETag/Cache-Control for GETs if feasible."
+
+########################################################################################################
+# 9) CI/CD — GitHub Actions; quality gates; security scan
+########################################################################################################
+ci_cd:
+  github_actions:
+    add_file: ".github/workflows/ci.yml"
+    content: |
+      name: CI
+      on: [push, pull_request]
+      jobs:
+        build:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with: { node-version: '20' }
+            - run: npm ci
+            - run: npm run preflight
+            - run: npm run check   # tsc + eslint + maps
+            - run: npm test -- --run
+            - run: npm run build --workspaces=false
+            - run: npm audit --production --audit-level=high
+        e2e:
+          needs: build
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with: { node-version: '20' }
+            - run: npm ci
+            - run: npm run test:e2e -- --headed=false
+########################################################################################################
+# 10) MONITORING & HEALTH
+########################################################################################################
+monitoring:
+  endpoints:
+    - "/healthz returns 200 {status:'ok', version, uptimeSec} (plus optional DB ping)"
+    - "/metrics exposes Prometheus counters/histograms (optional gate via env)"
+  logging:
+    - "pino JSON logs with requestId; trace errors with stack; environment-level log level"
+  alerting:
+    - "Document integration steps for Sentry/Datadog (stubs only in code)."
+
+########################################################################################################
+# 11) BACKUPS & DR — docs + scripts
+########################################################################################################
+backups:
+  scripts:
+    - path: "scripts/backup-db.sh"
+      content: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # Usage: PGURL=postgres://... ./scripts/backup-db.sh
+        : "${PGURL:?Need PGURL env var (service role connection)}"
+        ts=$(date +%Y%m%d_%H%M%S)
+        pg_dump --clean --if-exists --no-owner "$PGURL" > "backups/db_${ts}.sql"
+        echo "Backup written to backups/db_${ts}.sql"
+  docs:
+    - "Enable Supabase automated backups; monthly PITR if available; quarterly restore drills."
+
+########################################################################################################
+# 12) DOCUMENTATION — truthful, complete
+########################################################################################################
+documentation:
+  files:
+    - path: "ARCHITECTURE.md"
+      content: |
+        # Architecture
+        - Frontend: React + React Router v6, shadcn + Tailwind, TanStack Query, react-hook-form + zod.
+        - Backend: Express, Supabase Auth & Storage, unified API contract, logging/metrics/health.
+        - Data: Postgres (Supabase); RLS enforced via supabase-js with user token; admin ops via service role.
+        - Mapping: DB snake_case; DTO/UI camelCase; use dbToDto/dtoToDb.
+        - Routing: /api/v1 only; single apiRouter; no duplicate mounts.
+        - Security: helmet, strict CORS, rate limiting, validated inputs, secure uploads.
+        - Perf: summary RPC, indexes, compression, pagination, code splitting.
+    - path: "API.md"
+      content: |
+        # API v1
+        - Contract: { success, data?, count?, error? }, HTTP codes standard.
+        - Auth: /api/v1/auth/login, /register, /logout.
+        - Organizations:
+          - GET /api/v1/organizations?q&limit&offset
+          - POST /api/v1/organizations
+          - GET /api/v1/organizations/:id/summary
+          - POST /api/v1/organizations/:id/branding-files/sign
+          - GET /api/v1/organizations/:id/branding-files
+          - DELETE /api/v1/organizations/:id/branding-files
+        - Users:
+          - GET /api/v1/users
+          - PATCH /api/v1/users/:id/email
+          - POST /api/v1/users/:id/reset-password
+          - PATCH /api/v1/users/:id/roles
+        - Orders:
+          - CRUD with statusCode only; validate against status_orders
+        - Errors: examples for 400/401/403/404/500
+    - path: "CONTRIBUTING.md"
+      content: |
+        # Contributing
+        - CR-first workflow; add a CR YAML under /architecture/crs/.
+        - Edit architecture/context/.PLAN.md before sensitive changes; fill .IMPACT.md after.
+        - Run: npm run preflight && npm run check && npm test && npm run test:e2e before PR.
+        - Style: ESLint + Prettier; TS strict; no client/_legacy.
+    - path: "MIGRATIONS.md"
+      content: |
+        # Migrations
+        - Single source at db/migrations. Old paths ./migrations and ./supabase/migrations are deprecated.
+        - Use idempotent SQL in numbered files. Run in order. Preflight blocks new files elsewhere.
+
+########################################################################################################
+# 13) CLEANUP — dead code & legacy quarantine
+########################################################################################################
+cleanup:
+  actions:
+    - "Remove any routes/pages duplicated or commented; keep only canonical."
+    - "Exclude client/_legacy from build; add ESLint no-restricted-imports for */_legacy/*."
+    - "Remove unused imports across repo; ESLint no-unused-vars/no-unused-imports."
+
+########################################################################################################
+# 14) SAFETY CHECKS — quality gates that must pass before success
+########################################################################################################
+safety_checks:
+  - "App boots with /healthz = 200 and no unhandled promise rejections."
+  - "All API responses match contract; DELETE returns 200/204 with no error payload."
+  - "ESLint clean; TypeScript no errors; alias parity OK; preflight OK."
+  - "Auth: protected routes 401 w/out token; 200 with valid token."
+  - "Organizations: create/list/summary ok; sport contacts create customers; branding uploads validated."
+  - "Users admin: list/edit email/reset password/roles; success toasts; no false error on delete."
+  - "Orders: statusCode only; invalid code => 400."
+  - "No SQL injection via dynamic inputs (validated & parameterized)."
+  - "CORS locked in production to ORIGINS; no wildcard."
+  - "E2E happy paths pass; coverage thresholds met."
+
+########################################################################################################
+# 15) NOTES — no mercy: zero drift allowed
+########################################################################################################
+notes: |
+  - This CR intentionally replaces the broken routing, installs real auth, and standardizes all layers.
+  - Drizzle direct PG access must not be used for user-scoped data; use supabase-js with bearer to enforce RLS.
+  - For multi-step operations that must be atomic, prefer SQL RPC (SECURITY DEFINER) or explicit transactions.
+  - All new features must follow: Domain → Migration → DTO → API → UI → Tests → Docs.

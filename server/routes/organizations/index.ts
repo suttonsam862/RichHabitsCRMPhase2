@@ -6,7 +6,8 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
 import { organizations } from '@shared/schema';
 import { sql, eq, and, or, ilike, desc, asc } from 'drizzle-orm';
-import { sendSuccess, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { listBrandingFiles } from '../../lib/storage';
+import { sendSuccess, sendOk, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 
 // DTO <-> DB field mappings for camelCase <-> snake_case conversion
 const DTO_TO_DB_MAPPING = {
@@ -125,7 +126,7 @@ router.get('/', asyncHandler(async (req, res) => {
     // Map database rows to DTOs
     const data = results.map(dbRowToDto);
 
-    sendSuccess(res, data, total);
+    sendOk(res, data, total);
   } catch (error) {
     handleDatabaseError(res, error, 'list organizations');
   }
@@ -147,9 +148,139 @@ router.get('/:id', asyncHandler(async (req, res) => {
     }
 
     const mappedOrg = dbRowToDto(result[0]);
-    sendSuccess(res, mappedOrg);
+    sendOk(res, mappedOrg);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch organization');
+  }
+}));
+
+// Get organization summary with branding, contacts/sports, and users
+router.get('/:id/summary', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get organization basic info
+    const orgResult = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, id))
+      .limit(1);
+
+    if (orgResult.length === 0) {
+      return HttpErrors.notFound(res, 'Organization not found');
+    }
+
+    const organization = dbRowToDto(orgResult[0]);
+
+    // Get branding files
+    let brandingFiles: any[] = [];
+    try {
+      brandingFiles = await listBrandingFiles(id);
+    } catch (error) {
+      console.warn('Failed to load branding files:', error);
+      // Continue without branding files rather than failing the whole request
+    }
+
+    // Get sports contacts
+    const sportsContacts = await db.execute(sql`
+      SELECT 
+        os.id,
+        os.sport_id,
+        os.contact_name,
+        os.contact_email,
+        os.contact_phone,
+        os.contact_user_id,
+        s.name as sport_name,
+        s.emoji as sport_emoji,
+        u.full_name as contact_user_full_name,
+        u.email as contact_user_email
+      FROM org_sports os
+      LEFT JOIN sports s ON os.sport_id = s.id
+      LEFT JOIN users u ON os.contact_user_id = u.id
+      WHERE os.organization_id = ${id}
+      ORDER BY s.name
+    `);
+
+    // Get organization users with roles
+    const orgUsers = await db.execute(sql`
+      SELECT DISTINCT
+        u.id,
+        u.email,
+        u.full_name,
+        u.phone,
+        u.avatar_url,
+        u.is_active,
+        u.last_login,
+        COALESCE(
+          json_agg(
+            CASE WHEN r.id IS NOT NULL THEN
+              json_build_object(
+                'id', r.id,
+                'name', r.name,
+                'slug', r.slug,
+                'description', r.description
+              )
+            END
+          ) FILTER (WHERE r.id IS NOT NULL), 
+          '[]'::json
+        ) as roles
+      FROM users u
+      LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.org_id = ${id}
+      LEFT JOIN roles r ON ur.role_id = r.id
+      WHERE u.id IN (
+        SELECT DISTINCT user_id 
+        FROM user_roles 
+        WHERE org_id = ${id}
+      )
+      GROUP BY u.id, u.email, u.full_name, u.phone, u.avatar_url, u.is_active, u.last_login
+      ORDER BY u.full_name, u.email
+    `);
+
+    // Format sports contacts  
+    const sports = (sportsContacts as any).map((contact: any) => ({
+      id: contact.id,
+      sportId: contact.sport_id,
+      sportName: contact.sport_name,
+      sportEmoji: contact.sport_emoji,
+      contactName: contact.contact_name,
+      contactEmail: contact.contact_email,
+      contactPhone: contact.contact_phone,
+      contactUserId: contact.contact_user_id,
+      contactUserFullName: contact.contact_user_full_name,
+      contactUserEmail: contact.contact_user_email
+    }));
+
+    // Format users
+    const users = (orgUsers as any).map((user: any) => ({
+      id: user.id,
+      email: user.email,
+      fullName: user.full_name,
+      phone: user.phone,
+      avatarUrl: user.avatar_url,
+      isActive: user.is_active,
+      lastLogin: user.last_login ? new Date(user.last_login).toISOString() : null,
+      roles: user.roles || []
+    }));
+
+    // Get summary stats
+    const stats = {
+      sportsCount: sports.length,
+      usersCount: users.length,
+      brandingFilesCount: brandingFiles.length,
+      activeUsersCount: users.filter((u: any) => u.isActive).length
+    };
+
+    const summary = {
+      organization,
+      brandingFiles,
+      sports,
+      users,
+      stats
+    };
+
+    sendOk(res, summary);
+  } catch (error) {
+    handleDatabaseError(res, error, 'fetch organization summary');
   }
 }));
 
@@ -221,17 +352,17 @@ router.post('/',
             RETURNING id, email, full_name, phone
           `);
           
-          createdUser = userResult.rows[0];
+          createdUser = (userResult as any)[0];
 
           // Assign owner role
           const ownerRoleResult = await db.execute(sql`
             SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
           `);
 
-          if (ownerRoleResult.rows.length > 0) {
+          if ((ownerRoleResult as any).length > 0) {
             await db.execute(sql`
               INSERT INTO user_roles (user_id, org_id, role_id)
-              VALUES (${createdUser.id}, ${createdOrg.id}, ${ownerRoleResult.rows[0].id})
+              VALUES (${createdUser.id}, ${createdOrg.id}, ${(ownerRoleResult as any)[0].id})
               ON CONFLICT (user_id, org_id, role_id) DO NOTHING
             `);
           }
@@ -260,7 +391,7 @@ router.post('/',
         sportsCount: validatedData.sports?.length || 0
       };
       
-      sendSuccess(res, responseData, undefined, 201);
+      sendOk(res, responseData, undefined, 201);
     } catch (error) {
       handleDatabaseError(res, error, 'create organization');
     }
@@ -293,7 +424,7 @@ router.patch('/:id',
         .update(organizations)
         .set({
           ...mappedData,
-          updated_at: new Date()
+          updatedAt: new Date().toISOString()
         })
         .where(eq(organizations.id, id))
         .returning();
@@ -303,7 +434,7 @@ router.patch('/:id',
       }
 
       const mappedResult = dbRowToDto(result[0]);
-      sendSuccess(res, mappedResult);
+      sendOk(res, mappedResult);
     } catch (error) {
       handleDatabaseError(res, error, 'update organization');
     }

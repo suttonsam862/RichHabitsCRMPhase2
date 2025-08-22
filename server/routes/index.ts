@@ -7,6 +7,7 @@ import express from 'express';
 import { organizationsRouter } from './organizations/index';
 import { usersRouter } from './users/index';
 import { ordersRouter } from './orders/index';
+import { filesRouter } from './files/index';
 // Import additional routers as they become available
 // import { salesRouter } from './sales/index';
 // import { manufacturingRouter } from './manufacturing/index';  
@@ -31,6 +32,8 @@ apiRouter.get('/health', (req, res) => {
 apiRouter.use('/organizations', organizationsRouter);
 apiRouter.use('/users', usersRouter);
 apiRouter.use('/orders', ordersRouter);
+apiRouter.use('/files', filesRouter);
+// Legacy upload router (to be deprecated)
 apiRouter.use('/upload', uploadRouter);
 
 // Additional routers to be mounted as they become available
