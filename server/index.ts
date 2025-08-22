@@ -5,12 +5,10 @@
 
 import express from 'express';
 import { createServer } from 'http';
-import { apiRouter } from './routes/api';
+import { apiRouter } from './routes/index';
 import { setupVite, serveStatic } from './vite';
 import { errorHandler } from './middleware/error';
 import dotenv from 'dotenv';
-import organizationsRouter from './routes/organizations.js';
-import uploadRouter from './routes/upload.js';
 
 // Load environment variables
 dotenv.config();
@@ -31,12 +29,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mount API routes at /api
+// Mount canonical API router at /api - single source of truth
 app.use('/api', apiRouter);
-
-// API Routes
-app.use('/api/organizations', organizationsRouter);
-app.use('/api/upload', uploadRouter);
 
 // Error handling middleware
 app.use(errorHandler);

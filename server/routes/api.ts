@@ -9,7 +9,7 @@ import { usersRouter } from './users/index';
 import uploadRouter from './upload';
 // TODO: Fix TypeScript type imports in sales router before enabling
 // import { salesRouter } from './sales/index';
-// import { ordersRouter } from './orders/index';
+import { ordersRouter } from './orders/index';
 // import { manufacturingRouter } from './manufacturing/index';
 // import { catalogRouter } from './catalog/index';
 
@@ -29,9 +29,9 @@ router.get('/health', (req, res) => {
 router.use('/organizations', organizationsRouter);
 router.use('/users', usersRouter);
 router.use('/upload', uploadRouter);
-// TODO: Enable sales router after fixing TypeScript type import issues
+// TODO: Fix TypeScript type imports in sales router before enabling
 // router.use('/sales', salesRouter);
-// router.use('/orders', ordersRouter);
+router.use('/orders', ordersRouter);
 // router.use('/manufacturing', manufacturingRouter);
 // router.use('/catalog', catalogRouter);
 

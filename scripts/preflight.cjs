@@ -53,4 +53,12 @@ if (sensitive) {
   }
 }
 
+// ❌ Run route verification
+try {
+  execSync('node scripts/verify-routes.cjs', { stdio: 'inherit' });
+} catch (e) {
+  console.error('❌ Preflight: Route verification failed');
+  process.exit(1);
+}
+
 console.log('✅ Preflight OK');

@@ -28,6 +28,14 @@ export const OrganizationDTO = z.object({
   status: z.string().optional(),
   website: z.string().nullable().optional(),
   universalDiscounts: z.any().optional(),
+  colorPalette: z.array(
+    z.string().refine(
+      (color) => 
+        /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(color) || // hex: #RGB or #RRGGBB
+        /^\d+\s+\d+%\s+\d+%$/.test(color), // HSL: H S% L%
+      { message: "Color must be hex (#RGB or #RRGGBB) or HSL format (H S% L%)" }
+    )
+  ).max(12, "Maximum 12 colors allowed").optional().default([]),
   address: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   titleCardUrl: z.string().nullable().optional(),

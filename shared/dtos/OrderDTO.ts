@@ -15,7 +15,7 @@ export const OrderItemDTO = z.object({
   quantity: z.number(),
   unitPrice: z.number(),
   totalPrice: z.number(),
-  status_code: z.enum(['pending', 'design', 'approved', 'manufacturing', 'shipped', 'done']),
+  statusCode: z.enum(['pending', 'design', 'approved', 'manufacturing', 'shipped', 'done']),
   customizations: z.record(z.string(), z.string()).optional(),
 });
 
@@ -35,7 +35,7 @@ export const OrderDTO = z.object({
   customerName: z.string(),
   customerEmail: z.string().email(),
   customerPhone: z.string().optional(),
-  status_code: z.enum(['consultation', 'design', 'manufacturing', 'shipped', 'completed']),
+  statusCode: z.enum(['consultation', 'design', 'manufacturing', 'shipped', 'completed']),
   items: z.array(OrderItemDTO),
   totals: OrderTotalsDTO,
   shippingAddress: z.object({

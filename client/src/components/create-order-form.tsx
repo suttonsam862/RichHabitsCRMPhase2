@@ -41,7 +41,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
       organization_id: organizationId,
       order_number: "",
       customer_name: "",
-      status: "pending",
+      statusCode: "consultation",
       total_amount: 0,
       notes: "",
       items: [{ item: "", quantity: 1, price: 0 }],
@@ -57,8 +57,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
     mutationFn: (data: InsertOrder) =>
       apiRequest("/api/orders", {
         method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
+        data,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
@@ -83,7 +82,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
     let totalAmount = data.total_amount;
     if (!totalAmount && data.items.length > 0) {
       const calculated = data.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-      totalAmount = calculated.toFixed(2);
+      totalAmount = parseFloat(calculated.toFixed(2));
     }
 
     const orderData: InsertOrder = {
@@ -141,7 +140,7 @@ export function CreateOrderForm({ organizationId, onSuccess }: CreateOrderFormPr
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="status_code"
+            name="statusCode"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>

@@ -649,6 +649,24 @@ export const catalogItemManufacturers = pgTable("catalog_item_manufacturers", {
         primaryKey({ columns: [table.catalogItemId, table.manufacturerId], name: "catalog_item_manufacturers_pkey"}),
 ]);
 
+export const users = pgTable("users", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        email: text().notNull(),
+        fullName: text("full_name").notNull(),
+        phone: text(),
+        avatarUrl: text("avatar_url"),
+        isActive: boolean("is_active").default(true).notNull(),
+        lastLogin: timestamp("last_login", { withTimezone: true, mode: 'string' }),
+        preferences: jsonb().default({}).notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+        unique("users_email_key").on(table.email),
+        index("users_email_idx").using("btree", table.email.asc().nullsLast().op("text_ops")),
+        pgPolicy("users_select", { as: "permissive", for: "select", to: ["authenticated"] }),
+        pgPolicy("users_write", { as: "permissive", for: "all", to: ["authenticated"] }),
+]);
+
 export const userRoles = pgTable("user_roles", {
         userId: uuid("user_id").default(sql`auth.uid()`).notNull(),
         orgId: uuid("org_id").notNull(),

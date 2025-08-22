@@ -6,40 +6,64 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
 import { organizations } from '@shared/schema';
 import { sql, eq, and, or, ilike, desc, asc } from 'drizzle-orm';
+import { sendSuccess, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 
-// Explicit column selection for consistent API responses
-const cols = {
-  id: organizations.id,
-  name: organizations.name,
-  status: organizations.status,
-  logo_url: organizations.logoUrl,
-  title_card_url: organizations.titleCardUrl,
-  created_at: organizations.createdAt,
-  updated_at: organizations.updatedAt,
+// DTO <-> DB field mappings for camelCase <-> snake_case conversion
+const DTO_TO_DB_MAPPING = {
+  brandPrimary: 'brand_primary',
+  brandSecondary: 'brand_secondary',
+  emailDomain: 'email_domain', 
+  billingEmail: 'billing_email',
+  colorPalette: 'color_palette',
+  universalDiscounts: 'universal_discounts',
+  logoUrl: 'logo_url',
+  titleCardUrl: 'title_card_url',
+  addressLine1: 'address_line_1',
+  addressLine2: 'address_line_2',
+  postalCode: 'postal_code',
+  contactEmail: 'contact_email',
+  isBusiness: 'is_business',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 };
 
-function dbToDto(row: any): any {
+// Helper to map DB row to DTO
+function dbRowToDto(row: any): any {
   if (!row) return null;
 
+  const mapped = mapDbToDto(row, DTO_TO_DB_MAPPING);
+  
   return {
     id: row.id,
     name: row.name,
-    status: row.status,
-    logoUrl: row.logo_url,
-    titleCardUrl: row.title_card_url,
-    createdAt: row.created_at?.toISOString?.() ?? null,
-    updatedAt: row.updated_at?.toISOString?.() ?? null,
+    state: row.state,
+    city: row.city,
+    phone: row.phone,
+    email: row.email,
+    notes: row.notes,
+    website: row.website,
+    country: row.country,
+    status: row.is_business ? 'Business' : 'School',
+    ...mapped,
+    // Ensure arrays and objects are properly handled
+    colorPalette: row.color_palette || [],
+    universalDiscounts: row.universal_discounts || {},
   };
+}
+
+// Validate colorPalette colors (hex or HSL)
+function validateColorPalette(colors: string[]): boolean {
+  return colors.every(color => 
+    /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(color) || // hex: #RGB or #RRGGBB
+    /^\d+\s+\d+%\s+\d+%$/.test(color) // HSL: H S% L%
+  );
 }
 
 const router = express.Router();
 
 // Debug endpoint to check available columns - MUST be before /:id route
 router.get('/__columns', asyncHandler(async (req, res) => {
-  res.json({
-    success: true,
-    data: Object.keys(organizations)
-  });
+  sendSuccess(res, Object.keys(organizations));
 }));
 
 // List all organizations with filtering, sorting, and pagination
@@ -89,17 +113,8 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const total = Number(countResult[0]?.count || 0);
 
-    // Get paginated results with explicit column selection
+    // Get paginated results
     const results = await db
-      .select(cols)
-      .from(organizations)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(organizations.createdAt))
-      .limit(pageSizeNum)
-      .offset(offset);
-
-    // Get full organization data for mapping
-    const fullResults = await db
       .select()
       .from(organizations)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
@@ -108,44 +123,11 @@ router.get('/', asyncHandler(async (req, res) => {
       .offset(offset);
 
     // Map database rows to DTOs
-    const data = fullResults.map((org: any) => ({
-      id: org.id,
-      name: org.name,
-      state: org.state,
-      isBusiness: org.is_business || false,
-      logoUrl: org.logo_url,
-      titleCardUrl: org.title_card_url,
-      createdAt: org.created_at,
-      updatedAt: org.updated_at,
-      status: org.is_business ? 'Business' : 'School',
-      email: org.email,
-      phone: org.phone,
-      addressLine1: org.address_line_1,
-      addressLine2: org.address_line_2,
-      city: org.city,
-      postalCode: org.postal_code,
-      notes: org.notes,
-      universalDiscounts: org.universal_discounts || {},
-      brandPrimary: org.brand_primary,
-      brandSecondary: org.brand_secondary,
-      contactEmail: org.contact_email,
-      website: org.website,
-      billingEmail: org.billing_email
-    }));
+    const data = results.map(dbRowToDto);
 
-    // Return response envelope
-    res.json({
-      success: true,
-      data,
-      count: total
-    });
+    sendSuccess(res, data, total);
   } catch (error) {
-    console.error('Error fetching organizations:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch organizations',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleDatabaseError(res, error, 'list organizations');
   }
 }));
 
@@ -161,48 +143,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
       .limit(1);
 
     if (result.length === 0) {
-      return res.status(404).json({
-        error: 'Not found'
-      });
+      return HttpErrors.notFound(res, 'Organization not found');
     }
 
-    const org = result[0];
-
-    const mappedOrg = {
-      id: org.id,
-      name: org.name,
-      state: org.state,
-      isBusiness: org.is_business || false,
-      logoUrl: org.logo_url,
-      titleCardUrl: org.title_card_url,
-      createdAt: org.created_at,
-      updatedAt: org.updated_at,
-      email: org.email,
-      phone: org.phone,
-      addressLine1: org.address_line_1,
-      addressLine2: org.address_line_2,
-      city: org.city,
-      postalCode: org.postal_code,
-      notes: org.notes,
-      universalDiscounts: org.universal_discounts || {},
-      brandPrimary: org.brand_primary,
-      brandSecondary: org.brand_secondary,
-      contactEmail: org.contact_email,
-      website: org.website,
-      billingEmail: org.billing_email
-    };
-
-    res.json({
-      success: true,
-      data: mappedOrg
-    });
+    const mappedOrg = dbRowToDto(result[0]);
+    sendSuccess(res, mappedOrg);
   } catch (error) {
-    console.error('Error fetching organization:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch organization',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleDatabaseError(res, error, 'fetch organization');
   }
 }));
 
@@ -213,35 +160,44 @@ router.post('/',
     const validatedData = req.body;
 
     try {
+      // Validate colorPalette if provided
+      if (validatedData.colorPalette && validatedData.colorPalette.length > 0) {
+        if (!validateColorPalette(validatedData.colorPalette)) {
+          return HttpErrors.validationError(res, 
+            'Invalid colorPalette: colors must be hex (#RGB or #RRGGBB) or HSL format (H S% L%)')
+        }
+        if (validatedData.colorPalette.length > 12) {
+          return HttpErrors.validationError(res, 'colorPalette cannot have more than 12 colors');
+        }
+      }
+
+      // Map DTO fields to DB fields using helper
+      const mappedData = mapDtoToDb(validatedData, DTO_TO_DB_MAPPING);
+      
       // Prepare the organization data with proper field mapping
       const now = new Date();
       const orgData = {
         name: validatedData.name,
-        logo_url: validatedData.logoUrl || null,
         state: validatedData.state || null,
         phone: validatedData.phone || null,
         email: validatedData.email || null,
-        is_business: validatedData.isBusiness || false,
-        notes: validatedData.notes || null,
-        universal_discounts: validatedData.universalDiscounts || {},
-        // Address fields
-        address_line_1: validatedData.addressLine1 || validatedData.address || null,
-        address_line_2: validatedData.addressLine2 || null,
         city: validatedData.city || null,
-        postal_code: validatedData.postalCode || null,
-        country: validatedData.country || 'United States',
-        // Contact fields
-        contact_email: validatedData.contactEmail || validatedData.email || null,
-        billing_email: validatedData.billingEmail || null,
+        notes: validatedData.notes || null,
         website: validatedData.website || null,
-        // Branding fields
-        brand_primary: validatedData.brandPrimary || '#3B82F6',
-        brand_secondary: validatedData.brandSecondary || '#8B5CF6',
-        email_domain: validatedData.emailDomain || null,
-        title_card_url: validatedData.titleCardUrl || null,
+        country: validatedData.country || 'United States',
         status: 'active',
         created_at: now,
         updated_at: now,
+        // Mapped fields
+        ...mappedData,
+        // Ensure proper defaults
+        universal_discounts: validatedData.universalDiscounts || {},
+        color_palette: validatedData.colorPalette || [],
+        brand_primary: validatedData.brandPrimary || '#3B82F6',
+        brand_secondary: validatedData.brandSecondary || '#8B5CF6',
+        is_business: validatedData.isBusiness || false,
+        // Handle address fallback
+        address_line_1: validatedData.addressLine1 || validatedData.address || null,
       };
 
       const result = await db
@@ -298,46 +254,15 @@ router.post('/',
         }
       }
 
-      res.status(201).json({
-        success: true,
-        data: {
-          organization: createdOrg,
-          user: createdUser,
-          sportsCount: validatedData.sports?.length || 0
-        }
-      });
+      const responseData = {
+        organization: dbRowToDto(createdOrg),
+        user: createdUser,
+        sportsCount: validatedData.sports?.length || 0
+      };
+      
+      sendSuccess(res, responseData, undefined, 201);
     } catch (error) {
-      console.error('Error creating organization:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        validatedData
-      });
-
-      // Handle specific database errors
-      if (error instanceof Error) {
-        if (error.message.includes('duplicate key') || error.message.includes('already exists')) {
-          return res.status(409).json({
-            success: false,
-            error: 'Duplicate organization name',
-            message: `An organization with the name "${validatedData.name}" already exists`
-          });
-        }
-
-        if (error.message.includes('invalid input syntax') || error.message.includes('ERR_INVALID_ARG_TYPE')) {
-          return res.status(400).json({
-            success: false,
-            error: 'Invalid data format',
-            message: 'One or more fields contain invalid data format'
-          });
-        }
-      }
-
-      return res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Failed to create organization'
-      });
+      handleDatabaseError(res, error, 'create organization');
     }
   })
 );
@@ -350,33 +275,37 @@ router.patch('/:id',
     const updateData = req.body;
 
     try {
+      // Validate colorPalette if provided
+      if (updateData.colorPalette && updateData.colorPalette.length > 0) {
+        if (!validateColorPalette(updateData.colorPalette)) {
+          return HttpErrors.validationError(res, 
+            'Invalid colorPalette: colors must be hex (#RGB or #RRGGBB) or HSL format (H S% L%)')
+        }
+        if (updateData.colorPalette.length > 12) {
+          return HttpErrors.validationError(res, 'colorPalette cannot have more than 12 colors');
+        }
+      }
+
+      // Map DTO fields to DB fields
+      const mappedData = mapDtoToDb(updateData, DTO_TO_DB_MAPPING);
+      
       const result = await db
         .update(organizations)
         .set({
-          ...updateData,
-          updatedAt: new Date()
+          ...mappedData,
+          updated_at: new Date()
         })
         .where(eq(organizations.id, id))
         .returning();
 
       if (result.length === 0) {
-        return res.status(404).json({
-          success: false,
-          error: 'Organization not found'
-        });
+        return HttpErrors.notFound(res, 'Organization not found');
       }
 
-      res.json({
-        success: true,
-        data: result[0]
-      });
+      const mappedResult = dbRowToDto(result[0]);
+      sendSuccess(res, mappedResult);
     } catch (error) {
-      console.error('Error updating organization:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to update organization',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      handleDatabaseError(res, error, 'update organization');
     }
   })
 );
@@ -392,20 +321,12 @@ router.delete('/:id', asyncHandler(async (req, res) => {
       .returning();
 
     if (result.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Organization not found'
-      });
+      return HttpErrors.notFound(res, 'Organization not found');
     }
 
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting organization:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to delete organization',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleDatabaseError(res, error, 'delete organization');
   }
 }));
 

@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOrganizationSchema } from "../../../shared/supabase-schema";
-import type { InsertOrganization } from "../../../shared/supabase-schema";
+import { CreateOrganizationDTO } from "../../../shared/dtos/OrganizationDTO";
+import { z } from "zod";
 
 interface CreateOrganizationFormProps {
   onSuccess: () => void;
@@ -18,22 +21,23 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const form = useForm<InsertOrganization>({
-    resolver: zodResolver(insertOrganizationSchema),
+  const form = useForm<CreateOrganizationDTO>({
+    resolver: zodResolver(CreateOrganizationDTO),
     defaultValues: {
       name: "",
       state: "",
-      logo_url: "",
+      logoUrl: "",
       address: "",
       phone: "",
       email: "",
       notes: "",
       universalDiscounts: {},
+      colorPalette: [],
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: InsertOrganization) =>
+    mutationFn: (data: CreateOrganizationDTO) =>
       apiRequest('/api/organizations', { method: 'POST', data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
@@ -52,11 +56,11 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
     },
   });
 
-  const onSubmit = (data: InsertOrganization) => {
+  const onSubmit = (data: CreateOrganizationDTO) => {
     // Clean up empty strings to null for optional fields
     const cleanedData = {
       ...data,
-      logo_url: data.logo_url || undefined,
+      logoUrl: data.logoUrl || undefined,
       address: data.address || undefined,
       phone: data.phone || undefined,
       email: data.email || undefined,
@@ -110,7 +114,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
 
         <FormField
           control={form.control}
-          name="logo_url"
+          name="logoUrl"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Logo URL</FormLabel>
@@ -144,6 +148,91 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
               <FormMessage />
             </FormItem>
           )}
+        />
+
+        <FormField
+          control={form.control}
+          name="colorPalette"
+          render={({ field }) => {
+            const [colorInput, setColorInput] = useState("");
+            const colors = field.value || [];
+
+            const addColor = () => {
+              const color = colorInput.trim();
+              if (color && !colors.includes(color) && colors.length < 12) {
+                // Basic validation for hex colors
+                if (/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(color)) {
+                  field.onChange([...colors, color]);
+                  setColorInput("");
+                }
+              }
+            };
+
+            const removeColor = (colorToRemove: string) => {
+              field.onChange(colors.filter(c => c !== colorToRemove));
+            };
+
+            return (
+              <FormItem>
+                <FormLabel>Color Palette (Optional)</FormLabel>
+                <FormControl>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="#3B82F6 or #RGB"
+                        className="glass"
+                        value={colorInput}
+                        onChange={(e) => setColorInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addColor();
+                          }
+                        }}
+                        data-testid="input-color-palette"
+                      />
+                      <Button
+                        type="button"
+                        onClick={addColor}
+                        variant="outline"
+                        size="sm"
+                        data-testid="button-add-color"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {colors.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {colors.map((color, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="flex items-center gap-1 pr-1"
+                            data-testid={`badge-color-${index}`}
+                          >
+                            <div
+                              className="w-3 h-3 rounded-full border"
+                              style={{ backgroundColor: color }}
+                            />
+                            {color}
+                            <button
+                              type="button"
+                              onClick={() => removeColor(color)}
+                              className="ml-1 hover:text-red-500"
+                              data-testid={`button-remove-color-${index}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

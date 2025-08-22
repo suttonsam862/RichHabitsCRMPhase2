@@ -1,22 +1,43 @@
 import express from 'express';
-import { z } from 'zod';
+import { CreateUserDTO, UpdateUserDTO, UserDTO } from '@shared/dtos';
+import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
-import { sql, eq } from 'drizzle-orm';
-
-// User schema
-const CreateUserSchema = z.object({
-  email: z.string().email(),
-  full_name: z.string().min(1),
-  phone: z.string().optional(),
-  avatar_url: z.string().url().optional(),
-});
-
-const UpdateUserSchema = CreateUserSchema.partial();
+import { users } from '@shared/schema';
+import { sql, eq, ilike, desc } from 'drizzle-orm';
+import { sendSuccess, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 
 const router = express.Router();
 
-// List all users with pagination
+// DTO <-> DB field mappings for camelCase <-> snake_case conversion
+const DTO_TO_DB_MAPPING = {
+  fullName: 'full_name',
+  avatarUrl: 'avatar_url',
+  isActive: 'is_active',
+  lastLogin: 'last_login',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+};
+
+// Helper to map DB row to DTO
+function dbRowToDto(row: any): any {
+  if (!row) return null;
+
+  const mapped = mapDbToDto(row, DTO_TO_DB_MAPPING);
+  
+  return {
+    id: row.id,
+    email: row.email,
+    phone: row.phone,
+    preferences: row.preferences || {},
+    ...mapped,
+    createdAt: row.created_at?.toISOString?.() ?? null,
+    updatedAt: row.updated_at?.toISOString?.() ?? null,
+    lastLogin: row.last_login?.toISOString?.() ?? null,
+  };
+}
+
+// List all users with pagination and search
 router.get('/', asyncHandler(async (req, res) => {
   const {
     q = '',
@@ -29,95 +50,38 @@ router.get('/', asyncHandler(async (req, res) => {
   const offset = (pageNum - 1) * pageSizeNum;
 
   try {
-    // Minimal implementation - using raw query until users table is added to schema
-    let query = 'SELECT id, name, email, role, created_at, updated_at FROM users';
-    let countQuery = 'SELECT COUNT(*) as count FROM users';
-    let params: any[] = [];
-
+    // Build where conditions
+    const conditions = [];
+    
+    // Search query by name or email
     if (q && typeof q === 'string' && q.trim()) {
-      query += ` WHERE name ILIKE '%${q.trim()}%'`;
-      countQuery += ` WHERE name ILIKE '%${q.trim()}%'`;
+      const searchTerm = `%${q.trim()}%`;
+      conditions.push(sql`(${users.fullName} ILIKE ${searchTerm} OR ${users.email} ILIKE ${searchTerm})`);
     }
 
-    query += ` ORDER BY created_at DESC LIMIT ${pageSizeNum} OFFSET ${offset}`;
+    // Get total count
+    const countResult = await db
+      .select({ count: sql`count(*)` })
+      .from(users)
+      .where(conditions.length > 0 ? sql`${conditions[0]}` : undefined);
 
-    const countResult = await db.execute(sql.raw(countQuery));
-    const total = Number((countResult as any)[0]?.count || 0);
+    const total = Number(countResult[0]?.count || 0);
 
-    const results = await db.execute(sql.raw(query));
-    const rows = (results as any) || [];
+    // Get paginated results
+    const results = await db
+      .select()
+      .from(users)
+      .where(conditions.length > 0 ? sql`${conditions[0]}` : undefined)
+      .orderBy(desc(users.createdAt))
+      .limit(pageSizeNum)
+      .offset(offset);
 
-    // Map to camelCase
-    const data = rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      role: row.role,
-      createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
-      updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined
-    }));
+    // Map database rows to DTOs
+    const data = results.map(dbRowToDto);
 
-    res.json({
-      success: true,
-      data,
-      count: total
-    });
+    sendSuccess(res, data, total);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.json({
-      success: true,
-      data: [],
-      count: 0,
-      warning: 'database query failed - returning empty result'
-    });
-  }
-}));
-
-// Create user
-router.post('/', asyncHandler(async (req, res) => {
-  const parseResult = CreateUserSchema.safeParse(req.body);
-
-  if (!parseResult.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed',
-      issues: parseResult.error.issues
-    });
-  }
-
-  const userData = parseResult.data;
-
-  try {
-    // Check if user already exists
-    const existingUser = await db.execute(sql`
-      SELECT id FROM users WHERE email = ${userData.email}
-    `);
-
-    if ((existingUser as any).length > 0) {
-      return res.status(409).json({
-        success: false,
-        error: 'User with this email already exists'
-      });
-    }
-
-    // Create user
-    const result = await db.execute(sql`
-      INSERT INTO users (email, full_name, phone, avatar_url)
-      VALUES (${userData.email}, ${userData.full_name}, ${userData.phone || null}, ${userData.avatar_url || null})
-      RETURNING id, email, full_name, avatar_url, phone, created_at, updated_at, is_active
-    `);
-
-    res.status(201).json({
-      success: true,
-      data: (result as any)[0]
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create user',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleDatabaseError(res, error, 'list users');
   }
 }));
 
@@ -126,86 +90,117 @@ router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await db.execute(sql`
-      SELECT id, email, full_name, avatar_url, phone, created_at, updated_at, is_active, last_login, preferences
-      FROM users 
-      WHERE id = ${id}
-    `);
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
 
-    if ((result as any).length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
+    if (result.length === 0) {
+      return HttpErrors.notFound(res, 'User not found');
     }
 
-    res.json({
-      success: true,
-      data: (result as any)[0]
-    });
+    const mappedUser = dbRowToDto(result[0]);
+    sendSuccess(res, mappedUser);
   } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch user',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleDatabaseError(res, error, 'fetch user');
   }
 }));
 
+// Create user
+router.post('/',
+  validateRequest({ body: CreateUserDTO }),
+  asyncHandler(async (req, res) => {
+    const validatedData = req.body;
+
+    try {
+      // Check if user already exists
+      const existingUser = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, validatedData.email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return HttpErrors.conflict(res, 'User with this email already exists');
+      }
+
+      // Map DTO fields to DB fields
+      const mappedData = mapDtoToDb(validatedData, DTO_TO_DB_MAPPING);
+      
+      // Prepare user data
+      const now = new Date();
+      const userData = {
+        email: validatedData.email,
+        phone: validatedData.phone || null,
+        preferences: {},
+        created_at: now,
+        updated_at: now,
+        ...mappedData
+      };
+
+      const result = await db
+        .insert(users)
+        .values(userData)
+        .returning();
+
+      const createdUser = dbRowToDto(result[0]);
+      sendSuccess(res, createdUser, undefined, 201);
+    } catch (error) {
+      handleDatabaseError(res, error, 'create user');
+    }
+  })
+);
+
 // Update user
-router.patch('/:id', asyncHandler(async (req, res) => {
+router.patch('/:id',
+  validateRequest({ body: UpdateUserDTO }),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    try {
+      // Map DTO fields to DB fields
+      const mappedData = mapDtoToDb(updateData, DTO_TO_DB_MAPPING);
+      
+      const result = await db
+        .update(users)
+        .set({
+          ...mappedData,
+          updated_at: new Date()
+        })
+        .where(eq(users.id, id))
+        .returning();
+
+      if (result.length === 0) {
+        return HttpErrors.notFound(res, 'User not found');
+      }
+
+      const mappedResult = dbRowToDto(result[0]);
+      sendSuccess(res, mappedResult);
+    } catch (error) {
+      handleDatabaseError(res, error, 'update user');
+    }
+  })
+);
+
+// Delete user
+router.delete('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const parseResult = UpdateUserSchema.safeParse(req.body);
-
-  if (!parseResult.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed',
-      issues: parseResult.error.issues
-    });
-  }
-
-  const updateData = parseResult.data;
 
   try {
-    // Build dynamic update query
-    const setClause = Object.entries(updateData)
-      .map(([key, value]) => `${key} = ${value === null ? 'NULL' : `'${value}'`}`)
-      .join(', ');
+    const result = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning();
 
-    if (!setClause) {
-      return res.status(400).json({
-        success: false,
-        error: 'No valid fields to update'
-      });
+    if (result.length === 0) {
+      return HttpErrors.notFound(res, 'User not found');
     }
 
-    const result = await db.execute(sql`
-      UPDATE users 
-      SET ${sql.raw(setClause)}, updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING id, email, full_name, avatar_url, phone, created_at, updated_at, is_active
-    `);
-
-    if ((result as any).length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: (result as any)[0]
-    });
+    res.status(204).send();
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update user',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    handleDatabaseError(res, error, 'delete user');
   }
 }));
 
