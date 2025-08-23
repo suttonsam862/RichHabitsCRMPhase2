@@ -37,7 +37,7 @@
 
   /* Glass Borders and Inputs */
   --border: hsla(220, 20%, 80%, 0.3);
-  --input: hsla(0, 0%, 100%, 0.3);
+  --input: hsla(0, 0%, 100%, 0.85);
   --ring: hsl(240, 80%, 60%);
 
   /* Chart Colors */
@@ -101,7 +101,7 @@
 
   /* Dark Glass Borders */
   --border: hsla(220, 15%, 25%, 0.4);
-  --input: hsla(220, 15%, 20%, 0.4);
+  --input: hsla(220, 15%, 95%, 0.9);
   --ring: hsl(240, 70%, 65%);
 
   /* Chart Colors */
