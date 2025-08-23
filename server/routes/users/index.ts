@@ -5,7 +5,11 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
 import { users } from '@shared/schema';
 import { sql, eq, ilike, desc } from 'drizzle-orm';
-import { sendSuccess, sendOk, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { sendSuccess, sendOk, sendErr, sendCreated, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { requireAuth, AuthedRequest } from '../../middleware/auth';
+import { supabaseAdmin } from '../../lib/supabase';
+import { logDatabaseOperation, logSecurityEvent } from '../../lib/log';
+import { z } from 'zod';
 
 const router = express.Router();
 
@@ -37,8 +41,21 @@ function dbRowToDto(row: any): any {
   };
 }
 
+// Validation schemas
+const updateEmailSchema = z.object({
+  email: z.string().email('Invalid email format')
+});
+
+const updateRolesSchema = z.object({
+  roles: z.array(z.object({
+    slug: z.string(),
+    orgId: z.string().uuid(),
+    action: z.enum(['add', 'remove'])
+  }))
+});
+
 // List all users with pagination and search
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const {
     q = '',
     page = '1',
@@ -85,8 +102,8 @@ router.get('/', asyncHandler(async (req, res) => {
   }
 }));
 
-// Get user by ID
-router.get('/:id', asyncHandler(async (req, res) => {
+// Get user by ID with roles
+router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {
@@ -100,17 +117,139 @@ router.get('/:id', asyncHandler(async (req, res) => {
       return HttpErrors.notFound(res, 'User not found');
     }
 
-    const mappedUser = dbRowToDto(result[0]);
+    // Get user roles
+    const rolesResult = await db.execute(sql`
+      SELECT r.id, r.name, r.slug, ur.org_id
+      FROM user_roles ur
+      JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = ${id}
+    `);
+    
+    const mappedUser = {
+      ...dbRowToDto(result[0]),
+      roles: rolesResult || []
+    };
     sendOk(res, mappedUser);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch user');
   }
 }));
 
+// PATCH /:id/email - Update user email
+router.patch('/:id/email', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Validate request body
+    const validation = updateEmailSchema.safeParse(req.body);
+    if (!validation.success) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Invalid email format', validation.error.flatten(), 400);
+    }
+    
+    const { email } = validation.data;
+    
+    // Update email using Supabase Admin
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { email });
+    
+    if (error) {
+      logSecurityEvent(req, 'USER_EMAIL_UPDATE_FAILED', { userId: id, error: error.message });
+      return sendErr(res, 'UPDATE_ERROR', error.message, undefined, 400);
+    }
+    
+    logDatabaseOperation(req, 'USER_EMAIL_UPDATED', 'users', { userId: id });
+    sendOk(res, { success: true });
+  } catch (error) {
+    handleDatabaseError(res, error, 'update user email');
+  }
+}));
+
+// POST /:id/reset-password - Reset user password
+router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Generate random password
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    // Update password using Supabase Admin
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { password });
+    
+    if (error) {
+      logSecurityEvent(req, 'USER_PASSWORD_RESET_FAILED', { userId: id, error: error.message });
+      return sendErr(res, 'UPDATE_ERROR', error.message, undefined, 400);
+    }
+    
+    logSecurityEvent(req, 'USER_PASSWORD_RESET', { userId: id, adminId: req.user?.id });
+    
+    // Only return masked version (first 3 chars)
+    const maskedPassword = password.substring(0, 3) + '*'.repeat(9);
+    sendOk(res, { 
+      success: true, 
+      message: 'Password reset successfully',
+      maskedPassword 
+    });
+  } catch (error) {
+    handleDatabaseError(res, error, 'reset user password');
+  }
+}));
+
+// PATCH /:id/roles - Update user roles
+router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Validate request body
+    const validation = updateRolesSchema.safeParse(req.body);
+    if (!validation.success) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Invalid roles data', validation.error.flatten(), 400);
+    }
+    
+    const { roles } = validation.data;
+    
+    for (const roleChange of roles) {
+      // Get role ID from slug
+      const roleResult = await db.execute(sql`
+        SELECT id FROM roles WHERE slug = ${roleChange.slug} LIMIT 1
+      `);
+      
+      if (!roleResult || roleResult.length === 0) {
+        continue;
+      }
+      
+      const roleId = (roleResult as any)[0].id;
+      
+      if (roleChange.action === 'add') {
+        // Add role
+        await db.execute(sql`
+          INSERT INTO user_roles (user_id, org_id, role_id)
+          VALUES (${id}, ${roleChange.orgId}, ${roleId})
+          ON CONFLICT (user_id, org_id, role_id) DO NOTHING
+        `);
+      } else {
+        // Remove role
+        await db.execute(sql`
+          DELETE FROM user_roles 
+          WHERE user_id = ${id} AND org_id = ${roleChange.orgId} AND role_id = ${roleId}
+        `);
+      }
+    }
+    
+    logDatabaseOperation(req, 'USER_ROLES_UPDATED', 'user_roles', { userId: id, changes: roles });
+    sendOk(res, { success: true });
+  } catch (error) {
+    handleDatabaseError(res, error, 'update user roles');
+  }
+}));
+
 // Create user
 router.post('/',
+  requireAuth,
   validateRequest({ body: CreateUserDTO }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const validatedData = req.body;
 
     try {

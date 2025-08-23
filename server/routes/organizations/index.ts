@@ -7,7 +7,10 @@ import { db } from '../../db';
 import { organizations } from '@shared/schema';
 import { sql, eq, and, or, ilike, desc, asc } from 'drizzle-orm';
 import { listBrandingFiles } from '../../lib/storage';
-import { sendSuccess, sendOk, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { sendSuccess, sendOk, sendErr, sendCreated, sendNoContent, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { requireAuth, AuthedRequest } from '../../middleware/auth';
+import { supabaseAdmin, supabaseForUser } from '../../lib/supabase';
+import { logDatabaseOperation } from '../../lib/log';
 
 // DTO <-> DB field mappings for camelCase <-> snake_case conversion
 const DTO_TO_DB_MAPPING = {
@@ -68,7 +71,7 @@ router.get('/__columns', asyncHandler(async (req, res) => {
 }));
 
 // List all organizations with filtering, sorting, and pagination
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req: AuthedRequest, res) => {
   const {
     q = '',
     state,
@@ -133,7 +136,7 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 // Get organization by ID
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {
@@ -154,131 +157,30 @@ router.get('/:id', asyncHandler(async (req, res) => {
   }
 }));
 
-// Get organization summary with branding, contacts/sports, and users
-router.get('/:id/summary', asyncHandler(async (req, res) => {
+// Get organization summary using RPC to eliminate N+1
+router.get('/:id/summary', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {
-    // Get organization basic info
-    const orgResult = await db
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, id))
-      .limit(1);
-
-    if (orgResult.length === 0) {
+    // Use RPC to get summary in one trip instead of N+1 queries
+    const sb = supabaseForUser(req.headers.authorization?.slice(7));
+    const { data, error } = await sb.rpc('org_summary', {
+      p_org_id: id,
+      p_requester: req.user?.id
+    });
+    
+    if (error) {
+      if (error.code === '42501') {
+        return HttpErrors.forbidden(res, 'Access denied');
+      }
+      throw error;
+    }
+    
+    if (!data || Object.keys(data).length === 0) {
       return HttpErrors.notFound(res, 'Organization not found');
     }
-
-    const organization = dbRowToDto(orgResult[0]);
-
-    // Get branding files
-    let brandingFiles: any[] = [];
-    try {
-      brandingFiles = await listBrandingFiles(id);
-    } catch (error) {
-      console.warn('Failed to load branding files:', error);
-      // Continue without branding files rather than failing the whole request
-    }
-
-    // Get sports contacts
-    const sportsContacts = await db.execute(sql`
-      SELECT 
-        os.id,
-        os.sport_id,
-        os.contact_name,
-        os.contact_email,
-        os.contact_phone,
-        os.contact_user_id,
-        s.name as sport_name,
-        s.emoji as sport_emoji,
-        u.full_name as contact_user_full_name,
-        u.email as contact_user_email
-      FROM org_sports os
-      LEFT JOIN sports s ON os.sport_id = s.id
-      LEFT JOIN users u ON os.contact_user_id = u.id
-      WHERE os.organization_id = ${id}
-      ORDER BY s.name
-    `);
-
-    // Get organization users with roles
-    const orgUsers = await db.execute(sql`
-      SELECT DISTINCT
-        u.id,
-        u.email,
-        u.full_name,
-        u.phone,
-        u.avatar_url,
-        u.is_active,
-        u.last_login,
-        COALESCE(
-          json_agg(
-            CASE WHEN r.id IS NOT NULL THEN
-              json_build_object(
-                'id', r.id,
-                'name', r.name,
-                'slug', r.slug,
-                'description', r.description
-              )
-            END
-          ) FILTER (WHERE r.id IS NOT NULL), 
-          '[]'::json
-        ) as roles
-      FROM users u
-      LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.org_id = ${id}
-      LEFT JOIN roles r ON ur.role_id = r.id
-      WHERE u.id IN (
-        SELECT DISTINCT user_id 
-        FROM user_roles 
-        WHERE org_id = ${id}
-      )
-      GROUP BY u.id, u.email, u.full_name, u.phone, u.avatar_url, u.is_active, u.last_login
-      ORDER BY u.full_name, u.email
-    `);
-
-    // Format sports contacts  
-    const sports = (sportsContacts as any).map((contact: any) => ({
-      id: contact.id,
-      sportId: contact.sport_id,
-      sportName: contact.sport_name,
-      sportEmoji: contact.sport_emoji,
-      contactName: contact.contact_name,
-      contactEmail: contact.contact_email,
-      contactPhone: contact.contact_phone,
-      contactUserId: contact.contact_user_id,
-      contactUserFullName: contact.contact_user_full_name,
-      contactUserEmail: contact.contact_user_email
-    }));
-
-    // Format users
-    const users = (orgUsers as any).map((user: any) => ({
-      id: user.id,
-      email: user.email,
-      fullName: user.full_name,
-      phone: user.phone,
-      avatarUrl: user.avatar_url,
-      isActive: user.is_active,
-      lastLogin: user.last_login ? new Date(user.last_login).toISOString() : null,
-      roles: user.roles || []
-    }));
-
-    // Get summary stats
-    const stats = {
-      sportsCount: sports.length,
-      usersCount: users.length,
-      brandingFilesCount: brandingFiles.length,
-      activeUsersCount: users.filter((u: any) => u.isActive).length
-    };
-
-    const summary = {
-      organization,
-      brandingFiles,
-      sports,
-      users,
-      stats
-    };
-
-    sendOk(res, summary);
+    
+    sendOk(res, data);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch organization summary');
   }
@@ -286,8 +188,9 @@ router.get('/:id/summary', asyncHandler(async (req, res) => {
 
 // Create new organization
 router.post('/', 
+  requireAuth,
   validateRequest({ body: CreateOrganizationDTO }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const validatedData = req.body;
 
     try {
@@ -391,7 +294,7 @@ router.post('/',
         sportsCount: validatedData.sports?.length || 0
       };
       
-      sendOk(res, responseData, undefined, 201);
+      sendCreated(res, responseData);
     } catch (error) {
       handleDatabaseError(res, error, 'create organization');
     }
@@ -400,8 +303,9 @@ router.post('/',
 
 // Update organization
 router.patch('/:id',
+  requireAuth,
   validateRequest({ body: UpdateOrganizationDTO }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
@@ -442,7 +346,7 @@ router.patch('/:id',
 );
 
 // Delete organization
-router.delete('/:id', asyncHandler(async (req, res) => {
+router.delete('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {
@@ -455,7 +359,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
       return HttpErrors.notFound(res, 'Organization not found');
     }
 
-    res.status(204).send();
+    sendNoContent(res);
   } catch (error) {
     handleDatabaseError(res, error, 'delete organization');
   }

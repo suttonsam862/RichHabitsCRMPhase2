@@ -141,6 +141,24 @@ export function mapDbToDto(dbRow: Record<string, any>, mapping: Record<string, s
 }
 
 /**
+ * Send 201 Created response
+ */
+export function sendCreated<T>(res: Response, data?: T): void {
+  const response: ApiResponse<T> = {
+    success: true,
+    ...(data !== undefined && { data })
+  };
+  res.status(201).json(response);
+}
+
+/**
+ * Send 204 No Content response
+ */
+export function sendNoContent(res: Response): void {
+  res.status(204).send();
+}
+
+/**
  * CR-specified aliases for sendSuccess/sendError
  */
 export const sendOk = sendSuccess;

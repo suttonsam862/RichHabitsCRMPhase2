@@ -1,9 +1,10 @@
 import express from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { sendOk, sendErr, HttpErrors } from '../../lib/http';
-import { listBrandingFiles, signBrandingUploads, deleteBrandingFiles, getSignedFileUrl } from '../../lib/storage';
-import { logSecurityEvent, createRequestLogger } from '../../lib/log';
+import { sendOk, sendErr, sendNoContent, HttpErrors } from '../../lib/http';
+import { requireAuth, AuthedRequest } from '../../middleware/auth';
+import { supabaseForUser, supabaseAdmin } from '../../lib/supabase';
+import { logSecurityEvent, logDatabaseOperation, createRequestLogger } from '../../lib/log';
 import { db } from '../../db';
 import { organizations } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -23,24 +24,48 @@ const DeleteFilesSchema = z.object({
   names: z.array(z.string().min(1))
 });
 
-// TODO: Implement proper role checking middleware
-// For now, we'll simulate role checks with basic validation
-async function requireOrgMember(req: express.Request, res: express.Response, next: express.NextFunction) {
+// Allowed MIME types for branding files
+const ALLOWED_MIME_TYPES = [
+  'image/png',
+  'image/jpeg', 
+  'image/webp',
+  'image/svg+xml',
+  'application/pdf'
+];
+
+// Max file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+/**
+ * Sanitize filename to prevent path traversal
+ */
+function safeName(name: string): string {
+  if (name.includes('..') || name.startsWith('/') || name.includes('\\')) {
+    throw new Error('Invalid filename');
+  }
+  // Replace unsafe characters but keep extensions
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+// All branding routes require authentication
+router.use(requireAuth);
+
+// Middleware to verify org membership
+async function requireOrgMember(req: AuthedRequest, res: express.Response, next: express.NextFunction) {
   const orgId = req.params.id || req.params.orgId;
   
   if (!orgId) {
     return HttpErrors.badRequest(res, 'Organization ID is required');
   }
   
-  // TODO: Implement proper JWT/session validation and org membership check
-  // For now, we'll just validate that the org exists
   try {
     const org = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
     if (!org.length) {
       return HttpErrors.notFound(res, 'Organization not found');
     }
     
-    // Store org in request for later use
+    // TODO: Check if user is member of org
+    // For now, allow if authenticated
     (req as any).org = org[0];
     next();
   } catch (error) {
@@ -49,7 +74,7 @@ async function requireOrgMember(req: express.Request, res: express.Response, nex
   }
 }
 
-async function requireOrgAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+async function requireOrgAdmin(req: AuthedRequest, res: express.Response, next: express.NextFunction) {
   const logger = createRequestLogger(req);
   
   // TODO: Implement proper role checking with has_role_slug
@@ -61,23 +86,37 @@ async function requireOrgAdmin(req: express.Request, res: express.Response, next
 }
 
 /**
- * GET /:id/branding-files - List branding files with signed URLs
+ * GET /:id/branding-files - List branding files
  * Requires: Organization member access
  */
-router.get('/:id/branding-files', requireOrgMember, asyncHandler(async (req, res) => {
+router.get('/:id/branding-files', requireOrgMember, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
   try {
-    const files = await listBrandingFiles(orgId);
+    const sb = supabaseForUser(req.headers.authorization?.slice(7));
+    
+    const { data, error } = await sb.storage
+      .from('app')
+      .list(`org/${orgId}/branding`, {
+        limit: 100,
+        offset: 0
+      });
+    
+    if (error) {
+      throw error;
+    }
+    
+    const files = (data || []).map(f => ({
+      name: f.name,
+      size: f.metadata?.size || 0,
+      contentType: f.metadata?.mimetype || 'application/octet-stream',
+      updatedAt: f.updated_at || f.created_at
+    }));
     
     logger.info({ fileCount: files.length }, 'Listed branding files');
-    
-    sendOk(res, {
-      organization: (req as any).org,
-      brandingFiles: files
-    }, files.length);
-  } catch (error) {
+    sendOk(res, files);
+  } catch (error: any) {
     logger.error({ error }, 'Failed to list branding files');
     return HttpErrors.internalError(res, 'Failed to list branding files');
   }
@@ -87,7 +126,7 @@ router.get('/:id/branding-files', requireOrgMember, asyncHandler(async (req, res
  * POST /:id/branding-files/sign - Generate signed upload URLs
  * Requires: Organization admin access
  */
-router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, asyncHandler(async (req, res) => {
+router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -95,7 +134,53 @@ router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, async
     // Validate request body
     const requestData = SignRequestSchema.parse(req.body);
     
-    const signedUrls = await signBrandingUploads(orgId, requestData);
+    // Validate MIME types and sizes
+    for (const file of requestData.files) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      const mimeMap: Record<string, string> = {
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'webp': 'image/webp',
+        'svg': 'image/svg+xml',
+        'pdf': 'application/pdf'
+      };
+      
+      const contentType = mimeMap[ext || ''];
+      if (!contentType || !ALLOWED_MIME_TYPES.includes(contentType)) {
+        return HttpErrors.validationError(res, 
+          `File type not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`);
+      }
+      
+      if (file.size && file.size > MAX_FILE_SIZE) {
+        return HttpErrors.validationError(res, 
+          `File ${file.name} exceeds maximum size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      }
+    }
+    
+    const sb = supabaseForUser(req.headers.authorization?.slice(7));
+    const signedUrls = [];
+    
+    for (const file of requestData.files) {
+      const sanitizedName = safeName(file.name);
+      const key = `org/${orgId}/branding/${sanitizedName}`;
+      
+      const { data, error } = await sb.storage
+        .from('app')
+        .createSignedUploadUrl(key, {
+          upsert: true
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      signedUrls.push({
+        name: sanitizedName,
+        uploadUrl: data?.signedUrl,
+        accessPath: key
+      });
+    }
     
     logger.info({ fileCount: requestData.files.length }, 'Generated signed upload URLs');
     
@@ -115,7 +200,7 @@ router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, async
  * DELETE /:id/branding-files - Delete branding files
  * Requires: Organization admin access
  */
-router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHandler(async (req, res) => {
+router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -123,12 +208,20 @@ router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHan
     // Validate request body
     const { names } = DeleteFilesSchema.parse(req.body);
     
-    await deleteBrandingFiles(orgId, names);
+    // Sanitize and prepare file paths
+    const keys = names.map(name => `org/${orgId}/branding/${safeName(name)}`);
+    
+    // Use admin client for deletion to ensure proper permissions
+    const { error } = await supabaseAdmin.storage
+      .from('app')
+      .remove(keys);
+    
+    if (error) {
+      throw error;
+    }
     
     logger.info({ fileCount: names.length, fileNames: names }, 'Deleted branding files');
-    
-    // CR specifies DELETE should return pure success, no error object
-    sendOk(res);
+    sendNoContent(res);
   } catch (error) {
     logger.error({ error }, 'Failed to delete branding files');
     
@@ -144,7 +237,7 @@ router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHan
  * POST /:id/logo - Upload or set logo URL
  * Requires: Organization admin access  
  */
-router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (req, res) => {
+router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -156,7 +249,11 @@ router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (
     }
     
     // Generate signed URL for the logo file
-    const signedUrl = await getSignedFileUrl(orgId, filename);
+    const logoPath = `org/${orgId}/branding/${filename}`;
+    const { data: urlData } = await supabaseAdmin.storage
+      .from('app')
+      .createSignedUrl(logoPath, 3600);
+    const signedUrl = urlData?.signedUrl;
     
     // Update organization logo_url
     await db.update(organizations)
@@ -191,7 +288,11 @@ router.post('/:id/title-card', requireOrgMember, requireOrgAdmin, asyncHandler(a
     }
     
     // Generate signed URL for the title card file
-    const signedUrl = await getSignedFileUrl(orgId, filename);
+    const cardPath = `org/${orgId}/branding/${filename}`;
+    const { data: urlData } = await supabaseAdmin.storage
+      .from('app')
+      .createSignedUrl(cardPath, 3600);
+    const signedUrl = urlData?.signedUrl;
     
     // Update organization title_card_url
     await db.update(organizations)

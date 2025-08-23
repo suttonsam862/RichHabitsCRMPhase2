@@ -2,9 +2,23 @@ import pino from 'pino';
 import { v4 as uuidv4 } from 'uuid';
 import { Request, Response, NextFunction } from 'express';
 
-// Create logger instance
+// Create logger instance with redaction for sensitive data
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
+  redact: [
+    'req.headers.authorization',
+    'res.headers.authorization',
+    'process.env',
+    'config.db.password',
+    'config.supabase.serviceKey',
+    'password',
+    'token',
+    'access_token',
+    'refresh_token',
+    'JWT_SECRET',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_ANON_KEY'
+  ],
   transport: process.env.NODE_ENV === 'development' ? {
     target: 'pino-pretty',
     options: {

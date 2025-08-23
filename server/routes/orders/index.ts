@@ -6,7 +6,9 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
 import { orders, orderItems, statusOrders, statusOrderItems, customers, organizations } from '@shared/schema';
 import { sql, eq, and, ilike, desc, inArray } from 'drizzle-orm';
-import { sendSuccess, sendOk, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { requireAuth, AuthedRequest } from '../../middleware/auth';
+import { logDatabaseOperation } from '../../lib/log';
 
 const router = express.Router();
 
@@ -70,6 +72,10 @@ function orderItemDbRowToDto(row: any): any {
   };
 }
 
+// Status code constants from status_orders/status_order_items
+const ORDER_STATUS_CODES = ['draft', 'submitted', 'production', 'shipped', 'completed', 'cancelled'];
+const ITEM_STATUS_CODES = ['pending_design', 'designing', 'approved', 'manufacturing', 'completed', 'shipped'];
+
 // Helper to validate statusCode against status_orders table
 async function validateOrderStatusCode(statusCode: string): Promise<boolean> {
   try {
@@ -98,8 +104,11 @@ async function validateOrderItemStatusCode(statusCode: string): Promise<boolean>
   }
 }
 
+// All orders routes require authentication
+router.use(requireAuth);
+
 // Get available order status codes
-router.get('/status-codes', asyncHandler(async (req, res) => {
+router.get('/status-codes', asyncHandler(async (req: AuthedRequest, res) => {
   try {
     const result = await db
       .select({
@@ -110,14 +119,14 @@ router.get('/status-codes', asyncHandler(async (req, res) => {
       .from(statusOrders)
       .orderBy(statusOrders.sortOrder);
 
-    sendSuccess(res, result);
+    sendOk(res, result);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch order status codes');
   }
 }));
 
 // Get available order item status codes
-router.get('/item-status-codes', asyncHandler(async (req, res) => {
+router.get('/item-status-codes', asyncHandler(async (req: AuthedRequest, res) => {
   try {
     const result = await db
       .select({
@@ -128,14 +137,14 @@ router.get('/item-status-codes', asyncHandler(async (req, res) => {
       .from(statusOrderItems)
       .orderBy(statusOrderItems.sortOrder);
 
-    sendSuccess(res, result);
+    sendOk(res, result);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch order item status codes');
   }
 }));
 
 // List all orders with filtering, sorting, and pagination
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req: AuthedRequest, res) => {
   const {
     q = '',
     orgId,
@@ -152,47 +161,59 @@ router.get('/', asyncHandler(async (req, res) => {
   try {
     // Build where conditions
     const conditions = [];
+    
+    // Organization filter
+    if (orgId) {
+      conditions.push(eq(orders.orgId, orgId as string));
+    }
 
-    // Search query by code or customer contact name
+    // Status filter
+    if (statusCode) {
+      conditions.push(eq(orders.statusCode, statusCode as string));
+    }
+
+    // Customer filter
+    if (customerId) {
+      conditions.push(eq(orders.customerId, customerId as string));
+    }
+
+    // Search query by order number or customer contact
     if (q && typeof q === 'string' && q.trim()) {
       const searchTerm = `%${q.trim()}%`;
-      conditions.push(sql`(${orders.code} ILIKE ${searchTerm} OR ${orders.customerContactName} ILIKE ${searchTerm})`);
+      conditions.push(sql`(${orders.code} ILIKE ${searchTerm} OR ${orders.customerContactName} ILIKE ${searchTerm} OR ${orders.customerContactEmail} ILIKE ${searchTerm})`);
     }
 
-    // Filter by organization
-    if (orgId && typeof orgId === 'string') {
-      conditions.push(eq(orders.orgId, orgId));
-    }
-
-    // Filter by status
-    if (statusCode && typeof statusCode === 'string') {
-      conditions.push(eq(orders.statusCode, statusCode));
-    }
-
-    // Filter by customer
-    if (customerId && typeof customerId === 'string') {
-      conditions.push(eq(orders.customerId, customerId));
-    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
     const countResult = await db
       .select({ count: sql`count(*)` })
       .from(orders)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+      .where(whereClause);
 
     const total = Number(countResult[0]?.count || 0);
 
-    // Get paginated results
+    // Get paginated results with joins
     const results = await db
-      .select()
+      .select({
+        order: orders,
+        customer: customers,
+        organization: organizations
+      })
       .from(orders)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .leftJoin(customers, eq(orders.customerId, customers.id))
+      .leftJoin(organizations, eq(orders.orgId, organizations.id))
+      .where(whereClause)
       .orderBy(desc(orders.createdAt))
       .limit(pageSizeNum)
       .offset(offset);
 
-    // Map database rows to DTOs
-    const data = results.map(orderDbRowToDto);
+    // Map database rows to DTOs with nested entities
+    const data = results.map(row => ({
+      ...orderDbRowToDto(row.order),
+      customer: row.customer ? { id: row.customer.id, name: row.customer.name } : null,
+      organization: row.organization ? { id: row.organization.id, name: row.organization.name } : null
+    }));
 
     sendOk(res, data, total);
   } catch (error) {
@@ -201,13 +222,19 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 // Get order by ID
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {
     const result = await db
-      .select()
+      .select({
+        order: orders,
+        customer: customers,
+        organization: organizations
+      })
       .from(orders)
+      .leftJoin(customers, eq(orders.customerId, customers.id))
+      .leftJoin(organizations, eq(orders.orgId, organizations.id))
       .where(eq(orders.id, id))
       .limit(1);
 
@@ -215,131 +242,173 @@ router.get('/:id', asyncHandler(async (req, res) => {
       return HttpErrors.notFound(res, 'Order not found');
     }
 
-    const mappedOrder = orderDbRowToDto(result[0]);
+    // Get order items
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, id));
+
+    const mappedOrder = {
+      ...orderDbRowToDto(result[0].order),
+      customer: result[0].customer ? { id: result[0].customer.id, name: result[0].customer.name } : null,
+      organization: result[0].organization ? { id: result[0].organization.id, name: result[0].organization.name } : null,
+      items: items.map(orderItemDbRowToDto)
+    };
+
     sendOk(res, mappedOrder);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch order');
   }
 }));
 
-// Create new order
+// Create order
 router.post('/',
   validateRequest({ body: CreateOrderDTO }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const validatedData = req.body;
 
     try {
-      // Validate statusCode if provided
+      // Validate status code if provided
       if (validatedData.statusCode) {
-        const isValidStatus = await validateOrderStatusCode(validatedData.statusCode);
-        if (!isValidStatus) {
-          return HttpErrors.validationError(res, 'Invalid statusCode: must exist in status_orders table');
+        const isValid = await validateOrderStatusCode(validatedData.statusCode);
+        if (!isValid) {
+          return HttpErrors.validationError(res, `Invalid status code: ${validatedData.statusCode}. Use GET /api/orders/status-codes to see valid options.`);
         }
       }
 
-      // Map DTO fields to DB fields
-      const mappedData = mapDtoToDb(validatedData, ORDER_DTO_TO_DB_MAPPING);
+      // Map DTO to DB
+      const dbData = mapDtoToDb(validatedData, ORDER_DTO_TO_DB_MAPPING);
       
-      // Generate order number if not provided
-      const orderNumber = validatedData.orderNumber || `ORD-${Date.now()}`;
-      
-      // Prepare order data
-      const now = new Date();
-      const orderData = {
-        code: orderNumber,
-        notes: validatedData.notes || null,
-        status_code: validatedData.statusCode || 'consultation',
-        created_at: now,
-        updated_at: now,
-        ...mappedData
-      };
+      // Set defaults
+      if (!dbData.status_code) {
+        dbData.status_code = 'draft';
+      }
+      if (!dbData.code) {
+        // Generate order number: ORD-YYYYMMDD-XXXX
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        dbData.code = `ORD-${today}-${random}`;
+      }
 
-      const result = await db
-        .insert(orders)
-        .values(orderData)
-        .returning();
+      // Insert order
+      const insertedOrders = await db.insert(orders).values({
+        ...dbData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
 
-      const createdOrder = orderDbRowToDto(result[0]);
-      sendOk(res, createdOrder, undefined, 201);
+      if (insertedOrders.length === 0) {
+        return HttpErrors.internalError(res, 'Failed to create order');
+      }
+
+      const newOrder = insertedOrders[0];
+      const mappedOrder = orderDbRowToDto(newOrder);
+
+      logDatabaseOperation(req, 'ORDER_CREATED', 'orders', { orderId: newOrder.id });
+      sendCreated(res, mappedOrder);
     } catch (error) {
       handleDatabaseError(res, error, 'create order');
     }
   })
 );
 
-// Update order status
-router.patch('/:id/status',
-  validateRequest({
-    body: z.object({
-      statusCode: z.string().min(1, 'statusCode is required')
-    })
-  }),
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { statusCode } = req.body;
+// PATCH /:id/status - Update order status
+router.patch('/:id/status', asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+  const { statusCode } = req.body;
 
-    try {
-      // Validate statusCode
-      const isValidStatus = await validateOrderStatusCode(statusCode);
-      if (!isValidStatus) {
-        return HttpErrors.validationError(res, 'Invalid statusCode: must exist in status_orders table');
-      }
+  if (!statusCode) {
+    return HttpErrors.validationError(res, 'statusCode is required');
+  }
 
-      const result = await db
-        .update(orders)
-        .set({
-          statusCode: statusCode,
-          updatedAt: new Date().toISOString()
-        })
-        .where(eq(orders.id, id))
-        .returning();
-
-      if (result.length === 0) {
-        return HttpErrors.notFound(res, 'Order not found');
-      }
-
-      const mappedResult = orderDbRowToDto(result[0]);
-      sendOk(res, mappedResult);
-    } catch (error) {
-      handleDatabaseError(res, error, 'update order status');
+  try {
+    // Validate status code
+    const isValid = await validateOrderStatusCode(statusCode);
+    if (!isValid) {
+      return HttpErrors.validationError(res, `Invalid status code: ${statusCode}. Use GET /api/orders/status-codes to see valid options.`);
     }
-  })
-);
+
+    // Check if order exists
+    const existingOrder = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id))
+      .limit(1);
+
+    if (existingOrder.length === 0) {
+      return HttpErrors.notFound(res, 'Order not found');
+    }
+
+    // Update status
+    const updatedOrders = await db
+      .update(orders)
+      .set({ 
+        statusCode,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+
+    if (updatedOrders.length === 0) {
+      return HttpErrors.internalError(res, 'Failed to update order status');
+    }
+
+    const mappedOrder = orderDbRowToDto(updatedOrders[0]);
+    logDatabaseOperation(req, 'ORDER_STATUS_UPDATED', 'orders', { orderId: id, statusCode });
+    sendOk(res, mappedOrder);
+  } catch (error) {
+    handleDatabaseError(res, error, 'update order status');
+  }
+}));
 
 // Update order
 router.patch('/:id',
   validateRequest({ body: UpdateOrderDTO }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const { id } = req.params;
-    const updateData = req.body;
+    const validatedData = req.body;
 
     try {
-      // Validate statusCode if provided
-      if (updateData.statusCode) {
-        const isValidStatus = await validateOrderStatusCode(updateData.statusCode);
-        if (!isValidStatus) {
-          return HttpErrors.validationError(res, 'Invalid statusCode: must exist in status_orders table');
+      // Validate status code if provided
+      if (validatedData.statusCode) {
+        const isValid = await validateOrderStatusCode(validatedData.statusCode);
+        if (!isValid) {
+          return HttpErrors.validationError(res, `Invalid status code: ${validatedData.statusCode}. Use GET /api/orders/status-codes to see valid options.`);
         }
       }
 
-      // Map DTO fields to DB fields
-      const mappedData = mapDtoToDb(updateData, ORDER_DTO_TO_DB_MAPPING);
-      
-      const result = await db
+      // Check if order exists
+      const existingOrder = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, id))
+        .limit(1);
+
+      if (existingOrder.length === 0) {
+        return HttpErrors.notFound(res, 'Order not found');
+      }
+
+      // Map DTO to DB
+      const dbData = mapDtoToDb(validatedData, ORDER_DTO_TO_DB_MAPPING);
+
+      // Update order
+      const updatedOrders = await db
         .update(orders)
         .set({
-          ...mappedData,
+          ...dbData,
           updatedAt: new Date().toISOString()
         })
         .where(eq(orders.id, id))
         .returning();
 
-      if (result.length === 0) {
-        return HttpErrors.notFound(res, 'Order not found');
+      if (updatedOrders.length === 0) {
+        return HttpErrors.internalError(res, 'Failed to update order');
       }
 
-      const mappedResult = orderDbRowToDto(result[0]);
-      sendOk(res, mappedResult);
+      const updatedOrder = updatedOrders[0];
+      const mappedOrder = orderDbRowToDto(updatedOrder);
+      logDatabaseOperation(req, 'ORDER_UPDATED', 'orders', { orderId: id });
+      sendOk(res, mappedOrder);
     } catch (error) {
       handleDatabaseError(res, error, 'update order');
     }
@@ -347,70 +416,73 @@ router.patch('/:id',
 );
 
 // Delete order
-router.delete('/:id', asyncHandler(async (req, res) => {
+router.delete('/:id', asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {
-    const result = await db
-      .delete(orders)
+    // Check if order exists
+    const existingOrder = await db
+      .select()
+      .from(orders)
       .where(eq(orders.id, id))
-      .returning();
+      .limit(1);
 
-    if (result.length === 0) {
+    if (existingOrder.length === 0) {
       return HttpErrors.notFound(res, 'Order not found');
     }
 
-    res.status(204).send();
+    // Delete order (items will cascade)
+    await db.delete(orders).where(eq(orders.id, id));
+
+    logDatabaseOperation(req, 'ORDER_DELETED', 'orders', { orderId: id });
+    sendNoContent(res);
   } catch (error) {
     handleDatabaseError(res, error, 'delete order');
   }
 }));
 
-// Order analytics summary
-router.get('/analytics/summary', asyncHandler(async (req, res) => {
-  try {
-    // Get total orders count
-    const totalOrdersResult = await db
-      .select({ count: sql`count(*)` })
-      .from(orders);
-    
-    // Get total revenue estimate
-    const totalValueResult = await db
-      .select({ sum: sql`COALESCE(sum(revenue_estimate), 0)` })
-      .from(orders);
+// Analytics endpoint - orders by status
+router.get('/analytics/summary', asyncHandler(async (req: AuthedRequest, res) => {
+  const { orgId } = req.query;
 
-    // Get orders by status
-    const ordersByStatusResult = await db
+  try {
+    const conditions = orgId ? [eq(orders.orgId, orgId as string)] : [];
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get order counts by status
+    const statusCounts = await db
       .select({
         statusCode: orders.statusCode,
-        count: sql`count(*)`
+        count: sql`count(*)::int`
       })
       .from(orders)
+      .where(whereClause)
       .groupBy(orders.statusCode);
 
-    // Get recent orders (last 10)
-    const recentOrdersResult = await db
+    // Get total revenue estimate
+    const revenueResult = await db
+      .select({
+        total: sql`COALESCE(SUM(${orders.revenueEstimate}), 0)::float`
+      })
+      .from(orders)
+      .where(whereClause);
+
+    // Get recent orders
+    const recentOrders = await db
       .select()
       .from(orders)
+      .where(whereClause)
       .orderBy(desc(orders.createdAt))
-      .limit(10);
+      .limit(5);
 
-    const ordersByStatus = ordersByStatusResult.reduce((acc, row) => {
-      acc[row.statusCode || 'unknown'] = Number(row.count);
-      return acc;
-    }, {} as Record<string, number>);
-
-    const analyticsData = {
-      totalOrders: Number(totalOrdersResult[0]?.count || 0),
-      totalValue: Number(totalValueResult[0]?.sum || 0),
-      ordersByStatus,
-      recentOrders: recentOrdersResult.map(orderDbRowToDto)
-    };
-
-    sendSuccess(res, analyticsData);
+    sendOk(res, {
+      statusCounts,
+      totalRevenue: revenueResult[0]?.total || 0,
+      recentOrders: recentOrders.map(orderDbRowToDto)
+    });
   } catch (error) {
     handleDatabaseError(res, error, 'fetch order analytics');
   }
 }));
 
-export { router as ordersRouter };
+export default router;

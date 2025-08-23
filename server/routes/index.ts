@@ -1,12 +1,13 @@
 /**
  * Canonical API router - single source of truth for all API routes
- * Mounts all domain-specific routers under /api
+ * Mounts all domain-specific routers under /api/v1
  */
 
 import express from 'express';
+import authRouter from './auth/index';
 import { organizationsRouter } from './organizations/index';
 import { usersRouter } from './users/index';
-import { ordersRouter } from './orders/index';
+import ordersRouter from './orders/index';
 import { filesRouter } from './files/index';
 // Import additional routers as they become available
 // import { salesRouter } from './sales/index';
@@ -16,24 +17,22 @@ import uploadRouter from './upload';
 
 const apiRouter = express.Router();
 
-// Health check endpoint
-apiRouter.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      version: '1.0.0'
-    }
-  });
-});
+// Create v1 router
+const v1Router = express.Router();
+
+// Mount auth routes (no requireAuth needed for auth endpoints)
+v1Router.use('/auth', authRouter);
 
 // Domain-specific routers - canonical mounts
-apiRouter.use('/organizations', organizationsRouter);
-apiRouter.use('/users', usersRouter);
-apiRouter.use('/orders', ordersRouter);
-apiRouter.use('/files', filesRouter);
-// Legacy upload router (to be deprecated)
+v1Router.use('/organizations', organizationsRouter);
+v1Router.use('/users', usersRouter);
+v1Router.use('/orders', ordersRouter);
+v1Router.use('/files', filesRouter);
+
+// Mount v1 router
+apiRouter.use('/v1', v1Router);
+
+// Legacy routes (to be deprecated)
 apiRouter.use('/upload', uploadRouter);
 
 // Additional routers to be mounted as they become available

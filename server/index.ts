@@ -12,6 +12,8 @@ import rateLimit from 'express-rate-limit';
 import { apiRouter } from './routes/index';
 import { setupVite, serveStatic } from './vite';
 import { errorHandler } from './middleware/error';
+import { requestIdMiddleware, logRequest, logRequestComplete } from './lib/log';
+import { env } from './lib/env';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -20,8 +22,8 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
-const PORT = parseInt(process.env.PORT || '5000', 10);
-const isDevelopment = process.env.NODE_ENV === 'development';
+const PORT = parseInt(env.PORT || '3000', 10);
+const isDevelopment = env.NODE_ENV === 'development';
 
 // Security middleware
 app.use(helmet({
@@ -30,10 +32,10 @@ app.use(helmet({
 }));
 
 // CORS configuration
-const allowedOrigins = process.env.ORIGINS ? process.env.ORIGINS.split(',') : ['http://localhost:5000', 'http://0.0.0.0:5000'];
+const allowedOrigins = env.ORIGINS.split(',').map(o => o.trim());
 app.use(cors({
   origin: allowedOrigins,
-  credentials: false
+  credentials: true
 }));
 
 // Compression middleware
@@ -54,15 +56,77 @@ const apiLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Stricter rate limit for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Limit each IP to 10 requests per minute
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many authentication attempts, please try again later.'
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Basic middleware
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+// Request ID middleware
+app.use(requestIdMiddleware);
+
 // Request logging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+  const startTime = Date.now();
+  logRequest(req);
+  
+  res.on('finish', () => {
+    const responseTime = Date.now() - startTime;
+    logRequestComplete(req, res, responseTime);
+  });
+  
   next();
 });
+
+// Health check endpoint
+app.get('/healthz', (req, res) => {
+  const uptime = process.uptime();
+  res.status(200).json({
+    status: 'ok',
+    version: process.env.npm_package_version || '1.0.0',
+    uptimeSec: Math.floor(uptime),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Metrics endpoint (basic stub)
+app.get('/metrics', (req, res) => {
+  const memoryUsage = process.memoryUsage();
+  const uptime = process.uptime();
+  
+  // Prometheus-style metrics (basic)
+  const metrics = [
+    `# HELP process_uptime_seconds Process uptime in seconds`,
+    `# TYPE process_uptime_seconds gauge`,
+    `process_uptime_seconds ${uptime}`,
+    `# HELP nodejs_heap_size_used_bytes Process heap size used`,
+    `# TYPE nodejs_heap_size_used_bytes gauge`,
+    `nodejs_heap_size_used_bytes ${memoryUsage.heapUsed}`,
+    `# HELP nodejs_heap_size_total_bytes Process heap size total`,
+    `# TYPE nodejs_heap_size_total_bytes gauge`,
+    `nodejs_heap_size_total_bytes ${memoryUsage.heapTotal}`
+  ].join('\n');
+  
+  res.set('Content-Type', 'text/plain');
+  res.send(metrics);
+});
+
+// Mount auth routes with stricter rate limiting
+app.use('/api/v1/auth/login', authLimiter);
+app.use('/api/v1/auth/register', authLimiter);
 
 // Mount canonical API router at /api with rate limiting
 app.use('/api', apiLimiter, apiRouter);
