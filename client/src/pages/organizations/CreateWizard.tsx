@@ -305,7 +305,7 @@ export default function CreateWizard(){
                   
                   {sports.map((sport, i) => (
                     <div key={i} className={`p-4 rounded-xl border transition-colors ${sport.saved ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <select 
                           className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:border-cyan-500/50 focus:outline-none transition-colors" 
                           value={sport.sportId} 
