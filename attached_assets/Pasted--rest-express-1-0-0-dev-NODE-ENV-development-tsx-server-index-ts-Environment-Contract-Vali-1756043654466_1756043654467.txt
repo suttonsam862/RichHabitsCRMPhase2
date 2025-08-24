@@ -1,0 +1,512 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+
+=== Environment Contract Validation ===
+✓ NODE_ENV: development
+✓ PORT: 5000
+✓ ORIGINS: http://localhost:5173,http://localhost:5000
+✓ DATABASE_URL: postgresql://neondb_***
+✓ VITE_SUPABASE_URL: https://qkampkccsdie***
+✓ VITE_SUPABASE_ANON_KEY: eyJhbG*** (length: 208)
+✓ SUPABASE_SERVICE_ROLE_KEY: eyJhbG*** (length: 219)
+✓ JWT_SECRET: BzbblH*** (length: 64)
+✓ OPENAI_API_KEY: sk-pro*** (length: 164)
+✓ ENABLE_DOMAIN_STUBS: 0
+✓ All environment variables validated successfully
+
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+🚀 Server running on http://0.0.0.0:5000
+📊 Environment: development
+📁 API routes available at: http://0.0.0.0:5000/api
+✅ Vite dev server configured
+1:48:08 PM [vite] Serving SPA route: /
+[13:48:08.360] INFO (548): Request started
+    requestId: "e1ee4454-03fa-494a-84d2-dcd90295f105"
+    method: "GET"
+    url: "/"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:08.419] INFO (548): Request completed
+    requestId: "e1ee4454-03fa-494a-84d2-dcd90295f105"
+    method: "GET"
+    url: "/"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 200
+    responseTime: 59
+[13:48:08.655] INFO (548): Request started
+    requestId: "9abb298e-609a-4051-97af-3b150eb3282a"
+    method: "GET"
+    url: "/@vite/client"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:08.659] INFO (548): Request started
+    requestId: "c1201eca-e39e-4555-9c90-051e3ba21fb2"
+    method: "GET"
+    url: "/src/main.tsx?v=1r4bFzDW0ntE86BUfVCKK"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:08.694] INFO (548): Request completed
+    requestId: "9abb298e-609a-4051-97af-3b150eb3282a"
+    method: "GET"
+    url: "/@vite/client"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 200
+    responseTime: 39
+[13:48:08.708] INFO (548): Request completed
+    requestId: "c1201eca-e39e-4555-9c90-051e3ba21fb2"
+    method: "GET"
+    url: "/src/main.tsx?v=1r4bFzDW0ntE86BUfVCKK"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 200
+    responseTime: 49
+[13:48:08.832] INFO (548): Request started
+    requestId: "0cdfd208-0dd0-4b94-af39-cc14e1330481"
+    method: "GET"
+    url: "/src/index.css?v=1r4bFzDW0ntE86BUfVCKK"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:08.833] INFO (548): Request started
+    requestId: "12b80ca5-96ed-4626-a64f-9f7a5e401af5"
+    method: "GET"
+    url: "/@react-refresh"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[13:48:09.323] INFO (548): Request completed
+    requestId: "12b80ca5-96ed-4626-a64f-9f7a5e401af5"
+    method: "GET"
+    url: "/@react-refresh"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 490
+[13:48:09.324] INFO (548): Request started
+    requestId: "3ca9ed16-82a4-48d6-b282-de271a688a58"
+    method: "GET"
+    url: "/src/App.tsx?v=1r4bFzDW0ntE86BUfVCKK"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:09.333] INFO (548): Request started
+    requestId: "e0824d34-74ba-4073-86f5-de60dfdc99f0"
+    method: "GET"
+    url: "/@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:09.333] INFO (548): Request completed
+    requestId: "e0824d34-74ba-4073-86f5-de60dfdc99f0"
+    method: "GET"
+    url: "/@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:09.539] INFO (548): Request completed
+    requestId: "3ca9ed16-82a4-48d6-b282-de271a688a58"
+    method: "GET"
+    url: "/src/App.tsx?v=1r4bFzDW0ntE86BUfVCKK"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 200
+    responseTime: 215
+[13:48:10.721] INFO (548): Request started
+    requestId: "11976747-1f02-46a3-985e-33bf267c6000"
+    method: "GET"
+    url: "/src/components/ui/toaster.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:10.722] INFO (548): Request completed
+    requestId: "11976747-1f02-46a3-985e-33bf267c6000"
+    method: "GET"
+    url: "/src/components/ui/toaster.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:10.723] INFO (548): Request started
+    requestId: "80b8dd8d-54c4-4625-aa0d-a3fd6c1f474c"
+    method: "GET"
+    url: "/src/lib/queryClient.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:10.723] INFO (548): Request completed
+    requestId: "80b8dd8d-54c4-4625-aa0d-a3fd6c1f474c"
+    method: "GET"
+    url: "/src/lib/queryClient.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:10.732] INFO (548): Request started
+    requestId: "a41ae177-39c9-4918-a464-190c1a9c53f7"
+    method: "GET"
+    url: "/src/components/ui/tooltip.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:10.732] INFO (548): Request completed
+    requestId: "a41ae177-39c9-4918-a464-190c1a9c53f7"
+    method: "GET"
+    url: "/src/components/ui/tooltip.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.199] INFO (548): Request started
+    requestId: "3af0071a-6a8e-45ef-b7a0-8f437aaf4b3b"
+    method: "GET"
+    url: "/src/routes.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.201] INFO (548): Request completed
+    requestId: "3af0071a-6a8e-45ef-b7a0-8f437aaf4b3b"
+    method: "GET"
+    url: "/src/routes.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 2
+[13:48:11.288] INFO (548): Request completed
+    requestId: "0cdfd208-0dd0-4b94-af39-cc14e1330481"
+    method: "GET"
+    url: "/src/index.css?v=1r4bFzDW0ntE86BUfVCKK"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 200
+    responseTime: 2456
+[13:48:11.299] INFO (548): Request started
+    requestId: "ec0f2b17-1f1a-425a-bd85-8123f459c607"
+    method: "GET"
+    url: "/src/hooks/use-toast.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.300] INFO (548): Request started
+    requestId: "076020af-b797-4958-9dd6-f0ff68b0fa10"
+    method: "GET"
+    url: "/src/components/ui/toast.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.314] INFO (548): Request completed
+    requestId: "076020af-b797-4958-9dd6-f0ff68b0fa10"
+    method: "GET"
+    url: "/src/components/ui/toast.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 14
+[13:48:11.315] INFO (548): Request started
+    requestId: "f9ec4052-4b8d-4040-a77c-65b97ff39400"
+    method: "GET"
+    url: "/src/components/DevOverlay.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.315] INFO (548): Request completed
+    requestId: "f9ec4052-4b8d-4040-a77c-65b97ff39400"
+    method: "GET"
+    url: "/src/components/DevOverlay.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.343] INFO (548): Request started
+    requestId: "f72f99e2-c050-46bd-90b5-d8d2455277f5"
+    method: "GET"
+    url: "/src/pages/auth/LoginPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.343] INFO (548): Request started
+    requestId: "7b442043-81ee-4b5d-bf9a-fd3b1c2869fb"
+    method: "GET"
+    url: "/src/lib/utils.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.344] INFO (548): Request completed
+    requestId: "7b442043-81ee-4b5d-bf9a-fd3b1c2869fb"
+    method: "GET"
+    url: "/src/lib/utils.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.354] INFO (548): Request completed
+    requestId: "f72f99e2-c050-46bd-90b5-d8d2455277f5"
+    method: "GET"
+    url: "/src/pages/auth/LoginPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 11
+[13:48:11.355] INFO (548): Request started
+    requestId: "80f9db04-6f99-4582-ba1f-a88e7a4cc7ee"
+    method: "GET"
+    url: "/src/auth/AuthProvider.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.356] INFO (548): Request completed
+    requestId: "80f9db04-6f99-4582-ba1f-a88e7a4cc7ee"
+    method: "GET"
+    url: "/src/auth/AuthProvider.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.415] INFO (548): Request completed
+    requestId: "ec0f2b17-1f1a-425a-bd85-8123f459c607"
+    method: "GET"
+    url: "/src/hooks/use-toast.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 116
+[13:48:11.472] INFO (548): Request started
+    requestId: "933d4f46-2ebd-4355-a28e-1643506533b0"
+    method: "GET"
+    url: "/src/auth/ProtectedRoute.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.472] INFO (548): Request completed
+    requestId: "933d4f46-2ebd-4355-a28e-1643506533b0"
+    method: "GET"
+    url: "/src/auth/ProtectedRoute.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.473] INFO (548): Request started
+    requestId: "b7eeb0f5-eb9f-4429-8ce7-55a3f20aa957"
+    method: "GET"
+    url: "/src/components/ErrorBoundary.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.473] INFO (548): Request completed
+    requestId: "b7eeb0f5-eb9f-4429-8ce7-55a3f20aa957"
+    method: "GET"
+    url: "/src/components/ErrorBoundary.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.478] INFO (548): Request started
+    requestId: "49f0066f-3363-4d98-b691-87f14ea9911b"
+    method: "GET"
+    url: "/src/pages/organizations/List.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.479] INFO (548): Request completed
+    requestId: "49f0066f-3363-4d98-b691-87f14ea9911b"
+    method: "GET"
+    url: "/src/pages/organizations/List.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.479] INFO (548): Request started
+    requestId: "7436d287-f44b-4330-ba43-50be3490b904"
+    method: "GET"
+    url: "/src/pages/auth/ResetPasswordPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.479] INFO (548): Request completed
+    requestId: "7436d287-f44b-4330-ba43-50be3490b904"
+    method: "GET"
+    url: "/src/pages/auth/ResetPasswordPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.495] INFO (548): Request started
+    requestId: "e61d10b4-1363-4c19-9aac-ccbced1e9e68"
+    method: "GET"
+    url: "/src/pages/HomePage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.496] INFO (548): Request completed
+    requestId: "e61d10b4-1363-4c19-9aac-ccbced1e9e68"
+    method: "GET"
+    url: "/src/pages/HomePage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.516] INFO (548): Request started
+    requestId: "a4a82986-3861-4042-abd2-3200109fe17f"
+    method: "GET"
+    url: "/src/pages/auth/AuthConfirmedPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.517] INFO (548): Request completed
+    requestId: "a4a82986-3861-4042-abd2-3200109fe17f"
+    method: "GET"
+    url: "/src/pages/auth/AuthConfirmedPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.535] INFO (548): Request started
+    requestId: "1acc0d10-401f-4659-9f0a-71753f0afc6e"
+    method: "GET"
+    url: "/src/pages/auth/RegisterPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.535] INFO (548): Request completed
+    requestId: "1acc0d10-401f-4659-9f0a-71753f0afc6e"
+    method: "GET"
+    url: "/src/pages/auth/RegisterPage.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.535] INFO (548): Request started
+    requestId: "2a6d28ea-3b2e-4b19-a020-bb023e76a969"
+    method: "GET"
+    url: "/src/pages/organizations/CreateWizard.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.536] INFO (548): Request completed
+    requestId: "2a6d28ea-3b2e-4b19-a020-bb023e76a969"
+    method: "GET"
+    url: "/src/pages/organizations/CreateWizard.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.553] INFO (548): Request started
+    requestId: "b6072d8a-767d-41b3-be40-aca2c03851ec"
+    method: "GET"
+    url: "/src/components/NotFound.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.554] INFO (548): Request completed
+    requestId: "b6072d8a-767d-41b3-be40-aca2c03851ec"
+    method: "GET"
+    url: "/src/components/NotFound.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.554] INFO (548): Request started
+    requestId: "c0b09022-2844-4a57-a38f-17ff2c7fa316"
+    method: "GET"
+    url: "/src/components/ui/label.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.554] INFO (548): Request completed
+    requestId: "c0b09022-2844-4a57-a38f-17ff2c7fa316"
+    method: "GET"
+    url: "/src/components/ui/label.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.555] INFO (548): Request started
+    requestId: "ea48d547-7e39-46c3-8f6e-2bcc7bcfbe88"
+    method: "GET"
+    url: "/src/components/ui/button.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.555] INFO (548): Request completed
+    requestId: "ea48d547-7e39-46c3-8f6e-2bcc7bcfbe88"
+    method: "GET"
+    url: "/src/components/ui/button.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.569] INFO (548): Request started
+    requestId: "a03ba39b-3d73-4fe0-9464-31a7e1f87254"
+    method: "GET"
+    url: "/src/components/ui/input.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.570] INFO (548): Request completed
+    requestId: "a03ba39b-3d73-4fe0-9464-31a7e1f87254"
+    method: "GET"
+    url: "/src/components/ui/input.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.584] INFO (548): Request started
+    requestId: "808f3ded-ef0c-4002-a7fd-973a8afe516a"
+    method: "GET"
+    url: "/src/lib/supabase.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.584] INFO (548): Request completed
+    requestId: "808f3ded-ef0c-4002-a7fd-973a8afe516a"
+    method: "GET"
+    url: "/src/lib/supabase.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.585] INFO (548): Request started
+    requestId: "4ccb16ca-86de-45ab-8677-18898dc3d70f"
+    method: "GET"
+    url: "/src/components/ui/card.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.585] INFO (548): Request completed
+    requestId: "4ccb16ca-86de-45ab-8677-18898dc3d70f"
+    method: "GET"
+    url: "/src/components/ui/card.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.611] INFO (548): Request started
+    requestId: "471491a2-76d0-49aa-bb33-6b7e572a0629"
+    method: "GET"
+    url: "/src/features/organizations/gradient.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.612] INFO (548): Request completed
+    requestId: "471491a2-76d0-49aa-bb33-6b7e572a0629"
+    method: "GET"
+    url: "/src/features/organizations/gradient.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.612] INFO (548): Request started
+    requestId: "c4016a47-c7c2-45ad-89ec-d519a1fc3550"
+    method: "GET"
+    url: "/src/lib/paths.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.613] INFO (548): Request completed
+    requestId: "c4016a47-c7c2-45ad-89ec-d519a1fc3550"
+    method: "GET"
+    url: "/src/lib/paths.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.613] INFO (548): Request started
+    requestId: "b2d75fdd-1740-4c87-bd81-b5686b530609"
+    method: "GET"
+    url: "/src/components/ui/GlowCard.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.614] INFO (548): Request completed
+    requestId: "b2d75fdd-1740-4c87-bd81-b5686b530609"
+    method: "GET"
+    url: "/src/components/ui/GlowCard.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.618] INFO (548): Request started
+    requestId: "b4ebe2eb-c048-48b0-8dd5-8738bd64faed"
+    method: "GET"
+    url: "/src/lib/api.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.619] INFO (548): Request completed
+    requestId: "b4ebe2eb-c048-48b0-8dd5-8738bd64faed"
+    method: "GET"
+    url: "/src/lib/api.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 1
+[13:48:11.637] INFO (548): Request started
+    requestId: "30f61a62-3a1f-4a2e-87a7-4be8309ee34d"
+    method: "GET"
+    url: "/src/components/ui/alert.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.637] INFO (548): Request completed
+    requestId: "30f61a62-3a1f-4a2e-87a7-4be8309ee34d"
+    method: "GET"
+    url: "/src/components/ui/alert.tsx"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:48:11.669] INFO (548): Request started
+    requestId: "de5b1f32-3011-4bcf-b4d4-c8319d5334ae"
+    method: "GET"
+    url: "/src/lib/devtools.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:48:11.669] INFO (548): Request completed
+    requestId: "de5b1f32-3011-4bcf-b4d4-c8319d5334ae"
+    method: "GET"
+    url: "/src/lib/devtools.ts"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 0
+[13:53:27.441] INFO (548): Request started
+    requestId: "57d32896-3cf4-48ce-b2fc-68c9e1ff9b62"
+    method: "GET"
+    url: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:53:27.930] INFO (548): Request completed
+    requestId: "57d32896-3cf4-48ce-b2fc-68c9e1ff9b62"
+    method: "GET"
+    url: "/?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 489
+[13:53:28.244] INFO (548): Request started
+    requestId: "8f41c5a2-78ea-44cf-9759-d295adad88f5"
+    method: "GET"
+    url: "/api/v1/sports"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:53:28.484] INFO (548): Request completed
+    requestId: "8f41c5a2-78ea-44cf-9759-d295adad88f5"
+    method: "GET"
+    url: "/"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 304
+    responseTime: 240
+[13:53:46.542] INFO (548): Request started
+    requestId: "d220557f-9a90-4ec4-a51d-b17eb3304af2"
+    method: "POST"
+    url: "/api/v1/organizations"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+[13:53:47.599] WARN (548): Schema cache error detected, forcing refresh and retry
+    rid: "t027bnjytyo"
+    error: "Could not find the 'contact_user_id' column of 'org_sports' in the schema cache"
+[13:53:48.939] INFO (548): Request completed
+    requestId: "d220557f-9a90-4ec4-a51d-b17eb3304af2"
+    method: "POST"
+    url: "/"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    statusCode: 400
+    responseTime: 2397
