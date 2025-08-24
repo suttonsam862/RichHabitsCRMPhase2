@@ -1,0 +1,52 @@
+You are the implementation agent. Execute CR “2025-08-24-zero-db-error-framework”.
+
+Rules:
+- Treat the CR file as the source of truth.
+- Make every file and edit exactly as specified (paths and contents).
+- Do not invent alternative paths. If a target file doesn’t exist, create it.
+- If the organizations POST route exists in a different path, update that file to use supabaseAdmin for writes; otherwise create and mount the provided create.ts and ensure the router is registered.
+- Keep the repo ESM settings intact; all new TS files should compile under current tsconfig.
+- Do not expose SUPABASE_SERVICE_ROLE_KEY to any client code.
+
+Steps:
+1) Install packages:
+   - dev: tsx, zod
+   - prod: @supabase/supabase-js, pg
+
+2) Apply all file edits and additions from the CR verbatim.
+
+3) Confirm env variables exist (do not print secrets):
+   - SUPABASE_URL or VITE_SUPABASE_URL
+   - SUPABASE_SERVICE_ROLE_KEY
+   - DATABASE_URL
+
+4) Apply the SQL migration at server/migrations/2025_08_24_orgsports_contact_user_id.sql using the configured DB.
+   - If the project has a migration runner, use it; if not, note in output that this file must be executed in Supabase SQL.
+   - After migration, run: `npm run db:reload-postgrest`
+
+5) Generate and validate schema:
+   - Run: `npm run db:schema:dump`
+   - Run: `npm run db:schema:check`
+   - If schema-check fails, fix the root cause (e.g., wrong DB/URL; missing column) and re-run until green.
+
+6) Prove writes are RLS-safe:
+   - Run: `npm run db:selftest`
+   - If it fails, ensure the create org route uses supabaseAdmin and PostgREST cache was reloaded, then re-run.
+
+7) Preflight:
+   - Confirm scripts/preflight.cjs now runs schema dump + check.
+
+8) Start the app:
+   - `npm run dev`
+   - Attempt a POST /api/v1/organizations via the UI straight away.
+   - Confirm 200 and the org appears in the list.
+
+9) Output:
+   - Paste the logs from steps 5–8 including success messages or any errors you fixed.
+   - If a mismatch in file paths required you to adapt (e.g., organizations route path), list the exact diffs you made.
+
+Acceptance criteria:
+- `npm run verify` passes (dump + check + selftest).
+- Creating an organization from the UI returns 200, visible in list.
+- No RLS or “schema cache” errors present.
+- Service-role writes stay server-only.
