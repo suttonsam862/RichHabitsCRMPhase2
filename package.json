@@ -11,6 +11,11 @@
     "preflight": "node scripts/preflight.cjs",
     "db:push": "drizzle-kit push",
     "db:introspect": "drizzle-kit introspect",
+    "db:schema:dump": "tsx scripts/db/schema-dump.ts",
+    "db:schema:check": "tsx scripts/db/schema-check.ts",
+    "db:selftest": "tsx scripts/db/selftest.ts",
+    "db:reload-postgrest": "tsx scripts/db/reload-postgrest.ts",
+    "verify": "npm run db:schema:dump && npm run db:schema:check && npm run db:selftest",
     "smoke:orgs": "tsx scripts/smoke-orgs.ts"
   },
   "dependencies": {
