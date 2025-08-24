@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Failed to sign in');
+      throw new Error(error.error?.message || error.message || 'Failed to sign in');
     }
 
     const data = await response.json();
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Failed to sign up');
+      throw new Error(error.error?.message || error.message || 'Failed to sign up');
     }
 
     const data = await response.json();
