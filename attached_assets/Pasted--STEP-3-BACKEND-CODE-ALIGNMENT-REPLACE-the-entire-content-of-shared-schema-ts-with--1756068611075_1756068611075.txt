@@ -1,0 +1,208 @@
+ **STEP 3: BACKEND CODE ALIGNMENT**
+    REPLACE the entire content of `/shared/schema.ts` with:
+    ```typescript
+    import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, primaryKey } from 'drizzle-orm/pg-core';
+    import { relations } from 'drizzle-orm';
+    
+    export const users = pgTable('users', { id: uuid('id').primaryKey(), email: text('email'), role: text('role') });
+    export const organizations = pgTable('organizations', {
+      id: uuid('id').primaryKey().defaultRandom(),
+      name: varchar('name', { length: 255 }).notNull(),
+      address: text('address'), city: text('city'), state: text('state'), zip: text('zip'),
+      phone: text('phone'), email: text('email'), website: text('website'), logoUrl: text('logo_url'),
+      primaryColor: text('primary_color'), secondaryColor: text('secondary_color'), tertiaryColor: text('tertiary_color'),
+      titleCardUrl: text('title_card_url'),
+      createdAt: timestamp('created_at').defaultNow().notNull(),
+      updatedAt: timestamp('updated_at').defaultNow().notNull(),
+      createdBy: uuid('created_by').references(() => users.id),
+    });
+    export const sports = pgTable('sports', { id: uuid('id').primaryKey().defaultRandom(), name: text('name').notNull().unique() });
+    export const orgSports = pgTable('org_sports', {
+        organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+        sportId: uuid('sport_id').references(() => sports.id).notNull(),
+    }, (t) => ({ pk: primaryKey({ columns: [t.organizationId, t.sportId] }) }));
+    export const usersRelations = relations(users, ({ many }) => ({ organizations: many(organizations) }));
+    export const organizationsRelations = relations(organizations, ({ one, many }) => ({ createdBy: one(users, { fields: [organizations.createdBy], references: [users.id] }), orgSports: many(orgSports) }));
+    export const sportsRelations = relations(sports, ({ many }) => ({ orgSports: many(orgSports) }));
+    export const orgSportsRelations = relations(orgSports, ({ one }) => ({
+        organization: one(organizations, { fields: [orgSports.organizationId], references: [organizations.id] }),
+        sport: one(sports, { fields: [orgSports.sportId], references: [sports.id] }),
+    }));
+    ```
+    REPLACE the entire content of `/server/routes/organizations/hardened.ts` with:
+    ```typescript
+    import { Router } from 'express';
+    import { db } from '../../db';
+    import { organizations, orgSports } from '../../../shared/schema';
+    import { asyncHandler } from '../middleware/asyncHandler';
+    import { authenticate } from '../../middleware/auth';
+    import { createOrganizationSchema } from '../../../shared/schemas/organization';
+    import { BadRequestError } from '../../lib/errors';
+    import { eq } from 'drizzle-orm';
+    const router = Router();
+    router.use(authenticate);
+    router.get('/', asyncHandler(async (req, res) => {
+        const orgs = await db.select().from(organizations);
+        res.status(200).json(orgs);
+    }));
+    router.post('/', asyncHandler(async (req, res) => {
+        const userId = (req as any).user?.id;
+        if (!userId) { throw new BadRequestError('User ID not found on authenticated request.'); }
+        const validation = createOrganizationSchema.safeParse(req.body);
+        if (!validation.success) { throw new BadRequestError('Invalid organization data', validation.error.flatten().fieldErrors); }
+        const { sports: sportIds, ...orgData } = validation.data;
+        const dataToInsert = { ...orgData, createdBy: userId };
+        const newOrg = await db.transaction(async (tx) => {
+            const [insertedOrg] = await tx.insert(organizations).values(dataToInsert).returning();
+            if (sportIds && sportIds.length > 0) {
+                const orgSportsData = sportIds.map((sportId: string) => ({ organizationId: insertedOrg.id, sportId }));
+                await tx.insert(orgSports).values(orgSportsData);
+            }
+            return insertedOrg;
+        });
+        res.status(201).json(newOrg);
+    }));
+    router.get('/:id', asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
+        if (!org) { return res.status(404).json({ message: 'Organization not found or you do not have permission to view it.' }); }
+        res.status(200).json(org);
+    }));
+    export default router;
+    ```
+    REPLACE the entire content of `/server/routes/index.ts` with:
+    ```typescript
+    import { Router } from 'express';
+    import authRoutes from './auth';
+    import usersRoutes from './users';
+    import hardenedOrganizationsRoutes from './organizations/hardened';
+    import sportsRoutes from './sports';
+    import uploadRoutes from './upload';
+    import adminRoutes from './admin';
+    const router = Router();
+    router.get('/healthcheck', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
+    router.use('/auth', authRoutes);
+    router.use('/users', usersRoutes);
+    router.use('/organizations', hardenedOrganizationsRoutes);
+    router.use('/sports', sportsRoutes);
+    router.use('/upload', uploadRoutes);
+    router.use('/admin', adminRoutes);
+    export default router;
+    ```
+    REPLACE the entire content of `/server/routes/organizations/index.ts` with:
+    ```typescript
+    // This file is deprecated and has been replaced by ./organizations/hardened.ts
+    import { Router } from 'express';
+    const router = Router();
+    export default router;
+    ```
+
+    **STEP 4: FRONTEND CODE ALIGNMENT**
+    REPLACE the entire content of `/client/src/lib/api/organizations.ts` with:
+    ```typescript
+    import { supabase } from '../supabase';
+    import { Organization } from '../../../shared/schemas/organization';
+    import { handleApiError } from '../utils';
+    const BASE_URL = '/api/organizations';
+    export const createOrganization = async (organizationData: Omit<Organization, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { sports?: string[] }): Promise<Organization> => {
+      try {
+        const token = (await supabase.auth.getSession()).data.session?.access_token;
+        if (!token) { throw new Error('Authentication token not found.'); }
+        const response = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(organizationData),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to create organization');
+        }
+        return await response.json();
+      } catch (error) {
+        return handleApiError(error);
+      }
+    };
+    export const getOrganizations = async (): Promise<Organization[]> => {
+        try {
+            const token = (await supabase.auth.getSession()).data.session?.access_token;
+            if (!token) { throw new Error('Authentication token not found.'); }
+            const response = await fetch(BASE_URL, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to fetch organizations');
+            }
+            return await response.json();
+        } catch (error) {
+            return handleApiError(error);
+        }
+    };
+    ```
+    REPLACE the entire content of `/client/src/components/organization-wizard/org-wizard-modal.tsx` with:
+    ```tsx
+    import React, { useState } from 'react';
+    import { useForm } from 'react-hook-form';
+    import { zodResolver } from '@hookform/resolvers/zod';
+    import { z } from 'zod';
+    import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+    import { Button } from '../ui/button';
+    import { useToast } from '../../hooks/use-toast';
+    import { PrimaryStep } from './primary-step';
+    import { BrandingStep } from './branding-step';
+    import { SportsContactsStep } from './sports-contacts-step';
+    import { createOrganizationSchema } from '../../../shared/schemas/organization';
+    import { createOrganization } from '../../lib/api/organizations';
+    import { useMutation, useQueryClient } from '@tanstack/react-query';
+    const wizardSchema = createOrganizationSchema;
+    type WizardFormData = z.infer<typeof wizardSchema>;
+    interface OrgWizardModalProps { isOpen: boolean; onClose: () => void; }
+    export const OrgWizardModal: React.FC<OrgWizardModalProps> = ({ isOpen, onClose }) => {
+      const [step, setStep] = useState(1);
+      const { toast } = useToast();
+      const queryClient = useQueryClient();
+      const form = useForm<WizardFormData>({
+        resolver: zodResolver(wizardSchema),
+        defaultValues: { name: '', address: '', city: '', state: '', zip: '', phone: '', email: '', website: '', sports: [] },
+      });
+      const mutation = useMutation({
+        mutationFn: createOrganization,
+        onSuccess: () => {
+          toast({ title: 'Success', description: 'Organization created successfully.' });
+          queryClient.invalidateQueries({ queryKey: ['organizations'] });
+          onClose();
+          form.reset();
+          setStep(1);
+        },
+        onError: (error: Error) => {
+          toast({ title: 'Error', description: error.message || 'Could not create organization.', variant: 'destructive' });
+        },
+      });
+      const onSubmit = (data: WizardFormData) => {
+        console.log('Submitting organization data:', data);
+        mutation.mutate(data);
+      };
+      const nextStep = () => setStep((prev) => prev + 1);
+      const prevStep = () => setStep((prev) => prev - 1);
+      return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogContent className="sm:max-w-[600px] bg-gray-900/80 backdrop-blur-sm border-purple-500/30 text-white">
+            <DialogHeader><DialogTitle>Create New Organization - Step {step} of 3</DialogTitle></DialogHeader>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <div className="space-y-4 p-1">
+                {step === 1 && <PrimaryStep form={form} />}
+                {step === 2 && <BrandingStep form={form} />}
+                {step === 3 && <SportsContactsStep form={form} />}
+              </div>
+              <div className="flex justify-between mt-6 pt-4 border-t border-gray-700">
+                {step > 1 && (<Button type="button" variant="outline" onClick={prevStep}>Back</Button>)}
+                {step < 3 && (<Button type="button" onClick={nextStep} className="ml-auto">Next</Button>)}
+                {step === 3 && (<Button type="submit" disabled={mutation.isPending} className="ml-auto bg-green-600 hover:bg-green-700">{mutation.isPending ? 'Creating...' : 'Create Organization'}</Button>)}
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      );
+    };
+    ```
+
+    **STEP 5: VERIFY AND RESTART**
+    After applying all file changes, stop and restart the Replit environment to ensure all changes take effect.
