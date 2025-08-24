@@ -16,23 +16,24 @@ const tagsSchema = z.array(z.string().max(24)).max(20);
 
 const createOrgSchema = z.object({
   name: z.string().min(2).max(120),
-  is_business: z.boolean().default(false),
-  brand_primary: z.string().optional(), // More permissive for debugging
-  brand_secondary: z.string().optional(), // More permissive for debugging
-  colorPalette: z.array(z.string()).default([]), // More permissive
-  email_domain: z.string().optional().or(z.literal('').transform(()=>undefined)),
-  billing_email: z.string().optional().or(z.literal('').transform(()=>undefined)),
-  tags: z.array(z.string()).default([]), // More permissive
+  // Frontend sends camelCase - match that
+  isBusiness: z.boolean().default(false),
+  brandPrimary: z.string().optional(),
+  brandSecondary: z.string().optional(),
+  colorPalette: z.array(z.string()).default([]),
+  emailDomain: z.string().optional().or(z.literal('').transform(()=>undefined)),
+  billingEmail: z.string().optional().or(z.literal('').transform(()=>undefined)),
+  tags: z.array(z.string()).default([]),
   sports: z.array(z.object({
-    sportId: z.string(), // Allow any string for now
-    contact_name: z.string().min(1).max(100),
-    contact_email: z.string().email(),
-    // Additional fields the frontend might send
+    sportId: z.string(),
+    contactName: z.string().min(1).max(100),
+    contactEmail: z.string().email(),
+    contactPhone: z.string().optional(),
+    saved: z.boolean().optional(),
     id: z.string().optional(),
-    sportName: z.string().optional(),
-    contact_phone: z.string().optional()
+    sportName: z.string().optional()
   })).default([]),
-  // Address fields
+  // Address fields - keep snake_case as they match DB
   address_line1: z.string().optional(),
   address_line2: z.string().optional(),
   city: z.string().optional(),
@@ -44,10 +45,9 @@ const createOrgSchema = z.object({
   phone: z.string().optional(),
   email: z.string().optional(),
   notes: z.string().optional(),
-  // Additional frontend fields that might be sent
   logo_file: z.any().optional(),
   logo_url: z.string().optional()
-}).passthrough(); // Allow additional fields without failing
+}).passthrough();
 
 const updateOrgSchema = z.object({
   name: z.string().min(2).max(120).optional(),
@@ -97,12 +97,12 @@ r.post('/', async (req:any, res) => {
   
   const { data: org, error: orgErr } = await sb.from('organizations').insert([{
     name: p.name,
-    is_business: p.is_business,
-    brand_primary: brandPrimary,
-    brand_secondary: brandSecondary,
-    color_palette: colorPalette,
-    email_domain: p.email_domain,
-    billing_email: p.billing_email,
+    is_business: p.isBusiness,
+    brand_primary: p.brandPrimary || brandPrimary,
+    brand_secondary: p.brandSecondary || brandSecondary,
+    color_palette: p.colorPalette || colorPalette,
+    email_domain: p.emailDomain,
+    billing_email: p.billingEmail,
     tags: p.tags,
     gradient_css: gradient
   }]).select().single();
