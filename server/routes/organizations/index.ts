@@ -65,20 +65,24 @@ r.post('/', async (req:any, res) => {
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const p = parse.data;
 
-  // insert organization
+  // insert organization using user token client for RLS
   const gradient = gradientFrom(p.brandPrimary, p.brandSecondary);
   const { data: org, error: orgErr } = await sb.from('organizations').insert([{
     name: p.name,
     is_business: p.isBusiness,
     brand_primary: p.brandPrimary,
     brand_secondary: p.brandSecondary,
-    color_palette: p.colorPalette,
+    color_palette: p.colorPalette || [],
     email_domain: p.emailDomain,
     billing_email: p.billingEmail,
     tags: p.tags,
     gradient_css: gradient
   }]).select().single();
   if (orgErr) return sendErr(res, 'BAD_REQUEST', orgErr.message, undefined, 400);
+
+  // Re-select the row with the same client to reflect RLS membership
+  const { data: freshOrg, error: selectErr } = await sb.from('organizations').select('*').eq('id', org.id).single();
+  if (selectErr) return sendErr(res, 'BAD_REQUEST', selectErr.message, undefined, 400);
 
   // auto-create coach users & user_roles for regular orgs with sports contacts
   for (const s of p.sports){
@@ -108,7 +112,7 @@ r.post('/', async (req:any, res) => {
     }
   }
 
-  return sendOk(res, org);
+  return sendOk(res, freshOrg);
 });
 
 /* ---------- List (search/filter/sort/pagination/favorites/archived) ---------- */

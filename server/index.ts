@@ -31,6 +31,9 @@ app.use(helmet({
   contentSecurityPolicy: isDevelopment ? false : undefined
 }));
 
+// Trust proxy setting to prevent X-Forwarded-For warnings
+app.set('trust proxy', 1);
+
 // CORS configuration
 const allowedOrigins = env.ORIGINS.split(',').map(o => o.trim());
 app.use(cors({
