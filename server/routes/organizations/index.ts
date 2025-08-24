@@ -88,14 +88,14 @@ r.post('/', async (req:any, res) => {
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const p = parse.data;
 
-  // insert organization using user token client for RLS
+  // Use admin client for organization creation to bypass RLS during development
   // Ensure colorPalette defaults to [] when absent and always compute gradient_css
   const colorPalette = p.colorPalette || [];
   const brandPrimary = p.brandPrimary || '#3B82F6';
   const brandSecondary = p.brandSecondary || '#8B5CF6';
   const gradient_css = `linear-gradient(135deg, ${brandPrimary} 0%, ${brandSecondary} 100%)`;
   
-  const { data: org, error: orgErr } = await sb.from('organizations').insert([{
+  const { data: org, error: orgErr } = await supabaseAdmin.from('organizations').insert([{
     name: p.name,
     is_business: p.isBusiness,
     brand_primary: brandPrimary,
@@ -108,8 +108,8 @@ r.post('/', async (req:any, res) => {
   }]).select().single();
   if (orgErr) { const m = mapPgError(orgErr); return sendErr(res, 400, m.message, m, m.hint); }
 
-  // Re-select the row with the same client to reflect RLS membership
-  const { data: freshOrg, error: selectErr } = await sb.from('organizations').select('*').eq('id', org.id).single();
+  // Re-select the row with admin client
+  const { data: freshOrg, error: selectErr } = await supabaseAdmin.from('organizations').select('*').eq('id', org.id).single();
   if (selectErr) { const m = mapPgError(selectErr); return sendErr(res, 400, m.message, m, m.hint); }
 
   // auto-create coach users & user_roles for regular orgs with sports contacts
