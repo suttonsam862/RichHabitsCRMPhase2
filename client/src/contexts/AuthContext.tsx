@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('/api/v1/auth/me', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch('/api/v1/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signUp(email: string, password: string, fullName?: string) {
-    const response = await fetch('/api/auth/register', {
+    const response = await fetch('/api/v1/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        await fetch('/api/auth/logout', {
+        await fetch('/api/v1/auth/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
