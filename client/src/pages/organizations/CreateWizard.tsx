@@ -1,9 +1,10 @@
-import { useState } from 'react'; 
+import { useState, useEffect } from 'react'; 
 import { api } from '@/lib/api'; 
 import GlowCard from '@/components/ui/GlowCard';
 import { Link, useNavigate } from 'react-router-dom';
 
 type SportRow = { sportId:string; contactName:string; contactEmail:string };
+type Sport = { id: string; name: string };
 
 export default function CreateWizard(){
   const navigate = useNavigate();
@@ -17,9 +18,21 @@ export default function CreateWizard(){
   const [billingEmail, setBillingEmail] = useState('');
   const [tags, setTags] = useState<string>(''); // comma-separated
   const [sports, setSports] = useState<SportRow[]>([]);
+  const [availableSports, setAvailableSports] = useState<Sport[]>([]);
   const [msg, setMsg] = useState<string|undefined>(); 
   const [err, setErr] = useState<string|undefined>();
   const [loading, setLoading] = useState(false);
+
+  // Fetch available sports on component mount
+  useEffect(() => {
+    async function fetchSports() {
+      const r = await api.get('/api/v1/sports');
+      if (r.success) {
+        setAvailableSports(r.data || []);
+      }
+    }
+    fetchSports();
+  }, []);
 
   function addSport(){ 
     setSports([...sports, { sportId:'', contactName:'', contactEmail:'' }]); 
@@ -289,13 +302,19 @@ export default function CreateWizard(){
                   {sports.map((sport, i) => (
                     <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input 
-                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
+                        <select 
+                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:border-cyan-500/50 focus:outline-none transition-colors" 
                           value={sport.sportId} 
                           onChange={e=>updateSport(i,{sportId:e.target.value})}
-                          placeholder="Sport ID (UUID)"
-                          data-testid={`input-sport-id-${i}`}
-                        />
+                          data-testid={`select-sport-${i}`}
+                        >
+                          <option value="" className="bg-gray-800">Select a sport...</option>
+                          {availableSports.map(availableSport => (
+                            <option key={availableSport.id} value={availableSport.id} className="bg-gray-800">
+                              {availableSport.name}
+                            </option>
+                          ))}
+                        </select>
                         <input 
                           className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
                           value={sport.contactName} 
