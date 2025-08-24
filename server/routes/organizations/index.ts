@@ -91,7 +91,8 @@ r.post('/', async (req:any, res) => {
 
   // Use admin client for organization creation to bypass RLS during development
   // Ensure colorPalette defaults to [] when absent and always compute gradient_css
-  const colorPalette = p.colorPalette || [];
+  const colorPalette = Array.isArray(p.colorPalette) ? p.colorPalette : [];
+  const tags = Array.isArray(p.tags) ? p.tags : [];
   const brandPrimary = p.brandPrimary || '#3B82F6';
   const brandSecondary = p.brandSecondary || '#8B5CF6';
   const gradient_css = `linear-gradient(135deg, ${brandPrimary} 0%, ${brandSecondary} 100%)`;
@@ -104,7 +105,7 @@ r.post('/', async (req:any, res) => {
     color_palette: colorPalette,
     email_domain: p.emailDomain,
     billing_email: p.billingEmail,
-    tags: p.tags,
+    tags: tags,
     gradient_css: gradient_css
   }]).select().single();
   if (orgErr) { const m = mapPgError(orgErr); return sendErr(res, 400, m.message, m, m.hint); }
