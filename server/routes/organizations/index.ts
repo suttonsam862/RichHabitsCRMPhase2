@@ -4,6 +4,7 @@ import { sendOk, sendErr, sendNoContent } from '../../lib/http';
 import { mapPgError, mapValidationError } from '../../lib/err';
 import { supabaseForUser, supabaseAdmin } from '../../lib/supabase';
 import { requireAuth } from '../../middleware/auth';
+import { logger } from '../../lib/log';
 
 const r = Router();
 r.use(requireAuth);
@@ -126,12 +127,41 @@ r.post('/', async (req:any, res) => {
       if (create.error || !create.data?.user) return sendErr(res, 400, create.error?.message || 'Unable to create contact user');
       coachId = create.data.user.id;
     }
-    // add org_sports entry
-    const { error: osErr } = await sb.from('org_sports').insert([{
-      organization_id: org.id, sport_id: s.sportId,
-      contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
-    }]);
-    if (osErr) { const m = mapPgError(osErr); return sendErr(res, 400, m.message, m, m.hint); }
+    // add org_sports entry with schema cache error recovery
+    try {
+      const { error: osErr } = await sb.from('org_sports').insert([{
+        organization_id: org.id, sport_id: s.sportId,
+        contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
+      }]);
+      if (osErr) { 
+        // Handle schema cache error specifically
+        if (osErr.message?.includes('contact_user_id') && osErr.message?.includes('schema cache')) {
+          logger.warn({ rid: res.locals?.rid, error: osErr.message }, 'Schema cache error detected, forcing refresh and retry');
+          
+          // Force schema refresh
+          await Promise.allSettled([
+            supabaseAdmin.rpc('pgrst_reload'),
+            supabaseAdmin.from('pg_notify').insert([{ channel: 'pgrst', payload: 'reload schema' }])
+          ]);
+          
+          // Wait a moment and retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { error: retryErr } = await sb.from('org_sports').insert([{
+            organization_id: org.id, sport_id: s.sportId,
+            contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
+          }]);
+          
+          if (retryErr) { const m = mapPgError(retryErr); return sendErr(res, 400, m.message, m, m.hint); }
+        } else {
+          const m = mapPgError(osErr); 
+          return sendErr(res, 400, m.message, m, m.hint); 
+        }
+      }
+    } catch (insertError: any) {
+      logger.error({ rid: res.locals?.rid, error: insertError.message }, 'Org sports insert failed');
+      const m = mapPgError(insertError); 
+      return sendErr(res, 400, m.message, m, m.hint);
+    }
     // assign Customer role scoped to this org
     const { data: roles } = await supabaseAdmin.from('roles').select('id,slug');
     const customer = roles?.find(r=>r.slug==='customer')?.id;
