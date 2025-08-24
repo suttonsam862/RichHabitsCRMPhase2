@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { sendOk, sendErr, sendCreated, sendNoContent } from '../../lib/http';
-import { supabaseAdmin } from '../../lib/supabase';
+import { supabaseAdmin } from '../../lib/supabaseAdmin';
 import { requireAuth } from '../../middleware/auth';
 
 const r = Router();

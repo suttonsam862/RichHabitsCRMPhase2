@@ -2,7 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth';
 import { usersRouter } from './users';
 import hardenedOrganizationsRoutes from './organizations/hardened';
-import sportsRoutes from './sports';
+import sportsRoutes from './sports/index';
 import uploadRoutes from './upload';
 const router = Router();
 router.get('/healthcheck', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
