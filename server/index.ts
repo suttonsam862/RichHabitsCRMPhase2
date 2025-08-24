@@ -137,6 +137,10 @@ app.use('/api/v1/auth/register', authLimiter);
 // Mount canonical API router at /api with rate limiting
 app.use('/api', apiLimiter, apiRouter);
 
+// Routes
+import apiRouter from './routes/index.js';
+app.use('/api/v1', apiRouter);
+
 // Centralized error handler (last middleware)
 app.use((err:any, req:any, res:any, next:any)=>{
   const { logger } = require('./lib/log');

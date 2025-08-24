@@ -14,5 +14,4 @@ router.use('/organizations', hardenedOrganizationsRoutes);
 router.use('/sports', sportsRoutes);
 router.use('/upload', uploadRoutes);
 
-export { router as apiRouter };
 export default router;
