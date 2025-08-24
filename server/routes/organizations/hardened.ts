@@ -25,27 +25,29 @@ router.post('/', asyncHandler(async (req, res) => {
     const validation = CreateOrganizationDTO.safeParse(req.body);
     if (!validation.success) { throw new BadRequestError('Invalid organization data', validation.error.flatten().fieldErrors); }
     const { sports: sportData, ...orgData } = validation.data;
-    
+
     // Use supabaseAdmin for writes to bypass RLS
     if (!supabaseAdmin) {
         throw new Error('Supabase admin client not available');
     }
-    
+
     // Insert organization using supabaseAdmin
     const orgRes = await supabaseAdmin
         .from('organizations')
         .insert({
             ...orgData,
             created_by: userId,
-            status: 'active'
+            status: 'active',
+            brand_primary: orgData.brandPrimary || null,
+            brand_secondary: orgData.brandSecondary || null,
         })
         .select('*')
         .single();
-    
+
     if (orgRes.error) {
         throw new BadRequestError(`Failed to create organization: ${orgRes.error.message}`);
     }
-    
+
     // Insert org_sports if provided
     if (sportData && sportData.length > 0) {
         const orgSportsData = sportData.map((sport: any) => ({
@@ -56,18 +58,18 @@ router.post('/', asyncHandler(async (req, res) => {
             contact_phone: sport.contactPhone || '',
             contact_user_id: sport.contactUserId || null
         }));
-        
+
         const sportRes = await supabaseAdmin
             .from('org_sports')
             .insert(orgSportsData);
-        
+
         if (sportRes.error) {
             // Attempt to rollback by deleting the organization
             await supabaseAdmin.from('organizations').delete().eq('id', orgRes.data.id);
             throw new BadRequestError(`Failed to create organization sports: ${sportRes.error.message}`);
         }
     }
-    
+
     res.status(201).json(orgRes.data);
 }));
 router.get('/:id', asyncHandler(async (req, res) => {
