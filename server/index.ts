@@ -82,12 +82,12 @@ app.use(requestIdMiddleware);
 app.use((req, res, next) => {
   const startTime = Date.now();
   logRequest(req);
-  
+
   res.on('finish', () => {
     const responseTime = Date.now() - startTime;
     logRequestComplete(req, res, responseTime);
   });
-  
+
   next();
 });
 
@@ -106,7 +106,7 @@ app.get('/healthz', (req, res) => {
 app.get('/metrics', (req, res) => {
   const memoryUsage = process.memoryUsage();
   const uptime = process.uptime();
-  
+
   // Prometheus-style metrics (basic)
   const metrics = [
     `# HELP process_uptime_seconds Process uptime in seconds`,
@@ -119,7 +119,7 @@ app.get('/metrics', (req, res) => {
     `# TYPE nodejs_heap_size_total_bytes gauge`,
     `nodejs_heap_size_total_bytes ${memoryUsage.heapTotal}`
   ].join('\n');
-  
+
   res.set('Content-Type', 'text/plain');
   res.send(metrics);
 });
