@@ -42,7 +42,7 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
     next();
   } catch (error) {
     logSecurityEvent(req, 'AUTH_ERROR', { error: error instanceof Error ? error.message : 'Unknown error' });
-    return sendErr(res, 'INTERNAL_ERROR', 'Authentication error', undefined, 500);
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication error', undefined, 500);
   }
 }
 

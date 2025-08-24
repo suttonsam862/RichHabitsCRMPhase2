@@ -143,7 +143,7 @@ app.use((err:any, req:any, res:any, next:any)=>{
   const status = err?.status || err?.statusCode || 500;
   const code = err?.code || 'ERR_UNEXPECTED';
   const msg = err?.message || 'Unhandled error';
-  
+
   // Log the error
   console.error({
     rid: res.locals?.rid,
@@ -161,7 +161,7 @@ app.use((err:any, req:any, res:any, next:any)=>{
     message: dev ? msg : 'An unexpected error occurred',
     ...(dev && err?.stack && { stack: err.stack })
   };
-  
+
   return res.status(status).json(responseBody);
 });
 
