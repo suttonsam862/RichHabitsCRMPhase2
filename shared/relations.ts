@@ -1,4 +1,4 @@
-// Schema auto-pulled on 2025-08-24T07:35:03.309Z
+// Schema auto-pulled on 2025-08-24T07:49:38.122Z
 // This file was automatically generated from the database
 
 import { relations } from "drizzle-orm/relations";
