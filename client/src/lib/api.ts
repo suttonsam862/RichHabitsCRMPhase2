@@ -1,6 +1,9 @@
-import { sb } from '@/lib/supabase';
+import { sb, isSupabaseAvailable } from '@/lib/supabase';
 
 async function authHeaders(): Promise<Record<string, string>>{
+  if (!isSupabaseAvailable() || !sb) {
+    return {};
+  }
   const { data } = await sb.auth.getSession();
   const t = data.session?.access_token;
   return t ? { Authorization: `Bearer ${t}` } : {};
