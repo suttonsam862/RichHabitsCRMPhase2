@@ -1,3 +1,4 @@
+
 // Error taxonomy + mapper for Postgres/Supabase
 export type RichError = {
   code: string|number;

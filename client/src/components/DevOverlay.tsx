@@ -1,5 +1,5 @@
-import { useState } from 'react';
 
+import { useEffect, useState } from 'react';
 export default function DevOverlay(){
   const [open,setOpen]=useState(false);
   if (import.meta.env.PROD || (import.meta.env.VITE_DEBUG_LEVEL ?? '1')==='0') return null;

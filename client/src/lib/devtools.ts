@@ -1,3 +1,4 @@
+
 export const DEBUG_LEVEL = Number(import.meta.env.VITE_DEBUG_LEVEL ?? 1);
 export function groupLog(title:string, data:any, danger=false){
   if (DEBUG_LEVEL === 0) return;
