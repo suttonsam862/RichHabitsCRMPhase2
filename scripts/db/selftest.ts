@@ -21,12 +21,16 @@ async function main() {
 
   // Insert org_sports row
   const sportIns = await sb.from('org_sports').insert({
-    org_id: orgIns.data!.id, sport: 'wrestling', contact_user_id: null
+    organization_id: orgIns.data!.id, 
+    sport_id: '26c98c39-f204-40f3-a5ec-b0dbd040b01c', // wrestling sport ID
+    contact_name: 'Test Contact',
+    contact_email: 'test@example.com',
+    contact_user_id: null
   });
   if (sportIns.error) throw new Error(`Insert org_sports failed: ${sportIns.error.message}`);
 
   // Cleanup (best effort)
-  await sb.from('org_sports').delete().eq('org_id', orgIns.data!.id);
+  await sb.from('org_sports').delete().eq('organization_id', orgIns.data!.id);
   await sb.from('organizations').delete().eq('id', orgIns.data!.id);
 
   console.log('✅ DB selftest passed (writes via service role, no RLS/constraint errors).');

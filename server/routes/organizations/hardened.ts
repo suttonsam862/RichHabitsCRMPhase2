@@ -49,8 +49,11 @@ router.post('/', asyncHandler(async (req, res) => {
     // Insert org_sports if provided
     if (sportData && sportData.length > 0) {
         const orgSportsData = sportData.map((sport: any) => ({
-            org_id: orgRes.data.id,
+            organization_id: orgRes.data.id,
             sport_id: sport.sportId || sport,
+            contact_name: sport.contactName || '',
+            contact_email: sport.contactEmail || '',
+            contact_phone: sport.contactPhone || '',
             contact_user_id: sport.contactUserId || null
         }));
         
