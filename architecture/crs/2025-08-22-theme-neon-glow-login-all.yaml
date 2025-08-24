@@ -1,0 +1,877 @@
+cr:
+title: "2025-08-22-theme-neon-glow-login-all"
+rationale: >
+  Rebuild auth + theme + baseline production hardening in one pass. Reinstate neon/glow UI theme; fix login using Supabase
+  client auth in the browser with token forwarding for RLS; implement branded SendGrid password reset and signup confirmation;
+  add role-aware registration (customer/sales/designer) with designer portfolio .zip upload via signed URLs; auto-apply roles
+  after confirmation; add admin set-password fallback; restore routing, ErrorBoundary, ProtectedRoute; standardize API
+  responses; add security middleware (helmet/cors/rate-limit/compression), logging, health endpoint; reconcile DB helpers;
+  add preflight + route-verify; provide ship-check script for instant verification.
+
+########################################################################################################
+# 0) EXECUTION PROTOCOL
+########################################################################################################
+agent_protocol:
+  rules:
+    - "PLAN-FIRST: update architecture/context/.PLAN.md (goal, files, risks, rollback) before coding."
+    - "All new endpoints live under /api/v1 and are mounted exactly once."
+    - "All API responses use { success, data?, count?, error? } with proper HTTP codes."
+    - "No imports from client/_legacy; preflight will block."
+    - "Run npm run preflight && npm run check && npm run dev; fix until green."
+
+########################################################################################################
+# 1) ENV / CONFIG
+########################################################################################################
+config_delta:
+  server_env_required:
+    - "SUPABASE_URL"
+    - "SUPABASE_ANON_KEY"
+    - "SUPABASE_SERVICE_ROLE_KEY"
+    - "JWT_SECRET (min 32 chars)"
+    - "ORIGINS (comma-separated allowed origins)"
+    - "SENDGRID_API_KEY (existing; do not hardcode)"
+    - "SENDGRID_FROM (e.g., no-reply@rich-habits.com)"
+    - "SENDGRID_FROM_NAME (defaults to 'Rich Habits App')"
+    - "APP_PUBLIC_URL (e.g., http://localhost:5173)"
+  client_env_required:
+    - "VITE_SUPABASE_URL"
+    - "VITE_SUPABASE_ANON_KEY"
+  notes: |
+    - This CR reads the existing SendGrid keys from Replit; if missing, reset/confirm endpoints return 503 with missing keys list.
+    - APP_PUBLIC_URL is used only to build email links; it is safe to expose.
+
+########################################################################################################
+# 2) DATABASE MIGRATION — helpers, lookups, RPC, indexes (idempotent)
+########################################################################################################
+db_migration:
+  id: "2025_08_22_rebuild_base"
+  sql:
+    # Roles seeds
+    - |
+      INSERT INTO public.roles (id, name, slug)
+      VALUES
+        (gen_random_uuid(), 'Admin', 'admin'),
+        (gen_random_uuid(), 'Sales', 'sales'),
+        (gen_random_uuid(), 'Design', 'design'),
+        (gen_random_uuid(), 'Manufacturing', 'manufacturing'),
+        (gen_random_uuid(), 'Accounting', 'accounting'),
+        (gen_random_uuid(), 'Customer', 'customer')
+      ON CONFLICT (slug) DO UPDATE SET name=EXCLUDED.name;
+
+    # Order status lookups
+    - |
+      INSERT INTO public.status_orders (code, sort_order, is_terminal) VALUES
+        ('consultation',1,false),('design',2,false),('manufacturing',3,false),
+        ('shipped',4,false),('completed',5,true)
+      ON CONFLICT (code) DO NOTHING;
+
+    # Order item status lookups
+    - |
+      CREATE TABLE IF NOT EXISTS public.status_order_items (
+        code text PRIMARY KEY,
+        sort_order integer NOT NULL,
+        is_terminal boolean NOT NULL DEFAULT false
+      );
+    - |
+      INSERT INTO public.status_order_items (code, sort_order, is_terminal) VALUES
+        ('pending',1,false),('design',2,false),('approved',3,false),
+        ('manufacturing',4,false),('shipped',5,false),('done',6,true)
+      ON CONFLICT (code) DO NOTHING;
+
+    # Organizations shape defaults
+    - |
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='organizations' AND column_name='color_palette') THEN
+          ALTER TABLE public.organizations ADD COLUMN color_palette jsonb NOT NULL DEFAULT '[]'::jsonb;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='organizations' AND column_name='universal_discounts') THEN
+          ALTER TABLE public.organizations ADD COLUMN universal_discounts jsonb;
+        END IF;
+        UPDATE public.organizations SET universal_discounts='{}'::jsonb WHERE universal_discounts IS NULL;
+        ALTER TABLE public.organizations
+          ALTER COLUMN universal_discounts SET DEFAULT '{}'::jsonb,
+          ALTER COLUMN universal_discounts SET NOT NULL;
+      END$$;
+
+    # OrgSports contact user link
+    - |
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='org_sports' AND column_name='contact_user_id') THEN
+          ALTER TABLE public.org_sports
+            ADD COLUMN contact_user_id uuid NULL REFERENCES auth.users(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+
+    # Orders/items: ensure status_code only (no enums)
+    - |
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='orders' AND column_name='status') THEN
+          UPDATE public.orders SET status_code = status::text WHERE status_code IS NULL;
+          ALTER TABLE public.orders DROP COLUMN status;
+        END IF;
+      END $$;
+    - |
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='order_items' AND column_name='status_code') THEN
+          ALTER TABLE public.order_items ADD COLUMN status_code text;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='order_items' AND column_name='status') THEN
+          UPDATE public.order_items SET status_code = status::text WHERE status_code IS NULL;
+          ALTER TABLE public.order_items DROP COLUMN status;
+        END IF;
+        BEGIN
+          ALTER TABLE public.order_items
+            ADD CONSTRAINT order_items_status_code_fkey
+            FOREIGN KEY (status_code) REFERENCES public.status_order_items(code);
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+      END $$;
+
+    # Drop orphan enums if unused
+    - |
+      DO $$ DECLARE r int; i int;
+      BEGIN
+        SELECT COUNT(*) INTO r FROM pg_type t LEFT JOIN pg_depend d ON d.refobjid=t.oid WHERE t.typname='order_status';
+        IF r=0 THEN BEGIN DROP TYPE IF EXISTS public.order_status; EXCEPTION WHEN others THEN NULL; END; END IF;
+        SELECT COUNT(*) INTO i FROM pg_type t LEFT JOIN pg_depend d ON d.refobjid=t.oid WHERE t.typname='order_item_status';
+        IF i=0 THEN BEGIN DROP TYPE IF EXISTS public.order_item_status; EXCEPTION WHEN others THEN NULL; END; END IF;
+      END $$;
+
+    # RLS Helpers
+    - |
+      CREATE OR REPLACE FUNCTION public.has_role_slug(uid uuid, org uuid, role_slug text)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (
+          SELECT 1 FROM public.user_roles ur
+          JOIN public.roles r ON r.id=ur.role_id
+          WHERE ur.user_id=uid AND ur.org_id IS NOT DISTINCT FROM org AND r.slug=role_slug
+        );
+      $$;
+    - |
+      CREATE OR REPLACE FUNCTION public.has_role(uid uuid, org uuid, role_name text)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (
+          SELECT 1 FROM public.user_roles ur
+          JOIN public.roles r ON r.id=ur.role_id
+          WHERE ur.user_id=uid AND ur.org_id IS NOT DISTINCT FROM org
+            AND (r.slug=lower(role_name) OR r.name=role_name)
+        );
+      $$;
+    - |
+      CREATE OR REPLACE FUNCTION public.is_org_member(uid uuid, org uuid)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=uid AND org_id IS NOT DISTINCT FROM org);
+      $$;
+    - |
+      CREATE OR REPLACE FUNCTION public.is_org_admin(uid uuid, org uuid)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT public.has_role_slug(uid, org, 'admin');
+      $$;
+
+    # Org bootstrap owner
+    - |
+      CREATE OR REPLACE FUNCTION public.handle_org_insert()
+      RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+      DECLARE admin_role_id uuid; v_user uuid;
+      BEGIN
+        BEGIN v_user := auth.uid(); EXCEPTION WHEN others THEN v_user := NULL; END;
+        IF v_user IS NULL THEN RETURN NEW; END IF;
+        SELECT id INTO admin_role_id FROM public.roles WHERE slug='admin' LIMIT 1;
+        IF admin_role_id IS NOT NULL THEN
+          INSERT INTO public.user_roles (user_id, org_id, role_id)
+          VALUES (v_user, NEW.id, admin_role_id) ON CONFLICT DO NOTHING;
+        END IF;
+        RETURN NEW;
+      END $$;
+
+    # Summary RPC (avoid N+1)
+    - |
+      CREATE OR REPLACE FUNCTION public.org_summary(p_org_id uuid, p_requester uuid)
+      RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+      DECLARE result jsonb;
+      BEGIN
+        IF NOT public.is_org_member(p_requester, p_org_id) AND NOT public.is_org_admin(p_requester, p_org_id) THEN
+          RAISE EXCEPTION 'forbidden' USING ERRCODE='42501';
+        END IF;
+        SELECT jsonb_build_object(
+          'organization', to_jsonb(o) - 'universal_discounts' || jsonb_build_object(
+              'universalDiscounts', COALESCE(o.universal_discounts,'{}'::jsonb),
+              'colorPalette', COALESCE(o.color_palette, '[]'::jsonb)
+          ),
+          'sports', COALESCE((
+             SELECT jsonb_agg(jsonb_build_object(
+               'sportId', os.sport_id, 'contactEmail', os.contact_email,
+               'contactUserId', os.contact_user_id, 'contactUserEmail', au.email ))
+             FROM public.org_sports os
+             LEFT JOIN auth.users au ON au.id=os.contact_user_id
+             WHERE os.org_id=o.id
+          ), '[]'::jsonb)
+        ) INTO result
+        FROM public.organizations o WHERE o.id=p_org_id;
+        RETURN COALESCE(result, '{}'::jsonb);
+      END $$;
+
+    # Indexes
+    - "CREATE INDEX IF NOT EXISTS idx_orders_org_id       ON public.orders(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_customer_id  ON public.orders(customer_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_orders_status_code  ON public.orders(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_order   ON public.order_items(order_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_org     ON public.order_items(org_id);"
+    - "CREATE INDEX IF NOT EXISTS idx_order_items_status  ON public.order_items(status_code);"
+    - "CREATE INDEX IF NOT EXISTS idx_orgs_name           ON public.organizations(name);"
+    - "CREATE INDEX IF NOT EXISTS idx_user_roles_org_user ON public.user_roles(org_id, user_id);"
+
+    # RLS enable (no-op if already)
+    - |
+      DO $$ BEGIN
+        EXECUTE 'ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.org_sports ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY';
+      EXCEPTION WHEN others THEN NULL; END $$;
+
+    # Storage bucket ensure
+    - |
+      INSERT INTO storage.buckets (id, name, public) VALUES ('app','app',false)
+      ON CONFLICT (id) DO NOTHING;
+
+########################################################################################################
+# 3) SERVER — MIDDLEWARE, LOGGING, HEALTH
+########################################################################################################
+server_bootstrap:
+  files:
+    - path: "server/lib/http.ts"
+      content: |
+        export function sendOk(res, data, count) {
+          const body = count !== undefined ? { success:true, data, count } : { success:true, data };
+          return res.status(200).json(body);
+        }
+        export function sendCreated(res, data) { return res.status(201).json({ success:true, data }); }
+        export function sendNoContent(res) { return res.status(204).send(); }
+        export function sendErr(res, code, message, details) {
+          const status = code || 500;
+          return res.status(status).json({ success:false, error:{ code:status, message, details }});
+        }
+    - path: "server/lib/log.ts"
+      content: |
+        import pino from 'pino';
+        export const logger = pino({
+          level: process.env.LOG_LEVEL || 'info',
+          redact: ['req.headers.authorization','res.headers.authorization','process.env','config.db.password','config.supabase.serviceKey']
+        });
+    - path: "server/lib/supabase.ts"
+      content: |
+        import { createClient } from '@supabase/supabase-js';
+        export const supabaseAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        export function supabaseForUser(accessToken?: string){
+          return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+            global: { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} }
+          });
+        }
+    - path: "server/middleware/auth.ts"
+      content: |
+        import { Request, Response, NextFunction } from 'express';
+        import { supabaseForUser } from '../lib/supabase';
+        export interface AuthedRequest extends Request { user?: { id:string, email?:string } }
+        export async function requireAuth(req:AuthedRequest,res:Response,next:NextFunction){
+          const h=req.headers.authorization; if(!h?.startsWith('Bearer ')) return res.status(401).json({success:false,error:{code:401,message:'Unauthorized'}});
+          const token=h.slice(7); const sb=supabaseForUser(token); const { data:{ user }, error }=await sb.auth.getUser();
+          if(error || !user) return res.status(401).json({success:false,error:{code:401,message:'Unauthorized'}});
+          req.user={ id:user.id, email:user.email||undefined }; return next();
+        }
+    - path: "server/index.ts"
+      patch: |
+        import express from 'express';
+        import helmet from 'helmet';
+        import compression from 'compression';
+        import cors from 'cors';
+        import rateLimit from 'express-rate-limit';
+        import { sendOk } from './lib/http';
+        import { logger } from './lib/log';
+        import apiRouter from './routes';
+        const app = express();
+        app.disable('x-powered-by');
+        app.use(helmet());
+        app.use(compression());
+        app.use(express.json({ limit: '2mb' }));
+        app.use(cors({ origin: (process.env.ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean) || true, credentials:false }));
+        app.use(rateLimit({ windowMs: 15*60*1000, max: 200 }));
+        // Request id + basic logging
+        app.use((req,res,next)=>{ (req as any).rid = Math.random().toString(36).slice(2); res.setHeader('X-Request-Id',(req as any).rid); next(); });
+        app.use('/api/v1', apiRouter);
+        app.get('/healthz', (_req,res)=> sendOk(res,{ status:'ok', version: (process.env.APP_VERSION||'dev'), uptimeSec: Math.floor(process.uptime()) }));
+        export default app;
+
+########################################################################################################
+# 4) SERVER — EMAIL (SendGrid overlay: use existing keys, graceful fallback)
+########################################################################################################
+server_email:
+  files:
+    - path: "server/lib/email.ts"
+      content: |
+        import sg from '@sendgrid/mail';
+        const KEY  = process.env.SENDGRID_API_KEY;
+        const FROM = process.env.SENDGRID_FROM;
+        const NAME = process.env.SENDGRID_FROM_NAME || 'Rich Habits App';
+        const APP  = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'');
+        if (KEY) sg.setApiKey(KEY);
+        export function isEmailConfigured(){ return !!KEY && !!FROM && !!APP; }
+        export function emailConfigIssues(){
+          const out:string[]=[]; if(!KEY) out.push('SENDGRID_API_KEY'); if(!FROM) out.push('SENDGRID_FROM'); if(!APP) out.push('APP_PUBLIC_URL'); return out;
+        }
+        export async function sendBrandedEmail(to:string, subject:string, html:string){
+          if (!isEmailConfigured()) throw new Error('Email not configured: missing '+emailConfigIssues().join(', '));
+          await sg.send({ to, from:{ email: FROM!, name: NAME }, subject, html });
+        }
+        export function neonEmailShell(title:string, bodyHtml:string){
+          return `
+            <div style="background:#0A0B0E;color:#fff;padding:32px;font-family:Inter,system-ui,-apple-system,sans-serif">
+              <div style="max-width:560px;margin:auto;border-radius:18px;padding:24px;background:rgba(255,255,255,0.04);
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),0 8px 40px rgba(0,0,0,.45)">
+                <h1 style="margin:0 0 8px;font-size:22px">${title}</h1>
+                ${bodyHtml}
+                <p style="opacity:.6;font-size:12px;margin-top:28px">© ${new Date().getFullYear()} Rich Habits</p>
+              </div>
+            </div>`;
+        }
+        export function actionButton(href:string,label='Open'){
+          return `<p style="margin:24px 0">
+            <a href="${href}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#fff;color:#000;
+               text-decoration:none;font-weight:600">${label}</a></p>`;
+        }
+
+########################################################################################################
+# 5) SERVER — AUTH (branded reset, branded signup confirmation, post-confirm role apply)
+########################################################################################################
+server_auth_routes:
+  files:
+    - path: "server/routes/auth/index.ts"
+      content: |
+        import { Router } from 'express';
+        import { sendOk, sendErr } from '../../lib/http';
+        import { supabaseAdmin } from '../../lib/supabase';
+        import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, neonEmailShell, actionButton } from '../../lib/email';
+        import { requireAuth } from '../../middleware/auth';
+        const r = Router();
+
+        // POST /api/v1/auth/reset-request { email }
+        r.post('/reset-request', async (req, res) => {
+          try{
+            const { email } = req.body || {};
+            if (!email) return sendErr(res, 400, 'Email required');
+            if (!isEmailConfigured()) return sendErr(res,503,'Email not configured: missing '+emailConfigIssues().join(', '));
+            const redirectTo = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'') + '/reset-password';
+            const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type:'recovery', email, options:{ redirectTo } });
+            if (error || !data?.action_link) return sendErr(res,400,error?.message || 'Could not generate link');
+            const html = neonEmailShell(
+              'Reset your password',
+              `<p style="opacity:.8">Click the button below to set a new password. This link will expire soon.</p>
+               ${actionButton(data.action_link,'Set new password')}
+               <p style="opacity:.65;font-size:13px">If you did not request this, ignore this email.</p>`
+            );
+            await sendBrandedEmail(email,'Reset your password',html);
+            return sendOk(res,{ sent:true });
+          }catch(e:any){ return sendErr(res,500,e?.message || 'Email error'); }
+        });
+
+        // POST /api/v1/auth/register { email,password,fullName,role, portfolioKey? }
+        r.post('/register', async (req, res) => {
+          try{
+            const { email, password, fullName, role, portfolioKey } = req.body || {};
+            if (!email || !password || !fullName || !role) return sendErr(res,400,'Missing required fields');
+            if (!['customer','sales','design'].includes(role)) return sendErr(res,400,'Invalid role');
+            if (!isEmailConfigured()) return sendErr(res,503,'Email not configured: missing '+emailConfigIssues().join(', '));
+            const redirectTo = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'') + '/auth/confirmed';
+            const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+              type:'signup', email, password,
+              options:{ data:{ full_name: fullName, desired_role: role, portfolio_key: portfolioKey || null }, redirectTo }
+            });
+            if (error || !data?.action_link) return sendErr(res,400,error?.message || 'Could not generate confirmation link');
+            const html = neonEmailShell(
+              'Confirm your email',
+              `<p style="opacity:.8">Welcome to Rich Habits. Please confirm your email to activate your account.</p>
+               ${actionButton(data.action_link,'Confirm email')}
+               <p style="opacity:.65;font-size:13px">After confirming, you will be redirected to finish setup.</p>`
+            );
+            await sendBrandedEmail(email,'Confirm your email',html);
+            return sendOk(res,{ sent:true });
+          }catch(e:any){ return sendErr(res,500,e?.message || 'Email error'); }
+        });
+
+        // POST /api/v1/auth/complete-profile — after verified login, apply desired_role -> user_roles
+        r.post('/complete-profile', requireAuth, async (req:any,res) => {
+          try{
+            const uid = req.user?.id; if(!uid) return sendErr(res,401,'Unauthorized');
+            const { data: uData, error: uErr } = await supabaseAdmin.auth.admin.getUserById(uid);
+            if (uErr || !uData?.user) return sendErr(res,400,uErr?.message || 'User not found');
+            const meta = uData.user.user_metadata || {};
+            const desiredRole = (meta.desired_role || '').toString();
+            if (!desiredRole) return sendOk(res,{ ok:true, applied:false });
+
+            const { data: roles } = await supabaseAdmin.from('roles').select('id,slug');
+            const slug = desiredRole==='design' ? 'design' : desiredRole==='sales' ? 'sales' : 'customer';
+            const roleId = roles?.find(r=>r.slug===slug)?.id;
+            if (!roleId) return sendErr(res,400,'Role not found');
+
+            await supabaseAdmin.from('user_roles')
+              .upsert({ user_id: uid, org_id: null, role_id: roleId }, { onConflict:'user_id,org_id,role_id' });
+
+            return sendOk(res,{ ok:true, applied:true, role: slug });
+          }catch(e:any){ return sendErr(res,500,e?.message || 'Complete-profile error'); }
+        });
+
+        export default r;
+
+    - path: "server/routes/index.ts"
+      patch: |
+        import { Router } from 'express';
+        import authRouter from './auth';
+        import organizationsRouter from './organizations'; // existing if present
+        import usersRouter from './users'; // existing
+        import filesBrandingRouter from './files/branding'; // existing
+        import portfolioRouter from './files/portfolio';
+        import adminConfigRouter from './admin/config';
+        const apiRouter = Router();
+        apiRouter.use('/auth', authRouter);
+        apiRouter.use('/files/portfolio', portfolioRouter);
+        apiRouter.use('/admin/config', adminConfigRouter);
+        // mount other routers here (organizations, users, orders, files/branding)
+        export default apiRouter;
+
+########################################################################################################
+# 6) SERVER — Portfolio signing endpoint (.zip for designers)
+########################################################################################################
+portfolio_route:
+  files:
+    - path: "server/routes/files/portfolio.ts"
+      content: |
+        import { Router } from 'express';
+        import { supabaseAdmin } from '../../lib/supabase';
+        import { sendOk, sendErr } from '../../lib/http';
+        function safeName(name:string){ if(name.includes('..')||name.startsWith('/')||name.includes('\\')) throw new Error('invalid_name'); return name.replace(/[^a-zA-Z0-9._-]/g,'_'); }
+        const r = Router();
+        r.post('/sign', async (req, res) => {
+          try{
+            const { email, name } = req.body || {};
+            if (!email || !name) return sendErr(res,400,'email and name required');
+            const s = safeName(name);
+            const key = `designers/prospects/${email}/${s}`;
+            const { data, error } = await supabaseAdmin.storage.from('app').createSignedUploadUrl(key, { upsert: true, expiresIn: 600 });
+            if (error || !data?.signedUrl) return sendErr(res,400,error?.message || 'sign error');
+            return sendOk(res,{ name: s, uploadUrl: data.signedUrl, key });
+          }catch(e:any){ return sendErr(res,500,e?.message || 'sign error'); }
+        });
+        export default r;
+
+########################################################################################################
+# 7) SERVER — Admin config status (to verify SendGrid setup)
+########################################################################################################
+admin_config:
+  files:
+    - path: "server/routes/admin/config.ts"
+      content: |
+        import { Router } from 'express';
+        import { requireAuth } from '../../middleware/auth';
+        import { sendOk } from '../../lib/http';
+        import { isEmailConfigured, emailConfigIssues } from '../../lib/email';
+        const r = Router();
+        r.use(requireAuth); // TODO: guard with admin role if desired
+        r.get('/email', (_req,res)=> sendOk(res, { ok: isEmailConfigured(), missing: isEmailConfigured()? [] : emailConfigIssues() }));
+        export default r;
+
+########################################################################################################
+# 8) CLIENT — Supabase client & API wrapper (token-forwarded)
+########################################################################################################
+client_libs:
+  files:
+    - path: "client/src/lib/supabase.ts"
+      content: |
+        import { createClient } from '@supabase/supabase-js';
+        const url  = import.meta.env.VITE_SUPABASE_URL as string;
+        const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+        export const sb = createClient(url, anon);
+    - path: "client/src/lib/api.ts"
+      content: |
+        import { sb } from '@/lib/supabase';
+        async function authHeaders(){
+          const { data } = await sb.auth.getSession();
+          const t = data.session?.access_token;
+          return t ? { Authorization: `Bearer ${t}` } : {};
+        }
+        export const api = {
+          async get(url:string){
+            const h = await authHeaders();
+            const r = await fetch(url, { headers:{ ...h }});
+            const j = await r.json().catch(()=> ({}));
+            if(!r.ok) return { success:false, error:{ code:r.status, message:j?.error?.message || r.statusText }};
+            return j;
+          },
+          async post(url:string, body:any){
+            const h = await authHeaders();
+            try{
+              const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json', ...h }, body: JSON.stringify(body) });
+              const j = await r.json().catch(()=> ({}));
+              if(!r.ok) return { success:false, error:{ code:r.status, message: j?.error?.message || j?.message || r.statusText }};
+              return j;
+            }catch(e:any){ return { success:false, error:{ code:0, message: e?.message || 'Network error' }}}
+          }
+        }
+
+########################################################################################################
+# 9) CLIENT — AuthProvider, ProtectedRoute, ErrorBoundary
+########################################################################################################
+client_auth_shell:
+  files:
+    - path: "client/src/auth/AuthProvider.tsx"
+      content: |
+        import { createContext, useContext, useEffect, useState } from 'react';
+        import { sb } from '@/lib/supabase';
+        type U = { id:string, email?:string|null };
+        const Ctx = createContext<{ user?:U; login:(e:string,p:string)=>Promise<void>; logout:()=>Promise<void> }>({} as any);
+        export function AuthProvider({children}:{children:any}){
+          const [user,setUser]=useState<U|undefined>();
+          useEffect(()=>{ sb.auth.getSession().then(({data})=> setUser(data.session?.user ? { id:data.session.user.id, email:data.session.user.email } : undefined));
+            const { data: sub } = sb.auth.onAuthStateChange((_e,s)=> setUser(s?.user ? { id:s.user.id, email:s.user.email } : undefined));
+            return ()=> sub.subscription.unsubscribe();
+          },[]);
+          async function login(email:string,password:string){ const { error } = await sb.auth.signInWithPassword({ email, password }); if(error) throw new Error(error.message); }
+          async function logout(){ await sb.auth.signOut(); }
+          return <Ctx.Provider value={{user,login,logout}}>{children}</Ctx.Provider>
+        }
+        export const useAuth=()=>useContext(Ctx);
+    - path: "client/src/auth/ProtectedRoute.tsx"
+      content: |
+        import { Navigate, Outlet } from 'react-router-dom'; import { useAuth } from './AuthProvider';
+        export default function ProtectedRoute(){ const { user } = useAuth(); return user ? <Outlet/> : <Navigate to="/login" replace/>; }
+    - path: "client/src/components/ErrorBoundary.tsx"
+      content: |
+        import { Component, ReactNode } from 'react';
+        export class ErrorBoundary extends Component<{children:ReactNode},{error?:Error}>{
+          state={error:undefined as unknown as Error};
+          static getDerivedStateFromError(error:Error){ return { error }; }
+          render(){ return this.state.error
+            ? <div className="max-w-xl mx-auto mt-20 text-center"><h2 className="text-2xl font-semibold mb-2">Something went wrong</h2><p className="text-white/60">{this.state.error.message}</p></div>
+            : this.props.children; }
+        }
+
+########################################################################################################
+# 10) CLIENT — Neon/Glow Theme & Layout
+########################################################################################################
+client_theme:
+  files:
+    - path: "tailwind.config.ts"
+      patch: |
+        export default {
+          darkMode: ["class"],
+          content: ["client/index.html","client/src/**/*.{ts,tsx}","components/**/*.{ts,tsx}"],
+          theme: {
+            extend: {
+              colors: {
+                bg:"#0A0B0E", panel:"#0F1116", glass:"rgba(255,255,255,0.04)",
+                brand:{ pink:"#FF3CAC", blue:"#2BD2FF", purple:"#8153FF", orange:"#FF7A18", cyan:"#00E5FF" }
+              },
+              boxShadow:{ glass:"inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 40px rgba(0,0,0,0.45)" },
+              backdropBlur:{ xs:'2px' }
+            }
+          }, plugins:[]
+        }
+    - path: "client/src/index.css"
+      content: |
+        @tailwind base; @tailwind components; @tailwind utilities;
+        :root{ --bg:#0A0B0E; --panel:#0F1116; --glass:rgba(255,255,255,0.04);
+               --ring-pink:#FF3CAC; --ring-blue:#2BD2FF; --ring-purple:#8153FF; --ring-orange:#FF7A18; --ring-cyan:#00E5FF; }
+        body{ @apply bg-[var(--bg)] text-white antialiased; }
+        .neon-ring{ position:relative; border-radius:1.25rem;
+          background: linear-gradient(#0F1116,#0F1116) padding-box,
+                     conic-gradient(from 180deg at 50% 50%, var(--ring-pink), var(--ring-orange), var(--ring-cyan), var(--ring-blue), var(--ring-purple), var(--ring-pink)) border-box;
+          border:1px solid transparent;}
+        .glass{ background:var(--glass); box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 8px 40px rgba(0,0,0,0.45); backdrop-filter:blur(6px);}
+        .glow-blob::before{ content:""; position:absolute; inset:-25%;
+          background: radial-gradient(60% 60% at 30% 30%, rgba(255,122,24,0.25) 0%, rgba(0,0,0,0) 60%),
+                      radial-gradient(50% 50% at 70% 70%, rgba(43,210,255,0.22) 0%, rgba(0,0,0,0) 55%),
+                      radial-gradient(45% 45% at 50% 15%, rgba(129,83,255,0.22) 0%, rgba(0,0,0,0) 60%);
+          filter:blur(40px); z-index:0; pointer-events:none;}
+        .noise::after{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.04; mix-blend:overlay;
+          background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.45'/></svg>");}
+        .input{ @apply rounded-md bg-[#0C0E12] border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-white/20 transition; }
+        .btn-primary{ @apply inline-flex items-center justify-center rounded-md bg-white text-black hover:bg-white/90 px-4 py-2 font-medium transition; }
+    - path: "client/src/components/ui/GlowCard.tsx"
+      content: |
+        import { PropsWithChildren } from "react";
+        export default function GlowCard({children,className=""}:PropsWithChildren<{className?:string}>){
+          return (
+            <div className={`relative neon-ring ${className}`}>
+              <div className="relative glass rounded-[18px] p-6 z-[1]">{children}</div>
+              <div className="absolute inset-0 rounded-[18px] glow-blob"></div>
+              <div className="absolute inset-0 rounded-[18px] noise"></div>
+            </div>
+          )
+        }
+    - path: "client/src/layouts/AppLayout.tsx"
+      content: |
+        import { Outlet } from "react-router-dom";
+        export default function AppLayout(){
+          return <div className="min-h-screen bg-[var(--bg)]"><main className="max-w-7xl mx-auto px-6 py-10"><Outlet/></main></div>
+        }
+
+########################################################################################################
+# 11) CLIENT — Pages (Login, Register, Reset, Confirmed, 404) + Routes
+########################################################################################################
+client_pages:
+  files:
+    - path: "client/src/pages/auth/LoginPage.tsx"
+      content: |
+        import { useState } from 'react';
+        import { useForm } from 'react-hook-form';
+        import { z } from 'zod'; import { zodResolver } from '@hookform/resolvers/zod';
+        import GlowCard from '@/components/ui/GlowCard';
+        import { useAuth } from '@/auth/AuthProvider';
+        import { useNavigate, Link } from 'react-router-dom';
+        const schema=z.object({email:z.string().email(),password:z.string().min(6)});
+        type Form=z.infer<typeof schema>;
+        export default function LoginPage(){
+          const nav=useNavigate(); const { login }=useAuth();
+          const [err,setErr]=useState<string|undefined>();
+          const { register, handleSubmit, formState:{errors,isSubmitting} } = useForm<Form>({resolver:zodResolver(schema)});
+          async function onSubmit(v:Form){ try{ setErr(undefined); await login(v.email,v.password); nav('/'); } catch(e:any){ setErr(e?.message||'Invalid email or password'); } }
+          return (
+            <div className="min-h-screen flex items-center justify-center px-4">
+              <div className="w-full max-w-md"><GlowCard>
+                <h1 className="text-2xl font-semibold mb-2">Sign in</h1>
+                <p className="text-white/60 mb-4">Enter your email and password to access your account</p>
+                {err && <p className="text-red-400 text-sm mb-3">{err}</p>}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <div><label className="text-sm text-white/70">Email</label>
+                    <input {...register('email')} className="input w-full mt-1" placeholder="you@domain.com"/>
+                    {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}</div>
+                  <div><label className="text-sm text-white/70">Password</label>
+                    <input type="password" {...register('password')} className="input w-full mt-1" placeholder="••••••••"/>
+                    {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}</div>
+                  <button className="btn-primary w-full" disabled={isSubmitting}>{isSubmitting?'Signing in…':'Sign in'}</button>
+                </form>
+                <p className="text-white/50 text-sm mt-4">
+                  <Link className="underline" to="/reset-password">Forgot password?</Link> ·
+                  <Link className="underline ml-1" to="/signup">Create account</Link>
+                </p>
+              </GlowCard></div>
+            </div>
+          )
+        }
+    - path: "client/src/pages/auth/RegisterPage.tsx"
+      content: |
+        import { useState } from 'react';
+        import GlowCard from '@/components/ui/GlowCard';
+        import { api } from '@/lib/api';
+        type Role='customer'|'sales'|'design';
+        export default function RegisterPage(){
+          const [fullName,setFullName]=useState(''); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
+          const [role,setRole]=useState<Role>('customer'); const [file,setFile]=useState<File|null>(null);
+          const [msg,setMsg]=useState<string|undefined>(); const [err,setErr]=useState<string|undefined>();
+          async function onSubmit(e:any){
+            e.preventDefault(); setMsg(undefined); setErr(undefined);
+            let portfolioKey:string|undefined;
+            if(role==='design' && file){
+              const sign=await api.post('/api/v1/files/portfolio/sign',{email,name:file.name});
+              if(!sign.success){ setErr(sign.error.message); return; }
+              const put=await fetch(sign.data.uploadUrl,{method:'PUT',body:file});
+              if(!put.ok){ setErr('Upload failed'); return; }
+              portfolioKey=sign.data.key;
+            }
+            const r=await api.post('/api/v1/auth/register',{email,password,fullName,role,portfolioKey});
+            if(!r.success){ setErr(r.error.message); return; }
+            setMsg('Check your email to confirm your account.');
+          }
+          return (
+            <div className="min-h-screen flex items-center justify-center px-4">
+              <div className="w-full max-w-xl"><GlowCard>
+                <h1 className="text-2xl font-semibold mb-2">Create your account</h1>
+                <p className="text-white/60 mb-4">Choose a role and (if designer) upload a portfolio .zip</p>
+                {msg && <p className="text-emerald-400 text-sm mb-3">{msg}</p>}
+                {err && <p className="text-red-400 text-sm mb-3">{err}</p>}
+                <form onSubmit={onSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-sm text-white/70">Full name</label>
+                    <input className="input w-full mt-1" value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Jane Doe"/>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div><label className="text-sm text-white/70">Email</label>
+                      <input className="input w-full mt-1" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@domain.com"/></div>
+                    <div><label className="text-sm text-white/70">Password</label>
+                      <input type="password" className="input w-full mt-1" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/></div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-white/70 block">Role</label>
+                    <div className="flex gap-3 mt-1">
+                      {(['customer','sales','design'] as Role[]).map(r=>
+                        <label key={r} className="flex items-center gap-2">
+                          <input type="radio" name="role" checked={role===r} onChange={()=>setRole(r)} />
+                          <span className="capitalize">{r}</span>
+                        </label>)}
+                    </div>
+                  </div>
+                  {role==='design' && (
+                    <div>
+                      <label className="text-sm text-white/70 block">Portfolio (.zip)</label>
+                      <input type="file" accept=".zip" onChange={e=>setFile(e.target.files?.[0]||null)} className="mt-1 text-sm"/>
+                      <p className="text-white/50 text-xs mt-1">Upload a single .zip (≤ 25MB) with representative work.</p>
+                    </div>
+                  )}
+                  <button className="btn-primary w-full">Create account</button>
+                </form>
+              </GlowCard></div>
+            </div>
+          )
+        }
+    - path: "client/src/pages/auth/ResetPasswordPage.tsx"
+      content: |
+        import { useState } from 'react'; import GlowCard from '@/components/ui/GlowCard'; import { api } from '@/lib/api';
+        export default function ResetPasswordPage(){
+          const [email,setEmail]=useState(''); const [done,setDone]=useState(false); const [err,setErr]=useState<string|undefined>();
+          async function submit(e:any){ e.preventDefault(); setErr(undefined);
+            const r=await api.post('/api/v1/auth/reset-request',{email}); if(!r.success){ setErr(r.error.message); return; } setDone(true); }
+          return <div className="min-h-screen flex items-center justify-center px-4"><div className="w-full max-w-md"><GlowCard>
+            <h1 className="text-2xl font-semibold mb-2">Reset password</h1>
+            {done ? <p className="text-white/70">Check your email for a reset link.</p> :
+            <form onSubmit={submit} className="space-y-4">
+              {err && <p className="text-red-400 text-sm">{err}</p>}
+              <input className="input w-full" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@domain.com"/>
+              <button className="btn-primary w-full">Send reset link</button>
+            </form>}
+          </GlowCard></div></div>;
+        }
+    - path: "client/src/pages/auth/ConfirmedPage.tsx"
+      content: |
+        import { useEffect, useState } from 'react'; import { api } from '@/lib/api'; import { sb } from '@/lib/supabase'; import GlowCard from '@/components/ui/GlowCard';
+        export default function ConfirmedPage(){
+          const [msg,setMsg]=useState('Finishing setup…');
+          useEffect(()=>{(async()=>{ const { data }=await sb.auth.getSession(); if(!data.session){ setMsg('Please sign in.'); return; }
+            const r=await api.post('/api/v1/auth/complete-profile',{}); setMsg(r.success?'Email confirmed. You can now use the app.':(r.error?.message||'Setup incomplete')); })()},[]);
+          return <div className="min-h-screen flex items-center justify-center px-4"><div className="w-full max-w-md"><GlowCard>
+            <h1 className="text-xl font-semibold mb-2">Welcome</h1><p className="text-white/70">{msg}</p>
+          </GlowCard></div></div>;
+        }
+    - path: "client/src/pages/misc/NotFound.tsx"
+      content: |
+        export default function NotFound(){ return <div className="min-h-[60vh] flex items-center justify-center"><div className="text-center opacity-80"><h1 className="text-4xl font-bold mb-2">404</h1><p className="text-white/60">Page not found</p></div></div>; }
+
+    - path: "client/src/routes.tsx"
+      content: |
+        import { useRoutes, Navigate } from 'react-router-dom';
+        import { ErrorBoundary } from '@/components/ErrorBoundary';
+        import ProtectedRoute from '@/auth/ProtectedRoute';
+        import LoginPage from '@/pages/auth/LoginPage';
+        import RegisterPage from '@/pages/auth/RegisterPage';
+        import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
+        import ConfirmedPage from '@/pages/auth/ConfirmedPage';
+        import OrganizationsList from '@/pages/organizations/List'; // keep existing
+        import UsersPage from '@/pages/users/UsersPage'; // keep existing
+        import QuotesPage from '@/pages/quotes/QuotesPage'; // keep existing
+        import NotFound from '@/pages/misc/NotFound';
+        export default function AppRoutes(){
+          return useRoutes([
+            { path:'/', element:<Navigate to="/organizations" replace/> },
+            { path:'/login', element:<LoginPage/> },
+            { path:'/signup', element:<RegisterPage/> },
+            { path:'/reset-password', element:<ResetPasswordPage/> },
+            { path:'/auth/confirmed', element:<ConfirmedPage/> },
+            { element:<ProtectedRoute/>, children:[
+              { path:'/organizations', element:<OrganizationsList/> },
+              { path:'/users', element:<UsersPage/> },
+              { path:'/quotes', element:<QuotesPage/> },
+            ]},
+            { path:'*', element:<NotFound/> }
+          ]);
+        }
+    - path: "client/src/App.tsx"
+      content: |
+        import { BrowserRouter } from 'react-router-dom';
+        import AppRoutes from './routes';
+        import { ErrorBoundary } from './components/ErrorBoundary';
+        import AppLayout from './layouts/AppLayout';
+        import { AuthProvider } from './auth/AuthProvider';
+        export default function App(){
+          return <ErrorBoundary><BrowserRouter><AuthProvider><AppLayout><AppRoutes/></AppLayout></AuthProvider></BrowserRouter></ErrorBoundary>;
+        }
+
+########################################################################################################
+# 12) UI SWEEP — delete-success only, remove legacy
+########################################################################################################
+ui_sweep:
+  actions:
+    - "Normalize delete flows: treat HTTP 200/204 as success; show success toast; do not show error toast on success."
+    - "Remove / exclude client/_legacy from build; ESLint no-restricted-imports will block."
+
+########################################################################################################
+# 13) PREFLIGHT / ROUTE VERIFY / SHIP-CHECK
+########################################################################################################
+preflight_and_tools:
+  files:
+    - path: "scripts/verify-routes.cjs"
+      content: |
+        #!/usr/bin/env node
+        const fs=require('fs'), path=require('path');
+        const root=path.join(process.cwd(),'server','routes');
+        function walk(d){return fs.existsSync(d)?fs.readdirSync(d).flatMap(f=>{const p=path.join(d,f);return fs.statSync(p).isDirectory()?walk(p):[p];}):[];}
+        const files = walk(root).filter(f=>/\.(ts|js)$/.test(f));
+        const set=new Set(); let dup=false;
+        for(const f of files){ const key=path.relative(root,f).replace(/\\/g,'/'); if(set.has(key)){ console.error('Duplicate route file',key); dup=true;} set.add(key); }
+        if(dup) process.exit(1); console.log('Routes verified OK');
+    - path: "scripts/preflight.cjs"
+      patch: |
+        const { execSync } = require('child_process');
+        function sh(c){ try{ return execSync(c,{stdio:['pipe','pipe','inherit']}).toString().trim(); }catch{ return ''; } }
+        let files = sh('git diff --name-only --cached') || sh('git diff --name-only'); files=files.split('\n').filter(Boolean);
+        // Block legacy
+        if(files.some(p=>p.startsWith('client/_legacy/'))){ console.error('❌ Preflight: edits to client/_legacy forbidden.'); process.exit(1); }
+        // Require CR for sensitive
+        const sensitive = files.some(p=>p.startsWith('server/routes/')||p.startsWith('shared/')||p.startsWith('db/migrations'));
+        if(sensitive && !files.some(p=>p.startsWith('architecture/crs/') && p.endsWith('.yaml'))){
+          console.error('❌ Preflight: provide a CR YAML in /architecture/crs/ for server/schema changes.'); process.exit(1);
+        }
+        // Verify routes
+        try{ execSync('node scripts/verify-routes.cjs',{stdio:'inherit'}); }catch{ process.exit(1); }
+        console.log('✅ Preflight OK');
+    - path: "package.json"
+      patch: |
+        {
+          "scripts": {
+            "ship-check": "npm run preflight && npm run check && curl -sSf http://localhost:3000/healthz | grep 'ok'"
+          }
+        }
+
+########################################################################################################
+# 14) TEST NOTES (minimal quick checks)
+########################################################################################################
+tests:
+  add:
+    - "integration: /api/v1/auth/reset-request → 200 when SendGrid configured; 503 with missing list otherwise."
+    - "integration: /api/v1/files/portfolio/sign → returns uploadUrl,key for email+name."
+    - "integration: /api/v1/auth/register → 200 sent:true; /api/v1/auth/complete-profile → applies role row."
+    - "smoke: GET /healthz → 200 contains status:'ok'."
+
+########################################################################################################
+# 15) SAFETY CHECKS
+########################################################################################################
+safety_checks:
+  - "SendGrid overlay uses existing secrets; if missing, reset/register return 503 with missing keys."
+  - "Login via Supabase client works; token forwarded; protected routes require auth."
+  - "Registration with role works; designer uploads .zip; email confirmation is branded; confirmed page applies role."
+  - "Delete actions show success only; no legacy imports."
+  - "ship-check exits 0 after server starts."
