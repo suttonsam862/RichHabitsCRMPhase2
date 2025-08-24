@@ -41,8 +41,9 @@ router.post('/login', async (req, res) => {
     });
     
     if (error) {
-      logger.info({ email, error: error.message }, 'Login failed');
-      return sendErr(res, 'UNAUTHORIZED', 'Invalid credentials', undefined, 401);
+      logger.info({ email, error: error.message, code: error.name }, 'Login failed');
+      // Return actual Supabase error for debugging
+      return sendErr(res, 'UNAUTHORIZED', error.message || 'Invalid credentials', undefined, 401);
     }
     
     logger.info({ userId: data.user?.id, email }, 'User logged in successfully');
@@ -78,15 +79,27 @@ router.post('/register', async (req, res) => {
     
     const { email, password, fullName } = validation.data;
     
-    // Register user with Supabase (auto-confirmed for development)
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    // Register user with Supabase using standard signup
+    const { data, error } = await supabaseAdmin.auth.signUp({
       email,
       password,
-      email_confirm: true, // Auto-confirm email for development
-      user_metadata: {
-        full_name: fullName
+      options: {
+        data: {
+          full_name: fullName
+        }
       }
     });
+    
+    // Auto-confirm the user for development since we have admin privileges
+    if (data.user && !error) {
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(
+        data.user.id,
+        { email_confirm: true }
+      );
+      if (confirmError) {
+        logger.warn({ confirmError: confirmError.message }, 'Failed to auto-confirm user');
+      }
+    }
     
     if (error) {
       logger.info({ email, error: error.message }, 'Registration failed');
