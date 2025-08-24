@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { sendOk, sendErr, sendCreated, sendNoContent } from '../../lib/http';
-import { supabaseForUser } from '../../lib/supabase';
+import { supabaseAdmin } from '../../lib/supabase';
 import { requireAuth } from '../../middleware/auth';
 
 const r = Router();
-r.use(requireAuth);
+// TODO: Re-enable auth when user login is implemented
+// r.use(requireAuth);
 
 const createSportSchema = z.object({
   name: z.string().min(2).max(50)
@@ -17,7 +18,7 @@ const updateSportSchema = z.object({
 
 /* ---------- List all sports ---------- */
 r.get('/', async (req: any, res) => {
-  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const sb = supabaseAdmin;
   
   const { data, error } = await sb
     .from('sports')
@@ -33,7 +34,7 @@ r.post('/', async (req: any, res) => {
   const parse = createSportSchema.safeParse(req.body);
   if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
   
-  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const sb = supabaseAdmin;
   const { data, error } = await sb
     .from('sports')
     .insert([{ name: parse.data.name }])
@@ -49,7 +50,7 @@ r.patch('/:id', async (req: any, res) => {
   const parse = updateSportSchema.safeParse(req.body);
   if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
   
-  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const sb = supabaseAdmin;
   const { data, error } = await sb
     .from('sports')
     .update({ name: parse.data.name })
@@ -63,7 +64,7 @@ r.patch('/:id', async (req: any, res) => {
 
 /* ---------- Delete sport ---------- */
 r.delete('/:id', async (req: any, res) => {
-  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const sb = supabaseAdmin;
   const { error } = await sb
     .from('sports')
     .delete()

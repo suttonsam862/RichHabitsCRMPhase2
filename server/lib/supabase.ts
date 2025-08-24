@@ -5,7 +5,7 @@ import { env } from './env';
  * Create Supabase client for user requests with specific access token
  */
 export function supabaseForUser(accessToken?: string) {
-  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+  return createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
     global: {
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
     }
@@ -15,7 +15,7 @@ export function supabaseForUser(accessToken?: string) {
 /**
  * Supabase admin client for server-side operations
  */
-export const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+export const supabaseAdmin = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: {
     persistSession: false,
     autoRefreshToken: false

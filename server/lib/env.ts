@@ -8,8 +8,10 @@ const envSchema = z.object({
   ORIGINS: z.string().default("http://localhost:5173"),
   
   // Required for auth
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  VITE_SUPABASE_URL: z.string().url(),
+  VITE_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   
@@ -30,8 +32,8 @@ function validateEnv(): EnvSchema {
     console.log(`✓ PORT: ${parsedEnv.PORT}`);
     console.log(`✓ ORIGINS: ${parsedEnv.ORIGINS}`);
     console.log(`✓ DATABASE_URL: ${parsedEnv.DATABASE_URL.substring(0, 20)}***`);
-    console.log(`✓ SUPABASE_URL: ${parsedEnv.SUPABASE_URL.substring(0, 20)}***`);
-    console.log(`✓ SUPABASE_ANON_KEY: ${parsedEnv.SUPABASE_ANON_KEY.substring(0, 6)}*** (length: ${parsedEnv.SUPABASE_ANON_KEY.length})`);
+    console.log(`✓ VITE_SUPABASE_URL: ${parsedEnv.VITE_SUPABASE_URL.substring(0, 20)}***`);
+    console.log(`✓ VITE_SUPABASE_ANON_KEY: ${parsedEnv.VITE_SUPABASE_ANON_KEY.substring(0, 6)}*** (length: ${parsedEnv.VITE_SUPABASE_ANON_KEY.length})`);
     console.log(`✓ SUPABASE_SERVICE_ROLE_KEY: ${parsedEnv.SUPABASE_SERVICE_ROLE_KEY.substring(0, 6)}*** (length: ${parsedEnv.SUPABASE_SERVICE_ROLE_KEY.length})`);
     console.log(`✓ JWT_SECRET: ${parsedEnv.JWT_SECRET.substring(0, 6)}*** (length: ${parsedEnv.JWT_SECRET.length})`);
     
