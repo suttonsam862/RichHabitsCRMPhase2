@@ -1,0 +1,1 @@
+export function gradientFrom(a:string,b:string){ return `linear-gradient(135deg, ${a} 0%, ${b} 100%)`; }

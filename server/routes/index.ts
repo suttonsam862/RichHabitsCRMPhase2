@@ -5,7 +5,7 @@
 
 import express from 'express';
 import authRouter from './auth/index';
-import { organizationsRouter } from './organizations/index';
+import organizationsRouter from './organizations/index';
 import { usersRouter } from './users/index';
 import ordersRouter from './orders/index';
 import { filesRouter } from './files/index';

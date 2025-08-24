@@ -1,368 +1,249 @@
-import express from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
-import { CreateOrganizationDTO, UpdateOrganizationDTO, OrganizationDTO } from '@shared/dtos/OrganizationDTO';
-import { validateRequest } from '../middleware/validation';
-import { asyncHandler } from '../middleware/asyncHandler';
-import { db } from '../../db';
-import { organizations } from '@shared/schema';
-import { sql, eq, and, or, ilike, desc, asc } from 'drizzle-orm';
-import { listBrandingFiles } from '../../lib/storage';
-import { sendSuccess, sendOk, sendErr, sendCreated, sendNoContent, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
-import { requireAuth, AuthedRequest } from '../../middleware/auth';
-import { supabaseAdmin, supabaseForUser } from '../../lib/supabase';
-import { logDatabaseOperation } from '../../lib/log';
+import { sendOk, sendErr, sendNoContent } from '../../lib/http';
+import { supabaseForUser, supabaseAdmin } from '../../lib/supabase';
+import { requireAuth } from '../../middleware/auth';
 
-// DTO <-> DB field mappings for camelCase <-> snake_case conversion
-const DTO_TO_DB_MAPPING = {
-  brandPrimary: 'brand_primary',
-  brandSecondary: 'brand_secondary',
-  emailDomain: 'email_domain', 
-  billingEmail: 'billing_email',
-  colorPalette: 'color_palette',
-  universalDiscounts: 'universal_discounts',
-  logoUrl: 'logo_url',
-  titleCardUrl: 'title_card_url',
-  addressLine1: 'address_line_1',
-  addressLine2: 'address_line_2',
-  postalCode: 'postal_code',
-  contactEmail: 'contact_email',
-  isBusiness: 'is_business',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
-};
+const r = Router();
+r.use(requireAuth);
 
-// Helper to map DB row to DTO
-function dbRowToDto(row: any): any {
-  if (!row) return null;
+/* ---------- Schemas ---------- */
+const hex = z.string().regex(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/);
+const hsl = z.string().regex(/^\d{1,3}\s\d{1,3}%\s\d{1,3}%$/);
+const color = z.union([hex, hsl]);
+const colorPalette = z.array(color).max(12);
+const tagsSchema = z.array(z.string().max(24)).max(20);
 
-  const mapped = mapDbToDto(row, DTO_TO_DB_MAPPING);
+const createOrgSchema = z.object({
+  name: z.string().min(2).max(120),
+  isBusiness: z.boolean().default(false),
+  brandPrimary: color,
+  brandSecondary: color,
+  colorPalette: colorPalette.default([]),
+  emailDomain: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  billingEmail: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  tags: tagsSchema.default([]),
+  sports: z.array(z.object({
+    sportId: z.string().uuid(),
+    contactName: z.string().min(2).max(100),
+    contactEmail: z.string().email()
+  })).default([])
+});
+
+const updateOrgSchema = z.object({
+  name: z.string().min(2).max(120).optional(),
+  brandPrimary: color.optional(),
+  brandSecondary: color.optional(),
+  colorPalette: colorPalette.optional(),
+  emailDomain: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  billingEmail: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  tags: tagsSchema.optional(),
+  isBusiness: z.boolean().optional()
+});
+
+const listQuerySchema = z.object({
+  q: z.string().optional(),
+  tag: z.string().optional(),
+  onlyFavorites: z.coerce.boolean().optional(),
+  includeArchived: z.coerce.boolean().optional(),
+  sort: z.enum(['name','created','updated']).optional().default('created'),
+  dir: z.enum(['asc','desc']).optional().default('desc'),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(24),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+});
+
+function gradientFrom(a:string,b:string){
+  // return CSS string that works in card backgrounds (client also recomputes)
+  return `linear-gradient(135deg, ${a} 0%, ${b} 100%)`;
+}
+
+/* ---------- Create ---------- */
+r.post('/', async (req:any, res) => {
+  const parse = createOrgSchema.safeParse(req.body);
+  if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid org payload', parse.error.flatten(), 400);
+  const uid = req.user!.id;
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const p = parse.data;
+
+  // insert organization
+  const gradient = gradientFrom(p.brandPrimary, p.brandSecondary);
+  const { data: org, error: orgErr } = await sb.from('organizations').insert([{
+    name: p.name,
+    is_business: p.isBusiness,
+    brand_primary: p.brandPrimary,
+    brand_secondary: p.brandSecondary,
+    color_palette: p.colorPalette,
+    email_domain: p.emailDomain,
+    billing_email: p.billingEmail,
+    tags: p.tags,
+    gradient_css: gradient
+  }]).select().single();
+  if (orgErr) return sendErr(res, 'BAD_REQUEST', orgErr.message, undefined, 400);
+
+  // auto-create coach users & user_roles for regular orgs with sports contacts
+  for (const s of p.sports){
+    // create or locate auth user by email
+    const { data: existing, error: gErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
+    if (gErr) return sendErr(res, 'BAD_REQUEST', gErr.message, undefined, 400);
+    let coachId = existing?.users?.find(u => u.email === s.contactEmail)?.id;
+    if (!coachId){
+      const create = await supabaseAdmin.auth.admin.createUser({
+        email: s.contactEmail, email_confirm: false,
+        user_metadata: { full_name: s.contactName, desired_role: 'customer' }
+      });
+      if (create.error || !create.data?.user) return sendErr(res, 'BAD_REQUEST', create.error?.message || 'Unable to create contact user', undefined, 400);
+      coachId = create.data.user.id;
+    }
+    // add org_sports entry
+    const { error: osErr } = await sb.from('org_sports').insert([{
+      organization_id: org.id, sport_id: s.sportId,
+      contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
+    }]);
+    if (osErr) return sendErr(res, 'BAD_REQUEST', osErr.message, undefined, 400);
+    // assign Customer role scoped to this org
+    const { data: roles } = await supabaseAdmin.from('roles').select('id,slug');
+    const customer = roles?.find(r=>r.slug==='customer')?.id;
+    if (customer) {
+      await supabaseAdmin.from('user_roles').upsert({ user_id: coachId, org_id: org.id, role_id: customer }, { onConflict: 'user_id,org_id,role_id' });
+    }
+  }
+
+  return sendOk(res, org);
+});
+
+/* ---------- List (search/filter/sort/pagination/favorites/archived) ---------- */
+r.get('/', async (req:any,res) => {
+  const q = listQuerySchema.parse(req.query);
+  const uid = req.user!.id;
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+
+  let query = sb.from('organizations')
+    .select('id,name,logo_url,brand_primary,brand_secondary,gradient_css,tags,is_business,is_archived,created_at,updated_at', { count:'exact' });
+
+  if (!q.includeArchived) query = query.eq('is_archived', false);
+  if (q.q) query = query.ilike('name', `%${q.q}%`);
+  if (q.tag) query = query.contains('tags', [q.tag]);
+
+  if (q.onlyFavorites) {
+    // join with organization_favorites via filter (two-step: fetch ids then filter)
+    const favs = await supabaseForUser(req.headers.authorization?.slice(7)).from('organization_favorites')
+      .select('org_id').eq('user_id', uid);
+    const favIds = (favs.data||[]).map(x=>x.org_id);
+    if (favIds.length===0) return sendOk(res, [], 0);
+    query = query.in('id', favIds);
+  }
+
+  // sort
+  if (q.sort==='name') query = query.order('name', { ascending: q.dir==='asc' });
+  if (q.sort==='created') query = query.order('created_at', { ascending: q.dir==='asc' });
+  if (q.sort==='updated') query = query.order('updated_at', { ascending: q.dir==='asc' });
+
+  query = query.range(q.offset, q.offset + q.limit - 1);
+  const { data, error, count } = await query;
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, data, count || 0);
+});
+
+/* ---------- Get summary (tabs) ---------- */
+r.get('/:id', async (req:any,res)=>{
+  const orgId = req.params.id;
+  const uid = req.user!.id;
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
   
-  return {
-    id: row.id,
-    name: row.name,
-    state: row.state,
-    city: row.city,
-    phone: row.phone,
-    email: row.email,
-    notes: row.notes,
-    website: row.website,
-    country: row.country,
-    status: row.is_business ? 'Business' : 'School',
-    ...mapped,
-    // Ensure arrays and objects are properly handled
-    colorPalette: row.color_palette || [],
-    universalDiscounts: row.universal_discounts || {},
-  };
-}
+  // For now, just return basic org data until we have the RPC function
+  const { data, error } = await sb.from('organizations').select('*').eq('id', orgId).single();
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, data);
+});
 
-// Validate colorPalette colors (hex or HSL)
-function validateColorPalette(colors: string[]): boolean {
-  return colors.every(color => 
-    /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(color) || // hex: #RGB or #RRGGBB
-    /^\d+\s+\d+%\s+\d+%$/.test(color) // HSL: H S% L%
-  );
-}
-
-const router = express.Router();
-
-// Debug endpoint to check available columns - MUST be before /:id route
-router.get('/__columns', asyncHandler(async (req, res) => {
-  sendSuccess(res, Object.keys(organizations));
-}));
-
-// List all organizations with filtering, sorting, and pagination
-router.get('/', asyncHandler(async (req: AuthedRequest, res) => {
-  const {
-    q = '',
-    state,
-    type = 'all',
-    sort = 'created_at',
-    order = 'desc',
-    page = '1',
-    pageSize = '20'
-  } = req.query;
-
-  const pageNum = parseInt(page as string) || 1;
-  const pageSizeNum = parseInt(pageSize as string) || 20;
-  const offset = (pageNum - 1) * pageSizeNum;
-
-  // Build where conditions
-  const conditions = [];
-
-  // Search query
-  if (q && typeof q === 'string' && q.trim()) {
-    conditions.push(ilike(organizations.name, `%${q.trim()}%`));
+/* ---------- Update ---------- */
+r.patch('/:id', async (req:any,res)=>{
+  const body = updateOrgSchema.safeParse(req.body);
+  if (!body.success) return sendErr(res, 'BAD_REQUEST', 'Invalid update payload', body.error.flatten(), 400);
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const payload:any = {};
+  if (body.data.name !== undefined) payload.name = body.data.name;
+  if (body.data.isBusiness !== undefined) payload.is_business = body.data.isBusiness;
+  if (body.data.brandPrimary) payload.brand_primary = body.data.brandPrimary;
+  if (body.data.brandSecondary) payload.brand_secondary = body.data.brandSecondary;
+  if (body.data.colorPalette) payload.color_palette = body.data.colorPalette;
+  if (body.data.emailDomain !== undefined) payload.email_domain = body.data.emailDomain;
+  if (body.data.billingEmail !== undefined) payload.billing_email = body.data.billingEmail;
+  if (body.data.tags) payload.tags = body.data.tags;
+  if (payload.brand_primary && payload.brand_secondary) {
+    payload.gradient_css = `linear-gradient(135deg, ${payload.brand_primary} 0%, ${payload.brand_secondary} 100%)`;
   }
+  const { data, error } = await sb.from('organizations').update(payload).eq('id', req.params.id).select().single();
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, data);
+});
 
-  // State filter
-  if (state && state !== 'any') {
-    conditions.push(eq(organizations.state, state as string));
-  }
+/* ---------- Delete (hard) ---------- */
+r.delete('/:id', async (req:any,res)=>{
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { error } = await sb.from('organizations').delete().eq('id', req.params.id);
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendNoContent(res);
+});
 
-  // Type filter
-  if (type && type !== 'all') {
-    if (type === 'business') {
-      conditions.push(eq(organizations.isBusiness, true));
-    } else if (type === 'school') {
-      conditions.push(eq(organizations.isBusiness, false));
-    }
-  }
+/* ---------- Archive / Restore (soft) ---------- */
+r.post('/:id/archive', async (req:any,res)=>{
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { error } = await sb.from('organizations').update({ is_archived: true }).eq('id', req.params.id);
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, { ok:true });
+});
+r.post('/:id/restore', async (req:any,res)=>{
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { error } = await sb.from('organizations').update({ is_archived: false }).eq('id', req.params.id);
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, { ok:true });
+});
 
-  try {
-    // Get total count
-    const countResult = await db
-      .select({ count: sql`count(*)` })
-      .from(organizations)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+/* ---------- Tags ---------- */
+r.post('/:id/tags', async (req:any,res)=>{
+  const tags = tagsSchema.safeParse(req.body?.tags);
+  if (!tags.success) return sendErr(res, 'BAD_REQUEST', 'Invalid tags', undefined, 400);
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { data, error } = await sb.from('organizations').update({ tags: tags.data }).eq('id', req.params.id).select('tags').single();
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, data);
+});
 
-    const total = Number(countResult[0]?.count || 0);
+/* ---------- Favorites (pin) ---------- */
+r.post('/:id/favorite', async (req:any,res)=>{
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const uid = req.user!.id;
+  const { error } = await sb.from('organization_favorites').upsert({ user_id: uid, org_id: req.params.id });
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, { ok:true });
+});
+r.delete('/:id/favorite', async (req:any,res)=>{
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const uid = req.user!.id;
+  const { error } = await sb.from('organization_favorites').delete().eq('user_id', uid).eq('org_id', req.params.id);
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, { ok:true });
+});
 
-    // Get paginated results
-    const results = await db
-      .select()
-      .from(organizations)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(organizations.createdAt))
-      .limit(pageSizeNum)
-      .offset(offset);
+/* ---------- Logo upload sign ---------- */
+function safeName(name:string){ if (name.includes('..')||name.startsWith('/')||name.includes('\\')) throw new Error('invalid_name'); return name.replace(/[^a-zA-Z0-9._-]/g,'_'); }
+r.post('/:id/logo/sign', async (req:any,res)=>{
+  try{
+    const { fileName } = req.body||{};
+    if (!fileName) return sendErr(res, 'BAD_REQUEST', 'fileName required', undefined, 400);
+    const key = `org/${req.params.id}/branding/${safeName(fileName)}`;
+    const { data, error } = await supabaseAdmin.storage.from('app').createSignedUploadUrl(key, { upsert:true });
+    if (error || !data?.signedUrl) return sendErr(res, 'BAD_REQUEST', error?.message || 'sign error', undefined, 400);
+    return sendOk(res, { uploadUrl: data.signedUrl, key });
+  }catch(e:any){ return sendErr(res, 'BAD_REQUEST', e?.message || 'sign error', undefined, 400); }
+});
+r.post('/:id/logo/apply', async (req:any,res)=>{
+  const key = req.body?.key; if(!key) return sendErr(res, 'BAD_REQUEST', 'key required', undefined, 400);
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { data, error } = await sb.from('organizations').update({ logo_url: key }).eq('id', req.params.id).select('logo_url').single();
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, data);
+});
 
-    // Map database rows to DTOs
-    const data = results.map(dbRowToDto);
-
-    sendOk(res, data, total);
-  } catch (error) {
-    handleDatabaseError(res, error, 'list organizations');
-  }
-}));
-
-// Get organization by ID
-router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
-  const { id } = req.params;
-
-  try {
-    const result = await db
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, id))
-      .limit(1);
-
-    if (result.length === 0) {
-      return HttpErrors.notFound(res, 'Organization not found');
-    }
-
-    const mappedOrg = dbRowToDto(result[0]);
-    sendOk(res, mappedOrg);
-  } catch (error) {
-    handleDatabaseError(res, error, 'fetch organization');
-  }
-}));
-
-// Get organization summary using RPC to eliminate N+1
-router.get('/:id/summary', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
-  const { id } = req.params;
-
-  try {
-    // Use RPC to get summary in one trip instead of N+1 queries
-    const sb = supabaseForUser(req.headers.authorization?.slice(7));
-    const { data, error } = await sb.rpc('org_summary', {
-      p_org_id: id,
-      p_requester: req.user?.id
-    });
-    
-    if (error) {
-      if (error.code === '42501') {
-        return HttpErrors.forbidden(res, 'Access denied');
-      }
-      throw error;
-    }
-    
-    if (!data || Object.keys(data).length === 0) {
-      return HttpErrors.notFound(res, 'Organization not found');
-    }
-    
-    sendOk(res, data);
-  } catch (error) {
-    handleDatabaseError(res, error, 'fetch organization summary');
-  }
-}));
-
-// Create new organization
-router.post('/', 
-  requireAuth,
-  validateRequest({ body: CreateOrganizationDTO }),
-  asyncHandler(async (req: AuthedRequest, res) => {
-    const validatedData = req.body;
-
-    try {
-      // Validate colorPalette if provided
-      if (validatedData.colorPalette && validatedData.colorPalette.length > 0) {
-        if (!validateColorPalette(validatedData.colorPalette)) {
-          return HttpErrors.validationError(res, 
-            'Invalid colorPalette: colors must be hex (#RGB or #RRGGBB) or HSL format (H S% L%)')
-        }
-        if (validatedData.colorPalette.length > 12) {
-          return HttpErrors.validationError(res, 'colorPalette cannot have more than 12 colors');
-        }
-      }
-
-      // Map DTO fields to DB fields using helper
-      const mappedData = mapDtoToDb(validatedData, DTO_TO_DB_MAPPING);
-      
-      // Prepare the organization data with proper field mapping
-      const now = new Date();
-      const orgData = {
-        name: validatedData.name,
-        state: validatedData.state || null,
-        phone: validatedData.phone || null,
-        email: validatedData.email || null,
-        city: validatedData.city || null,
-        notes: validatedData.notes || null,
-        website: validatedData.website || null,
-        country: validatedData.country || 'United States',
-        status: 'active',
-        created_at: now,
-        updated_at: now,
-        // Mapped fields
-        ...mappedData,
-        // Ensure proper defaults
-        universal_discounts: validatedData.universalDiscounts || {},
-        color_palette: validatedData.colorPalette || [],
-        brand_primary: validatedData.brandPrimary || '#3B82F6',
-        brand_secondary: validatedData.brandSecondary || '#8B5CF6',
-        is_business: validatedData.isBusiness || false,
-        // Handle address fallback
-        address_line_1: validatedData.addressLine1 || validatedData.address || null,
-      };
-
-      const result = await db
-        .insert(organizations)
-        .values(orgData)
-        .returning();
-
-      const createdOrg = result[0];
-      let createdUser = null;
-
-      // Create owner user if requested
-      if (validatedData.createOwnerUser && validatedData.userEmail && validatedData.userFullName) {
-        try {
-          const userResult = await db.execute(sql`
-            INSERT INTO users (email, full_name, phone)
-            VALUES (${validatedData.userEmail}, ${validatedData.userFullName}, ${validatedData.userPhone || null})
-            ON CONFLICT (email) DO UPDATE SET 
-              full_name = EXCLUDED.full_name,
-              phone = EXCLUDED.phone,
-              updated_at = NOW()
-            RETURNING id, email, full_name, phone
-          `);
-          
-          createdUser = (userResult as any)[0];
-
-          // Assign owner role
-          const ownerRoleResult = await db.execute(sql`
-            SELECT id FROM roles WHERE slug = 'owner' LIMIT 1
-          `);
-
-          if ((ownerRoleResult as any).length > 0) {
-            await db.execute(sql`
-              INSERT INTO user_roles (user_id, org_id, role_id)
-              VALUES (${createdUser.id}, ${createdOrg.id}, ${(ownerRoleResult as any)[0].id})
-              ON CONFLICT (user_id, org_id, role_id) DO NOTHING
-            `);
-          }
-        } catch (userError) {
-          console.warn('Failed to create user or assign role:', userError);
-        }
-      }
-
-      // Create sports contacts
-      if (validatedData.sports && validatedData.sports.length > 0) {
-        try {
-          for (const sport of validatedData.sports) {
-            await db.execute(sql`
-              INSERT INTO org_sports (organization_id, sport_id, contact_name, contact_email, contact_phone)
-              VALUES (${createdOrg.id}, ${sport.sportId}, ${sport.contactName}, ${sport.contactEmail}, ${sport.contactPhone || null})
-            `);
-          }
-        } catch (sportsError) {
-          console.warn('Failed to create sports contacts:', sportsError);
-        }
-      }
-
-      const responseData = {
-        organization: dbRowToDto(createdOrg),
-        user: createdUser,
-        sportsCount: validatedData.sports?.length || 0
-      };
-      
-      sendCreated(res, responseData);
-    } catch (error) {
-      handleDatabaseError(res, error, 'create organization');
-    }
-  })
-);
-
-// Update organization
-router.patch('/:id',
-  requireAuth,
-  validateRequest({ body: UpdateOrganizationDTO }),
-  asyncHandler(async (req: AuthedRequest, res) => {
-    const { id } = req.params;
-    const updateData = req.body;
-
-    try {
-      // Validate colorPalette if provided
-      if (updateData.colorPalette && updateData.colorPalette.length > 0) {
-        if (!validateColorPalette(updateData.colorPalette)) {
-          return HttpErrors.validationError(res, 
-            'Invalid colorPalette: colors must be hex (#RGB or #RRGGBB) or HSL format (H S% L%)')
-        }
-        if (updateData.colorPalette.length > 12) {
-          return HttpErrors.validationError(res, 'colorPalette cannot have more than 12 colors');
-        }
-      }
-
-      // Map DTO fields to DB fields
-      const mappedData = mapDtoToDb(updateData, DTO_TO_DB_MAPPING);
-      
-      const result = await db
-        .update(organizations)
-        .set({
-          ...mappedData,
-          updatedAt: new Date().toISOString()
-        })
-        .where(eq(organizations.id, id))
-        .returning();
-
-      if (result.length === 0) {
-        return HttpErrors.notFound(res, 'Organization not found');
-      }
-
-      const mappedResult = dbRowToDto(result[0]);
-      sendOk(res, mappedResult);
-    } catch (error) {
-      handleDatabaseError(res, error, 'update organization');
-    }
-  })
-);
-
-// Delete organization
-router.delete('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
-  const { id } = req.params;
-
-  try {
-    const result = await db
-      .delete(organizations)
-      .where(eq(organizations.id, id))
-      .returning();
-
-    if (result.length === 0) {
-      return HttpErrors.notFound(res, 'Organization not found');
-    }
-
-    sendNoContent(res);
-  } catch (error) {
-    handleDatabaseError(res, error, 'delete organization');
-  }
-}));
-
-export { router as organizationsRouter };
+export default r;

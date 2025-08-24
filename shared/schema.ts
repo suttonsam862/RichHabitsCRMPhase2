@@ -577,14 +577,33 @@ export const organizations = pgTable("organizations", {
         address: text(),
         email: text(),
         titleCardUrl: text("title_card_url"),
+        colorPalette: jsonb("color_palette").default(sql`'[]'::jsonb`),
+        tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+        isArchived: boolean("is_archived").notNull().default(false),
+        gradientCss: text("gradient_css"),
 }, (table) => [
         index("organizations_created_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
         index("organizations_name_idx").using("btree", table.name.asc().nullsLast().op("text_ops")),
         index("organizations_state_idx").using("btree", table.state.asc().nullsLast().op("text_ops")),
+        index("idx_orgs_archived").using("btree", table.isArchived.asc().nullsLast()),
+        index("idx_orgs_tags_gin").using("gin", table.tags.asc().nullsLast()),
         pgPolicy("org_select", { as: "permissive", for: "select", to: ["authenticated"], using: sql`is_org_member(auth.uid(), id)` }),
         pgPolicy("organizations_delete", { as: "permissive", for: "delete", to: ["authenticated"] }),
         pgPolicy("organizations_insert", { as: "permissive", for: "insert", to: ["authenticated"] }),
         pgPolicy("organizations_update", { as: "permissive", for: "update", to: ["authenticated"] }),
+]);
+
+export const organizationFavorites = pgTable("organization_favorites", {
+        userId: text("user_id").notNull(),
+        orgId: text("org_id").notNull(),
+}, (table) => [
+        primaryKey({ columns: [table.userId, table.orgId] }),
+        index("idx_org_favorites_user").using("btree", table.userId.asc().nullsLast()),
+        foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "organization_favorites_org_id_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const orgSports = pgTable("org_sports", {
