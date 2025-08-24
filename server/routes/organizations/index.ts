@@ -91,20 +91,20 @@ r.post('/', async (req:any, res) => {
   // insert organization using user token client for RLS
   // Ensure colorPalette defaults to [] when absent and always compute gradient_css
   const colorPalette = p.colorPalette || [];
-  const brandPrimary = p.brand_primary || '#3B82F6';
-  const brandSecondary = p.brand_secondary || '#8B5CF6';
-  const gradient = `linear-gradient(135deg, ${brandPrimary} 0%, ${brandSecondary} 100%)`;
+  const brandPrimary = p.brandPrimary || '#3B82F6';
+  const brandSecondary = p.brandSecondary || '#8B5CF6';
+  const gradient_css = `linear-gradient(135deg, ${brandPrimary} 0%, ${brandSecondary} 100%)`;
   
   const { data: org, error: orgErr } = await sb.from('organizations').insert([{
     name: p.name,
     is_business: p.isBusiness,
-    brand_primary: p.brandPrimary || brandPrimary,
-    brand_secondary: p.brandSecondary || brandSecondary,
-    color_palette: p.colorPalette || colorPalette,
+    brand_primary: brandPrimary,
+    brand_secondary: brandSecondary,
+    color_palette: colorPalette,
     email_domain: p.emailDomain,
     billing_email: p.billingEmail,
     tags: p.tags,
-    gradient_css: gradient
+    gradient_css: gradient_css
   }]).select().single();
   if (orgErr) { const m = mapPgError(orgErr); return sendErr(res, 400, m.message, m, m.hint); }
 

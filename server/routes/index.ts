@@ -13,6 +13,7 @@ import { filesRouter } from './files/index';
 import adminConfigRouter from './admin/config';
 import adminSchemaRouter from './admin/schema';
 import adminDiagnosticsRouter from './admin/diagnostics';
+import adminRlsRouter from './admin/rls';
 // Import additional routers as they become available
 // import { salesRouter } from './sales/index';
 // import { manufacturingRouter } from './manufacturing/index';  
@@ -36,6 +37,7 @@ v1Router.use('/files', filesRouter);
 v1Router.use('/admin/config', adminConfigRouter);
 v1Router.use('/admin/schema', adminSchemaRouter);
 v1Router.use('/admin/diagnostics', adminDiagnosticsRouter);
+v1Router.use('/admin/rls', adminRlsRouter);
 
 // Mount v1 router
 apiRouter.use('/v1', v1Router);
