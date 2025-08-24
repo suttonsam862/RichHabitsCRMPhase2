@@ -6,6 +6,7 @@
 import express from 'express';
 import authRouter from './auth/index';
 import organizationsRouter from './organizations/index';
+import hardenedOrganizationsRouter from './organizations/hardened';
 import sportsRouter from './sports/index';
 import { usersRouter } from './users/index';
 import ordersRouter from './orders/index';
@@ -30,6 +31,7 @@ v1Router.use('/auth', authRouter);
 
 // Domain-specific routers - canonical mounts
 v1Router.use('/organizations', organizationsRouter);
+v1Router.use('/organizations', hardenedOrganizationsRouter);
 v1Router.use('/sports', sportsRouter);
 v1Router.use('/users', usersRouter);
 v1Router.use('/orders', ordersRouter);
