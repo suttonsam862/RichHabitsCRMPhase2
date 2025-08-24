@@ -9,7 +9,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { apiRouter } from './routes/index';
+import apiRouter from './routes/index.js';
 import { setupVite, serveStatic } from './vite';
 import { errorHandler } from './middleware/error';
 import { requestIdMiddleware, logRequest, logRequestComplete } from './lib/log';
@@ -134,23 +134,35 @@ app.get('/metrics', (req, res) => {
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
 
-// Mount canonical API router at /api with rate limiting
-app.use('/api', apiLimiter, apiRouter);
-
-// Routes
-import apiRouter from './routes/index.js';
-app.use('/api/v1', apiRouter);
+// Mount canonical API router at /api/v1 with rate limiting
+app.use('/api/v1', apiLimiter, apiRouter);
 
 // Centralized error handler (last middleware)
 app.use((err:any, req:any, res:any, next:any)=>{
-  const { logger } = require('./lib/log');
-  const { sendErr } = require('./lib/http');
   const dev = (process.env.DEBUG_LEVEL ?? '1') !== '0';
   const status = err?.status || err?.statusCode || 500;
   const code = err?.code || 'ERR_UNEXPECTED';
   const msg = err?.message || 'Unhandled error';
-  logger.error({ rid: res.locals?.rid, err, path: req.originalUrl, method: req.method }, 'request_error');
-  return sendErr(res, status, msg, dev ? err?.stack : undefined, err?.hint);
+  
+  // Log the error
+  console.error({
+    rid: res.locals?.rid,
+    error: err?.message || 'Unknown error',
+    stack: err?.stack,
+    path: req.originalUrl,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+
+  // Send error response
+  const responseBody = {
+    success: false,
+    error: dev ? 'Internal server error' : 'Internal server error',
+    message: dev ? msg : 'An unexpected error occurred',
+    ...(dev && err?.stack && { stack: err.stack })
+  };
+  
+  return res.status(status).json(responseBody);
 });
 
 // Error handling middleware
