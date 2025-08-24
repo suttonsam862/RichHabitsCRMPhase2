@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, primaryKey, sql } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', { id: uuid('id').primaryKey(), email: text('email'), role: text('role') });
