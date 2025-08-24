@@ -126,15 +126,3 @@ export function useAuth() {
   }
   return context;
 }
-
-// Ensure consistent export for Fast Refresh
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-// Add default export for Fast Refresh compatibility
-export default AuthProvider;
