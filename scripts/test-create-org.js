@@ -246,7 +246,7 @@ async function runTests() {
 }
 
 // Script execution
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   runTests()
     .then(({ passedTests, failedTests }) => {
       process.exit(failedTests > 0 ? 1 : 0);

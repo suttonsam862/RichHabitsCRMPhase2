@@ -16,29 +16,41 @@ const tagsSchema = z.array(z.string().max(24)).max(20);
 
 const createOrgSchema = z.object({
   name: z.string().min(2).max(120),
-  isBusiness: z.boolean().default(false),
-  brandPrimary: color,
-  brandSecondary: color,
+  is_business: z.boolean().default(false),
+  brand_primary: color.optional(),
+  brand_secondary: color.optional(), 
   colorPalette: colorPalette.default([]),
-  emailDomain: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
-  billingEmail: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  email_domain: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  billing_email: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
   tags: tagsSchema.default([]),
   sports: z.array(z.object({
     sportId: z.string().uuid(),
-    contactName: z.string().min(2).max(100),
-    contactEmail: z.string().email()
-  })).default([])
+    contact_name: z.string().min(2).max(100),
+    contact_email: z.string().email()
+  })).default([]),
+  // Address fields
+  address_line1: z.string().optional(),
+  address_line2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postal_code: z.string().optional(),
+  country: z.string().default('United States'),
+  // Legacy compatibility
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
+  notes: z.string().optional()
 });
 
 const updateOrgSchema = z.object({
   name: z.string().min(2).max(120).optional(),
-  brandPrimary: color.optional(),
-  brandSecondary: color.optional(),
+  brand_primary: color.optional(),
+  brand_secondary: color.optional(),
   colorPalette: colorPalette.optional(),
-  emailDomain: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
-  billingEmail: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  email_domain: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
+  billing_email: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
   tags: tagsSchema.optional(),
-  isBusiness: z.boolean().optional()
+  is_business: z.boolean().optional()
 });
 
 const listQuerySchema = z.object({
@@ -68,16 +80,18 @@ r.post('/', async (req:any, res) => {
   // insert organization using user token client for RLS
   // Ensure colorPalette defaults to [] when absent and always compute gradient_css
   const colorPalette = p.colorPalette || [];
-  const gradient = `linear-gradient(135deg, ${p.brandPrimary} 0%, ${p.brandSecondary} 100%)`;
+  const brandPrimary = p.brand_primary || '#3B82F6';
+  const brandSecondary = p.brand_secondary || '#8B5CF6';
+  const gradient = `linear-gradient(135deg, ${brandPrimary} 0%, ${brandSecondary} 100%)`;
   
   const { data: org, error: orgErr } = await sb.from('organizations').insert([{
     name: p.name,
-    is_business: p.isBusiness,
-    brand_primary: p.brandPrimary,
-    brand_secondary: p.brandSecondary,
+    is_business: p.is_business,
+    brand_primary: brandPrimary,
+    brand_secondary: brandSecondary,
     color_palette: colorPalette,
-    email_domain: p.emailDomain,
-    billing_email: p.billingEmail,
+    email_domain: p.email_domain,
+    billing_email: p.billing_email,
     tags: p.tags,
     gradient_css: gradient
   }]).select().single();
@@ -92,11 +106,11 @@ r.post('/', async (req:any, res) => {
     // create or locate auth user by email
     const { data: existing, error: gErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
     if (gErr) return sendErr(res, 'BAD_REQUEST', gErr.message, undefined, 400);
-    let coachId = existing?.users?.find(u => u.email === s.contactEmail)?.id;
+    let coachId = existing?.users?.find(u => u.email === s.contact_email)?.id;
     if (!coachId){
       const create = await supabaseAdmin.auth.admin.createUser({
-        email: s.contactEmail, email_confirm: false,
-        user_metadata: { full_name: s.contactName, desired_role: 'customer' }
+        email: s.contact_email, email_confirm: false,
+        user_metadata: { full_name: s.contact_name, desired_role: 'customer' }
       });
       if (create.error || !create.data?.user) return sendErr(res, 'BAD_REQUEST', create.error?.message || 'Unable to create contact user', undefined, 400);
       coachId = create.data.user.id;
@@ -104,7 +118,7 @@ r.post('/', async (req:any, res) => {
     // add org_sports entry
     const { error: osErr } = await sb.from('org_sports').insert([{
       organization_id: org.id, sport_id: s.sportId,
-      contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
+      contact_name: s.contact_name, contact_email: s.contact_email, contact_user_id: coachId
     }]);
     if (osErr) return sendErr(res, 'BAD_REQUEST', osErr.message, undefined, 400);
     // assign Customer role scoped to this org
@@ -170,12 +184,12 @@ r.patch('/:id', async (req:any,res)=>{
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const payload:any = {};
   if (body.data.name !== undefined) payload.name = body.data.name;
-  if (body.data.isBusiness !== undefined) payload.is_business = body.data.isBusiness;
-  if (body.data.brandPrimary) payload.brand_primary = body.data.brandPrimary;
-  if (body.data.brandSecondary) payload.brand_secondary = body.data.brandSecondary;
+  if (body.data.is_business !== undefined) payload.is_business = body.data.is_business;
+  if (body.data.brand_primary) payload.brand_primary = body.data.brand_primary;
+  if (body.data.brand_secondary) payload.brand_secondary = body.data.brand_secondary;
   if (body.data.colorPalette) payload.color_palette = body.data.colorPalette;
-  if (body.data.emailDomain !== undefined) payload.email_domain = body.data.emailDomain;
-  if (body.data.billingEmail !== undefined) payload.billing_email = body.data.billingEmail;
+  if (body.data.email_domain !== undefined) payload.email_domain = body.data.email_domain;
+  if (body.data.billing_email !== undefined) payload.billing_email = body.data.billing_email;
   if (body.data.tags) payload.tags = body.data.tags;
   if (payload.brand_primary && payload.brand_secondary) {
     payload.gradient_css = `linear-gradient(135deg, ${payload.brand_primary} 0%, ${payload.brand_secondary} 100%)`;
