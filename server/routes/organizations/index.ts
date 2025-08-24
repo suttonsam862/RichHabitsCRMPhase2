@@ -128,46 +128,24 @@ r.post('/', async (req:any, res) => {
       if (create.error || !create.data?.user) return sendErr(res, 400, create.error?.message || 'Unable to create contact user');
       coachId = create.data.user.id;
     }
-    // add org_sports entry with bulletproof schema cache bypass
-    try {
-      const { error: osErr } = await sb.from('org_sports').insert([{
-        organization_id: org.id, sport_id: s.sportId,
-        contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
-      }]);
-      
-      if (osErr) { 
-        // Handle schema cache error by using admin client directly
-        if (osErr.message?.includes('contact_user_id') && osErr.message?.includes('schema cache')) {
-          logger.warn({ rid: res.locals?.rid, error: osErr.message }, 'Schema cache error - using admin client bypass');
-          
-          // BULLETPROOF: Use admin client to bypass PostgREST schema cache entirely
-          const { error: adminErr } = await supabaseAdmin
-            .from('org_sports')
-            .insert([{
-              organization_id: org.id,
-              sport_id: s.sportId,
-              contact_name: s.contactName,
-              contact_email: s.contactEmail,
-              contact_user_id: coachId
-            }]);
-          
-          if (adminErr) { 
-            logger.error({ rid: res.locals?.rid, adminError: adminErr.message }, 'Admin client insert also failed');
-            const m = mapPgError(adminErr); 
-            return sendErr(res, 400, m.message, m, m.hint); 
-          }
-          
-          logger.info({ rid: res.locals?.rid, orgId: org.id, contactEmail: s.contactEmail }, 'Successfully bypassed schema cache with admin client');
-        } else {
-          const m = mapPgError(osErr); 
-          return sendErr(res, 400, m.message, m, m.hint); 
-        }
-      }
-    } catch (insertError: any) {
-      logger.error({ rid: res.locals?.rid, error: insertError.message }, 'Org sports insert failed');
-      const m = mapPgError(insertError); 
+    // BULLETPROOF: Always use admin client for org_sports to bypass schema cache issues
+    logger.info({ rid: res.locals?.rid, orgId: org.id, sportId: s.sportId }, 'Creating org_sports with admin client');
+    
+    const { error: osErr } = await supabaseAdmin.from('org_sports').insert([{
+      organization_id: org.id, 
+      sport_id: s.sportId,
+      contact_name: s.contactName, 
+      contact_email: s.contactEmail, 
+      contact_user_id: coachId
+    }]);
+    
+    if (osErr) { 
+      logger.error({ rid: res.locals?.rid, error: osErr.message }, 'Failed to create org_sports with admin client');
+      const m = mapPgError(osErr); 
       return sendErr(res, 400, m.message, m, m.hint);
     }
+    
+    logger.info({ rid: res.locals?.rid, orgId: org.id, sportId: s.sportId }, 'Successfully created org_sports entry');
     // assign Customer role scoped to this org
     const { data: roles } = await supabaseAdmin.from('roles').select('id,slug');
     const customer = roles?.find(r=>r.slug==='customer')?.id;
