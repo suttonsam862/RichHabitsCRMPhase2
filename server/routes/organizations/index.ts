@@ -118,7 +118,7 @@ r.get('/', async (req:any,res) => {
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
 
   let query = sb.from('organizations')
-    .select('id,name,logo_url,brand_primary,brand_secondary,gradient_css,tags,is_business,is_archived,created_at,updated_at', { count:'exact' });
+    .select('id,name,logo_url,brand_primary,brand_secondary,color_palette,gradient_css,tags,is_business,is_archived,created_at,updated_at', { count:'exact' });
 
   if (!q.includeArchived) query = query.eq('is_archived', false);
   if (q.q) query = query.ilike('name', `%${q.q}%`);
