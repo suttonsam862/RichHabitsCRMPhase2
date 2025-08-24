@@ -1,134 +1,74 @@
 import { Router } from 'express';
-import { supabaseAdmin } from '../../lib/supabase';
 import { sendOk, sendErr } from '../../lib/http';
-import { z } from 'zod';
-import { createRequestLogger } from '../../lib/log';
+import { supabaseAdmin } from '../../lib/supabase';
+import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, neonEmailShell, actionButton } from '../../lib/email';
+import { requireAuth } from '../../middleware/auth';
+const r = Router();
 
-const router = Router();
-
-// Validation schemas
-const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
+// POST /api/v1/auth/reset-request { email }
+r.post('/reset-request', async (req, res) => {
+  try{
+    const { email } = req.body || {};
+    if (!email) return sendErr(res, 'BAD_REQUEST', 'Email required', undefined, 400);
+    if (!isEmailConfigured()) return sendErr(res,'SERVICE_UNAVAILABLE','Email not configured: missing '+emailConfigIssues().join(', '), undefined, 503);
+    const redirectTo = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'') + '/reset-password';
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type:'recovery', email, options:{ redirectTo } });
+    if (error || !data?.properties?.action_link) return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate link', undefined, 400);
+    const html = neonEmailShell(
+      'Reset your password',
+      `<p style="opacity:.8">Click the button below to set a new password. This link will expire soon.</p>
+       ${actionButton(data.properties.action_link,'Set new password')}
+       <p style="opacity:.65;font-size:13px">If you did not request this, ignore this email.</p>`
+    );
+    await sendBrandedEmail(email,'Reset your password',html);
+    return sendOk(res,{ sent:true });
+  }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Email error', undefined, 500); }
 });
 
-const registerSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullName: z.string().optional()
-});
-
-/**
- * POST /api/v1/auth/login
- * User login endpoint
- */
-router.post('/login', async (req, res) => {
-  const logger = createRequestLogger(req);
-  
-  try {
-    // Validate request body
-    const validation = loginSchema.safeParse(req.body);
-    if (!validation.success) {
-      return sendErr(res, 'VALIDATION_ERROR', 'Invalid request data', validation.error.flatten(), 400);
-    }
-    
-    const { email, password } = validation.data;
-    
-    // Attempt login with Supabase
-    const { data, error } = await supabaseAdmin.auth.signInWithPassword({ 
-      email, 
-      password 
+// POST /api/v1/auth/register { email,password,fullName,role, portfolioKey? }
+r.post('/register', async (req, res) => {
+  try{
+    const { email, password, fullName, role, portfolioKey } = req.body || {};
+    if (!email || !password || !fullName || !role) return sendErr(res,'BAD_REQUEST','Missing required fields', undefined, 400);
+    if (!['customer','sales','design'].includes(role)) return sendErr(res,'BAD_REQUEST','Invalid role', undefined, 400);
+    if (!isEmailConfigured()) return sendErr(res,'SERVICE_UNAVAILABLE','Email not configured: missing '+emailConfigIssues().join(', '), undefined, 503);
+    const redirectTo = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'') + '/auth/confirmed';
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+      type:'signup', email, password,
+      options:{ data:{ full_name: fullName, desired_role: role, portfolio_key: portfolioKey || null }, redirectTo }
     });
-    
-    if (error) {
-      logger.info({ email, error: error.message, code: error.name }, 'Login failed');
-      // Return actual Supabase error for debugging
-      return sendErr(res, 'UNAUTHORIZED', error.message || 'Invalid credentials', undefined, 401);
-    }
-    
-    logger.info({ userId: data.user?.id, email }, 'User logged in successfully');
-    
-    return sendOk(res, {
-      accessToken: data.session?.access_token,
-      refreshToken: data.session?.refresh_token,
-      user: {
-        id: data.user?.id,
-        email: data.user?.email,
-        fullName: data.user?.user_metadata?.full_name
-      }
-    });
-  } catch (error) {
-    logger.error({ error }, 'Login error');
-    return sendErr(res, 'INTERNAL_ERROR', 'An error occurred during login', undefined, 500);
-  }
+    if (error || !data?.properties?.action_link) return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate confirmation link', undefined, 400);
+    const html = neonEmailShell(
+      'Confirm your email',
+      `<p style="opacity:.8">Welcome to Rich Habits. Please confirm your email to activate your account.</p>
+       ${actionButton(data.properties.action_link,'Confirm email')}
+       <p style="opacity:.65;font-size:13px">After confirming, you will be redirected to finish setup.</p>`
+    );
+    await sendBrandedEmail(email,'Confirm your email',html);
+    return sendOk(res,{ sent:true });
+  }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Email error', undefined, 500); }
 });
 
-/**
- * POST /api/v1/auth/register
- * User registration endpoint
- */
-router.post('/register', async (req, res) => {
-  const logger = createRequestLogger(req);
-  
-  try {
-    // Validate request body
-    const validation = registerSchema.safeParse(req.body);
-    if (!validation.success) {
-      return sendErr(res, 'VALIDATION_ERROR', 'Invalid request data', validation.error.flatten(), 400);
-    }
-    
-    const { email, password, fullName } = validation.data;
-    
-    // Register user with Supabase using standard signup
-    const { data, error } = await supabaseAdmin.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName
-        }
-      }
-    });
-    
-    // Auto-confirm the user for development since we have admin privileges
-    if (data.user && !error) {
-      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(
-        data.user.id,
-        { email_confirm: true }
-      );
-      if (confirmError) {
-        logger.warn({ confirmError: confirmError.message }, 'Failed to auto-confirm user');
-      }
-    }
-    
-    if (error) {
-      logger.info({ email, error: error.message }, 'Registration failed');
-      return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
-    }
-    
-    logger.info({ userId: data.user?.id, email }, 'User registered successfully');
-    
-    return sendOk(res, {
-      user: {
-        id: data.user?.id,
-        email: data.user?.email,
-        fullName: data.user?.user_metadata?.full_name
-      }
-    });
-  } catch (error) {
-    logger.error({ error }, 'Registration error');
-    return sendErr(res, 'INTERNAL_ERROR', 'An error occurred during registration', undefined, 500);
-  }
+// POST /api/v1/auth/complete-profile — after verified login, apply desired_role -> user_roles
+r.post('/complete-profile', requireAuth, async (req:any,res) => {
+  try{
+    const uid = req.user?.id; if(!uid) return sendErr(res,'UNAUTHORIZED','Unauthorized', undefined, 401);
+    const { data: uData, error: uErr } = await supabaseAdmin.auth.admin.getUserById(uid);
+    if (uErr || !uData?.user) return sendErr(res,'BAD_REQUEST',uErr?.message || 'User not found', undefined, 400);
+    const meta = uData.user.user_metadata || {};
+    const desiredRole = (meta.desired_role || '').toString();
+    if (!desiredRole) return sendOk(res,{ ok:true, applied:false });
+
+    const { data: roles } = await supabaseAdmin.from('roles').select('id,slug');
+    const slug = desiredRole==='design' ? 'design' : desiredRole==='sales' ? 'sales' : 'customer';
+    const roleId = roles?.find(r=>r.slug===slug)?.id;
+    if (!roleId) return sendErr(res,'BAD_REQUEST','Role not found', undefined, 400);
+
+    await supabaseAdmin.from('user_roles')
+      .upsert({ user_id: uid, org_id: null, role_id: roleId }, { onConflict:'user_id,org_id,role_id' });
+
+    return sendOk(res,{ ok:true, applied:true, role: slug });
+  }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Complete-profile error', undefined, 500); }
 });
 
-/**
- * POST /api/v1/auth/logout
- * User logout endpoint (client-side token removal)
- */
-router.post('/logout', (_req, res) => {
-  // Logout is handled client-side by removing the token
-  // Server just acknowledges the request
-  return sendOk(res, { ok: true });
-});
-
-export default router;
+export default r;

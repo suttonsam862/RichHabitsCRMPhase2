@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface GlowCardProps {
@@ -26,17 +25,25 @@ export function GlowCard({ children, className = "", glowColor = "blue", gradien
     borderImage: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary}) 1`
   } : {};
 
+  const glowColors = {
+    blue: "hover:shadow-blue-500/40 hover:border-blue-500/50",
+    purple: "hover:shadow-purple-500/40 hover:border-purple-500/50", 
+    cyan: "hover:shadow-cyan-500/40 hover:border-cyan-500/50",
+    pink: "hover:shadow-pink-500/40 hover:border-pink-500/50"
+  };
+
   return (
     <div 
       className={cn(
         "relative group",
-        "bg-gray-900/50 backdrop-blur-sm",
+        "bg-black/60 backdrop-blur-sm",
         "border border-white/10",
         "rounded-xl p-6",
         "transition-all duration-300",
-        "hover:bg-gray-900/70",
-        "hover:border-white/20",
-        "hover:shadow-lg hover:shadow-blue-500/20",
+        "hover:bg-black/80",
+        "hover:border-white/30",
+        glowColors[glowColor as keyof typeof glowColors] || glowColors.blue,
+        "hover:shadow-2xl",
         onClick && "cursor-pointer hover:scale-[1.02] transition-transform",
         className
       )}

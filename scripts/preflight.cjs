@@ -53,6 +53,33 @@ if (sensitive) {
   }
 }
 
+// ❌ Check for security issues
+const securityIssues = [];
+
+// Check if .env files are properly gitignored
+const gitignoreFile = '.gitignore';
+if (fs.existsSync(gitignoreFile)) {
+  const gitignoreContent = fs.readFileSync(gitignoreFile, 'utf8');
+  if (!gitignoreContent.includes('.env')) {
+    securityIssues.push('.env files should be in .gitignore');
+  }
+} else {
+  securityIssues.push('.gitignore file missing');
+}
+
+// Check for sensitive files in repo
+const sensitiveFiles = ['.env', '.env.local', '.env.production'];
+const foundSensitiveFiles = sensitiveFiles.filter(file => fs.existsSync(file));
+if (foundSensitiveFiles.length > 0) {
+  securityIssues.push(`Sensitive files found: ${foundSensitiveFiles.join(', ')}`);
+}
+
+if (securityIssues.length > 0) {
+  console.error('❌ Preflight: Security issues detected:');
+  securityIssues.forEach(issue => console.error(`   -> ${issue}`));
+  process.exit(1);
+}
+
 // ❌ Run route verification
 try {
   execSync('node scripts/verify-routes.cjs', { stdio: 'inherit' });
@@ -61,4 +88,13 @@ try {
   process.exit(1);
 }
 
-console.log('✅ Preflight OK');
+// ❌ Check TypeScript compilation
+try {
+  execSync('npx tsc --noEmit', { stdio: 'pipe' });
+} catch (e) {
+  console.error('❌ Preflight: TypeScript compilation failed');
+  console.error('   -> Run "npx tsc --noEmit" to see details');
+  process.exit(1);
+}
+
+console.log('✅ Preflight OK - All checks passed!');

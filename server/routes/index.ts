@@ -9,6 +9,7 @@ import { organizationsRouter } from './organizations/index';
 import { usersRouter } from './users/index';
 import ordersRouter from './orders/index';
 import { filesRouter } from './files/index';
+import adminConfigRouter from './admin/config';
 // Import additional routers as they become available
 // import { salesRouter } from './sales/index';
 // import { manufacturingRouter } from './manufacturing/index';  
@@ -28,6 +29,7 @@ v1Router.use('/organizations', organizationsRouter);
 v1Router.use('/users', usersRouter);
 v1Router.use('/orders', ordersRouter);
 v1Router.use('/files', filesRouter);
+v1Router.use('/admin/config', adminConfigRouter);
 
 // Mount v1 router
 apiRouter.use('/v1', v1Router);

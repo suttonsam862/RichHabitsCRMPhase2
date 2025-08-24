@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/auth/AuthProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import ProtectedRoute from '@/auth/ProtectedRoute';
 
 // Auth pages
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
+import { AuthConfirmedPage } from '@/pages/auth/AuthConfirmedPage';
 
 // Protected pages
 import { HomePage } from '@/pages/HomePage';
@@ -42,56 +44,43 @@ export function AppRoutes() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<RegisterPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/confirmed" element={<AuthConfirmedPage />} />
 
               {/* Protected routes */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              } />
+              <Route path="/" element={<ProtectedRoute />}>
+                <Route index element={<HomePage />} />
+              </Route>
               
-              <Route path="/organizations" element={
-                <ProtectedRoute>
-                  <OrganizationListPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/organizations" element={<ProtectedRoute />}>
+                <Route index element={<OrganizationListPage />} />
+              </Route>
               
-              <Route path="/users" element={
-                <ProtectedRoute>
-                  <UsersPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/users" element={<ProtectedRoute />}>
+                <Route index element={<UsersPage />} />
+              </Route>
               
-              <Route path="/quotes" element={
-                <ProtectedRoute>
-                  <QuotesPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/quotes" element={<ProtectedRoute />}>
+                <Route index element={<QuotesPage />} />
+              </Route>
               
-              <Route path="/orders" element={
-                <ProtectedRoute>
-                  <OrdersPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/orders" element={<ProtectedRoute />}>
+                <Route index element={<OrdersPage />} />
+              </Route>
               
-              <Route path="/products" element={
-                <ProtectedRoute>
-                  <ProductsPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/products" element={<ProtectedRoute />}>
+                <Route index element={<ProductsPage />} />
+              </Route>
               
-              <Route path="/analytics" element={
-                <ProtectedRoute>
-                  <AnalyticsPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/analytics" element={<ProtectedRoute />}>
+                <Route index element={<AnalyticsPage />} />
+              </Route>
               
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <SettingsPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/settings" element={<ProtectedRoute />}>
+                <Route index element={<SettingsPage />} />
+              </Route>
 
               {/* 404 - Not Found */}
               <Route path="/404" element={<NotFound />} />

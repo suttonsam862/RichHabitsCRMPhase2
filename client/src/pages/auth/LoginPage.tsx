@@ -49,47 +49,50 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-muted">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <Card className="w-full max-w-md bg-black/80 border-white/20 neon-box">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardTitle className="text-3xl font-bold text-white glow-blue">Welcome Back</CardTitle>
+          <p className="text-white/70 mt-2">
+            Sign in to your account
+          </p>
         </CardHeader>
         
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
+              <p className="text-sm text-red-400 bg-red-500/10 p-3 rounded-md border border-red-500/20">
                 {error}
               </p>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="rounded-md"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 {...register('email')}
                 data-testid="input-email"
               />
               {errors.email && (
-                <p className="text-sm text-red-600">{errors.email.message}</p>
+                <p className="text-sm text-red-400">{errors.email.message}</p>
               )}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white">Password</Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="Enter your password"
-                className="rounded-md"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 {...register('password')}
                 data-testid="input-password"
               />
               {errors.password && (
-                <p className="text-sm text-red-600">{errors.password.message}</p>
+                <p className="text-sm text-red-400">{errors.password.message}</p>
               )}
             </div>
           </CardContent>
@@ -97,34 +100,43 @@ export function LoginPage() {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              variant="default"
-              className="w-full"
+              className="w-full neon-button"
               disabled={isLoading}
               data-testid="button-submit"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign in
-                </>
-              )}
+              <div className="neon-button-inner flex items-center justify-center">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign in
+                  </>
+                )}
+              </div>
             </Button>
             
-            <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{' '}
-              <Link 
-                to="/register" 
-                className="font-medium text-primary hover:underline" 
-                data-testid="link-register"
+            <div className="text-center space-y-2">
+              <p className="text-sm text-white/70">
+                Don't have an account?{' '}
+                <Link 
+                  to="/signup" 
+                  className="text-blue-400 hover:text-blue-300 glow" 
+                  data-testid="link-register"
+                >
+                  Sign up
+                </Link>
+              </p>
+              <Link
+                to="/reset-password"
+                className="text-white/70 hover:text-white text-sm glow block"
               >
-                Sign up
+                Forgot your password?
               </Link>
-            </p>
+            </div>
           </CardFooter>
         </form>
       </Card>

@@ -292,9 +292,7 @@ router.post('/',
 
       // Insert order
       const insertedOrders = await db.insert(orders).values({
-        ...dbData,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        ...dbData
       }).returning();
 
       if (insertedOrders.length === 0) {

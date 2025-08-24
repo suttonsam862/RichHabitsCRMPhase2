@@ -46,7 +46,7 @@ export const CreateProductDTO = ProductDTO.omit({
 export const UpdateProductDTO = CreateProductDTO.partial();
 
 // TypeScript types
-export type ProductDTO = z.infer<typeof ProductDTO>;
-export type ProductVariantDTO = z.infer<typeof ProductVariantDTO>;
-export type CreateProductDTO = z.infer<typeof CreateProductDTO>;
-export type UpdateProductDTO = z.infer<typeof UpdateProductDTO>;
+export type ProductType = z.infer<typeof ProductDTO>;
+export type ProductVariantType = z.infer<typeof ProductVariantDTO>;
+export type CreateProductType = z.infer<typeof CreateProductDTO>;
+export type UpdateProductType = z.infer<typeof UpdateProductDTO>;

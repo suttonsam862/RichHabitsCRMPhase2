@@ -30,6 +30,6 @@ export const CreateUserDTO = UserDTO.omit({
 export const UpdateUserDTO = CreateUserDTO.partial();
 
 // TypeScript types
-export type UserDTO = z.infer<typeof UserDTO>;
-export type CreateUserDTO = z.infer<typeof CreateUserDTO>;
-export type UpdateUserDTO = z.infer<typeof UpdateUserDTO>;
+export type UserType = z.infer<typeof UserDTO>;
+export type CreateUserType = z.infer<typeof CreateUserDTO>;
+export type UpdateUserType = z.infer<typeof UpdateUserDTO>;
