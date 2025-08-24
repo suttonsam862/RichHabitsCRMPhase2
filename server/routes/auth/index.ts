@@ -41,7 +41,7 @@ router.post('/login', async (req, res) => {
     });
     
     if (error) {
-      logger.info({ email }, 'Login failed');
+      logger.info({ email, error: error.message }, 'Login failed');
       return sendErr(res, 'UNAUTHORIZED', 'Invalid credentials', undefined, 401);
     }
     
@@ -78,14 +78,13 @@ router.post('/register', async (req, res) => {
     
     const { email, password, fullName } = validation.data;
     
-    // Register user with Supabase
-    const { data, error } = await supabaseAdmin.auth.signUp({
+    // Register user with Supabase (auto-confirmed for development)
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName
-        }
+      email_confirm: true, // Auto-confirm email for development
+      user_metadata: {
+        full_name: fullName
       }
     });
     

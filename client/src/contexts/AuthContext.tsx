@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json();
-    localStorage.setItem('auth_token', data.data.token);
+    localStorage.setItem('auth_token', data.data.accessToken);
     setUser(data.data.user);
   }
 
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json();
-    localStorage.setItem('auth_token', data.data.token);
+    // Registration doesn't return token, user needs to login after registration
     setUser(data.data.user);
   }
 
