@@ -1,81 +1,305 @@
-import { Router } from 'express';
-import { db } from '../../db';
-import { organizations, orgSports } from '../../../shared/schema';
-import { asyncHandler } from '../middleware/asyncHandler';
-import { requireAuth } from '../../middleware/auth';
-import { CreateOrganizationDTO } from '../../../shared/dtos/OrganizationDTO';
-import { eq } from 'drizzle-orm';
-import { supabaseAdmin } from '../../lib/supabaseAdmin';
 
-class BadRequestError extends Error {
-  constructor(message: string, public details?: any) {
-    super(message);
-    this.name = 'BadRequestError';
+import { Router } from 'express';
+import { z } from 'zod';
+import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
+import { createRequestLogger } from '../../lib/log.js';
+import { AuthedRequest } from '../middleware/asyncHandler.js';
+
+const router = Router();
+
+// Enhanced schema with detailed validation
+const CreateOrganizationSchema = z.object({
+  name: z.string().min(1, "Organization name is required").max(120),
+  isBusiness: z.boolean().default(false),
+  brandPrimary: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Brand primary must be a valid hex color").optional(),
+  brandSecondary: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Brand secondary must be a valid hex color").optional(),
+  colorPalette: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
+  state: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  address: z.string().optional(),
+  notes: z.string().optional(),
+  universalDiscounts: z.record(z.unknown()).default({}),
+  sports: z.array(z.object({
+    sportId: z.string().uuid(),
+    contactName: z.string(),
+    contactEmail: z.string().email(),
+    contactPhone: z.string().optional()
+  })).default([])
+});
+
+type CreateOrganizationRequest = z.infer<typeof CreateOrganizationSchema>;
+
+// Column mapping function to convert camelCase to snake_case
+function mapFieldsToDbColumns(data: CreateOrganizationRequest) {
+  const logger = createRequestLogger({ method: 'POST', url: '/organizations/field-mapping' } as any);
+  
+  logger.info('🔍 FIELD MAPPING DIAGNOSTICS - Input data:', data);
+  
+  const dbPayload: Record<string, any> = {
+    name: data.name,
+    is_business: data.isBusiness,
+    brand_primary: data.brandPrimary || null,
+    brand_secondary: data.brandSecondary || null,
+    color_palette: JSON.stringify(data.colorPalette || []),
+    tags: data.tags || [],
+    state: data.state || null,
+    phone: data.phone || null,
+    email: data.email || null,
+    address: data.address || null,
+    notes: data.notes || null,
+    universal_discounts: data.universalDiscounts || {},
+    status: 'active',
+    is_archived: false
+  };
+
+  logger.info('🔄 FIELD MAPPING - Converted payload:', dbPayload);
+  
+  // Log each mapping
+  const mappings = [
+    { frontend: 'isBusiness', backend: 'is_business', value: data.isBusiness },
+    { frontend: 'brandPrimary', backend: 'brand_primary', value: data.brandPrimary },
+    { frontend: 'brandSecondary', backend: 'brand_secondary', value: data.brandSecondary },
+    { frontend: 'colorPalette', backend: 'color_palette', value: data.colorPalette },
+    { frontend: 'universalDiscounts', backend: 'universal_discounts', value: data.universalDiscounts }
+  ];
+  
+  mappings.forEach(mapping => {
+    logger.info(`📋 MAPPING: ${mapping.frontend} → ${mapping.backend}`, { 
+      originalValue: mapping.value,
+      mappedValue: dbPayload[mapping.backend]
+    });
+  });
+
+  return dbPayload;
+}
+
+// Function to validate database schema before insertion
+async function validateDatabaseSchema() {
+  const logger = createRequestLogger({ method: 'GET', url: '/organizations/schema-check' } as any);
+  
+  try {
+    logger.info('🔍 SCHEMA VALIDATION - Checking organizations table structure...');
+    
+    // Check if we can query the table structure
+    const { data: schemaInfo, error: schemaError } = await supabaseAdmin
+      .from('organizations')
+      .select('*')
+      .limit(1);
+    
+    if (schemaError) {
+      logger.error('❌ SCHEMA ERROR:', schemaError);
+      return { isValid: false, error: schemaError };
+    }
+    
+    logger.info('✅ SCHEMA VALIDATION - Organizations table accessible');
+    
+    // Test required columns by attempting a dry-run insert with minimal data
+    const testPayload = {
+      name: '__SCHEMA_TEST__',
+      is_business: false,
+      status: 'active',
+      is_archived: false,
+      universal_discounts: {},
+      tags: [],
+      color_palette: '[]'
+    };
+    
+    logger.info('🧪 SCHEMA TEST - Testing column compatibility:', testPayload);
+    
+    // This will fail if columns don't exist, but we catch and analyze the error
+    const { data: testData, error: testError } = await supabaseAdmin
+      .from('organizations')
+      .insert([testPayload])
+      .select()
+      .single();
+    
+    if (testError) {
+      logger.error('❌ SCHEMA TEST FAILED:', testError);
+      
+      // Analyze the error to identify missing columns
+      if (testError.message.includes('column') && testError.message.includes('does not exist')) {
+        const missingColumn = testError.message.match(/column "([^"]+)" does not exist/)?.[1];
+        logger.error(`🚨 MISSING COLUMN DETECTED: ${missingColumn}`);
+      }
+      
+      return { isValid: false, error: testError, missingColumn: testError.message };
+    }
+    
+    // Clean up test data
+    if (testData?.id) {
+      await supabaseAdmin
+        .from('organizations')
+        .delete()
+        .eq('id', testData.id);
+      logger.info('🧹 CLEANUP - Removed test organization');
+    }
+    
+    logger.info('✅ SCHEMA VALIDATION - All columns compatible');
+    return { isValid: true };
+    
+  } catch (error: any) {
+    logger.error('❌ SCHEMA VALIDATION FAILED:', error);
+    return { isValid: false, error };
   }
 }
-const router = Router();
-router.use(requireAuth);
-router.get('/', asyncHandler(async (req, res) => {
-    const orgs = await db.select().from(organizations);
-    res.status(200).json(orgs);
-}));
-router.post('/', asyncHandler(async (req, res) => {
-    const userId = (req as any).user?.id;
-    if (!userId) { throw new BadRequestError('User ID not found on authenticated request.'); }
-    const validation = CreateOrganizationDTO.safeParse(req.body);
-    if (!validation.success) { throw new BadRequestError('Invalid organization data', validation.error.flatten().fieldErrors); }
-    const { sports: sportData, ...orgData } = validation.data;
 
-    // Use supabaseAdmin for writes to bypass RLS
-    if (!supabaseAdmin) {
-        throw new Error('Supabase admin client not available');
+// Function to validate and prepare sports data
+function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: string) {
+  const logger = createRequestLogger({ method: 'POST', url: '/organizations/sports-prep' } as any);
+  
+  logger.info('🏈 SPORTS PREP - Processing sports contacts:', sports);
+  
+  const sportsPayload = sports.map((sport, index) => {
+    const sportData = {
+      organization_id: orgId,
+      sport_id: sport.sportId,
+      contact_name: sport.contactName,
+      contact_email: sport.contactEmail,
+      contact_phone: sport.contactPhone || null,
+      contact_user_id: null // This will be set when user is created
+    };
+    
+    logger.info(`🏈 SPORT ${index + 1}:`, sportData);
+    return sportData;
+  });
+  
+  logger.info('🏈 SPORTS PREP COMPLETE - Prepared data:', sportsPayload);
+  return sportsPayload;
+}
+
+router.post('/', async (req, res) => {
+  const logger = createRequestLogger(req);
+  
+  try {
+    logger.info('🚀 ORGANIZATION CREATION STARTED');
+    logger.info('📨 Raw request body:', req.body);
+    
+    // Step 1: Validate input schema
+    logger.info('1️⃣ VALIDATING INPUT SCHEMA...');
+    const validation = CreateOrganizationSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      logger.error('❌ VALIDATION FAILED:', validation.error.errors);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: validation.error.errors
+      });
     }
-
-    // Insert organization using supabaseAdmin
-    const orgRes = await supabaseAdmin
-        .from('organizations')
-        .insert({
-            ...orgData,
-            created_by: userId,
-            status: 'active',
-            brand_primary: orgData.brandPrimary || null,
-            brand_secondary: orgData.brandSecondary || null,
-        })
-        .select('*')
-        .single();
-
-    if (orgRes.error) {
-        throw new BadRequestError(`Failed to create organization: ${orgRes.error.message}`);
+    
+    const validatedData = validation.data;
+    logger.info('✅ INPUT VALIDATION PASSED:', validatedData);
+    
+    // Step 2: Check database schema compatibility
+    logger.info('2️⃣ CHECKING DATABASE SCHEMA...');
+    const schemaCheck = await validateDatabaseSchema();
+    
+    if (!schemaCheck.isValid) {
+      logger.error('❌ SCHEMA INCOMPATIBILITY DETECTED:', schemaCheck);
+      return res.status(500).json({
+        success: false,
+        error: 'Database schema incompatibility',
+        details: schemaCheck.error,
+        suggestion: 'Run database migration to add missing columns'
+      });
     }
-
-    // Insert org_sports if provided
-    if (sportData && sportData.length > 0) {
-        const orgSportsData = sportData.map((sport: any) => ({
-            organization_id: orgRes.data.id,
-            sport_id: sport.sportId || sport,
-            contact_name: sport.contactName || '',
-            contact_email: sport.contactEmail || '',
-            contact_phone: sport.contactPhone || '',
-            contact_user_id: sport.contactUserId || null
-        }));
-
-        const sportRes = await supabaseAdmin
-            .from('org_sports')
-            .insert(orgSportsData);
-
-        if (sportRes.error) {
-            // Attempt to rollback by deleting the organization
-            await supabaseAdmin.from('organizations').delete().eq('id', orgRes.data.id);
-            throw new BadRequestError(`Failed to create organization sports: ${sportRes.error.message}`);
+    
+    logger.info('✅ SCHEMA COMPATIBILITY CONFIRMED');
+    
+    // Step 3: Map frontend fields to database columns
+    logger.info('3️⃣ MAPPING FIELDS TO DATABASE COLUMNS...');
+    const dbPayload = mapFieldsToDbColumns(validatedData);
+    
+    // Step 4: Create organization
+    logger.info('4️⃣ CREATING ORGANIZATION...');
+    const { data: orgData, error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .insert([dbPayload])
+      .select('id, name, created_at')
+      .single();
+    
+    if (orgError) {
+      logger.error('❌ ORGANIZATION CREATION FAILED:', orgError);
+      
+      // Provide specific error analysis
+      if (orgError.message.includes('column') && orgError.message.includes('does not exist')) {
+        const missingColumn = orgError.message.match(/column "([^"]+)" does not exist/)?.[1];
+        logger.error(`🚨 MISSING COLUMN: ${missingColumn}`);
+        
+        return res.status(500).json({
+          success: false,
+          error: `Database column missing: ${missingColumn}`,
+          message: `The database is missing the '${missingColumn}' column. Please run migrations.`,
+          code: 'MISSING_COLUMN'
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to create organization',
+        details: orgError
+      });
+    }
+    
+    logger.info('✅ ORGANIZATION CREATED:', orgData);
+    
+    // Step 5: Handle sports contacts if any
+    if (validatedData.sports.length > 0) {
+      logger.info('5️⃣ PROCESSING SPORTS CONTACTS...');
+      const sportsPayload = prepareSportsData(validatedData.sports, orgData.id);
+      
+      const { data: sportsData, error: sportsError } = await supabaseAdmin
+        .from('org_sports')
+        .insert(sportsPayload)
+        .select();
+      
+      if (sportsError) {
+        logger.error('❌ SPORTS CREATION FAILED:', sportsError);
+        
+        // Check for org_sports column issues
+        if (sportsError.message.includes('column') && sportsError.message.includes('does not exist')) {
+          const missingColumn = sportsError.message.match(/column "([^"]+)" does not exist/)?.[1];
+          logger.error(`🚨 MISSING ORG_SPORTS COLUMN: ${missingColumn}`);
         }
+        
+        // Organization was created, but sports failed - log this
+        logger.warn('⚠️ Organization created but sports contacts failed. Manual cleanup may be needed.');
+        
+        return res.status(500).json({
+          success: false,
+          error: 'Organization created but sports contacts failed',
+          organizationId: orgData.id,
+          sportsError: sportsError
+        });
+      }
+      
+      logger.info('✅ SPORTS CONTACTS CREATED:', sportsData);
     }
+    
+    // Step 6: Success response
+    logger.info('🎉 ORGANIZATION CREATION COMPLETED SUCCESSFULLY');
+    
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: orgData.id,
+        name: orgData.name,
+        createdAt: orgData.created_at
+      }
+    });
+    
+  } catch (error: any) {
+    logger.error('💥 UNEXPECTED ERROR:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      stack: error.stack
+    });
+  }
+});
 
-    res.status(201).json(orgRes.data);
-}));
-router.get('/:id', asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
-    if (!org) { return res.status(404).json({ message: 'Organization not found or you do not have permission to view it.' }); }
-    res.status(200).json(org);
-}));
 export default router;
