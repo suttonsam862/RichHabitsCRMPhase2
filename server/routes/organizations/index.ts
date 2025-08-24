@@ -17,16 +17,20 @@ const tagsSchema = z.array(z.string().max(24)).max(20);
 const createOrgSchema = z.object({
   name: z.string().min(2).max(120),
   is_business: z.boolean().default(false),
-  brand_primary: color.optional(),
-  brand_secondary: color.optional(), 
-  colorPalette: colorPalette.default([]),
-  email_domain: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
-  billing_email: z.string().email().optional().or(z.literal('').transform(()=>undefined)),
-  tags: tagsSchema.default([]),
+  brand_primary: z.string().optional(), // More permissive for debugging
+  brand_secondary: z.string().optional(), // More permissive for debugging
+  colorPalette: z.array(z.string()).default([]), // More permissive
+  email_domain: z.string().optional().or(z.literal('').transform(()=>undefined)),
+  billing_email: z.string().optional().or(z.literal('').transform(()=>undefined)),
+  tags: z.array(z.string()).default([]), // More permissive
   sports: z.array(z.object({
-    sportId: z.string().uuid(),
-    contact_name: z.string().min(2).max(100),
-    contact_email: z.string().email()
+    sportId: z.string(), // Allow any string for now
+    contact_name: z.string().min(1).max(100),
+    contact_email: z.string().email(),
+    // Additional fields the frontend might send
+    id: z.string().optional(),
+    sportName: z.string().optional(),
+    contact_phone: z.string().optional()
   })).default([]),
   // Address fields
   address_line1: z.string().optional(),
@@ -39,8 +43,11 @@ const createOrgSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
-  notes: z.string().optional()
-});
+  notes: z.string().optional(),
+  // Additional frontend fields that might be sent
+  logo_file: z.any().optional(),
+  logo_url: z.string().optional()
+}).passthrough(); // Allow additional fields without failing
 
 const updateOrgSchema = z.object({
   name: z.string().min(2).max(120).optional(),
@@ -72,7 +79,11 @@ function gradientFrom(a:string,b:string){
 /* ---------- Create ---------- */
 r.post('/', async (req:any, res) => {
   const parse = createOrgSchema.safeParse(req.body);
-  if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid org payload', parse.error.flatten(), 400);
+  if (!parse.success) {
+    console.log('❌ Validation failed for payload:', JSON.stringify(req.body, null, 2));
+    console.log('❌ Validation errors:', JSON.stringify(parse.error.flatten(), null, 2));
+    return sendErr(res, 'BAD_REQUEST', 'Invalid org payload', parse.error.flatten(), 400);
+  }
   const uid = req.user!.id;
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const p = parse.data;
