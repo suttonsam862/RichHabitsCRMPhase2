@@ -1,24 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL as string;
-const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Use environment variables first, fall back to hardcoded values if placeholders
+const envUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const envAnon = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-// Debug environment variables
-console.log('Supabase URL:', url);
-console.log('Supabase Anon Key:', anon);
-console.log('Anon Key Length:', anon ? anon.length : 'undefined');
+const url = envUrl === 'https://placeholder.supabase.co' || !envUrl 
+  ? 'https://qkampkccsdiebvkcfuby.supabase.co' 
+  : envUrl;
+
+const anon = envAnon === 'placeholder-key' || !envAnon
+  ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrYW1wa2Njc2RpZWJ2a2NmdWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3NDAxMTYsImV4cCI6MjA2MjMxNjExNn0.LX_uhF0JFDJ4xKriJ4Z8ip753DhTwKJA7lD-uLvlXAo'
+  : envAnon;
+
+console.log('Using Supabase URL:', url);
+console.log('Using Anon Key:', anon.substring(0, 20) + '...');
 
 // Check if we have valid Supabase credentials
-console.log('URL check:', !!url);
-console.log('Anon check:', !!anon);
-console.log('Not placeholder URL:', url !== 'https://placeholder.supabase.co');
-console.log('Not placeholder key:', anon !== 'placeholder-key');
-console.log('Contains supabase.co:', url.includes('.supabase.co'));
-
 const isValidSupabaseConfig = url && anon && 
-  url !== 'https://placeholder.supabase.co' && 
-  anon !== 'placeholder-key' &&
-  url.includes('.supabase.co');
+  url.includes('.supabase.co') && 
+  anon.length > 20;
 
 console.log('Supabase config valid:', isValidSupabaseConfig);
 
