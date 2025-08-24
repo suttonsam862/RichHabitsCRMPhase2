@@ -9,19 +9,12 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   }
 }
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY!; // server-only
 
-export const sb = supabaseUrl && supabaseServiceKey ? 
-  createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }) : null;
-
-// Export as supabaseAdmin for consistency with CR requirements
-export const supabaseAdmin = sb;
+export const supabaseAdmin = createClient(url, key, {
+  auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+});
 
 /**
  * User management operations using Supabase Admin API
@@ -47,12 +40,12 @@ export interface UpdateUserRequest {
  * Create a new user via Supabase Admin API
  */
 export async function createUser(userData: CreateUserRequest) {
-  if (!sb) {
+  if (!supabaseAdmin) {
     throw new Error('Supabase admin client not available');
   }
   
   try {
-    const { data, error } = await sb.auth.admin.createUser({
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: userData.email,
       password: userData.password || generateRandomPassword(),
       email_confirm: userData.emailConfirm ?? true,
@@ -79,12 +72,12 @@ export async function createUser(userData: CreateUserRequest) {
  * Update user email via Supabase Admin API
  */
 export async function updateUserEmail(userId: string, newEmail: string) {
-  if (!sb) {
+  if (!supabaseAdmin) {
     throw new Error('Supabase admin client not available');
   }
   
   try {
-    const { data, error } = await sb.auth.admin.updateUserById(userId, {
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       email: newEmail,
       email_confirm: true
     });
@@ -106,14 +99,14 @@ export async function updateUserEmail(userId: string, newEmail: string) {
  * Reset user password via Supabase Admin API
  */
 export async function resetUserPassword(userId: string, newPassword?: string) {
-  if (!sb) {
+  if (!supabaseAdmin) {
     throw new Error('Supabase admin client not available');
   }
   
   try {
     const password = newPassword || generateRandomPassword();
     
-    const { data, error } = await sb.auth.admin.updateUserById(userId, {
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       password
     });
     
@@ -134,12 +127,12 @@ export async function resetUserPassword(userId: string, newPassword?: string) {
  * Delete user via Supabase Admin API
  */
 export async function deleteUser(userId: string) {
-  if (!sb) {
+  if (!supabaseAdmin) {
     throw new Error('Supabase admin client not available');
   }
   
   try {
-    const { error } = await sb.auth.admin.deleteUser(userId);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     
     if (error) {
       log.error({ error: error.message, userId }, 'Failed to delete user');
@@ -157,12 +150,12 @@ export async function deleteUser(userId: string) {
  * Get user by ID via Supabase Admin API
  */
 export async function getUserById(userId: string) {
-  if (!sb) {
+  if (!supabaseAdmin) {
     throw new Error('Supabase admin client not available');
   }
   
   try {
-    const { data, error } = await sb.auth.admin.getUserById(userId);
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
     
     if (error) {
       log.error({ error: error.message, userId }, 'Failed to get user by ID');
@@ -194,12 +187,12 @@ function generateRandomPassword(length: number = 12): string {
  * List all users via Supabase Admin API (with pagination)
  */
 export async function listUsers(page: number = 1, perPage: number = 50) {
-  if (!sb) {
+  if (!supabaseAdmin) {
     throw new Error('Supabase admin client not available');
   }
   
   try {
-    const { data, error } = await sb.auth.admin.listUsers({
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
       page,
       perPage
     });
