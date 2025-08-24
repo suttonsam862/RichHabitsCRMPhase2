@@ -16,6 +16,7 @@
     "db:selftest": "tsx scripts/db/selftest.ts",
     "db:reload-postgrest": "tsx scripts/db/reload-postgrest.ts",
     "verify": "npm run db:schema:dump && npm run db:schema:check && npm run db:selftest",
+    "test:org-creation": "tsx scripts/db/comprehensive-test.ts",
     "smoke:orgs": "tsx scripts/smoke-orgs.ts"
   },
   "dependencies": {
