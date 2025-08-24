@@ -3,7 +3,7 @@ import { CreateUserDTO, UpdateUserDTO, UserDTO } from '@shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
-import { users } from '@shared/schema';
+import { userRoles } from '@shared/schema';
 import { sql, eq, ilike, desc } from 'drizzle-orm';
 import { sendSuccess, sendOk, sendErr, sendCreated, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
@@ -70,31 +70,42 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
     // Build where conditions
     const conditions = [];
     
-    // Search query by name or email
-    if (q && typeof q === 'string' && q.trim()) {
-      const searchTerm = `%${q.trim()}%`;
-      conditions.push(sql`(${users.fullName} ILIKE ${searchTerm} OR ${users.email} ILIKE ${searchTerm})`);
+    // Use Supabase Auth to get users instead of custom table
+    const { data: authUsers, error } = await supabaseAdmin.auth.admin.listUsers({
+      page: pageNum,
+      perPage: pageSizeNum
+    });
+
+    if (error) {
+      return sendErr(res, 'INTERNAL_ERROR', 'Failed to fetch users', undefined, 500);
     }
 
-    // Get total count
-    const countResult = await db
-      .select({ count: sql`count(*)` })
-      .from(users)
-      .where(conditions.length > 0 ? sql`${conditions[0]}` : undefined);
+    const results = authUsers?.users || [];
+    const total = authUsers?.total || 0;
 
-    const total = Number(countResult[0]?.count || 0);
+    // Filter by search query if provided
+    let filteredResults = results;
+    if (q && typeof q === 'string' && q.trim()) {
+      const searchTerm = q.trim().toLowerCase();
+      filteredResults = results.filter(user => 
+        user.email?.toLowerCase().includes(searchTerm) ||
+        user.user_metadata?.full_name?.toLowerCase().includes(searchTerm)
+      );
+    }
 
-    // Get paginated results
-    const results = await db
-      .select()
-      .from(users)
-      .where(conditions.length > 0 ? sql`${conditions[0]}` : undefined)
-      .orderBy(desc(users.createdAt))
-      .limit(pageSizeNum)
-      .offset(offset);
-
-    // Map database rows to DTOs
-    const data = results.map(dbRowToDto);
+    // Map Supabase auth users to DTOs
+    const data = filteredResults.map(user => ({
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      fullName: user.user_metadata?.full_name || null,
+      avatarUrl: user.user_metadata?.avatar_url || null,
+      isActive: true,
+      preferences: user.user_metadata?.preferences || {},
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      lastLogin: user.last_sign_in_at,
+    }));
 
     sendOk(res, data, total);
   } catch (error) {
@@ -107,15 +118,24 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
   const { id } = req.params;
 
   try {
-    const result = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const { data: user, error } = await supabaseAdmin.auth.admin.getUserById(id);
 
-    if (result.length === 0) {
+    if (error || !user) {
       return HttpErrors.notFound(res, 'User not found');
     }
+
+    const userData = {
+      id: user.user.id,
+      email: user.user.email,
+      phone: user.user.phone,
+      fullName: user.user.user_metadata?.full_name || null,
+      avatarUrl: user.user.user_metadata?.avatar_url || null,
+      isActive: !user.user.banned_until,
+      preferences: user.user.user_metadata?.preferences || {},
+      createdAt: user.user.created_at,
+      updatedAt: user.user.updated_at,
+      lastLogin: user.user.last_sign_in_at,
+    };
 
     // Get user roles
     const rolesResult = await db.execute(sql`
@@ -126,7 +146,7 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
     `);
     
     const mappedUser = {
-      ...dbRowToDto(result[0]),
+      ...userData,
       roles: rolesResult || []
     };
     sendOk(res, mappedUser);
@@ -253,38 +273,33 @@ router.post('/',
     const validatedData = req.body;
 
     try {
-      // Check if user already exists
-      const existingUser = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.email, validatedData.email))
-        .limit(1);
+      // Create user using Supabase Auth
+      const { data: newUser, error } = await supabaseAdmin.auth.admin.createUser({
+        email: validatedData.email,
+        phone: validatedData.phone,
+        user_metadata: {
+          full_name: validatedData.fullName || validatedData.email.split('@')[0],
+          preferences: {}
+        }
+      });
 
-      if (existingUser.length > 0) {
-        return HttpErrors.conflict(res, 'User with this email already exists');
+      if (error) {
+        if (error.message.includes('already registered')) {
+          return HttpErrors.conflict(res, 'User with this email already exists');
+        }
+        return sendErr(res, 'CREATE_ERROR', error.message, undefined, 400);
       }
 
-      // Map DTO fields to DB fields
-      const mappedData = mapDtoToDb(validatedData, DTO_TO_DB_MAPPING);
-      
-      // Prepare user data
-      const now = new Date().toISOString();
-      const userData = {
-        email: validatedData.email,
-        phone: validatedData.phone || null,
-        fullName: validatedData.fullName || validatedData.email.split('@')[0],
-        preferences: {},
-        createdAt: now,
-        updatedAt: now,
-        ...mappedData
+      const createdUser = {
+        id: newUser.user?.id,
+        email: newUser.user?.email,
+        phone: newUser.user?.phone,
+        fullName: newUser.user?.user_metadata?.full_name,
+        isActive: true,
+        preferences: newUser.user?.user_metadata?.preferences || {},
+        createdAt: newUser.user?.created_at,
+        updatedAt: newUser.user?.updated_at
       };
-
-      const result = await db
-        .insert(users)
-        .values(userData)
-        .returning();
-
-      const createdUser = dbRowToDto(result[0]);
       sendOk(res, createdUser, undefined, 201);
     } catch (error) {
       handleDatabaseError(res, error, 'create user');
@@ -300,23 +315,37 @@ router.patch('/:id',
     const updateData = req.body;
 
     try {
-      // Map DTO fields to DB fields
-      const mappedData = mapDtoToDb(updateData, DTO_TO_DB_MAPPING);
-      
-      const result = await db
-        .update(users)
-        .set({
-          ...mappedData,
-          updatedAt: new Date().toISOString()
-        })
-        .where(eq(users.id, id))
-        .returning();
-
-      if (result.length === 0) {
-        return HttpErrors.notFound(res, 'User not found');
+      // Update user using Supabase Auth
+      const updatePayload: any = {};
+      if (updateData.phone) updatePayload.phone = updateData.phone;
+      if (updateData.fullName || updateData.avatarUrl || updateData.preferences) {
+        updatePayload.user_metadata = {
+          full_name: updateData.fullName,
+          avatar_url: updateData.avatarUrl,
+          preferences: updateData.preferences
+        };
       }
 
-      const mappedResult = dbRowToDto(result[0]);
+      const { data: updatedUser, error } = await supabaseAdmin.auth.admin.updateUserById(id, updatePayload);
+
+      if (error) {
+        if (error.message.includes('not found')) {
+          return HttpErrors.notFound(res, 'User not found');
+        }
+        return sendErr(res, 'UPDATE_ERROR', error.message, undefined, 400);
+      }
+
+      const mappedResult = {
+        id: updatedUser.user?.id,
+        email: updatedUser.user?.email,
+        phone: updatedUser.user?.phone,
+        fullName: updatedUser.user?.user_metadata?.full_name,
+        avatarUrl: updatedUser.user?.user_metadata?.avatar_url,
+        isActive: true,
+        preferences: updatedUser.user?.user_metadata?.preferences || {},
+        createdAt: updatedUser.user?.created_at,
+        updatedAt: updatedUser.user?.updated_at
+      };
       sendOk(res, mappedResult);
     } catch (error) {
       handleDatabaseError(res, error, 'update user');
@@ -329,13 +358,14 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await db
-      .delete(users)
-      .where(eq(users.id, id))
-      .returning();
+    // Delete user using Supabase Auth
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
-    if (result.length === 0) {
-      return HttpErrors.notFound(res, 'User not found');
+    if (error) {
+      if (error.message.includes('not found')) {
+        return HttpErrors.notFound(res, 'User not found');
+      }
+      return sendErr(res, 'DELETE_ERROR', error.message, undefined, 400);
     }
 
     res.status(204).send();
