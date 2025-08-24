@@ -19,7 +19,7 @@ export const organizations = pgTable('organizations', {
   titleCardUrl: text('title_card_url'),
   colorPalette: jsonb('color_palette').notNull().default('[]'::any),
   universalDiscounts: jsonb('universal_discounts').notNull().default('{}'::any),
-  tags: text('tags').array().notNull().default(sql`'{}'::text[]`),
+  tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`),
   gradientCss: text('gradient_css'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
