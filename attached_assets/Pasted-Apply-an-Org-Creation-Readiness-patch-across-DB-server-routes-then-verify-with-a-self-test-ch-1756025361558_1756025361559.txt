@@ -1,0 +1,20 @@
+Apply an “Org Creation Readiness” patch across DB + server + routes, then verify with a self-test checklist: (DB migration) create a new idempotent SQL file under db/migrations that: 1) adds missing columns on public.organizations if not present: color_palette jsonb NOT NULL DEFAULT '[]'::jsonb, gradient_css text NULL, tags text[] NOT NULL DEFAULT '{}', is_archived boolean NOT NULL DEFAULT false; 2) enables RLS (no-op if enabled) and (re)creates policies exactly as:
+
+INSERT: CREATE POLICY organizations_insert ON public.organizations FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+
+SELECT: CREATE POLICY org_select ON public.organizations FOR SELECT TO authenticated USING (public.is_org_member(auth.uid(), id));
+
+UPDATE: CREATE POLICY organizations_update ON public.organizations FOR UPDATE TO authenticated USING (public.is_org_admin(auth.uid(), id)) WITH CHECK (public.is_org_admin(auth.uid(), id));
+
+DELETE: CREATE POLICY organizations_delete ON public.organizations FOR DELETE TO authenticated USING (public.is_org_admin(auth.uid(), id));
+
+(Re)create the owner bootstrap trigger: public.handle_org_insert() must be SECURITY DEFINER and keep the logic that inserts { user_id: auth.uid(), org_id: NEW.id, role_id: (SELECT id FROM roles WHERE slug='admin') } ON CONFLICT DO NOTHING;, then recreate trigger trg_org_after_insert_admin AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.handle_org_insert(); 4) PostgREST reload RPC: create public.pgrst_reload() as SELECT pg_notify('pgrst','reload schema'); and call it at the end of the migration; 5) RLS self-test RPC: create public.org_can_insert() returning boolean = (auth.uid() IS NOT NULL) (SECURITY INVOKER).
+(Server changes) 6) add an admin route file server/routes/admin/schema.ts with two POST endpoints, mounted once in server/routes/index.ts:
+
+POST /api/v1/admin/schema/reload → supabaseAdmin.rpc('pgrst_reload') → { reloaded:true }
+
+POST /api/v1/admin/rls/selftest (requires requireAuth) → supabaseForUser(token).rpc('org_can_insert') → { canInsert:true|false }
+
+in server/index.ts set trust proxy before the rate limiter: app.set('trust proxy', 1); (silence ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
+(Create handler hardening) 8) in server/routes/organizations/index.ts ensure the create flow uses the user-token client supabaseForUser(req.headers.authorization?.slice(7)) for INSERT + follow-up SELECT, defaults colorPalette to [] when absent, and always computes gradient_css = 'linear-gradient(135deg, ' + brandPrimary + ' 0%, ' + brandSecondary + ' 100%)'.
+(Run & verify) 9) run the new migration, then npm run preflight && npm run check && npm run dev. 10) Print a checklist to the console with ✅/❌ for: (a) columns present (color_palette/gradient_css/tags/is_archived), (b) RLS policies present (insert/select/update/delete), (c) trigger exists and function is SECURITY DEFINER, (d) PostgREST reload succeeded, (e) POST /api/v1/admin/rls/selftest returns { canInsert:true } when called with a valid Supabase access token. 11) Do not create duplicate mounts or touch client/_legacy; only patch canonical server files and add the single migration.

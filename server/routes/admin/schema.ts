@@ -13,9 +13,30 @@ r.post('/reload', async (req: any, res) => {
     if (error) {
       return sendErr(res, 'BAD_REQUEST', 'Schema reload failed', error, 500);
     }
-    return sendOk(res, { reloaded: true, data });
+    return sendOk(res, { reloaded: true });
   } catch (err: any) {
     return sendErr(res, 'INTERNAL_ERROR', 'Schema reload error', err.message, 500);
+  }
+});
+
+// POST /api/v1/admin/rls/selftest - tests RLS org_can_insert function
+r.post('/rls/selftest', async (req: any, res) => {
+  try {
+    const token = req.headers.authorization?.slice(7); // Remove 'Bearer ' prefix
+    if (!token) {
+      return sendErr(res, 'UNAUTHORIZED', 'Missing authorization token', undefined, 401);
+    }
+    
+    const sb = supabaseForUser(token);
+    const { data, error } = await sb.rpc('org_can_insert');
+    
+    if (error) {
+      return sendErr(res, 'BAD_REQUEST', 'RLS self-test failed', error, 500);
+    }
+    
+    return sendOk(res, { canInsert: data });
+  } catch (err: any) {
+    return sendErr(res, 'INTERNAL_ERROR', 'RLS self-test error', err.message, 500);
   }
 });
 

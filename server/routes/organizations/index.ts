@@ -66,13 +66,16 @@ r.post('/', async (req:any, res) => {
   const p = parse.data;
 
   // insert organization using user token client for RLS
-  const gradient = gradientFrom(p.brandPrimary, p.brandSecondary);
+  // Ensure colorPalette defaults to [] when absent and always compute gradient_css
+  const colorPalette = p.colorPalette || [];
+  const gradient = `linear-gradient(135deg, ${p.brandPrimary} 0%, ${p.brandSecondary} 100%)`;
+  
   const { data: org, error: orgErr } = await sb.from('organizations').insert([{
     name: p.name,
     is_business: p.isBusiness,
     brand_primary: p.brandPrimary,
     brand_secondary: p.brandSecondary,
-    color_palette: p.colorPalette || [],
+    color_palette: colorPalette,
     email_domain: p.emailDomain,
     billing_email: p.billingEmail,
     tags: p.tags,
