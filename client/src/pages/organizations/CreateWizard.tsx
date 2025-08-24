@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { Link, useNavigate } from 'react-router-dom';
 
-type SportRow = { sportId:string; contactName:string; contactEmail:string };
+type SportRow = { sportId:string; contactName:string; contactEmail:string; contactPhone:string; saved:boolean };
 type Sport = { id: string; name: string };
 
 export default function CreateWizard(){
@@ -35,7 +35,7 @@ export default function CreateWizard(){
   }, []);
 
   function addSport(){ 
-    setSports([...sports, { sportId:'', contactName:'', contactEmail:'' }]); 
+    setSports([...sports, { sportId:'', contactName:'', contactEmail:'', contactPhone:'', saved: false }]); 
   }
   
   function updateSport(i:number, patch:Partial<SportRow>){ 
@@ -44,6 +44,10 @@ export default function CreateWizard(){
   
   function removeSport(i:number) {
     setSports(sports.filter((_, idx) => idx !== i));
+  }
+
+  function saveSport(i:number) {
+    setSports(sports.map((s,idx)=> idx===i ? { ...s, saved: true } : s));
   }
 
   async function submit(){
@@ -60,7 +64,7 @@ export default function CreateWizard(){
       emailDomain: emailDomain || undefined,
       billingEmail: billingEmail || undefined,
       tags: tags.split(',').map(s=>s.trim()).filter(Boolean),
-      sports: isBusiness ? [] : sports.filter(s=>s.sportId && s.contactEmail && s.contactName)
+      sports: isBusiness ? [] : sports.filter(s=>s.sportId && s.contactEmail && s.contactName && s.saved)
     };
     
     const r = await api.post('/api/v1/organizations', payload);
@@ -300,13 +304,14 @@ export default function CreateWizard(){
                   </p>
                   
                   {sports.map((sport, i) => (
-                    <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div key={i} className={`p-4 rounded-xl border transition-colors ${sport.saved ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <select 
                           className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:border-cyan-500/50 focus:outline-none transition-colors" 
                           value={sport.sportId} 
                           onChange={e=>updateSport(i,{sportId:e.target.value})}
                           data-testid={`select-sport-${i}`}
+                          disabled={sport.saved}
                         >
                           <option value="" className="bg-gray-800">Select a sport...</option>
                           {availableSports.map(availableSport => (
@@ -321,22 +326,59 @@ export default function CreateWizard(){
                           onChange={e=>updateSport(i,{contactName:e.target.value})}
                           placeholder="Contact Name"
                           data-testid={`input-contact-name-${i}`}
+                          disabled={sport.saved}
+                        />
+                        <input 
+                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
+                          value={sport.contactEmail} 
+                          onChange={e=>updateSport(i,{contactEmail:e.target.value})}
+                          placeholder="Contact Email"
+                          data-testid={`input-contact-email-${i}`}
+                          disabled={sport.saved}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <input 
+                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
+                          value={sport.contactPhone} 
+                          onChange={e=>updateSport(i,{contactPhone:e.target.value})}
+                          placeholder="Contact Phone (optional)"
+                          data-testid={`input-contact-phone-${i}`}
+                          disabled={sport.saved}
                         />
                         <div className="flex gap-2">
-                          <input 
-                            className="flex-1 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
-                            value={sport.contactEmail} 
-                            onChange={e=>updateSport(i,{contactEmail:e.target.value})}
-                            placeholder="Contact Email"
-                            data-testid={`input-contact-email-${i}`}
-                          />
-                          <button 
-                            className="px-3 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                            onClick={() => removeSport(i)}
-                            data-testid={`button-remove-sport-${i}`}
-                          >
-                            ✕
-                          </button>
+                          {!sport.saved ? (
+                            <>
+                              <button 
+                                className="flex-1 px-4 py-2 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                                onClick={() => saveSport(i)}
+                                disabled={!sport.sportId || !sport.contactName || !sport.contactEmail}
+                                data-testid={`button-done-sport-${i}`}
+                              >
+                                ✓ Done
+                              </button>
+                              <button 
+                                className="px-3 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                                onClick={() => removeSport(i)}
+                                data-testid={`button-remove-sport-${i}`}
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex-1 px-4 py-2 rounded-xl bg-green-500/20 text-green-400 text-center">
+                                ✓ Saved
+                              </div>
+                              <button 
+                                className="px-3 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                                onClick={() => removeSport(i)}
+                                data-testid={`button-remove-sport-${i}`}
+                              >
+                                ✕
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
