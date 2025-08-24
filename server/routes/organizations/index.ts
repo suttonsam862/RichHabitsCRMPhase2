@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { sendOk, sendErr, sendNoContent } from '../../lib/http';
+import { mapPgError, mapValidationError } from '../../lib/err';
 import { supabaseForUser, supabaseAdmin } from '../../lib/supabase';
 import { requireAuth } from '../../middleware/auth';
 
@@ -80,9 +81,8 @@ function gradientFrom(a:string,b:string){
 r.post('/', async (req:any, res) => {
   const parse = createOrgSchema.safeParse(req.body);
   if (!parse.success) {
-    console.log('❌ Validation failed for payload:', JSON.stringify(req.body, null, 2));
-    console.log('❌ Validation errors:', JSON.stringify(parse.error.flatten(), null, 2));
-    return sendErr(res, 'BAD_REQUEST', 'Invalid org payload', parse.error.flatten(), 400);
+    const m = mapValidationError(parse.error);
+    return sendErr(res, 400, m.message, m.details);
   }
   const uid = req.user!.id;
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
@@ -106,24 +106,24 @@ r.post('/', async (req:any, res) => {
     tags: p.tags,
     gradient_css: gradient
   }]).select().single();
-  if (orgErr) return sendErr(res, 'BAD_REQUEST', orgErr.message, undefined, 400);
+  if (orgErr) { const m = mapPgError(orgErr); return sendErr(res, 400, m.message, m, m.hint); }
 
   // Re-select the row with the same client to reflect RLS membership
   const { data: freshOrg, error: selectErr } = await sb.from('organizations').select('*').eq('id', org.id).single();
-  if (selectErr) return sendErr(res, 'BAD_REQUEST', selectErr.message, undefined, 400);
+  if (selectErr) { const m = mapPgError(selectErr); return sendErr(res, 400, m.message, m, m.hint); }
 
   // auto-create coach users & user_roles for regular orgs with sports contacts
   for (const s of p.sports){
     // create or locate auth user by email
     const { data: existing, error: gErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
-    if (gErr) return sendErr(res, 'BAD_REQUEST', gErr.message, undefined, 400);
+    if (gErr) { const m = mapPgError(gErr); return sendErr(res, 400, m.message, m, m.hint); }
     let coachId = existing?.users?.find(u => u.email === s.contactEmail)?.id;
     if (!coachId){
       const create = await supabaseAdmin.auth.admin.createUser({
         email: s.contactEmail, email_confirm: false,
         user_metadata: { full_name: s.contactName, desired_role: 'customer' }
       });
-      if (create.error || !create.data?.user) return sendErr(res, 'BAD_REQUEST', create.error?.message || 'Unable to create contact user', undefined, 400);
+      if (create.error || !create.data?.user) return sendErr(res, 400, create.error?.message || 'Unable to create contact user');
       coachId = create.data.user.id;
     }
     // add org_sports entry
@@ -131,7 +131,7 @@ r.post('/', async (req:any, res) => {
       organization_id: org.id, sport_id: s.sportId,
       contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
     }]);
-    if (osErr) return sendErr(res, 'BAD_REQUEST', osErr.message, undefined, 400);
+    if (osErr) { const m = mapPgError(osErr); return sendErr(res, 400, m.message, m, m.hint); }
     // assign Customer role scoped to this org
     const { data: roles } = await supabaseAdmin.from('roles').select('id,slug');
     const customer = roles?.find(r=>r.slug==='customer')?.id;
@@ -172,7 +172,7 @@ r.get('/', async (req:any,res) => {
 
   query = query.range(q.offset, q.offset + q.limit - 1);
   const { data, error, count } = await query;
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, data, count || 0);
 });
 
@@ -184,14 +184,14 @@ r.get('/:id', async (req:any,res)=>{
   
   // For now, just return basic org data until we have the RPC function
   const { data, error } = await sb.from('organizations').select('*').eq('id', orgId).single();
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, data);
 });
 
 /* ---------- Update ---------- */
 r.patch('/:id', async (req:any,res)=>{
   const body = updateOrgSchema.safeParse(req.body);
-  if (!body.success) return sendErr(res, 'BAD_REQUEST', 'Invalid update payload', body.error.flatten(), 400);
+  if (!body.success) { const m = mapValidationError(body.error); return sendErr(res, 400, m.message, m.details); }
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const payload:any = {};
   if (body.data.name !== undefined) payload.name = body.data.name;
@@ -206,7 +206,7 @@ r.patch('/:id', async (req:any,res)=>{
     payload.gradient_css = `linear-gradient(135deg, ${payload.brand_primary} 0%, ${payload.brand_secondary} 100%)`;
   }
   const { data, error } = await sb.from('organizations').update(payload).eq('id', req.params.id).select().single();
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, data);
 });
 
@@ -214,7 +214,7 @@ r.patch('/:id', async (req:any,res)=>{
 r.delete('/:id', async (req:any,res)=>{
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const { error } = await sb.from('organizations').delete().eq('id', req.params.id);
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendNoContent(res);
 });
 
@@ -222,23 +222,23 @@ r.delete('/:id', async (req:any,res)=>{
 r.post('/:id/archive', async (req:any,res)=>{
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const { error } = await sb.from('organizations').update({ is_archived: true }).eq('id', req.params.id);
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, { ok:true });
 });
 r.post('/:id/restore', async (req:any,res)=>{
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const { error } = await sb.from('organizations').update({ is_archived: false }).eq('id', req.params.id);
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, { ok:true });
 });
 
 /* ---------- Tags ---------- */
 r.post('/:id/tags', async (req:any,res)=>{
   const tags = tagsSchema.safeParse(req.body?.tags);
-  if (!tags.success) return sendErr(res, 'BAD_REQUEST', 'Invalid tags', undefined, 400);
+  if (!tags.success) { const m = mapValidationError(tags.error); return sendErr(res, 400, m.message, m.details); }
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const { data, error } = await sb.from('organizations').update({ tags: tags.data }).eq('id', req.params.id).select('tags').single();
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, data);
 });
 
@@ -247,14 +247,14 @@ r.post('/:id/favorite', async (req:any,res)=>{
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const uid = req.user!.id;
   const { error } = await sb.from('organization_favorites').upsert({ user_id: uid, org_id: req.params.id });
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, { ok:true });
 });
 r.delete('/:id/favorite', async (req:any,res)=>{
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const uid = req.user!.id;
   const { error } = await sb.from('organization_favorites').delete().eq('user_id', uid).eq('org_id', req.params.id);
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, { ok:true });
 });
 
@@ -263,18 +263,18 @@ function safeName(name:string){ if (name.includes('..')||name.startsWith('/')||n
 r.post('/:id/logo/sign', async (req:any,res)=>{
   try{
     const { fileName } = req.body||{};
-    if (!fileName) return sendErr(res, 'BAD_REQUEST', 'fileName required', undefined, 400);
+    if (!fileName) return sendErr(res, 400, 'fileName required');
     const key = `org/${req.params.id}/branding/${safeName(fileName)}`;
     const { data, error } = await supabaseAdmin.storage.from('app').createSignedUploadUrl(key, { upsert:true });
-    if (error || !data?.signedUrl) return sendErr(res, 'BAD_REQUEST', error?.message || 'sign error', undefined, 400);
+    if (error || !data?.signedUrl) return sendErr(res, 400, error?.message || 'sign error');
     return sendOk(res, { uploadUrl: data.signedUrl, key });
-  }catch(e:any){ return sendErr(res, 'BAD_REQUEST', e?.message || 'sign error', undefined, 400); }
+  }catch(e:any){ return sendErr(res, 400, e?.message || 'sign error'); }
 });
 r.post('/:id/logo/apply', async (req:any,res)=>{
-  const key = req.body?.key; if(!key) return sendErr(res, 'BAD_REQUEST', 'key required', undefined, 400);
+  const key = req.body?.key; if(!key) return sendErr(res, 400, 'key required');
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const { data, error } = await sb.from('organizations').update({ logo_url: key }).eq('id', req.params.id).select('logo_url').single();
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) { const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint); }
   return sendOk(res, data);
 });
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 // Preflight guardrail check
+const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
 function sh(cmd) {

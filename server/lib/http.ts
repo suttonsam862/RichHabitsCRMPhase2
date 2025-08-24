@@ -18,6 +18,25 @@ export interface ApiResponse<T = any> {
   error?: ApiError;
 }
 
+export function sendOk(res: any, data?: any, count?: any) {
+  const body = count !== undefined ? { success:true, data, count } : { success:true, data };
+  return res.status(200).json(body);
+}
+export function sendCreated(res: any, data?: any) { return res.status(201).json({ success:true, data }); }
+export function sendNoContent(res: any) { return res.status(204).send(); }
+export function sendErr(res: any, code?: any, message?: string, details?: any, hint?: string) {
+  const ts = new Date().toISOString();
+  const rid = (res as any).locals?.rid;
+  const path = (res as any).req?.originalUrl;
+  const method = (res as any).req?.method;
+  // mask details in prod
+  const dev = (process.env.DEBUG_LEVEL ?? '1') !== '0';
+  const body:any = { success:false, error:{ code: code||500, message, rid, path, method, ts } };
+  if (hint && dev) body.error.hint = hint;
+  if (details && dev && (process.env.DEBUG_LEVEL ?? '1') === '2') body.error.details = details;
+  return res.status(code||500).json(body);
+}
+
 /**
  * Send standardized success response
  */
@@ -139,27 +158,3 @@ export function mapDbToDto(dbRow: Record<string, any>, mapping: Record<string, s
   
   return mapped;
 }
-
-/**
- * Send 201 Created response
- */
-export function sendCreated<T>(res: Response, data?: T): void {
-  const response: ApiResponse<T> = {
-    success: true,
-    ...(data !== undefined && { data })
-  };
-  res.status(201).json(response);
-}
-
-/**
- * Send 204 No Content response
- */
-export function sendNoContent(res: Response): void {
-  res.status(204).send();
-}
-
-/**
- * CR-specified aliases for sendSuccess/sendError
- */
-export const sendOk = sendSuccess;
-export const sendErr = sendError;

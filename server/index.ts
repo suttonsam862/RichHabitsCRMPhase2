@@ -78,6 +78,9 @@ const authLimiter = rateLimit({
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+// Correlation ID + request logging
+app.use((req,res,next)=>{ const rid = Math.random().toString(36).slice(2); (res as any).locals = { ...(res as any).locals, rid }; res.setHeader('X-Request-Id', rid); next(); });
+
 // Request ID middleware
 app.use(requestIdMiddleware);
 
@@ -133,6 +136,18 @@ app.use('/api/v1/auth/register', authLimiter);
 
 // Mount canonical API router at /api with rate limiting
 app.use('/api', apiLimiter, apiRouter);
+
+// Centralized error handler (last middleware)
+app.use((err:any, req:any, res:any, next:any)=>{
+  const { logger } = require('./lib/log');
+  const { sendErr } = require('./lib/http');
+  const dev = (process.env.DEBUG_LEVEL ?? '1') !== '0';
+  const status = err?.status || err?.statusCode || 500;
+  const code = err?.code || 'ERR_UNEXPECTED';
+  const msg = err?.message || 'Unhandled error';
+  logger.error({ rid: res.locals?.rid, err, path: req.originalUrl, method: req.method }, 'request_error');
+  return sendErr(res, status, msg, dev ? err?.stack : undefined, err?.hint);
+});
 
 // Error handling middleware
 app.use(errorHandler);

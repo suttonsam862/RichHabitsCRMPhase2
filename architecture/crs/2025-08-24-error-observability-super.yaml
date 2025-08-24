@@ -1,0 +1,295 @@
+cr:
+title: "Error & Observability Super-System: typed errors, DB mappers, correlation IDs, dev overlay, diagnostics"
+rationale: >
+  Provide an ultimate overview of database/API failures with high-signal developer feedback. Standardize a strict error contract;
+  add correlation IDs and structured logging; parse Postgres/Supabase errors into human, actionable messages; expose diagnostics
+  routes; and add a client dev overlay + console groups that show request/response, validation detail, RLS hints, and retry advice.
+  All verbose details are gated to development (and hidden in production) to remain safe.
+
+agent_protocol:
+  rules:
+    - "PLAN-FIRST in architecture/context/.PLAN.md; list all touched files."
+    - "Keep unified response shape: { success:false, error:{ code, message, hint?, details?, rid, path, method, ts } }."
+    - "Do NOT leak secrets or full SQL in production; verbose fields behind DEBUG_LEVEL >= 2 in dev only."
+    - "Mount routes exactly once; no client/_legacy imports; preflight must pass."
+
+########################################################################################################
+# 0) ENV / CONFIG
+########################################################################################################
+config_delta:
+  env:
+    add:
+      - { key: DEBUG_LEVEL, default: "1", note: "0=prod minimal, 1=dev concise, 2=dev verbose (stack/SQL fragments/redacted)" }
+      - { key: LOG_PRETTY,  default: "1", note: "Pretty print pino logs in dev" }
+    notes: |
+      - Production should use DEBUG_LEVEL=0 (masked details).
+      - LOG_PRETTY=0 in production for JSON logs.
+
+########################################################################################################
+# 1) SERVER: Error taxonomy, mapper, middleware, correlation IDs, structured logs
+########################################################################################################
+server_libs:
+  files:
+    - path: "server/lib/err.ts"
+      content: |
+        // Error taxonomy + mapper for Postgres/Supabase
+        export type RichError = {
+          code: string|number;
+          message: string;
+          hint?: string;
+          details?: any;
+        };
+
+        export class AppError extends Error {
+          status: number; code: string; hint?: string; details?: any;
+          constructor(status: number, code: string, message: string, hint?: string, details?: any){
+            super(message); this.status=status; this.code=code; this.hint=hint; this.details=details;
+          }
+        }
+
+        export function mapPgError(e:any): RichError {
+          // Handle common PG codes: 23505 unique_violation, 23503 fk_violation, 42501 insufficient_privilege (RLS),
+          // 22P02 invalid_text_representation, 23502 not_null_violation, etc.
+          const code = e?.code || e?.details?.code || e?.status || 'UNKNOWN';
+          const msg  = e?.message || e?.error_description || 'Unexpected database error';
+          if (code === '42501') return { code, message: 'Permission denied by RLS', hint: 'Check policies & auth.uid().' };
+          if (code === '23505') return { code, message: 'Duplicate value violates unique constraint', hint: 'Check unique fields.' };
+          if (code === '23503') return { code, message: 'Foreign key constraint failed', hint: 'Related record missing.' };
+          if (code === '23502') return { code, message: 'Required field is missing', hint: 'Add all NOT NULL columns.' };
+          if (code === '22P02') return { code, message: 'Invalid input format', hint: 'Check UUID/number types.' };
+          return { code, message: msg };
+        }
+
+        export function mapValidationError(zodError:any): RichError {
+          return { code: 400, message: 'Validation failed', details: zodError?.flatten?.() ?? zodError };
+        }
+
+    - path: "server/lib/http.ts"
+      patch: |
+        import { env } from '../env';
+        export function sendOk(res, data, count?) {
+          const body = count !== undefined ? { success:true, data, count } : { success:true, data };
+          return res.status(200).json(body);
+        }
+        export function sendCreated(res, data) { return res.status(201).json({ success:true, data }); }
+        export function sendNoContent(res) { return res.status(204).send(); }
+        export function sendErr(res, code, message, details?, hint?) {
+          const ts = new Date().toISOString();
+          const rid = (res as any).locals?.rid;
+          const path = (res as any).req?.originalUrl;
+          const method = (res as any).req?.method;
+          // mask details in prod
+          const dev = (process.env.DEBUG_LEVEL ?? '1') !== '0';
+          const body:any = { success:false, error:{ code: code||500, message, rid, path, method, ts } };
+          if (hint && dev) body.error.hint = hint;
+          if (details && dev && (process.env.DEBUG_LEVEL ?? '1') === '2') body.error.details = details;
+          return res.status(code||500).json(body);
+        }
+
+    - path: "server/lib/log.ts"
+      patch: |
+        import pino from 'pino';
+        const pretty = (process.env.LOG_PRETTY ?? '1') === '1';
+        export const logger = pino(pretty ? { transport: { target: 'pino-pretty', options: { colorize:true }}, level: process.env.LOG_LEVEL||'info' } : { level: process.env.LOG_LEVEL||'info' });
+
+server_bootstrap:
+  files:
+    - path: "server/index.ts"
+      patch: |
+        // Correlation ID + request logging
+        app.use((req,res,next)=>{ const rid = Math.random().toString(36).slice(2); (res as any).locals = { ...(res as any).locals, rid }; res.setHeader('X-Request-Id', rid); next(); });
+        // Centralized error handler (last middleware)
+        app.use((err:any, req:any, res:any, next:any)=>{
+          const { logger } = require('./lib/log');
+          const { sendErr } = require('./lib/http');
+          const dev = (process.env.DEBUG_LEVEL ?? '1') !== '0';
+          const status = err?.status || err?.statusCode || 500;
+          const code = err?.code || 'ERR_UNEXPECTED';
+          const msg = err?.message || 'Unhandled error';
+          logger.error({ rid: res.locals?.rid, err, path: req.originalUrl, method: req.method }, 'request_error');
+          return sendErr(res, status, msg, dev ? err?.stack : undefined, err?.hint);
+        });
+
+########################################################################################################
+# 2) SERVER: Diagnostics routes (schema reload, RLS self-test, heartbeat, last-logs ring buffer)
+########################################################################################################
+server_diagnostics:
+  files:
+    - path: "server/lib/ringlog.ts"
+      content: |
+        // tiny in-memory ring buffer for recent server events (dev only)
+        const N = 200; const buf:any[] = [];
+        export function pushLog(e:any){ if ((process.env.DEBUG_LEVEL ?? '1') === '0') return; buf.push(e); if (buf.length>N) buf.shift(); }
+        export function getLogs(){ return buf.slice(-N); }
+
+    - path: "server/routes/admin/diagnostics.ts"
+      content: |
+        import { Router } from 'express';
+        import { requireAuth } from '../../middleware/auth';
+        import { sendOk, sendErr } from '../../lib/http';
+        import { supabaseAdmin, supabaseForUser } from '../../lib/supabase';
+        import { getLogs } from '../../lib/ringlog';
+
+        const r = Router();
+        r.use(requireAuth); // TODO: add admin guard
+
+        r.post('/schema/reload', async (_req,res)=>{
+          const { error } = await supabaseAdmin.rpc('pgrst_reload');
+          if (error) return sendErr(res, 500, error.message);
+          return sendOk(res, { reloaded:true });
+        });
+
+        r.post('/rls/selftest', async (req:any,res)=>{
+          const sb = supabaseForUser(req.headers.authorization?.slice(7));
+          const { data, error } = await sb.rpc('org_can_insert');
+          if (error) return sendErr(res, 500, error.message);
+          return sendOk(res, { canInsert: !!data });
+        });
+
+        r.get('/heartbeat', (_req,res)=> sendOk(res, { ts: new Date().toISOString() }));
+
+        r.get('/logs', (_req,res)=> {
+          return sendOk(res, getLogs());
+        });
+
+        export default r;
+
+    - path: "server/routes/index.ts"
+      patch: |
+        import adminDiagnosticsRouter from './admin/diagnostics';
+        // mount once:
+        apiRouter.use('/v1/admin/diagnostics', adminDiagnosticsRouter);
+
+########################################################################################################
+# 3) SERVER: DB error mappers in critical routes (orgs, users, files)
+########################################################################################################
+route_patches:
+  files:
+    - path: "server/routes/organizations/index.ts"
+      patch: |
+        import { mapPgError, mapValidationError } from '../../lib/err';
+        // In each try/catch or error branch:
+        // return sendErr(res, 400, mapped.message, mapped, mapped.hint);
+        // Example change in create handler:
+        // if (!parse.success) { const m = mapValidationError(parse.error); return sendErr(res, 400, m.message, m.details); }
+        // if (orgErr) { const m = mapPgError(orgErr); return sendErr(res, 400, m.message, m, m.hint); }
+
+    - path: "server/routes/users/index.ts"
+      patch: |
+        import { mapPgError } from '../../lib/err';
+        // Wrap DB/Supabase errors with mapPgError and sendErr
+
+    - path: "server/routes/files/branding.ts"
+      patch: |
+        import { mapPgError } from '../../lib/err';
+        // On storage errors: const m = mapPgError(error); return sendErr(res, 400, m.message, m, m.hint);
+
+########################################################################################################
+# 4) CLIENT: Dev overlay + console groups for API calls; improved ErrorBoundary
+########################################################################################################
+client_devtools:
+  files:
+    - path: "client/src/lib/devtools.ts"
+      content: |
+        export const DEBUG_LEVEL = Number(import.meta.env.VITE_DEBUG_LEVEL ?? 1);
+        export function groupLog(title:string, data:any, danger=false){
+          if (DEBUG_LEVEL === 0) return;
+          const fn = danger ? console.group : console.groupCollapsed;
+          fn(`%c${title}`, `color:${danger?'#ff6b6b':'#9be9a8'};font-weight:600`);
+          try { console.log(data); } finally { console.groupEnd(); }
+        }
+
+    - path: "client/src/components/DevOverlay.tsx"
+      content: |
+        import { useEffect, useState } from 'react';
+        export default function DevOverlay(){
+          const [open,setOpen]=useState(false);
+          if (import.meta.env.PROD || (import.meta.env.VITE_DEBUG_LEVEL ?? '1')==='0') return null;
+          return (
+            <div style={{position:'fixed',bottom:12,right:12,zIndex:9999}}>
+              <button onClick={()=>setOpen(!open)} style={{padding:'8px 10px',borderRadius:8,background:'#111',color:'#fff',opacity:.7}}>
+                {open?'Hide':'Debug'}
+              </button>
+              {open && <iframe title="diag" src="/api/v1/admin/diagnostics/logs"
+                style={{width:380,height:260,background:'#0A0B0E',border:'1px solid #333',borderRadius:12,marginTop:8}} />}
+            </div>
+          );
+        }
+
+    - path: "client/src/lib/api.ts"
+      patch: |
+        import { groupLog } from '@/lib/devtools';
+        export const api = {
+          async get(url:string){
+            const start = performance.now();
+            const h = await authHeaders();
+            const r = await fetch(url,{ headers:{ ...h }});
+            const ms = Math.round(performance.now()-start);
+            const j = await r.json().catch(()=> ({}));
+            if(!r.ok){
+              groupLog(`API GET ${url} ❌ ${r.status} (${ms}ms)`, j, true);
+              return { success:false, error:{ code:r.status, message:j?.error?.message || r.statusText, rid:j?.error?.rid }};
+            }
+            groupLog(`API GET ${url} ✅ (${ms}ms)`, j);
+            return j;
+          },
+          async post(url:string, body:any){
+            const start = performance.now();
+            const h = await authHeaders();
+            const r = await fetch(url,{ method:"POST", headers:{ "Content-Type":"application/json", ...h }, body: JSON.stringify(body)});
+            const ms = Math.round(performance.now()-start);
+            const j = await r.json().catch(()=> ({}));
+            if(!r.ok){
+              groupLog(`API POST ${url} ❌ ${r.status} (${ms}ms)`, { body, resp: j }, true);
+              return { success:false, error:{ code:r.status, message: j?.error?.message || j?.message || r.statusText, rid:j?.error?.rid }};
+            }
+            groupLog(`API POST ${url} ✅ (${ms}ms)`, j);
+            return j;
+          }
+        }
+
+    - path: "client/src/components/ErrorBoundary.tsx"
+      patch: |
+        // add rid display and copy button if available in React tree via X-Request-Id header or last error stored
+        // (We keep minimal UI; console groups show full details)
+
+    - path: "client/src/App.tsx"
+      patch: |
+        import DevOverlay from './components/DevOverlay';
+        // inside App tree
+        // <DevOverlay />
+
+########################################################################################################
+# 5) DOCS & CHECKLIST
+########################################################################################################
+documentation:
+  files:
+    - path: "architecture/ERRORS.md"
+      content: |
+        # Error & Observability
+        ## Contract
+        All errors: { success:false, error:{ code, message, rid, path, method, ts, hint?, details? } }
+        - `rid` = correlation id (X-Request-Id); include when reporting.
+        - dev-only: `details` (stack/validation) shown at DEBUG_LEVEL=2.
+        ## Taxonomy
+        - ValidationError (400), RLS (42501), UniqueViolation (23505), FKViolation (23503), NotNull (23502), InvalidText (22P02), Unknown (500).
+        ## Developer Workflow
+        - Open console: each API call logs a group with timing.
+        - Toggle DevOverlay → see server ring buffer (last ~200 log lines).
+        - Diagnostics routes:
+          - POST /api/v1/admin/diagnostics/schema/reload
+          - POST /api/v1/admin/diagnostics/rls/selftest
+          - GET  /api/v1/admin/diagnostics/logs
+        ## Production
+        - DEBUG_LEVEL=0 → masked error details; JSON logs; Sentry/Datadog integration optional.
+
+########################################################################################################
+# 6) SAFETY CHECKS
+########################################################################################################
+safety_checks:
+  - "All error responses include rid/path/method/ts and code/message."
+  - "DB errors mapped into actionable messages; RLS (42501) shows hint."
+  - "Correlation ID emitted in X-Request-Id and in logs."
+  - "Diagnostics routes mounted once; require auth (optional admin guard next)."
+  - "Client devtools console groups present; DevOverlay is hidden in production."
+  - "No secrets or raw SQL leaked at DEBUG_LEVEL=0."
