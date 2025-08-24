@@ -1,5 +1,16 @@
 import { relations } from "drizzle-orm/relations";
-import { organizations, userRoles, roles } from "./schema";
+import { statusOrders, orders, organizations, userRoles, roles, statusOrderItems, orderItems, organizationFavorites } from "./schema";
+
+export const ordersRelations = relations(orders, ({one}) => ({
+	statusOrder: one(statusOrders, {
+		fields: [orders.statusCode],
+		references: [statusOrders.code]
+	}),
+}));
+
+export const statusOrdersRelations = relations(statusOrders, ({many}) => ({
+	orders: many(orders),
+}));
 
 export const userRolesRelations = relations(userRoles, ({one}) => ({
 	organization: one(organizations, {
@@ -14,8 +25,27 @@ export const userRolesRelations = relations(userRoles, ({one}) => ({
 
 export const organizationsRelations = relations(organizations, ({many}) => ({
 	userRoles: many(userRoles),
+	organizationFavorites: many(organizationFavorites),
 }));
 
 export const rolesRelations = relations(roles, ({many}) => ({
 	userRoles: many(userRoles),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({one}) => ({
+	statusOrderItem: one(statusOrderItems, {
+		fields: [orderItems.statusCode],
+		references: [statusOrderItems.code]
+	}),
+}));
+
+export const statusOrderItemsRelations = relations(statusOrderItems, ({many}) => ({
+	orderItems: many(orderItems),
+}));
+
+export const organizationFavoritesRelations = relations(organizationFavorites, ({one}) => ({
+	organization: one(organizations, {
+		fields: [organizationFavorites.orgId],
+		references: [organizations.id]
+	}),
 }));

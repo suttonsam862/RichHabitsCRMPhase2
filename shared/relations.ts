@@ -1,72 +1,54 @@
-// Simplified relations - only including existing tables
+// Schema auto-pulled on 2025-08-24T07:35:03.309Z
+// This file was automatically generated from the database
+
 import { relations } from "drizzle-orm/relations";
-import { 
-  organizations, 
-  orgSports, 
-  sports, 
-  roles, 
-  userRoles, 
-  users,
-  categories,
-  permissions,
-  rolePermissions
-} from "./schema";
+import { statusOrders, orders, organizations, userRoles, roles, statusOrderItems, orderItems, organizationFavorites } from "./schema";
 
-export const organizationsRelations = relations(organizations, ({many}) => ({
-  orgSports: many(orgSports),
-  userRoles: many(userRoles),
+export const ordersRelations = relations(orders, ({one}) => ({
+	statusOrder: one(statusOrders, {
+		fields: [orders.statusCode],
+		references: [statusOrders.code]
+	}),
 }));
 
-export const orgSportsRelations = relations(orgSports, ({one}) => ({
-  organization: one(organizations, {
-    fields: [orgSports.organizationId],
-    references: [organizations.id]
-  }),
-  sport: one(sports, {
-    fields: [orgSports.sportId],
-    references: [sports.id]
-  }),
-}));
-
-export const sportsRelations = relations(sports, ({many}) => ({
-  orgSports: many(orgSports),
+export const statusOrdersRelations = relations(statusOrders, ({many}) => ({
+	orders: many(orders),
 }));
 
 export const userRolesRelations = relations(userRoles, ({one}) => ({
-  user: one(users, {
-    fields: [userRoles.userId],
-    references: [users.id]
-  }),
-  role: one(roles, {
-    fields: [userRoles.roleId],
-    references: [roles.id]
-  }),
-  organization: one(organizations, {
-    fields: [userRoles.orgId],
-    references: [organizations.id]
-  }),
+	organization: one(organizations, {
+		fields: [userRoles.orgId],
+		references: [organizations.id]
+	}),
+	role: one(roles, {
+		fields: [userRoles.roleId],
+		references: [roles.id]
+	}),
 }));
 
-export const usersRelations = relations(users, ({many}) => ({
-  userRoles: many(userRoles),
+export const organizationsRelations = relations(organizations, ({many}) => ({
+	userRoles: many(userRoles),
+	organizationFavorites: many(organizationFavorites),
 }));
 
 export const rolesRelations = relations(roles, ({many}) => ({
-  userRoles: many(userRoles),
-  rolePermissions: many(rolePermissions),
+	userRoles: many(userRoles),
 }));
 
-export const rolePermissionsRelations = relations(rolePermissions, ({one}) => ({
-  role: one(roles, {
-    fields: [rolePermissions.roleId],
-    references: [roles.id]
-  }),
-  permission: one(permissions, {
-    fields: [rolePermissions.permissionId],
-    references: [permissions.id]
-  }),
+export const orderItemsRelations = relations(orderItems, ({one}) => ({
+	statusOrderItem: one(statusOrderItems, {
+		fields: [orderItems.statusCode],
+		references: [statusOrderItems.code]
+	}),
 }));
 
-export const permissionsRelations = relations(permissions, ({many}) => ({
-  rolePermissions: many(rolePermissions),
+export const statusOrderItemsRelations = relations(statusOrderItems, ({many}) => ({
+	orderItems: many(orderItems),
+}));
+
+export const organizationFavoritesRelations = relations(organizationFavorites, ({one}) => ({
+	organization: one(organizations, {
+		fields: [organizationFavorites.orgId],
+		references: [organizations.id]
+	}),
 }));
