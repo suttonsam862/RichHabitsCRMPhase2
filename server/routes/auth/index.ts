@@ -71,4 +71,33 @@ r.post('/complete-profile', requireAuth, async (req:any,res) => {
   }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Complete-profile error', undefined, 500); }
 });
 
+// POST /api/v1/auth/admin/create-user — create admin user directly
+r.post('/admin/create-user', async (req, res) => {
+  try{
+    const { email, password, fullName, role } = req.body || {};
+    if (!email || !password || !fullName) return sendErr(res,'BAD_REQUEST','Missing required fields', undefined, 400);
+    
+    // Create user directly with admin privileges
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      user_metadata: { full_name: fullName },
+      email_confirm: true // Skip email confirmation for admin users
+    });
+    
+    if (error || !data?.user) return sendErr(res,'BAD_REQUEST',error?.message || 'Could not create user', undefined, 400);
+    
+    // Assign admin role
+    const { data: roles } = await supabaseAdmin.from('roles').select('id,slug');
+    const targetRole = role || 'admin';
+    const roleId = roles?.find(r=>r.slug===targetRole)?.id;
+    if (!roleId) return sendErr(res,'BAD_REQUEST',`Role ${targetRole} not found`, undefined, 400);
+
+    await supabaseAdmin.from('user_roles')
+      .insert({ user_id: data.user.id, org_id: null, role_id: roleId });
+
+    return sendOk(res,{ created:true, user_id: data.user.id, email: data.user.email, role: targetRole });
+  }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Admin user creation error', undefined, 500); }
+});
+
 export default r;

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { sb, isSupabaseAvailable } from '@/lib/supabase';
 
 type U = { id:string, email?:string|null };
-const Ctx = createContext<{ user?:U; loading:boolean; signIn:(e:string,p:string)=>Promise<void>; login:(e:string,p:string)=>Promise<void>; logout:()=>Promise<void>; signOut:()=>Promise<void> }>({} as any);
+const Ctx = createContext<{ user?:U; loading:boolean; signIn:(e:string,p:string)=>Promise<void>; signUp:(e:string,p:string,fullName?:string)=>Promise<void>; login:(e:string,p:string)=>Promise<void>; logout:()=>Promise<void>; signOut:()=>Promise<void> }>({} as any);
 
 export function AuthProvider({children}:{children:any}){
   const [user,setUser]=useState<U|undefined>();
@@ -27,6 +27,18 @@ export function AuthProvider({children}:{children:any}){
     if(error) throw new Error(error.message); 
   }
   
+  async function signUp(email:string,password:string,fullName?:string){ 
+    if (!isSupabaseAvailable()) {
+      throw new Error('Authentication not available - Supabase not configured');
+    }
+    const { error } = await sb!.auth.signUp({ 
+      email, 
+      password,
+      options: fullName ? { data: { full_name: fullName } } : undefined
+    }); 
+    if(error) throw new Error(error.message); 
+  }
+  
   async function logout(){ 
     if (isSupabaseAvailable()) {
       await sb!.auth.signOut(); 
@@ -37,7 +49,7 @@ export function AuthProvider({children}:{children:any}){
   const signIn = login;
   const signOut = logout;
   
-  return <Ctx.Provider value={{user,loading,signIn,login,logout,signOut}}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{user,loading,signIn,signUp,login,logout,signOut}}>{children}</Ctx.Provider>
 }
 
 export const useAuth=()=>useContext(Ctx);
