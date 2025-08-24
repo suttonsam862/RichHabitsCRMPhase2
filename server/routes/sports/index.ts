@@ -1,10 +1,19 @@
 import { Router } from 'express';
-import { sendOk, sendErr } from '../../lib/http';
+import { z } from 'zod';
+import { sendOk, sendErr, sendCreated, sendNoContent } from '../../lib/http';
 import { supabaseForUser } from '../../lib/supabase';
 import { requireAuth } from '../../middleware/auth';
 
 const r = Router();
 r.use(requireAuth);
+
+const createSportSchema = z.object({
+  name: z.string().min(2).max(50)
+});
+
+const updateSportSchema = z.object({
+  name: z.string().min(2).max(50)
+});
 
 /* ---------- List all sports ---------- */
 r.get('/', async (req: any, res) => {
@@ -17,6 +26,51 @@ r.get('/', async (req: any, res) => {
     
   if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
   return sendOk(res, data || []);
+});
+
+/* ---------- Create sport ---------- */
+r.post('/', async (req: any, res) => {
+  const parse = createSportSchema.safeParse(req.body);
+  if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
+  
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { data, error } = await sb
+    .from('sports')
+    .insert([{ name: parse.data.name }])
+    .select()
+    .single();
+    
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendCreated(res, data);
+});
+
+/* ---------- Update sport ---------- */
+r.patch('/:id', async (req: any, res) => {
+  const parse = updateSportSchema.safeParse(req.body);
+  if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
+  
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { data, error } = await sb
+    .from('sports')
+    .update({ name: parse.data.name })
+    .eq('id', req.params.id)
+    .select()
+    .single();
+    
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendOk(res, data);
+});
+
+/* ---------- Delete sport ---------- */
+r.delete('/:id', async (req: any, res) => {
+  const sb = supabaseForUser(req.headers.authorization?.slice(7));
+  const { error } = await sb
+    .from('sports')
+    .delete()
+    .eq('id', req.params.id);
+    
+  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  return sendNoContent(res);
 });
 
 export default r;
