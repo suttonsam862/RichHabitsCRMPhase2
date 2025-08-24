@@ -1,0 +1,28 @@
+Apply an “Org-Creation RLS Repair + Diagnostics” patch end-to-end: (1) DB migration (idempotent) add/repair the public.organizations RLS surface:
+a) ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+b) (Re)create policies exactly:
+• INSERT: DROP POLICY IF EXISTS organizations_insert ON public.organizations; CREATE POLICY organizations_insert ON public.organizations FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+• SELECT: DROP POLICY IF EXISTS org_select ON public.organizations; CREATE POLICY org_select ON public.organizations FOR SELECT TO authenticated USING (public.is_org_member(auth.uid(), id));
+• UPDATE: DROP POLICY IF EXISTS organizations_update ON public.organizations; CREATE POLICY organizations_update ON public.organizations FOR UPDATE TO authenticated USING (public.is_org_admin(auth.uid(), id)) WITH CHECK (public.is_org_admin(auth.uid(), id));
+• DELETE: DROP POLICY IF EXISTS organizations_delete ON public.organizations; CREATE POLICY organizations_delete ON public.organizations FOR DELETE TO authenticated USING (public.is_org_admin(auth.uid(), id));
+c) (Re)create the owner bootstrap trigger with privilege:
+CREATE OR REPLACE FUNCTION public.handle_org_insert() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$ DECLARE admin_role_id uuid; v_user uuid; BEGIN BEGIN v_user := auth.uid(); EXCEPTION WHEN others THEN v_user := NULL; END; IF v_user IS NULL THEN RETURN NEW; END IF; SELECT id INTO admin_role_id FROM public.roles WHERE slug='admin' LIMIT 1; IF admin_role_id IS NOT NULL THEN INSERT INTO public.user_roles (user_id, org_id, role_id) VALUES (v_user, NEW.id, admin_role_id) ON CONFLICT DO NOTHING; END IF; RETURN NEW; END $$; DROP TRIGGER IF EXISTS trg_org_after_insert_admin ON public.organizations; CREATE TRIGGER trg_org_after_insert_admin AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.handle_org_insert();
+d) Add a PostgREST reload RPC and call it:
+CREATE OR REPLACE FUNCTION public.pgrst_reload() RETURNS void LANGUAGE sql AS $$ SELECT pg_notify('pgrst','reload schema'); $$; SELECT public.pgrst_reload();
+e) Add a minimal RLS self-test RPC to verify token context:
+CREATE OR REPLACE FUNCTION public.org_can_insert() RETURNS boolean LANGUAGE sql SECURITY INVOKER AS $$ SELECT auth.uid() IS NOT NULL; $$;
+(2) Diagnostics routes add server/routes/admin/rls.ts mounted once under /api/v1/admin/rls with:
+• GET /policies/organizations → return rows from pg_policies for table public.organizations (policy name, cmd, qual, with_check).
+• POST /selftest (requires requireAuth) → call supabaseForUser(token).rpc('org_can_insert') and return { canInsert: boolean }.
+• POST /schema/reload → supabaseAdmin.rpc('pgrst_reload').
+(3) trust-proxy fix in server/index.ts add before the rate-limiter: app.set('trust proxy', 1);.
+(4) Create-handler hardening in server/routes/organizations/index.ts:
+• Use const sb = supabaseForUser(req.headers.authorization?.slice(7)); for the INSERT and the follow-up select().single() (not admin).
+• Default colorPalette to [] if missing and always compute gradient_css = 'linear-gradient(135deg, ' + brandPrimary + ' 0%, ' + brandSecondary + ' 100%)'.
+(5) Run & report: run the migration, then npm run preflight && npm run check && npm run dev. Finally, print a checklist with ✅/❌:
+• columns present (color_palette/gradient_css/tags/is_archived),
+• policies present for INSERT/SELECT/UPDATE/DELETE on organizations (show pg_policies rows),
+• trigger trg_org_after_insert_admin exists & function is SECURITY DEFINER,
+• PostgREST reload OK,
+• POST /api/v1/admin/rls/selftest with a real Supabase access token returns { canInsert:true }.
+Do not create duplicate router mounts or touch client/_legacy.
