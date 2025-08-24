@@ -117,11 +117,11 @@ r.post('/', async (req:any, res) => {
     // create or locate auth user by email
     const { data: existing, error: gErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
     if (gErr) return sendErr(res, 'BAD_REQUEST', gErr.message, undefined, 400);
-    let coachId = existing?.users?.find(u => u.email === s.contact_email)?.id;
+    let coachId = existing?.users?.find(u => u.email === s.contactEmail)?.id;
     if (!coachId){
       const create = await supabaseAdmin.auth.admin.createUser({
-        email: s.contact_email, email_confirm: false,
-        user_metadata: { full_name: s.contact_name, desired_role: 'customer' }
+        email: s.contactEmail, email_confirm: false,
+        user_metadata: { full_name: s.contactName, desired_role: 'customer' }
       });
       if (create.error || !create.data?.user) return sendErr(res, 'BAD_REQUEST', create.error?.message || 'Unable to create contact user', undefined, 400);
       coachId = create.data.user.id;
@@ -129,7 +129,7 @@ r.post('/', async (req:any, res) => {
     // add org_sports entry
     const { error: osErr } = await sb.from('org_sports').insert([{
       organization_id: org.id, sport_id: s.sportId,
-      contact_name: s.contact_name, contact_email: s.contact_email, contact_user_id: coachId
+      contact_name: s.contactName, contact_email: s.contactEmail, contact_user_id: coachId
     }]);
     if (osErr) return sendErr(res, 'BAD_REQUEST', osErr.message, undefined, 400);
     // assign Customer role scoped to this org
