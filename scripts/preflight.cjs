@@ -99,4 +99,14 @@ try {
   process.exit(1);
 }
 
+// === END: preflight env checks ===
+const { execSync: exec } = require('child_process');
+try {
+  execSync('npm run db:schema:dump', { stdio:'inherit' });
+  execSync('npm run db:schema:check', { stdio:'inherit' });
+} catch (e) {
+  console.error('Preflight DB checks failed. Fix schema drift before continuing.');
+  process.exit(1);
+}
+
 console.log('✅ Preflight OK - All checks passed!');

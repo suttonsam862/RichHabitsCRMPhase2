@@ -20,6 +20,9 @@ export const sb = supabaseUrl && supabaseServiceKey ?
     }
   }) : null;
 
+// Export as supabaseAdmin for consistency with CR requirements
+export const supabaseAdmin = sb;
+
 /**
  * User management operations using Supabase Admin API
  * These operations bypass RLS and should only be used by Admin users

@@ -1,0 +1,2908 @@
+{
+  "generatedAt": "2025-08-24T21:47:08.520Z",
+  "columns": [
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "order_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "qb_invoice_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "subtotal",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "tax",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "total",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "column_name": "order_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "column_name": "qb_payment_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "column_name": "date",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "id",
+      "data_type": "bigint",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "occurred_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "actor",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "entity",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "entity_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "action",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "before",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "column_name": "after",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "column_name": "catalog_item_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "column_name": "url",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "column_name": "position",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_manufacturers",
+      "column_name": "catalog_item_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_manufacturers",
+      "column_name": "manufacturer_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "sport_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "category_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "base_price",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "turnaround_days",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "preferred_manufacturer_ids",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "fabric",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "build_instructions",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "moq",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "embellishments_json",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "colorways_json",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "care",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "image_urls",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "categories",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "categories",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "order_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "salesperson_user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "profit_amount",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "rate",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "commission_amount",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "column_name": "paid_at",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "address_line1",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "address_line2",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "city",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "state",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "postal_code",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "country",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "order_item_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "uploader_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "version",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "file_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "thumbnail_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "approved_by_admin",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "approved_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "signature_file_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "signature_hash",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "column_name": "storage_object_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "column_name": "design_job_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "column_name": "event_code",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "column_name": "actor_user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "column_name": "payload",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "column_name": "occurred_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "order_item_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "title",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "brief",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "priority",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "status_code",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "assignee_designer_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "created_by_user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "first_draft_due_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "due_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "approved_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "canceled_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "designers",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "designers",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "designers",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "designers",
+      "column_name": "pay_rate_per_design",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "column_name": "specialties_json",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "column_name": "wire_info_json",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "column_name": "contact_email",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "order_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "manufacturer_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "status_code",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "po_number",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "planned_start_date",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "planned_due_date",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "actual_start_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "actual_end_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "order_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "event_code",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "actor_user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "from_status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "to_status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "payload",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "column_name": "occurred_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_item_sizes",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_item_sizes",
+      "column_name": "order_item_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_item_sizes",
+      "column_name": "size",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_item_sizes",
+      "column_name": "qty",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "order_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "product_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "name_snapshot",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "price_snapshot",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "designer_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "manufacturer_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "status_code",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "variant_image_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "pantone_json",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "build_overrides_text",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "organization_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "order_number",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "customer_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "total_amount",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "items",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "status_code",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "organization_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "sport_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "contact_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "contact_email",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "contact_phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "contact_user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_favorites",
+      "column_name": "user_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_favorites",
+      "column_name": "org_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "logo_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "state",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "address",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "universal_discounts",
+      "data_type": "jsonb",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "is_business",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "title_card_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "brand_primary",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "brand_secondary",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "color_palette",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "tags",
+      "data_type": "ARRAY",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "is_archived",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "gradient_css",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "column_name": "key",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "column_name": "work_order_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "column_name": "event_code",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "column_name": "actor_user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "column_name": "payload",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "column_name": "occurred_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "role_permissions",
+      "column_name": "role_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "role_permissions",
+      "column_name": "permission_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "column_name": "slug",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salespeople",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salespeople",
+      "column_name": "org_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salespeople",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salespeople",
+      "column_name": "commission_rate_default",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "column_name": "code",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "column_name": "sort_order",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "column_name": "is_terminal",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "column_name": "code",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "column_name": "sort_order",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "column_name": "is_terminal",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "column_name": "code",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "column_name": "sort_order",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "column_name": "is_terminal",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "column_name": "code",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "column_name": "sort_order",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "column_name": "is_terminal",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "user_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "org_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "role_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    }
+  ],
+  "constraints": [
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "constraint_name": "2200_139311_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "constraint_name": "accounting_invoices_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "constraint_name": "2200_139319_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "constraint_name": "accounting_payments_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "constraint_name": "2200_139328_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "constraint_name": "audit_logs_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "constraint_name": "2200_139337_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "constraint_name": "2200_139337_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "constraint_name": "2200_139337_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "constraint_name": "2200_139337_5_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "constraint_name": "2200_139337_6_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "constraint_name": "catalog_item_images_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_manufacturers",
+      "constraint_name": "2200_139348_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_manufacturers",
+      "constraint_name": "2200_139348_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_manufacturers",
+      "constraint_name": "catalog_item_manufacturers_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "constraint_name": "2200_139353_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "constraint_name": "2200_139353_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "constraint_name": "catalog_items_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "categories",
+      "constraint_name": "2200_139363_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "categories",
+      "constraint_name": "2200_139363_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "categories",
+      "constraint_name": "categories_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "constraint_name": "2200_139371_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "constraint_name": "commissions_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "constraint_name": "commissions_rate_0_1",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "constraint_name": "2200_139380_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "constraint_name": "2200_139380_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "constraint_name": "customers_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "constraint_name": "2200_139390_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "constraint_name": "design_assets_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "constraint_name": "2200_139400_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "constraint_name": "2200_139400_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "constraint_name": "2200_139400_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "constraint_name": "2200_139400_6_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "constraint_name": "design_job_events_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "constraint_name": "2200_139409_14_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "constraint_name": "2200_139409_15_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "constraint_name": "2200_139409_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "constraint_name": "2200_139409_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "constraint_name": "2200_139409_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "constraint_name": "design_jobs_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "designers",
+      "constraint_name": "2200_139420_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "designers",
+      "constraint_name": "designers_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "constraint_name": "2200_139426_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "constraint_name": "manufacturers_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "constraint_name": "2200_139434_12_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "constraint_name": "2200_139434_13_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "constraint_name": "2200_139434_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "constraint_name": "2200_139434_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "constraint_name": "2200_139434_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "constraint_name": "2200_139434_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "constraint_name": "manufacturing_work_orders_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "constraint_name": "2200_139444_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "constraint_name": "2200_139444_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "constraint_name": "2200_139444_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "constraint_name": "2200_139444_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "constraint_name": "2200_139444_9_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "constraint_name": "order_events_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_item_sizes",
+      "constraint_name": "2200_139453_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_item_sizes",
+      "constraint_name": "order_item_sizes_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "constraint_name": "2200_139459_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "constraint_name": "order_items_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "constraint_name": "order_items_status_code_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "2200_24576_10_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "2200_24576_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "2200_24576_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "2200_24576_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "2200_24576_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "2200_24576_9_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "orders_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "orders_status_code_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "2200_90123_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "2200_90123_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "2200_90123_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "2200_90123_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "2200_90123_5_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "org_sports_organization_id_sport_id_key",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "org_sports_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_favorites",
+      "constraint_name": "2200_172041_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_favorites",
+      "constraint_name": "2200_172041_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_favorites",
+      "constraint_name": "organization_favorites_org_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_favorites",
+      "constraint_name": "organization_favorites_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_10_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_12_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_16_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_18_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_19_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "2200_24589_8_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "constraint_name": "organizations_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "constraint_name": "2200_139470_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "constraint_name": "2200_139470_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "constraint_name": "permissions_key_key",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "constraint_name": "permissions_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "constraint_name": "2200_139480_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "constraint_name": "2200_139480_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "constraint_name": "2200_139480_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "constraint_name": "2200_139480_6_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "constraint_name": "production_events_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "role_permissions",
+      "constraint_name": "2200_139489_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "role_permissions",
+      "constraint_name": "2200_139489_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "role_permissions",
+      "constraint_name": "role_permissions_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "constraint_name": "2200_65556_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "constraint_name": "2200_65556_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "constraint_name": "2200_65556_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "constraint_name": "2200_65556_5_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "constraint_name": "roles_name_key",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "constraint_name": "roles_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "constraint_name": "roles_slug_unique",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salespeople",
+      "constraint_name": "2200_139494_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salespeople",
+      "constraint_name": "salespeople_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "constraint_name": "2200_81920_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "constraint_name": "2200_81920_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "constraint_name": "sports_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "constraint_name": "2200_139501_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "constraint_name": "2200_139501_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "constraint_name": "2200_139501_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "constraint_name": "status_design_jobs_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "constraint_name": "2200_139509_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "constraint_name": "2200_139509_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "constraint_name": "2200_139509_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "constraint_name": "status_order_items_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "constraint_name": "2200_139517_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "constraint_name": "2200_139517_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "constraint_name": "2200_139517_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "constraint_name": "status_orders_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "constraint_name": "2200_139525_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "constraint_name": "2200_139525_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "constraint_name": "2200_139525_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "constraint_name": "status_work_orders_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "2200_65567_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "2200_65567_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "2200_65567_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "2200_65567_5_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "user_roles_org_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "user_roles_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "user_roles_role_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    }
+  ],
+  "rls": [
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "audit_logs",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "categories",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_invoices",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "customers",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_images",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_item_manufacturers",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_assets",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "accounting_payments",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "catalog_items",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "commissions",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_job_events",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "design_jobs",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_items",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturing_work_orders",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_events",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "designers",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "role_permissions",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "production_events",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salespeople",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_design_jobs",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "order_item_sizes",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_work_orders",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_orders",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "status_order_items",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_favorites",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "manufacturers",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "roles",
+      "rls_enabled": false
+    }
+  ]
+}
