@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Request, Response, NextFunction } from 'express';
 
 const pretty = (process.env.LOG_PRETTY ?? '1') === '1';
-export const logger = pino(pretty ? { transport: { target: 'pino-pretty', options: { colorize:true }}, level: process.env.LOG_LEVEL||'info' } : { level: process.env.LOG_LEVEL||'info' });
+const logger = pino(pretty ? { transport: { target: 'pino-pretty', options: { colorize:true }}, level: process.env.LOG_LEVEL||'info' } : { level: process.env.LOG_LEVEL||'info' });
 
 // Extend Request type to include requestId
 declare global {
