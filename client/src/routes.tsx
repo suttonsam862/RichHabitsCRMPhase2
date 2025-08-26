@@ -21,6 +21,7 @@ import { lazy, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 // Lazy loaded pages
+const SetupWizard = lazy(() => import('@/pages/organizations/SetupWizard').then(m => ({ default: m.default })));
 const UsersPage = lazy(() => import('@/pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
@@ -59,6 +60,7 @@ export function AppRoutes() {
               <Route path="/organizations" element={<ProtectedRoute />}>
                 <Route index element={<OrganizationsList />} />
                 <Route path="create" element={<CreateWizard />} />
+                <Route path=":id/setup" element={<SetupWizard />} />
               </Route>
               
               <Route path="/users" element={<ProtectedRoute />}>

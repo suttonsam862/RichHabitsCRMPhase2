@@ -13,7 +13,9 @@ type Org = {
   gradient_css?:string|null; 
   tags:string[]; 
   is_business:boolean; 
-  is_archived:boolean; 
+  is_archived:boolean;
+  setup_complete?:boolean;
+  finance_email?:string|null;
   created_at:string; 
   updated_at:string 
 };

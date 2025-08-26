@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-08-26T15:21:07.838Z",
+  "generatedAt": "2025-08-26T21:01:46.646Z",
   "columns": [
     {
       "table_schema": "public",
@@ -1411,6 +1411,54 @@
     },
     {
       "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "ship_address_line1",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "ship_address_line2",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "ship_city",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "ship_state",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "ship_postal_code",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "ship_country",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
       "table_name": "organization_favorites",
       "column_name": "user_id",
       "data_type": "character varying",
@@ -1590,6 +1638,38 @@
       "table_name": "organizations",
       "column_name": "zip",
       "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "finance_email",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "tax_exempt_doc_key",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "setup_complete",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "setup_completed_at",
+      "data_type": "timestamp with time zone",
       "is_nullable": "YES",
       "character_maximum_length": null
     },
@@ -2448,6 +2528,12 @@
     {
       "table_schema": "public",
       "table_name": "organizations",
+      "constraint_name": "2200_24589_24_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
       "constraint_name": "2200_24589_2_not_null",
       "constraint_type": "CHECK"
     },
@@ -2750,7 +2836,12 @@
     {
       "table_schema": "public",
       "table_name": "organizations",
-      "rls_enabled": false
+      "rls_enabled": true
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "rls_enabled": true
     },
     {
       "table_schema": "public",
@@ -2765,11 +2856,6 @@
     {
       "table_schema": "public",
       "table_name": "orders",
-      "rls_enabled": false
-    },
-    {
-      "table_schema": "public",
-      "table_name": "org_sports",
       "rls_enabled": false
     },
     {
