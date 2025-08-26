@@ -214,7 +214,7 @@ router.get('/', async (req, res) => {
 
     logger.info('🔍 Query parameters:', { q, tag, onlyFavorites, includeArchived, sort, dir, limit, offset });
 
-    // Build the query
+    // Build the query with all columns including setup fields
     let query = supabaseAdmin
       .from('organizations')
       .select('id, name, is_business, brand_primary, brand_secondary, tags, status, is_archived, created_at, updated_at, finance_email, setup_complete, setup_completed_at, tax_exempt_doc_key, logo_url');

@@ -6,16 +6,27 @@ const Ctx = createContext<{ user?:U; loading:boolean; signIn:(e:string,p:string)
 
 export function AuthProvider({children}:{children:any}){
   const [user,setUser]=useState<U|undefined>();
-  const [loading,setLoading]=useState(false);
+  const [loading,setLoading]=useState(true); // Start with loading true
   
   useEffect(()=>{ 
     if (!isSupabaseAvailable()) {
       console.warn('Supabase not configured - authentication disabled');
+      setLoading(false);
       return;
     }
     
-    sb!.auth.getSession().then(({data})=> setUser(data.session?.user ? { id:data.session.user.id, email:data.session.user.email } : undefined));
-    const { data: sub } = sb!.auth.onAuthStateChange((_e,s)=> setUser(s?.user ? { id:s.user.id, email:s.user.email } : undefined));
+    // Check for existing session on mount
+    sb!.auth.getSession().then(({data})=> {
+      setUser(data.session?.user ? { id:data.session.user.id, email:data.session.user.email } : undefined);
+      setLoading(false); // Done checking session
+    });
+    
+    // Listen for auth state changes
+    const { data: sub } = sb!.auth.onAuthStateChange((_e,s)=> {
+      setUser(s?.user ? { id:s.user.id, email:s.user.email } : undefined);
+      setLoading(false);
+    });
+    
     return ()=> sub.subscription.unsubscribe();
   },[]);
   
