@@ -1,0 +1,540 @@
+cr:
+title: "Organization Setup + Popup/Details (Logo, Colors, Per-Sport Shipping, Tax Doc, Finance Email) + Roles + Users Permissions"
+rationale: >
+  Add a gated Organization Setup (Admin & Salesperson only) that must be completed before viewing org details:
+  - Upload logo
+  - Confirm colors (two primary colors)
+  - Add per-sport shipping address
+  - Optional tax-exemption upload
+  - Optional finance email
+  When saved, the Organizations card shows logo and a background gradient of the two selected colors. After setup is complete,
+  a popup/details view shows all org data (branding, contacts/sports, docs). Add subpages in the popup for Orders and Sports
+  Assignments as "Coming soon". Ensure Supabase roles exist: Admin, Salesperson, Designer, Manufacturer, Customer. Harden Users
+  page so Admins see role mappings with strong permissions.
+
+agent_protocol:
+  rules:
+    - "PLAN-FIRST: document files to change and rollback in architecture/context/.PLAN.md."
+    - "DB-first: apply idempotent SQL before code that references the fields; always end schema changes with PostgREST reload."
+    - "Service-role writes: all server writes use supabaseAdmin (server-only key)."
+    - "RLS strict: UPDATE policies for organizations/org_sports must allow Admin OR Salesperson; others denied."
+    - "Unified response contract: { success, data?, count?, error? }."
+    - "Run and confirm: npm run db:schema:dump && npm run db:schema:check && npm run db:selftest && npm run dev."
+    - "No client/_legacy; mount API routers once under /api/v1."
+
+########################################################################################################
+# 1) DATABASE (idempotent) — columns, policies, roles, storage path & RPC reload
+########################################################################################################
+db_migration:
+  id: "2025_08_26_org_setup_popup"
+  sql:
+    - |
+      BEGIN;
+
+      -- Organizations: columns needed for setup & cards
+      ALTER TABLE public.organizations
+        ADD COLUMN IF NOT EXISTS finance_email           text,
+        ADD COLUMN IF NOT EXISTS tax_exempt_doc_key      text,
+        ADD COLUMN IF NOT EXISTS setup_complete          boolean NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS setup_completed_at      timestamptz,
+        ADD COLUMN IF NOT EXISTS color_palette           jsonb NOT NULL DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS gradient_css            text,
+        ADD COLUMN IF NOT EXISTS tags                    text[] NOT NULL DEFAULT '{}',
+        ADD COLUMN IF NOT EXISTS is_archived             boolean NOT NULL DEFAULT false;
+
+      -- OrgSports: per-sport shipping address fields
+      ALTER TABLE public.org_sports
+        ADD COLUMN IF NOT EXISTS organization_id         uuid,  -- if not present; if already present, no-op
+        ADD COLUMN IF NOT EXISTS ship_address_line1      text,
+        ADD COLUMN IF NOT EXISTS ship_address_line2      text,
+        ADD COLUMN IF NOT EXISTS ship_city               text,
+        ADD COLUMN IF NOT EXISTS ship_state              text,
+        ADD COLUMN IF NOT EXISTS ship_postal_code        text,
+        ADD COLUMN IF NOT EXISTS ship_country            text,
+        ADD COLUMN IF NOT EXISTS contact_user_id         uuid;
+
+      -- If column contact_user_id exists but wrong type, cast to uuid
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='org_sports'
+            AND column_name='contact_user_id' AND data_type <> 'uuid'
+        ) THEN
+          ALTER TABLE public.org_sports
+            ALTER COLUMN contact_user_id TYPE uuid
+            USING NULLIF(contact_user_id::text,'')::uuid;
+        END IF;
+      END $$;
+
+      -- Optional FK to auth.users if present
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='auth' AND table_name='users') THEN
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='org_sports_contact_user_fk') THEN
+            ALTER TABLE public.org_sports
+              ADD CONSTRAINT org_sports_contact_user_fk
+              FOREIGN KEY (contact_user_id) REFERENCES auth.users(id)
+              ON DELETE SET NULL;
+          END IF;
+        END IF;
+      END $$;
+
+      -- Seed roles
+      INSERT INTO public.roles (id, name, slug)
+      VALUES
+        (gen_random_uuid(), 'Admin',         'admin'),
+        (gen_random_uuid(), 'Salesperson',   'sales'),
+        (gen_random_uuid(), 'Designer',      'design'),
+        (gen_random_uuid(), 'Manufacturer',  'manufacturing'),
+        (gen_random_uuid(), 'Customer',      'customer')
+      ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name;
+
+      -- RLS helpers (CREATE OR REPLACE)
+      CREATE OR REPLACE FUNCTION public.has_role_slug(uid uuid, org uuid, role_slug text)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (
+          SELECT 1 FROM public.user_roles ur
+          JOIN public.roles r ON r.id = ur.role_id
+          WHERE ur.user_id = uid
+            AND (ur.org_id IS NOT DISTINCT FROM org)
+            AND r.slug = role_slug
+        );
+      $$;
+
+      CREATE OR REPLACE FUNCTION public.is_org_member(uid uuid, org uuid)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = uid AND (org_id IS NOT DISTINCT FROM org));
+      $$;
+
+      CREATE OR REPLACE FUNCTION public.is_org_admin(uid uuid, org uuid)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+        SELECT public.has_role_slug(uid, org, 'admin');
+      $$;
+
+      -- Owner bootstrap trigger
+      CREATE OR REPLACE FUNCTION public.handle_org_insert()
+      RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+      SET search_path = public, pg_temp AS $$
+      DECLARE admin_role_id uuid; v_user uuid;
+      BEGIN
+        BEGIN v_user := auth.uid(); EXCEPTION WHEN others THEN v_user := NULL; END;
+        IF v_user IS NULL THEN RETURN NEW; END IF;
+        SELECT id INTO admin_role_id FROM public.roles WHERE slug='admin' LIMIT 1;
+        IF admin_role_id IS NOT NULL THEN
+          INSERT INTO public.user_roles (user_id, org_id, role_id)
+          VALUES (v_user, NEW.id, admin_role_id)
+          ON CONFLICT DO NOTHING;
+        END IF;
+        RETURN NEW;
+      END $$;
+
+      DROP TRIGGER IF EXISTS trg_org_after_insert_admin ON public.organizations;
+      CREATE TRIGGER trg_org_after_insert_admin
+      AFTER INSERT ON public.organizations
+      FOR EACH ROW EXECUTE FUNCTION public.handle_org_insert();
+
+      -- Enable RLS
+      ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE public.org_sports   ENABLE ROW LEVEL SECURITY;
+
+      -- Organizations: Admin OR Salesperson can UPDATE/DELETE; members can SELECT
+      DROP POLICY IF EXISTS org_select ON public.organizations;
+      CREATE POLICY org_select
+      ON public.organizations FOR SELECT TO authenticated
+      USING (public.is_org_member(auth.uid(), id));
+
+      DROP POLICY IF EXISTS organizations_update ON public.organizations;
+      CREATE POLICY organizations_update
+      ON public.organizations FOR UPDATE TO authenticated
+      USING ( public.is_org_admin(auth.uid(), id) OR public.has_role_slug(auth.uid(), id, 'sales') )
+      WITH CHECK ( public.is_org_admin(auth.uid(), id) OR public.has_role_slug(auth.uid(), id, 'sales') );
+
+      DROP POLICY IF EXISTS organizations_delete ON public.organizations;
+      CREATE POLICY organizations_delete
+      ON public.organizations FOR DELETE TO authenticated
+      USING ( public.is_org_admin(auth.uid(), id) OR public.has_role_slug(auth.uid(), id, 'sales') );
+
+      -- OrgSports: Admin OR Salesperson can UPDATE/DELETE; members can SELECT; members can INSERT rows for their org
+      DROP POLICY IF EXISTS org_sports_insert ON public.org_sports;
+      CREATE POLICY org_sports_insert
+      ON public.org_sports FOR INSERT TO authenticated
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM public.user_roles ur
+          WHERE ur.user_id = auth.uid()
+            AND ur.org_id  = org_sports.organization_id
+        )
+      );
+
+      DROP POLICY IF EXISTS org_sports_select ON public.org_sports;
+      CREATE POLICY org_sports_select
+      ON public.org_sports FOR SELECT TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.user_roles ur
+          WHERE ur.user_id = auth.uid()
+            AND ur.org_id  = org_sports.organization_id
+        )
+      );
+
+      DROP POLICY IF EXISTS org_sports_update ON public.org_sports;
+      CREATE POLICY org_sports_update
+      ON public.org_sports FOR UPDATE TO authenticated
+      USING ( public.is_org_admin(auth.uid(), org_sports.organization_id) OR public.has_role_slug(auth.uid(), org_sports.organization_id, 'sales') )
+      WITH CHECK ( public.is_org_admin(auth.uid(), org_sports.organization_id) OR public.has_role_slug(auth.uid(), org_sports.organization_id, 'sales') );
+
+      DROP POLICY IF EXISTS org_sports_delete ON public.org_sports;
+      CREATE POLICY org_sports_delete
+      ON public.org_sports FOR DELETE TO authenticated
+      USING ( public.is_org_admin(auth.uid(), org_sports.organization_id) OR public.has_role_slug(auth.uid(), org_sports.organization_id, 'sales') );
+
+      -- PostgREST schema cache reload
+      CREATE OR REPLACE FUNCTION public.pgrst_reload()
+      RETURNS void LANGUAGE sql AS $$
+        SELECT pg_notify('pgrst','reload schema');
+      $$;
+      SELECT public.pgrst_reload();
+
+      COMMIT;
+    |
+
+########################################################################################################
+# 2) API — Setup wizard endpoints, logo & tax uploads, sport shipping, details, gating
+########################################################################################################
+api_delta:
+  files:
+    - path: "server/routes/organizations/setup.ts"
+      content: |
+        import { Router } from 'express';
+        import { z } from 'zod';
+        import { sendOk, sendErr } from '../../lib/http';
+        import { supabaseAdmin } from '../../lib/supabaseAdmin';
+        import { supabaseForUser } from '../../lib/supabase';
+
+        const router = Router();
+
+        // GET setup data
+        router.get('/:id/setup', async (req:any,res)=>{
+          const sb = supabaseForUser(req.headers.authorization?.slice(7));
+          const orgId = req.params.id;
+          // fetch org + its sports (ids & current addresses)
+          const org = await sb.from('organizations')
+            .select('id,name,logo_url,brand_primary,brand_secondary,finance_email,tax_exempt_doc_key,setup_complete,color_palette,gradient_css')
+            .eq('id',orgId).maybeSingle();
+          if (org.error) return sendErr(res, 400, org.error.message);
+          const sports = await sb.from('org_sports')
+            .select('organization_id,sport_id,ship_address_line1,ship_address_line2,ship_city,ship_state,ship_postal_code,ship_country,contact_user_id')
+            .eq('organization_id', orgId);
+          if (sports.error) return sendErr(res, 400, sports.error.message);
+          return sendOk(res, { org: org.data, sports: sports.data });
+        });
+
+        // POST setup save (finance email, colors confirm, set complete if all present)
+        const SetupSchema = z.object({
+          brand_primary: z.string().optional(),
+          brand_secondary: z.string().optional(),
+          color_palette: z.array(z.string()).optional(),
+          finance_email: z.string().email().optional(),
+          complete: z.boolean().optional()
+        });
+
+        router.post('/:id/setup', async (req:any,res)=>{
+          const parse = SetupSchema.safeParse(req.body);
+          if (!parse.success) return sendErr(res, 400, 'Invalid payload', parse.error.flatten());
+          const sb = supabaseAdmin; // server-side writes
+          const orgId = req.params.id;
+          const patch:any = {};
+          if (parse.data.brand_primary)   patch.brand_primary   = parse.data.brand_primary;
+          if (parse.data.brand_secondary) patch.brand_secondary = parse.data.brand_secondary;
+          if (parse.data.color_palette)   patch.color_palette   = parse.data.color_palette;
+          if (parse.data.finance_email)   patch.finance_email   = parse.data.finance_email;
+          if (patch.brand_primary && patch.brand_secondary) {
+            patch.gradient_css = `linear-gradient(135deg, ${patch.brand_primary} 0%, ${patch.brand_secondary} 100%)`;
+          }
+          if (parse.data.complete) {
+            patch.setup_complete = true;
+            patch.setup_completed_at = new Date().toISOString();
+          }
+          const up = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
+          if (up.error) return sendErr(res, 400, up.error.message);
+          return sendOk(res, up.data);
+        });
+
+        // Per-sport shipping address upsert
+        const AddressSchema = z.object({
+          ship_address_line1: z.string().min(3),
+          ship_address_line2: z.string().optional().nullable(),
+          ship_city:          z.string().min(2),
+          ship_state:         z.string().min(2),
+          ship_postal_code:   z.string().min(2),
+          ship_country:       z.string().min(2)
+        });
+
+        router.post('/:id/sports/:sportId/address', async (req:any,res)=>{
+          const parse = AddressSchema.safeParse(req.body);
+          if (!parse.success) return sendErr(res, 400, 'Invalid address', parse.error.flatten());
+          const sb = supabaseAdmin;
+          const orgId = req.params.id;
+          const sportId = req.params.sportId;
+          // merge into org_sports row
+          const up = await sb.from('org_sports').update({
+            ship_address_line1: parse.data.ship_address_line1,
+            ship_address_line2: parse.data.ship_address_line2 ?? null,
+            ship_city:          parse.data.ship_city,
+            ship_state:         parse.data.ship_state,
+            ship_postal_code:   parse.data.ship_postal_code,
+            ship_country:       parse.data.ship_country
+          }).eq('organization_id', orgId).eq('sport_id', sportId).select().maybeSingle();
+          if (up.error) return sendErr(res, 400, up.error.message);
+          return sendOk(res, up.data);
+        });
+
+        // Logo + Tax-Exemption signed-upload + apply
+        function safeName(n:string){ return n.includes('..')||n.startsWith('/')||n.includes('\\') ? '' : n.replace(/[^a-zA-Z0-9._-]/g,'_'); }
+
+        router.post('/:id/logo/sign', async (req:any,res)=>{
+          const { fileName } = req.body||{};
+          if (!fileName) return sendErr(res, 400, 'fileName required');
+          const key = `org/${req.params.id}/branding/${safeName(fileName)}`;
+          const sign = await supabaseAdmin.storage.from('app').createSignedUploadUrl(key, { upsert:true, expiresIn: 600 });
+          if (sign.error || !sign.data?.signedUrl) return sendErr(res, 400, sign.error?.message || 'sign error');
+          return sendOk(res, { uploadUrl: sign.data.signedUrl, key });
+        });
+
+        router.post('/:id/logo/apply', async (req:any,res)=>{
+          const { key } = req.body||{};
+          if (!key) return sendErr(res, 400, 'key required');
+          const up = await supabaseAdmin.from('organizations').update({ logo_url: key }).eq('id', req.params.id).select('logo_url').single();
+          if (up.error) return sendErr(res, 400, up.error.message);
+          return sendOk(res, up.data);
+        });
+
+        router.post('/:id/tax/sign', async (req:any,res)=>{
+          const { fileName } = req.body||{};
+          if (!fileName) return sendErr(res, 400, 'fileName required');
+          const key = `org/${req.params.id}/tax/${safeName(fileName)}`;
+          const sign = await supabaseAdmin.storage.from('app').createSignedUploadUrl(key, { upsert:true, expiresIn: 600 });
+          if (sign.error || !sign.data?.signedUrl) return sendErr(res, 400, sign.error?.message || 'sign error');
+          return sendOk(res, { uploadUrl: sign.data.signedUrl, key });
+        });
+
+        router.post('/:id/tax/apply', async (req:any,res)=>{
+          const { key } = req.body||{};
+          if (!key) return sendErr(res, 400, 'key required');
+          const up = await supabaseAdmin.from('organizations').update({ tax_exempt_doc_key: key }).eq('id', req.params.id).select('tax_exempt_doc_key').single();
+          if (up.error) return sendErr(res, 400, up.error.message);
+          return sendOk(res, up.data);
+        });
+
+        export default router;
+    - path: "server/routes/organizations/index.ts"
+      patch: |
+        import setupRouter from './setup';
+        // mount once:
+        router.use('/', setupRouter);
+
+    - path: "server/routes/users/admin.ts"
+      content: |
+        import { Router } from 'express';
+        import { sendOk, sendErr } from '../../lib/http';
+        import { supabaseAdmin } from '../../lib/supabaseAdmin';
+        import { requireAuth } from '../../middleware/auth';
+
+        const r = Router();
+        r.use(requireAuth);
+
+        // Admin-only: list users + roles by org
+        r.get('/list', async (req:any,res)=>{
+          try{
+            // NOTE: service role allows admin aggregation; you may add an app-level admin guard here
+            const users = await supabaseAdmin.from('user_roles')
+              .select('user_id, org_id, role_id, roles:role_id (slug,name), org:org_id (name)')
+            if (users.error) return sendErr(res,400,users.error.message);
+            return sendOk(res, users.data);
+          }catch(e:any){ return sendErr(res,500,e?.message||'users admin list error'); }
+        });
+
+        export default r;
+    - path: "server/routes/index.ts"
+      patch: |
+        import adminUsersRouter from './users/admin';
+        // mount once:
+        apiRouter.use('/v1/users/admin', adminUsersRouter);
+
+########################################################################################################
+# 3) UI — Setup Wizard (Admin/Sales), gating, Cards with logo+gradient, Popup/Details tabs
+########################################################################################################
+ui_delta:
+  files:
+    - path: "client/src/pages/organizations/SetupWizard.tsx"
+      content: |
+        import { useEffect, useState } from 'react';
+        import { api } from '@/lib/api';
+        import GlowCard from '@/components/ui/GlowCard';
+        import { useParams, useNavigate } from 'react-router-dom';
+
+        export default function SetupWizard(){
+          const { id } = useParams();
+          const nav = useNavigate();
+          const [org,setOrg]=useState<any>(); const [sports,setSports]=useState<any[]>([]);
+          const [financeEmail,setFinanceEmail]=useState(''); const [brand1,setBrand1]=useState(''); const [brand2,setBrand2]=useState('');
+          const [taxKey,setTaxKey]=useState<string|undefined>(); const [err,setErr]=useState<string|undefined>(); const [msg,setMsg]=useState<string|undefined>();
+
+          useEffect(()=>{(async()=>{
+            const r = await api.get(`/api/v1/organizations/${id}/setup`);
+            if(!r.success){ setErr(r.error.message); return; }
+            setOrg(r.data.org); setSports(r.data.sports||[]);
+            setFinanceEmail(r.data.org?.finance_email||'');
+            setBrand1(r.data.org?.brand_primary||''); setBrand2(r.data.org?.brand_secondary||'');
+          })()},[id]);
+
+          async function signAndUploadLogo(file:File){
+            const s = await api.post(`/api/v1/organizations/${id}/logo/sign`, { fileName:file.name });
+            if(!s.success) { setErr(s.error.message); return; }
+            await fetch(s.data.uploadUrl,{ method:'PUT', body:file });
+            await api.post(`/api/v1/organizations/${id}/logo/apply`, { key:s.data.key });
+          }
+
+          async function signAndUploadTax(file:File){
+            const s = await api.post(`/api/v1/organizations/${id}/tax/sign`, { fileName:file.name });
+            if(!s.success) { setErr(s.error.message); return; }
+            await fetch(s.data.uploadUrl,{ method:'PUT', body:file });
+            const a = await api.post(`/api/v1/organizations/${id}/tax/apply`, { key:s.data.key });
+            if(!a.success){ setErr(a.error.message); return; }
+            setTaxKey(a.data.tax_exempt_doc_key);
+          }
+
+          async function save(){
+            const payload:any = {
+              brand_primary: brand1 || undefined,
+              brand_secondary: brand2 || undefined,
+              finance_email: financeEmail || undefined,
+              complete: true
+            };
+            const r = await api.post(`/api/v1/organizations/${id}/setup`, payload);
+            if(!r.success){ setErr(r.error.message); return; }
+            setMsg('Setup saved'); nav(`/organizations/${id}`);
+          }
+
+          async function saveAddress(sportId:string, data:any){
+            const a = await api.post(`/api/v1/organizations/${id}/sports/${sportId}/address`, data);
+            if(!a.success){ setErr(a.error.message); return; }
+          }
+
+          if (err) return <div className="text-red-400">{err}</div>;
+          if (!org) return <div>Loading…</div>;
+
+          return (
+            <div className="max-w-4xl mx-auto">
+              <GlowCard>
+                <h1 className="text-2xl font-semibold mb-4">Complete Organization Setup</h1>
+
+                <div className="space-y-6">
+                  <section>
+                    <h2 className="font-semibold">Branding</h2>
+                    <div className="grid sm:grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <label className="text-sm">Brand Primary</label>
+                        <input className="input w-full mt-1" value={brand1} onChange={e=>setBrand1(e.target.value)} placeholder="#123456"/>
+                      </div>
+                      <div>
+                        <label className="text-sm">Brand Secondary</label>
+                        <input className="input w-full mt-1" value={brand2} onChange={e=>setBrand2(e.target.value)} placeholder="#654321"/>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <label className="text-sm block">Logo</label>
+                      <input type="file" accept="image/*" onChange={e=>{ const f=e.target.files?.[0]; if(f) signAndUploadLogo(f); }} />
+                    </div>
+                  </section>
+
+                  <section>
+                    <h2 className="font-semibold">Finance & Tax</h2>
+                    <div className="grid sm:grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <label className="text-sm">Finance Email (optional)</label>
+                        <input className="input w-full mt-1" value={financeEmail} onChange={e=>setFinanceEmail(e.target.value)} placeholder="finance@org.com"/>
+                      </div>
+                      <div>
+                        <label className="text-sm block">Tax Exemption (optional)</label>
+                        <input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={e=>{ const f=e.target.files?.[0]; if(f) signAndUploadTax(f); }}/>
+                        {taxKey && <p className="text-white/60 text-xs mt-1">Uploaded</p>}
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h2 className="font-semibold">Per-Sport Shipping</h2>
+                    <div className="space-y-3 mt-2">
+                      {sports.map(s => (
+                        <div key={s.sport_id} className="grid sm:grid-cols-3 gap-3">
+                          <input className="input" placeholder="Line 1" onBlur={e=>saveAddress(s.sport_id, { ship_address_line1: e.target.value, ship_city: s.ship_city||'', ship_state: s.ship_state||'', ship_postal_code: s.ship_postal_code||'', ship_country: s.ship_country||'' })}/>
+                          <input className="input" placeholder="City"   onBlur={e=>saveAddress(s.sport_id, { ship_address_line1: s.ship_address_line1||'', ship_city: e.target.value, ship_state: s.ship_state||'', ship_postal_code: s.ship_postal_code||'', ship_country: s.ship_country||'' })}/>
+                          <input className="input" placeholder="State"  onBlur={e=>saveAddress(s.sport_id, { ship_address_line1: s.ship_address_line1||'', ship_city: s.ship_city||'', ship_state: e.target.value, ship_postal_code: s.ship_postal_code||'', ship_country: s.ship_country||'' })}/>
+                        </div>
+                      ))}
+                      {!sports.length && <div className="text-white/60 text-sm">No sports configured for this org.</div>}
+                    </div>
+                  </section>
+
+                  <div className="flex gap-2">
+                    <button className="btn-primary" onClick={save}>Save & Complete Setup</button>
+                  </div>
+                  {msg && <p className="text-emerald-400 text-sm">{msg}</p>}
+                </div>
+              </GlowCard>
+            </div>
+          );
+        }
+    - path: "client/src/pages/organizations/Detail.tsx"
+      patch: |
+        // Add tabs: Overview, Branding, Contacts/Sports, Docs, Orders (coming soon), Assignments (coming soon)
+        // If org.setup_complete is false -> and user is Admin/Sales -> navigate to /organizations/:id/setup
+        // else render tabs with all fields (logo, gradient, finance_email, tax_exempt_doc_key, addresses)
+    - path: "client/src/pages/organizations/List.tsx"
+      patch: |
+        // When rendering a card: use org.logo_url if present, and style header with org.gradient_css if present,
+        // fallback compute gradient from brand_primary/brand_secondary
+    - path: "client/src/routes.tsx"
+      patch: |
+        // Add a route:
+        // { path:'/organizations/:id/setup', element:<SetupWizard/> }
+    - path: "client/src/pages/users/UsersPage.tsx"
+      patch: |
+        // Add an Admin-only section to view user roles by org.
+        // Call GET /api/v1/users/admin/list and render a table: user_id, org name, role slug.
+
+########################################################################################################
+# 4) SAFETY & ACCEPTANCE
+########################################################################################################
+safety_checks:
+  - "DB columns exist: organizations(finance_email,tax_exempt_doc_key,setup_complete,setup_completed_at,color_palette,gradient_css,tags,is_archived)"
+  - "DB columns exist: org_sports(organization_id,ship_* fields,contact_user_id uuid)"
+  - "RLS: organizations/org_sports UPDATE allowed for Admin OR Salesperson; members can SELECT; INSERT for org_sports allowed to members"
+  - "PostgREST schema reloaded after migration"
+  - "Service-role used for writes (logo/tax upload apply, setup save, sport address save)"
+  - "Setup Wizard redirects details until setup_complete=true"
+  - "Org card shows logo and gradient"
+  - "Popup/Details show all org data and includes Orders/Assignments tabs with 'Coming soon'"
+  - "Users admin list endpoint works and is restricted to Admin UI"
+
+acceptance_criteria:
+  - "Creating/updating org setup completes without RLS/column errors"
+  - "After setup, visiting /organizations shows card with logo+gradient"
+  - "Organization detail popup displays branding, finance email, tax doc state, per-sport shipping"
+  - "Non-setup org routes users to setup if Admin/Sales; other roles see 'Setup in progress'"
+  - "Users page shows roles-by-org when logged in as Admin"
+
+post_steps:
+  - "Run migration SQL portion of this CR in Supabase SQL; verify it completes and schema reload runs"
+  - "Restart server, then run: npm run db:schema:dump && npm run db:schema:check && npm run db:selftest"
+  - "Open /organizations/:id/setup as Admin/Sales and complete branding + finance + per-sport shipping"
+  - "Confirm card shows logo and gradient; popup shows full details"
+
+rollback_plan: |
+  - Revert files added/modified by this CR
+  - SQL rollback (if needed): set setup_complete=false; drop columns/constraints added in this CR (evaluate per environment)
