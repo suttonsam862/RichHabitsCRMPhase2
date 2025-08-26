@@ -193,14 +193,17 @@ function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: s
   return sportsPayload;
 }
 
-// GET route to list organizations
+// GET route to list organizations - HARDENED IMPLEMENTATION
 router.get('/', async (req, res) => {
   const logger = createRequestLogger(req);
   
   try {
-    logger.info('📋 FETCHING ORGANIZATIONS LIST');
+    logger.info('🏢 HARDENED ORGANIZATIONS LIST REQUEST');
     
-    // Query parameters for filtering/pagination
+    // Import the hardened service
+    const { OrganizationsService } = await import('../../services/OrganizationsService.js');
+    
+    // Extract query parameters
     const {
       q = '',
       tag = '',
@@ -212,74 +215,32 @@ router.get('/', async (req, res) => {
       offset = 0
     } = req.query;
 
-    logger.info('🔍 Query parameters:', { q, tag, onlyFavorites, includeArchived, sort, dir, limit, offset });
+    // Use hardened service
+    const result = await OrganizationsService.listOrganizations({
+      q: q as string,
+      tag: tag as string,
+      onlyFavorites: onlyFavorites as string,
+      includeArchived: includeArchived as string,
+      sort: sort as string,
+      dir: dir as string,
+      limit: parseInt(limit as string) || 24,
+      offset: parseInt(offset as string) || 0
+    }, req);
 
-    // Build the query with all columns including setup fields
-    let query = supabaseAdmin
-      .from('organizations')
-      .select('id, name, is_business, brand_primary, brand_secondary, tags, status, is_archived, created_at, updated_at, finance_email, setup_complete, setup_completed_at, tax_exempt_doc_key, logo_url');
-
-    // Apply filters
-    if (q && typeof q === 'string') {
-      query = query.ilike('name', `%${q}%`);
+    if (!result.success) {
+      logger.error('❌ SERVICE FAILED:', result.error);
+      return res.status(500).json(result);
     }
 
-    if (includeArchived !== 'true') {
-      query = query.eq('is_archived', false);
-    }
+    logger.info(`✅ HARDENED SERVICE SUCCESS: ${result.data?.length} organizations`);
 
-    // Apply sorting
-    const sortColumn = sort === 'updated' ? 'updated_at' : 'name';
-    query = query.order(sortColumn, { ascending: dir === 'asc' });
-
-    // Apply pagination
-    const limitNum = parseInt(limit as string) || 24;
-    const offsetNum = parseInt(offset as string) || 0;
-    query = query.range(offsetNum, offsetNum + limitNum - 1);
-
-    const { data: organizations, error, count } = await query;
-
-    if (error) {
-      logger.error('❌ ORGANIZATIONS FETCH FAILED:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to fetch organizations',
-        details: error
-      });
-    }
-
-    // Transform to match frontend expectations
-    const transformedData = organizations?.map(org => ({
-      id: org.id,
-      name: org.name,
-      isBusiness: org.is_business,
-      brandPrimary: org.brand_primary,
-      brandSecondary: org.brand_secondary,
-      tags: org.tags || [],
-      status: org.status,
-      isArchived: org.is_archived,
-      createdAt: org.created_at,
-      updatedAt: org.updated_at,
-      financeEmail: org.finance_email,
-      setupComplete: org.setup_complete,
-      setupCompletedAt: org.setup_completed_at,
-      taxExemptDocKey: org.tax_exempt_doc_key,
-      logoUrl: org.logo_url
-    })) || [];
-
-    logger.info(`✅ ORGANIZATIONS FETCHED: ${transformedData.length} items`);
-
-    return res.json({
-      success: true,
-      data: transformedData,
-      count: transformedData.length
-    });
+    return res.json(result);
 
   } catch (error: any) {
-    logger.error('💥 UNEXPECTED ERROR:', error);
+    logger.error('💥 ROUTE ERROR:', error);
     return res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: 'Route handler error',
       message: error.message
     });
   }
