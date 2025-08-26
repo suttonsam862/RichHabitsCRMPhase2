@@ -193,6 +193,93 @@ function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: s
   return sportsPayload;
 }
 
+// GET route to list organizations
+router.get('/', async (req, res) => {
+  const logger = createRequestLogger(req);
+  
+  try {
+    logger.info('📋 FETCHING ORGANIZATIONS LIST');
+    
+    // Query parameters for filtering/pagination
+    const {
+      q = '',
+      tag = '',
+      onlyFavorites = 'false',
+      includeArchived = 'false',
+      sort = 'updated',
+      dir = 'desc',
+      limit = 24,
+      offset = 0
+    } = req.query;
+
+    logger.info('🔍 Query parameters:', { q, tag, onlyFavorites, includeArchived, sort, dir, limit, offset });
+
+    // Build the query
+    let query = supabaseAdmin
+      .from('organizations')
+      .select('id, name, is_business, brand_primary, brand_secondary, tags, status, is_archived, created_at, updated_at');
+
+    // Apply filters
+    if (q && typeof q === 'string') {
+      query = query.ilike('name', `%${q}%`);
+    }
+
+    if (includeArchived !== 'true') {
+      query = query.eq('is_archived', false);
+    }
+
+    // Apply sorting
+    const sortColumn = sort === 'updated' ? 'updated_at' : 'name';
+    query = query.order(sortColumn, { ascending: dir === 'asc' });
+
+    // Apply pagination
+    const limitNum = parseInt(limit as string) || 24;
+    const offsetNum = parseInt(offset as string) || 0;
+    query = query.range(offsetNum, offsetNum + limitNum - 1);
+
+    const { data: organizations, error, count } = await query;
+
+    if (error) {
+      logger.error('❌ ORGANIZATIONS FETCH FAILED:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch organizations',
+        details: error
+      });
+    }
+
+    // Transform to match frontend expectations
+    const transformedData = organizations?.map(org => ({
+      id: org.id,
+      name: org.name,
+      isBusiness: org.is_business,
+      brandPrimary: org.brand_primary,
+      brandSecondary: org.brand_secondary,
+      tags: org.tags || [],
+      status: org.status,
+      isArchived: org.is_archived,
+      createdAt: org.created_at,
+      updatedAt: org.updated_at
+    })) || [];
+
+    logger.info(`✅ ORGANIZATIONS FETCHED: ${transformedData.length} items`);
+
+    return res.json({
+      success: true,
+      data: transformedData,
+      count: transformedData.length
+    });
+
+  } catch (error: any) {
+    logger.error('💥 UNEXPECTED ERROR:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 router.post('/', async (req, res) => {
   const logger = createRequestLogger(req);
   
