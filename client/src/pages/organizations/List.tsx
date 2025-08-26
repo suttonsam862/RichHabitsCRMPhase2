@@ -3,6 +3,8 @@ import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { gradientFrom } from '@/features/organizations/gradient';
 import { Link } from 'react-router-dom';
+import { useCurrentUser } from '@/auth/guard';
+import { Role } from '@/auth/roles';
 
 type Org = { 
   id:string; 
@@ -21,6 +23,7 @@ type Org = {
 };
 
 export default function OrganizationsList(){
+  const currentUser = useCurrentUser();
   const [rows, setRows] = useState<Org[]>([]);
   const [count, setCount] = useState(0);
   const [q, setQ] = useState(''); 
@@ -53,6 +56,17 @@ export default function OrganizationsList(){
     if (r.success) {
       load(); // Refresh list
     }
+  }
+
+  // Check if user can manage setup (admin or sales role)
+  const canManageSetup = useMemo(() => {
+    return currentUser?.role === Role.ADMIN || currentUser?.role === Role.SALES;
+  }, [currentUser]);
+
+  // For now, allow setup management for admin/sales users on any org
+  // In production, this would check per-org permissions
+  function canManageOrgSetup(orgId: string): boolean {
+    return canManageSetup;
   }
 
   return (
@@ -160,7 +174,7 @@ export default function OrganizationsList(){
                   
                   {/* Content */}
                   <div className="p-4 flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-white/10 overflow-hidden flex items-center justify-center border border-white/10">
+                    <div className="h-12 w-12 rounded-xl bg-white/10 overflow-hidden flex items-center justify-center border border-white/10 relative">
                       {org.logo_url ? (
                         <img 
                           src={`/storage/app/${org.logo_url}`} 
@@ -170,12 +184,24 @@ export default function OrganizationsList(){
                       ) : (
                         <div className="text-xs text-white/50 text-center">No<br/>Logo</div>
                       )}
+                      {/* Setup status indicator */}
+                      {org.setup_complete === false && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border border-white/20" title="Setup incomplete"></div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold truncate" data-testid={`text-name-${org.id}`}>{org.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold truncate" data-testid={`text-name-${org.id}`}>{org.name}</div>
+                        {org.setup_complete === false && (
+                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-xs rounded-md border border-amber-500/30" title="Setup incomplete">
+                            Setup Required
+                          </span>
+                        )}
+                      </div>
                       <div className="text-white/60 text-xs" data-testid={`text-type-${org.id}`}>
                         {org.is_business ? 'Business' : 'Organization'}
                         {org.tags?.length > 0 && ` · ${org.tags.slice(0,2).join(' · ')}`}
+                        {org.finance_email && ` · Finance: ${org.finance_email}`}
                       </div>
                     </div>
                     <button 
@@ -190,15 +216,29 @@ export default function OrganizationsList(){
                   
                   {/* Actions */}
                   <div className="px-4 pb-4 flex gap-2">
+                    {/* Setup button - only show if setup incomplete and user can manage */}
+                    {org.setup_complete === false && canManageOrgSetup(org.id) && (
+                      <Link 
+                        className="flex-1 text-center px-3 py-2 text-sm rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-400 transition-colors text-amber-300 hover:text-amber-200" 
+                        to={`/organizations/${org.id}/setup`}
+                        data-testid={`link-setup-${org.id}`}
+                      >
+                        Complete Setup
+                      </Link>
+                    )}
                     <Link 
-                      className="flex-1 text-center px-3 py-2 text-sm rounded-xl bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-colors" 
+                      className={`text-center px-3 py-2 text-sm rounded-xl bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-colors ${
+                        org.setup_complete === false && canManageOrgSetup(org.id) ? 'flex-1' : 'flex-1'
+                      }`}
                       to={`/organizations/${org.id}`}
                       data-testid={`link-view-${org.id}`}
                     >
                       View
                     </Link>
                     <Link 
-                      className="flex-1 text-center px-3 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors" 
+                      className={`text-center px-3 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors ${
+                        org.setup_complete === false && canManageOrgSetup(org.id) ? 'flex-1' : 'flex-1'
+                      }`}
                       to={`/organizations/${org.id}/edit`}
                       data-testid={`link-edit-${org.id}`}
                     >
