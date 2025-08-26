@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-08-24T22:17:41.625Z",
+  "generatedAt": "2025-08-26T15:21:07.838Z",
   "columns": [
     {
       "table_schema": "public",
@@ -1581,6 +1581,14 @@
       "table_schema": "public",
       "table_name": "organizations",
       "column_name": "gradient_css",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "zip",
       "data_type": "text",
       "is_nullable": "YES",
       "character_maximum_length": null

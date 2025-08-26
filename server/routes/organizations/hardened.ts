@@ -32,8 +32,16 @@ const CreateOrganizationSchema = z.object({
 type CreateOrganizationRequest = z.infer<typeof CreateOrganizationSchema>;
 
 // Column mapping function to convert camelCase to snake_case
-function mapFieldsToDbColumns(data: CreateOrganizationRequest) {
-  const logger = createRequestLogger({ method: 'POST', url: '/organizations/field-mapping' } as any);
+function mapFieldsToDbColumns(data: CreateOrganizationRequest, req?: any) {
+  // Create a mock request object if not provided
+  const mockReq = req || { 
+    method: 'POST', 
+    url: '/organizations/field-mapping',
+    headers: {
+      'user-agent': 'Field Mapper'
+    }
+  };
+  const logger = createRequestLogger(mockReq);
   
   logger.info('🔍 FIELD MAPPING DIAGNOSTICS - Input data:', data);
   
@@ -76,8 +84,16 @@ function mapFieldsToDbColumns(data: CreateOrganizationRequest) {
 }
 
 // Function to validate database schema before insertion
-async function validateDatabaseSchema() {
-  const logger = createRequestLogger({ method: 'GET', url: '/organizations/schema-check' } as any);
+async function validateDatabaseSchema(req?: any) {
+  // Create a mock request object if not provided
+  const mockReq = req || { 
+    method: 'GET', 
+    url: '/organizations/schema-check',
+    headers: {
+      'user-agent': 'Schema Validator'
+    }
+  };
+  const logger = createRequestLogger(mockReq);
   
   try {
     logger.info('🔍 SCHEMA VALIDATION - Checking organizations table structure...');
@@ -146,8 +162,16 @@ async function validateDatabaseSchema() {
 }
 
 // Function to validate and prepare sports data
-function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: string) {
-  const logger = createRequestLogger({ method: 'POST', url: '/organizations/sports-prep' } as any);
+function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: string, req?: any) {
+  // Create a mock request object if not provided
+  const mockReq = req || { 
+    method: 'POST', 
+    url: '/organizations/sports-prep',
+    headers: {
+      'user-agent': 'Sports Prep'
+    }
+  };
+  const logger = createRequestLogger(mockReq);
   
   logger.info('🏈 SPORTS PREP - Processing sports contacts:', sports);
   
@@ -194,7 +218,7 @@ router.post('/', async (req, res) => {
     
     // Step 2: Check database schema compatibility
     logger.info('2️⃣ CHECKING DATABASE SCHEMA...');
-    const schemaCheck = await validateDatabaseSchema();
+    const schemaCheck = await validateDatabaseSchema(req);
     
     if (!schemaCheck.isValid) {
       logger.error('❌ SCHEMA INCOMPATIBILITY DETECTED:', schemaCheck);
@@ -210,7 +234,7 @@ router.post('/', async (req, res) => {
     
     // Step 3: Map frontend fields to database columns
     logger.info('3️⃣ MAPPING FIELDS TO DATABASE COLUMNS...');
-    const dbPayload = mapFieldsToDbColumns(validatedData);
+    const dbPayload = mapFieldsToDbColumns(validatedData, req);
     
     // Step 4: Create organization
     logger.info('4️⃣ CREATING ORGANIZATION...');
@@ -248,7 +272,7 @@ router.post('/', async (req, res) => {
     // Step 5: Handle sports contacts if any
     if (validatedData.sports.length > 0) {
       logger.info('5️⃣ PROCESSING SPORTS CONTACTS...');
-      const sportsPayload = prepareSportsData(validatedData.sports, orgData.id);
+      const sportsPayload = prepareSportsData(validatedData.sports, orgData.id, req);
       
       const { data: sportsData, error: sportsError } = await supabaseAdmin
         .from('org_sports')
