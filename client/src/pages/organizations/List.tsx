@@ -9,17 +9,17 @@ import { Role } from '@/auth/roles';
 type Org = { 
   id:string; 
   name:string; 
-  logo_url?:string|null; 
-  brand_primary:string; 
-  brand_secondary:string; 
+  logoUrl?:string|null; 
+  brandPrimary:string; 
+  brandSecondary:string; 
   gradient_css?:string|null; 
   tags:string[]; 
-  is_business:boolean; 
-  is_archived:boolean;
-  setup_complete?:boolean;
-  finance_email?:string|null;
-  created_at:string; 
-  updated_at:string 
+  isBusiness:boolean; 
+  isArchived:boolean;
+  setupComplete?:boolean;
+  financeEmail?:string|null;
+  createdAt:string; 
+  updatedAt:string 
 };
 
 export default function OrganizationsList(){
@@ -159,15 +159,21 @@ export default function OrganizationsList(){
         {!loading && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {rows.map(org => {
-              const g = org.gradient_css || gradientFrom(org.brand_primary, org.brand_secondary);
+              const g = org.gradient_css || gradientFrom(org.brandPrimary, org.brandSecondary);
+              const needsSetup = org.setupComplete === false || org.setupComplete === null || org.setupComplete === undefined;
               return (
-                <GlowCard key={org.id} className="p-0 overflow-hidden" data-testid={`card-organization-${org.id}`}>
+                <GlowCard key={org.id} className={`p-0 overflow-hidden ${needsSetup ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : ''}`} data-testid={`card-organization-${org.id}`}>
                   {/* Header gradient */}
                   <div className="h-28 relative" style={{ background: g }}>
                     <div className="absolute inset-0 bg-black/20"></div>
-                    {org.is_archived && (
+                    {org.isArchived && (
                       <div className="absolute top-3 left-3 px-2 py-1 bg-red-500/80 text-white text-xs rounded-md">
                         Archived
+                      </div>
+                    )}
+                    {needsSetup && (
+                      <div className="absolute top-3 right-3 px-2 py-1 bg-yellow-500 text-black text-xs rounded-md font-semibold animate-pulse">
+                        SETUP NEEDED
                       </div>
                     )}
                   </div>
@@ -175,9 +181,9 @@ export default function OrganizationsList(){
                   {/* Content */}
                   <div className="p-4 flex items-center gap-3">
                     <div className="h-12 w-12 rounded-xl bg-white/10 overflow-hidden flex items-center justify-center border border-white/10 relative">
-                      {org.logo_url ? (
+                      {org.logoUrl ? (
                         <img 
-                          src={`/storage/app/${org.logo_url}`} 
+                          src={`/storage/app/${org.logoUrl}`} 
                           alt={`${org.name} logo`} 
                           className="h-full w-full object-cover"
                         />
@@ -185,23 +191,23 @@ export default function OrganizationsList(){
                         <div className="text-xs text-white/50 text-center">No<br/>Logo</div>
                       )}
                       {/* Setup status indicator */}
-                      {org.setup_complete === false && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border border-white/20" title="Setup incomplete"></div>
+                      {needsSetup && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border border-yellow-300 animate-pulse" title="Setup incomplete"></div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <div className="font-semibold truncate" data-testid={`text-name-${org.id}`}>{org.name}</div>
-                        {org.setup_complete === false && (
-                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-xs rounded-md border border-amber-500/30" title="Setup incomplete">
+                        {needsSetup && (
+                          <span className="px-2 py-0.5 bg-yellow-500/30 text-yellow-300 text-xs rounded-md border border-yellow-500/50 animate-pulse font-semibold" title="Setup incomplete">
                             Setup Required
                           </span>
                         )}
                       </div>
                       <div className="text-white/60 text-xs" data-testid={`text-type-${org.id}`}>
-                        {org.is_business ? 'Business' : 'Organization'}
+                        {org.isBusiness ? 'Business' : 'Organization'}
                         {org.tags?.length > 0 && ` · ${org.tags.slice(0,2).join(' · ')}`}
-                        {org.finance_email && ` · Finance: ${org.finance_email}`}
+                        {org.financeEmail && ` · Finance: ${org.financeEmail}`}
                       </div>
                     </div>
                     <button 
@@ -216,34 +222,52 @@ export default function OrganizationsList(){
                   
                   {/* Actions */}
                   <div className="px-4 pb-4 flex gap-2">
-                    {/* Setup button - only show if setup incomplete and user can manage */}
-                    {org.setup_complete === false && canManageOrgSetup(org.id) && (
+                    {/* Setup button - prominent for organizations needing setup */}
+                    {needsSetup && canManageOrgSetup(org.id) && (
                       <Link 
-                        className="flex-1 text-center px-3 py-2 text-sm rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-400 transition-colors text-amber-300 hover:text-amber-200" 
+                        className="flex-1 text-center px-3 py-2 text-sm rounded-xl bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/70 hover:border-yellow-400 transition-all duration-300 text-yellow-300 hover:text-yellow-200 font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-yellow-500/30" 
                         to={`/organizations/${org.id}/setup`}
                         data-testid={`link-setup-${org.id}`}
                       >
-                        Complete Setup
+                        🚀 Complete Setup
                       </Link>
                     )}
-                    <Link 
-                      className={`text-center px-3 py-2 text-sm rounded-xl bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-colors ${
-                        org.setup_complete === false && canManageOrgSetup(org.id) ? 'flex-1' : 'flex-1'
-                      }`}
-                      to={`/organizations/${org.id}`}
-                      data-testid={`link-view-${org.id}`}
-                    >
-                      View
-                    </Link>
-                    <Link 
-                      className={`text-center px-3 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors ${
-                        org.setup_complete === false && canManageOrgSetup(org.id) ? 'flex-1' : 'flex-1'
-                      }`}
-                      to={`/organizations/${org.id}/edit`}
-                      data-testid={`link-edit-${org.id}`}
-                    >
-                      Edit
-                    </Link>
+                    {/* Show smaller View/Edit buttons if setup is needed */}
+                    {needsSetup && canManageOrgSetup(org.id) ? (
+                      <>
+                        <Link 
+                          className="px-2 py-2 text-sm rounded-xl bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-colors text-xs"
+                          to={`/organizations/${org.id}`}
+                          data-testid={`link-view-${org.id}`}
+                        >
+                          View
+                        </Link>
+                        <Link 
+                          className="px-2 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors text-xs"
+                          to={`/organizations/${org.id}/edit`}
+                          data-testid={`link-edit-${org.id}`}
+                        >
+                          Edit
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link 
+                          className="flex-1 text-center px-3 py-2 text-sm rounded-xl bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-colors"
+                          to={`/organizations/${org.id}`}
+                          data-testid={`link-view-${org.id}`}
+                        >
+                          View
+                        </Link>
+                        <Link 
+                          className="flex-1 text-center px-3 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors"
+                          to={`/organizations/${org.id}/edit`}
+                          data-testid={`link-edit-${org.id}`}
+                        >
+                          Edit
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </GlowCard>
               );

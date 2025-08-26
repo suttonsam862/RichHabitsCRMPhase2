@@ -217,7 +217,7 @@ router.get('/', async (req, res) => {
     // Build the query
     let query = supabaseAdmin
       .from('organizations')
-      .select('id, name, is_business, brand_primary, brand_secondary, tags, status, is_archived, created_at, updated_at');
+      .select('id, name, is_business, brand_primary, brand_secondary, tags, status, is_archived, created_at, updated_at, finance_email, setup_complete, setup_completed_at, tax_exempt_doc_key, logo_url');
 
     // Apply filters
     if (q && typeof q === 'string') {
@@ -259,7 +259,12 @@ router.get('/', async (req, res) => {
       status: org.status,
       isArchived: org.is_archived,
       createdAt: org.created_at,
-      updatedAt: org.updated_at
+      updatedAt: org.updated_at,
+      financeEmail: org.finance_email,
+      setupComplete: org.setup_complete,
+      setupCompletedAt: org.setup_completed_at,
+      taxExemptDocKey: org.tax_exempt_doc_key,
+      logoUrl: org.logo_url
     })) || [];
 
     logger.info(`✅ ORGANIZATIONS FETCHED: ${transformedData.length} items`);
