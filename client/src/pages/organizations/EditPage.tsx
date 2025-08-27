@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save } from 'lucide-react';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
-import EditOrganizationForm from '@/components/edit-organization-form';
+import { EditOrganizationForm } from '@/components/edit-organization-form';
 
 export default function OrganizationEditPage() {
   const { id } = useParams<{ id: string }>();
