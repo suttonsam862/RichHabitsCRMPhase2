@@ -1,0 +1,201 @@
+cr:
+title: "Crisp Server Logging: slim request logs + rich DB/API diagnostics + on-demand debug"
+rationale: >
+  Replace noisy, repetitive logs with one concise request summary line + correlation id,
+  silence static/Vite asset traffic, add structured DB/API error diagnostics,
+  enable per-request deep debug (header or ?debug=1), and remove spammy loop logs.
+
+agent_protocol:
+  rules:
+    - "PLAN-FIRST in architecture/context/.PLAN.md; list changed files and rollback."
+    - "Do not change client-side logging here; focus server console."
+    - "Patch only canonical server files and org routes; keep ESM style."
+    - "All errors go through sendErr(); include rid/path/method/ts already."
+    - "Run: npm run dev and show a before/after snippet of logs for one org request."
+
+#####################################################################
+# 0) ENV — simple toggles
+#####################################################################
+env:
+  add:
+    - { key: LOG_LEVEL,   default: "info", note: "levels: trace, debug, info, warn, error" }
+    - { key: LOG_PRETTY,  default: "1",    note: "1=pretty (dev), 0=json (prod)" }
+    - { key: HTTP_LOG_IGNORE, default: "/@vite/*,/@react-refresh,/@fs/*,/src/*,/favicon.ico", note: "comma-separated path prefixes to skip" }
+    - { key: LOG_SAMPLE_RATE, default: "0.02", note: "2% of requests auto-debug (0-1); set 0 to disable" }
+    - { key: DEBUG_HEADER, default: "x-debug", note: "set to '1' per request to force deep debug" }
+
+#####################################################################
+# 1) SERVER LIB — central logger + request middleware
+#####################################################################
+edits:
+  - action: write_file
+    path: server/lib/log.ts
+    contents: |
+      import pino from 'pino';
+
+      const pretty = (process.env.LOG_PRETTY ?? '1') === '1';
+      const level  = process.env.LOG_LEVEL ?? 'info';
+
+      export const logger = pino(
+        pretty
+          ? { level, transport: { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:HH:MM:ss.l' } } }
+          : { level }
+      );
+
+      export function shortRid() {
+        // Small collision-safe-ish token for log lines
+        return Math.random().toString(36).slice(2, 10);
+      }
+
+  - action: write_file
+    path: server/middleware/requestLog.ts
+    contents: |
+      import type { Request, Response, NextFunction } from 'express';
+      import { logger, shortRid } from '../lib/log.js';
+
+      const IGNORE = (process.env.HTTP_LOG_IGNORE ?? '').split(',').map(s => s.trim()).filter(Boolean);
+      const SAMPLE = Math.max(0, Math.min(1, Number(process.env.LOG_SAMPLE_RATE ?? '0.02')));
+      const DBG_HDR = process.env.DEBUG_HEADER ?? 'x-debug';
+
+      function shouldIgnore(path: string) {
+        if (!IGNORE.length) return false;
+        for (const pref of IGNORE) {
+          if (!pref) continue;
+          if (pref.endsWith('*')) {
+            const base = pref.slice(0, -1);
+            if (path.startsWith(base)) return true;
+          } else if (path === pref) return true;
+        }
+        return false;
+      }
+
+      export function requestLog(req: Request, res: Response, next: NextFunction) {
+        const rid = shortRid();
+        (res as any).locals = { ...(res as any).locals, rid };
+        res.setHeader('X-Request-Id', rid);
+
+        // mark debug depth per request
+        const forced = (req.headers[DBG_HDR] === '1') || (req.query?.debug === '1');
+        const sampled = Math.random() < SAMPLE;
+        (req as any)._debug = !!(forced || sampled);
+
+        const start = performance.now();
+        const path  = req.originalUrl || req.url;
+
+        if (shouldIgnore(path)) return next();
+
+        res.on('finish', () => {
+          const ms = Math.round(performance.now() - start);
+          const line = `${req.method} ${res.statusCode} ${ms}ms ${path}`;
+          if (res.statusCode >= 500) {
+            logger.error({ rid, method: req.method, path, status: res.statusCode, ms }, line);
+          } else if (res.statusCode >= 400) {
+            logger.warn({ rid, method: req.method, path, status: res.statusCode, ms }, line);
+          } else {
+            logger.info({ rid, method: req.method, path, status: res.statusCode, ms }, line);
+          }
+        });
+
+        next();
+      }
+
+      // helper for deep debug inside handlers
+      export function reqDebug(req: Request, data: any, title = 'debug') {
+        if ((req as any)._debug) {
+          const rid = (res as any)?.locals?.rid ?? 'no-rid';
+          logger.debug({ rid, ...data }, title);
+        }
+      }
+
+  - action: write_file
+    path: server/lib/dbLog.ts
+    contents: |
+      import type { Request } from 'express';
+      import { logger } from './log.js';
+
+      export function logSbError(req: Request, ctx: string, err: any) {
+        const rid = (req as any)?.res?.locals?.rid || (req as any)?.locals?.rid;
+        const code = err?.code ?? err?.status ?? 'SB_ERR';
+        logger.error({ rid, ctx, code, message: err?.message, details: err }, '🔴 Supabase error');
+      }
+
+#####################################################################
+# 2) SERVER INDEX — mount middleware & trust proxy, remove spammy start/complete logs
+#####################################################################
+  - action: patch_in_file
+    file: server/index.ts
+    find: "const app = express();"
+    replace_with: |
+      const app = express();
+      app.set('trust proxy', 1);
+      // slim request logger (1 line/req; ignores vite/assets)
+      import { requestLog } from './middleware/requestLog.js';
+      app.use(requestLog);
+
+  - action: patch_in_file
+    file: server/index.ts
+    find: "INFO: Request started"
+    replace_with: "// removed noisy per-request start logs (now handled by requestLog)"
+
+  - action: patch_in_file
+    file: server/index.ts
+    find: "INFO: Request completed"
+    replace_with: "// removed noisy per-request completion logs (now handled by requestLog)"
+
+#####################################################################
+# 3) ORG ROUTES — replace chatty logs with single summaries & error logs
+#####################################################################
+  - action: patch_in_file
+    file: server/routes/organizations/index.ts
+    hint: "Collapse repeated 'Transforming organization' logs into a single summary; log DB errors with logSbError"
+    replace: |
+      // After fetching and transforming rows, log one summary:
+      //   logger.info({ rid: res.locals?.rid, count: data.length }, 'organizations.list ok');
+      // On Supabase error paths, call logSbError(req,'orgs.list', error);
+
+  - action: patch_in_file
+    file: server/routes/organizations/hardened.ts
+    hint: "Ensure DB errors call logSbError; avoid per-item logs inside loops"
+    replace: |
+      // Replace any per-item console logs with a single summary line.
+      // When a Supabase call returns error, call logSbError(req,'orgs.hardened', error) and sendErr.
+
+  - action: patch_in_file
+    file: server/routes/organizations/create.ts
+    hint: "On error branches from supabaseAdmin, call logSbError(req,'orgs.create', error)"
+    replace: |
+      // Example:
+      // if (orgRes.error) { logSbError(req,'orgs.create.insert', orgRes.error); return sendErr(res,400,orgRes.error.message); }
+
+#####################################################################
+# 4) ERROR HANDLER — keep one-line response + structured error line
+#####################################################################
+  - action: patch_in_file
+    file: server/lib/http.ts
+    hint: "Ensure sendErr keeps rid/path/method/ts; do not print giant objects by default."
+    replace: |
+      // already present from previous CR; no change unless it prints huge details.
+      // If details are included, wrap behind DEBUG header only.
+
+#####################################################################
+# 5) ACCEPTANCE — what good looks like
+#####################################################################
+acceptance_criteria:
+  - "Asset/vite/hmr paths are suppressed in server console"
+  - "Every API request prints exactly one concise line: METHOD STATUS ms PATH + JSON context"
+  - "Setting header 'x-debug: 1' or ?debug=1 shows extra debug lines *only for that request*"
+  - "Supabase errors print a single 🔴 line with code/message and rid"
+  - "Organizations list no longer prints spammy per-item 'Transforming organization' logs"
+  - "Keeping LOG_PRETTY=1 produces human-friendly dev logs; switching to 0 outputs JSON for shipping to a log tool"
+
+post_steps:
+  - "Set env if desired: LOG_LEVEL=info, LOG_PRETTY=1, HTTP_LOG_IGNORE='/@vite/*,/@react-refresh,/@fs/*,/src/*'"
+  - "Restart: npm run dev"
+  - "Hit GET /api/v1/organizations → observe one line only"
+  - "Repeat GET with header x-debug: 1 → observe extra debug lines for that single request"
+  - "Trigger a failing Supabase call → observe a single 🔴 diagnostic with rid/code/message"
+
+rollback_plan: |
+  - Revert server/lib/log.ts, server/middleware/requestLog.ts, server/lib/dbLog.ts
+  - Revert patches in server/index.ts and organizations routes
+  - Restore previous logging behavior if needed
