@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
+import { logSbError } from '../../lib/dbLog.js';
 
 const router = Router();
 
@@ -32,7 +33,10 @@ router.post('/', async (req, res) => {
     .select('id')
     .single();
 
-  if (orgRes.error) return res.status(400).json({ error: orgRes.error });
+  if (orgRes.error) {
+    logSbError(req, 'orgs.create.insert', orgRes.error);
+    return res.status(400).json({ error: orgRes.error });
+  }
 
   if (payload.sports?.length) {
     const rows = payload.sports.map(s => ({
@@ -41,7 +45,10 @@ router.post('/', async (req, res) => {
       contact_user_id: s.contact_user_id ?? null
     }));
     const sportRes = await supabaseAdmin.from('org_sports').insert(rows);
-    if (sportRes.error) return res.status(400).json({ error: sportRes.error });
+    if (sportRes.error) {
+      logSbError(req, 'orgs.create.sports', sportRes.error);
+      return res.status(400).json({ error: sportRes.error });
+    }
   }
 
   return res.json({ success: true, data: { id: orgRes.data!.id } });

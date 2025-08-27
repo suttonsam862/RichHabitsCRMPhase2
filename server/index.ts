@@ -12,7 +12,8 @@ import rateLimit from 'express-rate-limit';
 import apiRouter from './routes/index.js';
 import { setupVite, serveStatic } from './vite';
 import { errorHandler } from './middleware/error';
-import { requestIdMiddleware, logRequest, logRequestComplete } from './lib/log';
+// slim request logger (1 line/req; ignores vite/assets)
+import { requestLog } from './middleware/requestLog.js';
 import { env } from './lib/env';
 import dotenv from 'dotenv';
 
@@ -78,24 +79,7 @@ const authLimiter = rateLimit({
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// Correlation ID + request logging
-app.use((req,res,next)=>{ const rid = Math.random().toString(36).slice(2); (res as any).locals = { ...(res as any).locals, rid }; res.setHeader('X-Request-Id', rid); next(); });
-
-// Request ID middleware
-app.use(requestIdMiddleware);
-
-// Request logging
-app.use((req, res, next) => {
-  const startTime = Date.now();
-  logRequest(req);
-
-  res.on('finish', () => {
-    const responseTime = Date.now() - startTime;
-    logRequestComplete(req, res, responseTime);
-  });
-
-  next();
-});
+app.use(requestLog);
 
 // Health check endpoint
 app.get('/healthz', (req, res) => {
