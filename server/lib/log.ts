@@ -28,3 +28,16 @@ export function logSecurityEvent(req: Request, event: string, details?: any) {
     ip: req.ip
   }, 'Security event');
 }
+
+/**
+ * Log database operations
+ */
+export function logDatabaseOperation(req: Request, operation: string, table: string, data?: any) {
+  const rid = (req as any)?.res?.locals?.rid || shortRid();
+  logger.debug({
+    rid,
+    operation,
+    table,
+    data
+  }, 'Database operation');
+}
