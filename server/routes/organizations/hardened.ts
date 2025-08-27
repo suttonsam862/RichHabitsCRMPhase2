@@ -246,6 +246,53 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET route to fetch single organization by ID - HARDENED IMPLEMENTATION
+router.get('/:id', async (req, res) => {
+  const logger = createRequestLogger(req);
+  
+  try {
+    logger.info('🏢 HARDENED ORGANIZATION GET BY ID REQUEST');
+    
+    const { id } = req.params;
+    
+    if (!id) {
+      logger.error('❌ Missing organization ID');
+      return res.status(400).json({
+        success: false,
+        error: 'Organization ID is required'
+      });
+    }
+    
+    // Import the hardened service
+    const { OrganizationsService } = await import('../../services/OrganizationsService.js');
+    
+    // Use hardened service to get organization by ID
+    const result = await OrganizationsService.getOrganizationById(id, req);
+
+    if (!result.success) {
+      if (result.error === 'Organization not found') {
+        logger.info(`📭 Organization not found: ${id}`);
+        return res.status(404).json(result);
+      }
+      
+      logger.error('❌ SERVICE FAILED:', result.error);
+      return res.status(500).json(result);
+    }
+
+    logger.info(`✅ HARDENED SERVICE SUCCESS: Found organization ${id}`);
+
+    return res.json(result);
+
+  } catch (error: any) {
+    logger.error('💥 ROUTE ERROR:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Route handler error',
+      message: error.message
+    });
+  }
+});
+
 router.post('/', async (req, res) => {
   const logger = createRequestLogger(req);
   

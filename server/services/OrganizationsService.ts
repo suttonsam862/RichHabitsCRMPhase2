@@ -167,4 +167,62 @@ export class OrganizationsService {
       taxExemptDocKey: null
     };
   }
+
+  static async getOrganizationById(id: string, req?: any): Promise<{ success: boolean; data?: OrganizationData; error?: string; details?: any }> {
+    // Create a mock request object if not provided
+    const mockReq = req || { 
+      method: 'GET', 
+      url: `/organizations/${id}`,
+      headers: {
+        'user-agent': 'Organization Service'
+      }
+    };
+    const logger = createRequestLogger(mockReq);
+    
+    try {
+      logger.info(`🔍 GETTING ORGANIZATION BY ID: ${id}`);
+      
+      // Query organization by ID using only guaranteed columns
+      const { data, error } = await supabaseAdmin
+        .from('organizations')
+        .select(ALL_COLUMNS.join(', '))
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned - organization not found
+          logger.info(`📭 Organization not found: ${id}`);
+          return { success: false, error: 'Organization not found' };
+        }
+        
+        logger.error('❌ DATABASE QUERY FAILED:', error);
+        return { 
+          success: false, 
+          error: 'Database query failed',
+          details: error
+        };
+      }
+
+      if (!data) {
+        logger.info(`📭 Organization not found: ${id}`);
+        return { success: false, error: 'Organization not found' };
+      }
+
+      logger.info(`✅ ORGANIZATION FOUND: ${data.name}`);
+
+      // Map database result to DTO using the existing transform method
+      const mappedData = this.transformOrganization(data, logger);
+      
+      return { success: true, data: mappedData };
+      
+    } catch (error: any) {
+      logger.error('💥 SERVICE ERROR:', error);
+      return { 
+        success: false, 
+        error: 'Service error',
+        details: error.message
+      };
+    }
+  }
 }
