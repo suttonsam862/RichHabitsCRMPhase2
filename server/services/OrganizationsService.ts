@@ -19,6 +19,7 @@ const CORE_COLUMNS = [
   'tags', 'status', 'is_archived', 'created_at', 'updated_at', 'logo_url'
 ];
 
+// Setup columns confirmed to exist via SQL query 2025-08-26
 const SETUP_COLUMNS = [
   'finance_email', 'setup_complete', 'setup_completed_at', 'tax_exempt_doc_key'
 ];
@@ -161,8 +162,8 @@ export class OrganizationsService {
       updatedAt: dbRow.updated_at,
       logoUrl: dbRow.logo_url || null,
       
-      // Setup fields (with safe defaults)
-      setupComplete: dbRow.setup_complete !== undefined ? dbRow.setup_complete : null,
+      // Setup fields (confirmed to exist in database)
+      setupComplete: dbRow.setup_complete !== undefined ? dbRow.setup_complete : false,
       financeEmail: dbRow.finance_email || null,
       setupCompletedAt: dbRow.setup_completed_at || null,
       taxExemptDocKey: dbRow.tax_exempt_doc_key || null
