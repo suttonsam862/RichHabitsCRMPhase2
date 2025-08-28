@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { API_BASE } from './env';
 import { OrganizationDTO } from '@shared/dtos/OrganizationDTO';
+import { sb } from './supabase';
 
 // API Response envelope schema
 const ApiResponseSchema = z.object({
@@ -43,9 +44,23 @@ async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE}${endpoint}`;
   
+  // Get current session token for authentication
+  let authHeaders: Record<string, string> = {};
+  try {
+    if (sb) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.access_token) {
+        authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to get auth session for API request:', error);
+  }
+  
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...options.headers,
     },
     ...options,

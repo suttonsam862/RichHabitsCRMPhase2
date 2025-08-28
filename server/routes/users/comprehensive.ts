@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
 import { logger } from '../../lib/log.js';
 import { logSbError } from '../../lib/dbLog.js';
 import { sendOk, sendErr } from '../../lib/http.js';
+import { requireAuth } from '../../middleware/auth.js';
 
 const router = Router();
 
@@ -47,7 +48,7 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 // List users with filtering and pagination
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const {
       page = '1',
@@ -169,7 +170,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get user by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -243,7 +244,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new user
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const parseResult = CreateUserSchema.safeParse(req.body);
     
@@ -346,7 +347,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update user
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const parseResult = UpdateUserSchema.safeParse(req.body);
@@ -469,7 +470,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete user
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -508,7 +509,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Get user statistics
-router.get('/__stats', async (req, res) => {
+router.get('/__stats', requireAuth, async (req, res) => {
   try {
     const stats = await Promise.all([
       // Total users
