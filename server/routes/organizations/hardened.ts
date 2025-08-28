@@ -675,19 +675,32 @@ router.patch('/:id', async (req: any, res) => {
 router.get('/:id/logo', async (req, res) => {
   try {
     const { id } = req.params;
-    const { data: org } = await supabaseAdmin
+    const { data: org, error } = await supabaseAdmin
       .from('organizations')
       .select('logo_url, name')
       .eq('id', id)
       .single();
 
-    if (!org?.logo_url) {
-      // Serve a placeholder SVG with the first letter
-      const firstLetter = org?.name?.charAt(0).toUpperCase() || 'O';
+    if (error || !org) {
+      // Organization not found - return placeholder
       res.setHeader('Content-Type', 'image/svg+xml');
-      res.send(`<svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-        <rect width="64" height="64" fill="#1a1a2e"/>
-        <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#6EE7F9">
+      res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+        <rect width="256" height="256" fill="#1a1a2e"/>
+        <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">
+          ?
+        </text>
+      </svg>`);
+      return;
+    }
+
+    if (!org.logo_url || org.logo_url === '' || org.logo_url === null) {
+      // Serve a placeholder SVG with the first letter
+      const firstLetter = org.name?.charAt(0).toUpperCase() || 'O';
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+        <rect width="256" height="256" fill="#1a1a2e"/>
+        <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">
           ${firstLetter}
         </text>
       </svg>`);

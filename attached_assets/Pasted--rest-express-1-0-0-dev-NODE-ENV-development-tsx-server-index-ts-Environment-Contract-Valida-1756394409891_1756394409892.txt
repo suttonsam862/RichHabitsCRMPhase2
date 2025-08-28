@@ -1,0 +1,277 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+=== Environment Contract Validation ===
+✓ NODE_ENV: development
+✓ PORT: 5000
+✓ ORIGINS: http://localhost:5173,http://localhost:5000
+✓ DATABASE_URL: postgresql://neondb_***
+✓ VITE_SUPABASE_URL: https://qkampkccsdie***
+✓ VITE_SUPABASE_ANON_KEY: eyJhbG*** (length: 208)
+✓ SUPABASE_SERVICE_ROLE_KEY: eyJhbG*** (length: 219)
+✓ JWT_SECRET: BzbblH*** (length: 64)
+✓ OPENAI_API_KEY: sk-pro*** (length: 164)
+✓ ENABLE_DOMAIN_STUBS: 0
+✓ All environment variables validated successfully
+
+[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+🔌 Forcing connection to Supabase: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+🚀 Server running on http://0.0.0.0:5000
+📊 Environment: development
+📁 API routes available at: http://0.0.0.0:5000/api
+✅ Vite dev server configured
+3:19:04 PM [vite] Serving SPA route: /
+[15:19:04.503] INFO (1887): GET 200 64ms /
+    rid: "3p6juxek"
+    method: "GET"
+    path: "/"
+    status: 200
+    ms: 64
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[15:19:05.375] INFO (1887): GET 200 15ms /src/main.tsx?v=6ZnKJFrroRJ9WHcaiBIpu
+    rid: "kjq5o64o"
+    method: "GET"
+    path: "/src/main.tsx?v=6ZnKJFrroRJ9WHcaiBIpu"
+    status: 200
+    ms: 15
+[15:19:06.284] INFO (1887): GET 304 1ms /@react-refresh
+    rid: "o7ydyz15"
+    method: "GET"
+    path: "/@react-refresh"
+    status: 304
+    ms: 1
+[15:19:06.320] INFO (1887): GET 200 980ms /@vite/client
+    rid: "pu3kc853"
+    method: "GET"
+    path: "/@vite/client"
+    status: 200
+    ms: 980
+[15:19:06.320] INFO (1887): GET 200 8ms /src/App.tsx?v=6ZnKJFrroRJ9WHcaiBIpu
+    rid: "0l4ob5r9"
+    method: "GET"
+    path: "/src/App.tsx?v=6ZnKJFrroRJ9WHcaiBIpu"
+    status: 200
+    ms: 8
+[15:19:06.596] INFO (1887): GET 200 278ms /src/index.css?v=6ZnKJFrroRJ9WHcaiBIpu
+    rid: "3xinunwb"
+    method: "GET"
+    path: "/src/index.css?v=6ZnKJFrroRJ9WHcaiBIpu"
+    status: 200
+    ms: 278
+[15:19:06.606] INFO (1887): GET 304 0ms /src/components/ui/toaster.tsx
+    rid: "a9wgwyt7"
+    method: "GET"
+    path: "/src/components/ui/toaster.tsx"
+    status: 304
+    ms: 0
+[15:19:06.607] INFO (1887): GET 304 0ms /src/routes.tsx
+    rid: "95fbvp4k"
+    method: "GET"
+    path: "/src/routes.tsx"
+    status: 304
+    ms: 0
+[15:19:06.642] INFO (1887): GET 304 1ms /src/components/ui/tooltip.tsx
+    rid: "s9te0vvo"
+    method: "GET"
+    path: "/src/components/ui/tooltip.tsx"
+    status: 304
+    ms: 1
+[15:19:06.669] INFO (1887): GET 304 1ms /src/lib/queryClient.ts
+    rid: "n3qtmxx2"
+    method: "GET"
+    path: "/src/lib/queryClient.ts"
+    status: 304
+    ms: 1
+[15:19:06.766] INFO (1887): GET 304 0ms /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs
+    rid: "cz4xufnv"
+    method: "GET"
+    path: "/@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs"
+    status: 304
+    ms: 0
+[15:19:06.767] INFO (1887): GET 304 0ms /src/components/DevOverlay.tsx
+    rid: "srth11k1"
+    method: "GET"
+    path: "/src/components/DevOverlay.tsx"
+    status: 304
+    ms: 0
+[15:19:06.776] INFO (1887): GET 304 0ms /src/hooks/use-toast.ts
+    rid: "x5xr4np1"
+    method: "GET"
+    path: "/src/hooks/use-toast.ts"
+    status: 304
+    ms: 0
+[15:19:06.783] INFO (1887): GET 304 0ms /src/components/ErrorBoundary.tsx
+    rid: "5cnfuils"
+    method: "GET"
+    path: "/src/components/ErrorBoundary.tsx"
+    status: 304
+    ms: 0
+[15:19:06.783] INFO (1887): GET 304 0ms /src/components/ui/toast.tsx
+    rid: "t8rjwnc9"
+    method: "GET"
+    path: "/src/components/ui/toast.tsx"
+    status: 304
+    ms: 0
+[15:19:06.796] INFO (1887): GET 304 0ms /src/auth/AuthProvider.tsx
+    rid: "ecdbexil"
+    method: "GET"
+    path: "/src/auth/AuthProvider.tsx"
+    status: 304
+    ms: 0
+[15:19:06.928] INFO (1887): GET 304 1ms /src/auth/ProtectedRoute.tsx
+    rid: "3qpdulse"
+    method: "GET"
+    path: "/src/auth/ProtectedRoute.tsx"
+    status: 304
+    ms: 1
+[15:19:06.928] INFO (1887): GET 304 0ms /src/pages/auth/RegisterPage.tsx
+    rid: "q6oy997h"
+    method: "GET"
+    path: "/src/pages/auth/RegisterPage.tsx"
+    status: 304
+    ms: 0
+[15:19:06.930] INFO (1887): GET 304 0ms /src/pages/auth/ResetPasswordPage.tsx
+    rid: "0m45rgp6"
+    method: "GET"
+    path: "/src/pages/auth/ResetPasswordPage.tsx"
+    status: 304
+    ms: 0
+[15:19:06.930] INFO (1887): GET 304 0ms /src/pages/HomePage.tsx
+    rid: "a3vkxb6n"
+    method: "GET"
+    path: "/src/pages/HomePage.tsx"
+    status: 304
+    ms: 0
+[15:19:06.931] INFO (1887): GET 304 0ms /src/pages/auth/LoginPage.tsx
+    rid: "p9zlo2q6"
+    method: "GET"
+    path: "/src/pages/auth/LoginPage.tsx"
+    status: 304
+    ms: 0
+[15:19:06.932] INFO (1887): GET 304 0ms /src/pages/auth/AuthConfirmedPage.tsx
+    rid: "e2hb6ema"
+    method: "GET"
+    path: "/src/pages/auth/AuthConfirmedPage.tsx"
+    status: 304
+    ms: 0
+[15:19:07.035] INFO (1887): GET 304 0ms /src/components/NotFound.tsx
+    rid: "2z0rzjm8"
+    method: "GET"
+    path: "/src/components/NotFound.tsx"
+    status: 304
+    ms: 0
+[15:19:07.036] INFO (1887): GET 304 0ms /src/lib/utils.ts
+    rid: "i460wxgj"
+    method: "GET"
+    path: "/src/lib/utils.ts"
+    status: 304
+    ms: 0
+[15:19:07.038] INFO (1887): GET 304 0ms /src/components/ui/card.tsx
+    rid: "k6k9wd0y"
+    method: "GET"
+    path: "/src/components/ui/card.tsx"
+    status: 304
+    ms: 0
+[15:19:07.038] INFO (1887): GET 304 0ms /src/pages/organizations/CreateWizard.tsx
+    rid: "mdg26tu8"
+    method: "GET"
+    path: "/src/pages/organizations/CreateWizard.tsx"
+    status: 304
+    ms: 0
+[15:19:07.039] INFO (1887): GET 304 0ms /src/lib/supabase.ts
+    rid: "6sfgqv4r"
+    method: "GET"
+    path: "/src/lib/supabase.ts"
+    status: 304
+    ms: 0
+[15:19:07.041] INFO (1887): GET 200 5ms /src/pages/organizations/List.tsx
+    rid: "k42ddz4o"
+    method: "GET"
+    path: "/src/pages/organizations/List.tsx"
+    status: 200
+    ms: 5
+[15:19:07.139] INFO (1887): GET 304 0ms /src/lib/paths.ts
+    rid: "tnfj09nq"
+    method: "GET"
+    path: "/src/lib/paths.ts"
+    status: 304
+    ms: 0
+[15:19:07.140] INFO (1887): GET 304 0ms /src/components/ui/button.tsx
+    rid: "zzjy6g6b"
+    method: "GET"
+    path: "/src/components/ui/button.tsx"
+    status: 304
+    ms: 0
+[15:19:07.141] INFO (1887): GET 304 0ms /src/components/ui/input.tsx
+    rid: "hawcu7jz"
+    method: "GET"
+    path: "/src/components/ui/input.tsx"
+    status: 304
+    ms: 0
+[15:19:07.141] INFO (1887): GET 304 0ms /src/components/ui/label.tsx
+    rid: "mvnqrhmj"
+    method: "GET"
+    path: "/src/components/ui/label.tsx"
+    status: 304
+    ms: 0
+[15:19:07.143] INFO (1887): GET 304 0ms /src/components/ui/alert.tsx
+    rid: "9399z0e9"
+    method: "GET"
+    path: "/src/components/ui/alert.tsx"
+    status: 304
+    ms: 0
+[15:19:07.258] INFO (1887): GET 304 0ms /src/components/ui/GlowCard.tsx
+    rid: "zulz16fj"
+    method: "GET"
+    path: "/src/components/ui/GlowCard.tsx"
+    status: 304
+    ms: 0
+[15:19:07.259] INFO (1887): GET 304 0ms /src/lib/api.ts
+    rid: "31glbpsq"
+    method: "GET"
+    path: "/src/lib/api.ts"
+    status: 304
+    ms: 0
+[15:19:07.262] INFO (1887): GET 304 0ms /src/auth/guard.tsx
+    rid: "zkw5p8po"
+    method: "GET"
+    path: "/src/auth/guard.tsx"
+    status: 304
+    ms: 0
+[15:19:07.263] INFO (1887): GET 304 0ms /src/auth/roles.ts
+    rid: "jeubsn5l"
+    method: "GET"
+    path: "/src/auth/roles.ts"
+    status: 304
+    ms: 0
+[15:19:07.267] INFO (1887): GET 304 0ms /src/features/organizations/gradient.ts
+    rid: "e8w4ts5r"
+    method: "GET"
+    path: "/src/features/organizations/gradient.ts"
+    status: 304
+    ms: 0
+[15:19:07.456] INFO (1887): GET 304 0ms /src/lib/devtools.ts
+    rid: "rmec1c7f"
+    method: "GET"
+    path: "/src/lib/devtools.ts"
+    status: 304
+    ms: 0
+3:19:12 PM [vite] Skipping frontend handler for API route: /api/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo
+[15:19:12.232] INFO (1887): organizations.list ok
+    rid: "8i4lsl0w"
+    count: 13
+[15:19:12.235] INFO (1887): GET 304 402ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "8i4lsl0w"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 402
+[15:19:12.380] WARN (1887): GET 404 4ms /api/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo
+    rid: "90iq0vad"
+    method: "GET"
+    path: "/api/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo"
+    status: 404
+    ms: 4

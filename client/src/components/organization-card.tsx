@@ -53,12 +53,13 @@ export function OrganizationCard({
       >
         {/* Logo overlay on gradient background */}
         {logo_url && !organization.title_card_url && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
             <img 
-              src={logo_url.startsWith('http') ? logo_url : `/api/organizations/${organization.id}/logo`}
+              src={logo_url.startsWith('http') ? logo_url : `/api/v1/organizations/${organization.id}/logo`}
               alt=""
-              className="w-32 h-32 object-contain opacity-10"
+              className="w-full h-auto object-cover opacity-10"
               aria-hidden="true"
+              style={{ minHeight: '150%' }}
             />
           </div>
         )}
@@ -87,7 +88,7 @@ export function OrganizationCard({
                     {/* Semitransparent logo overlay against gradient */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                     <img 
-                      src={logo_url.startsWith('http') ? logo_url : `/api/organizations/${organization.id}/logo`} 
+                      src={logo_url.startsWith('http') ? logo_url : `/api/v1/organizations/${organization.id}/logo`} 
                       alt={`${name} logo`}
                       className="relative z-10 w-full h-full object-cover"
                       data-testid={`img-organization-logo-${organization.id}`}
