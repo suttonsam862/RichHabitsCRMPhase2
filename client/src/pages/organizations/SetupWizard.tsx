@@ -14,7 +14,7 @@ export default function SetupWizard(){
     const r = await api.get(`/api/v1/organizations/${id}/setup`);
     if(!r.success){ setErr(r.error.message); return; }
     setOrg(r.data.org); setSports(r.data.sports||[]);
-    setFinanceEmail(r.data.org?.finance_email||'');
+    // Note: finance_email not available in current schema, leaving empty for now
     setBrand1(r.data.org?.brand_primary||''); setBrand2(r.data.org?.brand_secondary||'');
   })()},[id]);
 
@@ -38,7 +38,7 @@ export default function SetupWizard(){
     const payload:any = {
       brand_primary: brand1 || undefined,
       brand_secondary: brand2 || undefined,
-      finance_email: financeEmail || undefined,
+      // finance_email not available in current schema
       complete: true
     };
     const r = await api.post(`/api/v1/organizations/${id}/setup`, payload);
@@ -79,30 +79,34 @@ export default function SetupWizard(){
           </section>
 
           <section>
-            <h2 className="font-semibold">Finance & Tax</h2>
+            <h2 className="font-semibold">Finance & Tax (Coming Soon)</h2>
             <div className="grid sm:grid-cols-2 gap-3 mt-2">
               <div>
-                <label className="text-sm">Finance Email (optional)</label>
-                <input className="input w-full mt-1" value={financeEmail} onChange={e=>setFinanceEmail(e.target.value)} placeholder="finance@org.com"/>
+                <label className="text-sm">Finance Email (not available yet)</label>
+                <input className="input w-full mt-1" value={financeEmail} onChange={e=>setFinanceEmail(e.target.value)} placeholder="finance@org.com" disabled title="Finance email field not yet available in schema"/>
               </div>
               <div>
-                <label className="text-sm block">Tax Exemption (optional)</label>
-                <input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={e=>{ const f=e.target.files?.[0]; if(f) signAndUploadTax(f); }}/>
+                <label className="text-sm block">Tax Exemption (not available yet)</label>
+                <input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={e=>{ const f=e.target.files?.[0]; if(f) signAndUploadTax(f); }} disabled title="Tax exemption not yet available in schema"/>
                 {taxKey && <p className="text-white/60 text-xs mt-1">Uploaded</p>}
               </div>
             </div>
           </section>
 
           <section>
-            <h2 className="font-semibold">Per-Sport Shipping</h2>
+            <h2 className="font-semibold">Per-Sport Shipping (Coming Soon)</h2>
             <div className="space-y-3 mt-2">
-              {sports.map(s => (
-                <div key={s.sport_id} className="grid sm:grid-cols-3 gap-3">
-                  <input className="input" placeholder="Line 1" onBlur={e=>saveAddress(s.sport_id, { ship_address_line1: e.target.value, ship_city: s.ship_city||'', ship_state: s.ship_state||'', ship_postal_code: s.ship_postal_code||'', ship_country: s.ship_country||'' })}/>
-                  <input className="input" placeholder="City" onBlur={e=>saveAddress(s.sport_id, { ship_address_line1: s.ship_address_line1||'', ship_city: e.target.value, ship_state: s.ship_state||'', ship_postal_code: s.ship_postal_code||'', ship_country: s.ship_country||'' })}/>
-                  <input className="input" placeholder="State" onBlur={e=>saveAddress(s.sport_id, { ship_address_line1: s.ship_address_line1||'', ship_city: s.ship_city||'', ship_state: e.target.value, ship_postal_code: s.ship_postal_code||'', ship_country: s.ship_country||'' })}/>
-                </div>
-              ))}
+              {sports.length === 0 ? (
+                <p className="text-white/60 text-sm">No sports configured yet. Sports and shipping addresses will be available once the schema is updated.</p>
+              ) : (
+                sports.map(s => (
+                  <div key={s.sport_id} className="grid sm:grid-cols-3 gap-3">
+                    <input className="input" placeholder="Line 1" disabled title="Shipping addresses not yet available in schema"/>
+                    <input className="input" placeholder="City" disabled title="Shipping addresses not yet available in schema"/>
+                    <input className="input" placeholder="State" disabled title="Shipping addresses not yet available in schema"/>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 
