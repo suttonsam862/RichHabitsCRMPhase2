@@ -293,7 +293,7 @@ export default function OrganizationsList(){
               <option value="asc">Asc</option>
             </select>
           </div>
-        </div>
+        </motion.div>
 
         {/* Organization Groups */}
         {loading ? (
