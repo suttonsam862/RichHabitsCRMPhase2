@@ -1,7 +1,8 @@
 
 import { Router } from 'express';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
-import { createRequestLogger } from '../../lib/log.js';
+import { logger } from '../../lib/log.js';
+import { logSbError } from '../../lib/dbLog.js';
 
 const router = Router();
 
@@ -38,10 +39,7 @@ const FIELD_TO_COLUMN_MAPPING = {
 };
 
 router.get('/schema-diagnostics', async (req, res) => {
-  const logger = createRequestLogger(req);
-  
   try {
-    logger.info('🔍 STARTING COMPREHENSIVE SCHEMA DIAGNOSTICS');
     
     const diagnostics = {
       timestamp: new Date().toISOString(),
@@ -66,7 +64,6 @@ router.get('/schema-diagnostics', async (req, res) => {
         .select();
       
       if (orgColumnsError) {
-        logger.warn('⚠️ Could not fetch column info via RPC, trying direct query...');
         
         // Fallback: try a simple select to see what columns exist
         const { data: sampleData, error: sampleError } = await supabaseAdmin
@@ -75,14 +72,13 @@ router.get('/schema-diagnostics', async (req, res) => {
           .limit(1);
         
         if (sampleError) {
-          logger.error('❌ ORGANIZATIONS TABLE ACCESS FAILED:', sampleError);
+          logSbError(req, 'diagnostics.orgs.access', sampleError);
           diagnostics.database_checks.organizations = {
             accessible: false,
             error: sampleError.message
           };
         } else {
           const availableColumns = sampleData && sampleData.length > 0 ? Object.keys(sampleData[0]) : [];
-          logger.info('✅ ORGANIZATIONS TABLE ACCESSIBLE, columns:', availableColumns);
           
           diagnostics.database_checks.organizations = {
             accessible: true,
@@ -104,14 +100,13 @@ router.get('/schema-diagnostics', async (req, res) => {
           });
         }
       } else {
-        logger.info('✅ GOT ORGANIZATIONS COLUMN INFO:', orgColumns);
         diagnostics.database_checks.organizations = {
           accessible: true,
           columns: orgColumns
         };
       }
     } catch (orgError: any) {
-      logger.error('❌ ORGANIZATIONS TABLE CHECK FAILED:', orgError);
+      logSbError(req, 'diagnostics.orgs.check', orgError);
       diagnostics.database_checks.organizations = {
         accessible: false,
         error: orgError.message

@@ -11,7 +11,8 @@
  */
 
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
-import { createRequestLogger } from '../lib/log.js';
+import { logger } from '../lib/log.js';
+import { logSbError } from '../lib/dbLog.js';
 
 // Hardened column definitions - DO NOT CHANGE
 const CORE_COLUMNS = [
@@ -60,19 +61,9 @@ export class OrganizationsService {
     offset?: number;
   }, req?: any): Promise<{ success: boolean; data?: OrganizationData[]; count?: number; error?: string; details?: any }> {
     
-    const logger = createRequestLogger(req || { 
-      method: 'GET', 
-      url: '/api/organizations/service',
-      headers: { 'user-agent': 'Organizations Service' }
-    });
-    
     try {
-      logger.info('🏢 ORGANIZATIONS SERVICE - Listing organizations');
-      logger.info('📋 Parameters:', params);
-      
       // Build query with hardened column selection
       const columnsList = ALL_COLUMNS.join(', ');
-      logger.info('🔍 Selecting columns:', columnsList);
       
       let query = supabaseAdmin
         .from('organizations')
@@ -81,31 +72,27 @@ export class OrganizationsService {
       // Apply filters
       if (params.q && typeof params.q === 'string') {
         query = query.ilike('name', `%${params.q}%`);
-        logger.info('🔎 Search filter applied:', params.q);
       }
       
       if (params.includeArchived !== 'true') {
         query = query.eq('is_archived', false);
-        logger.info('📁 Excluding archived organizations');
       }
       
       // Apply sorting
       const sortColumn = params.sort === 'updated' ? 'updated_at' : 'name';
       const ascending = params.dir === 'asc';
       query = query.order(sortColumn, { ascending });
-      logger.info('📊 Sorting by:', sortColumn, ascending ? 'ASC' : 'DESC');
       
       // Apply pagination
       const limit = params.limit || 24;
       const offset = params.offset || 0;
       query = query.range(offset, offset + limit - 1);
-      logger.info('📄 Pagination:', { limit, offset });
       
       // Execute query
       const { data: organizations, error, count } = await query;
       
       if (error) {
-        logger.error('❌ DATABASE QUERY FAILED:', error);
+        logSbError(req, 'orgs.service.list', error);
         return {
           success: false,
           error: 'Database query failed',
@@ -114,12 +101,7 @@ export class OrganizationsService {
       }
       
       // Transform data using hardened mapping
-      const transformedData = organizations?.map(org => this.transformOrganization(org, logger)) || [];
-      
-      logger.info('✅ ORGANIZATIONS RETRIEVED:', {
-        count: transformedData.length,
-        hasSetupData: transformedData.some(org => org.setupComplete !== null)
-      });
+      const transformedData = organizations?.map(org => this.transformOrganization(org)) || [];
       
       return {
         success: true,
@@ -128,7 +110,7 @@ export class OrganizationsService {
       };
       
     } catch (error: any) {
-      logger.error('💥 SERVICE ERROR:', error);
+      logSbError(req, 'orgs.service.list.catch', error);
       return {
         success: false,
         error: 'Internal service error',
@@ -141,10 +123,7 @@ export class OrganizationsService {
    * HARDENED METHOD: Transform database row to frontend format
    * Handles missing fields gracefully with sensible defaults
    */
-  private static transformOrganization(dbRow: any, logger?: any): OrganizationData {
-    if (logger) {
-      logger.info('🔄 Transforming organization:', { id: dbRow.id, name: dbRow.name });
-    }
+  private static transformOrganization(dbRow: any): OrganizationData {
     
     return {
       // Core fields (required)
@@ -169,19 +148,7 @@ export class OrganizationsService {
   }
 
   static async getOrganizationById(id: string, req?: any): Promise<{ success: boolean; data?: OrganizationData; error?: string; details?: any }> {
-    // Create a mock request object if not provided
-    const mockReq = req || { 
-      method: 'GET', 
-      url: `/organizations/${id}`,
-      headers: {
-        'user-agent': 'Organization Service'
-      }
-    };
-    const logger = createRequestLogger(mockReq);
-    
     try {
-      logger.info(`🔍 GETTING ORGANIZATION BY ID: ${id}`);
-      
       // Query organization by ID using only guaranteed columns
       const { data, error } = await supabaseAdmin
         .from('organizations')
@@ -192,11 +159,11 @@ export class OrganizationsService {
       if (error) {
         if (error.code === 'PGRST116') {
           // No rows returned - organization not found
-          logger.info(`📭 Organization not found: ${id}`);
+          // Organization not found
           return { success: false, error: 'Organization not found' };
         }
         
-        logger.error('❌ DATABASE QUERY FAILED:', error);
+        logSbError(req, 'orgs.service.getById', error);
         return { 
           success: false, 
           error: 'Database query failed',
@@ -205,19 +172,19 @@ export class OrganizationsService {
       }
 
       if (!data) {
-        logger.info(`📭 Organization not found: ${id}`);
+        // Organization not found
         return { success: false, error: 'Organization not found' };
       }
 
-      logger.info(`✅ ORGANIZATION FOUND: ${data.name}`);
+      // Organization found
 
       // Map database result to DTO using the existing transform method
-      const mappedData = this.transformOrganization(data, logger);
+      const mappedData = this.transformOrganization(data);
       
       return { success: true, data: mappedData };
       
     } catch (error: any) {
-      logger.error('💥 SERVICE ERROR:', error);
+      logSbError(req, 'orgs.service.getById.catch', error);
       return { 
         success: false, 
         error: 'Service error',

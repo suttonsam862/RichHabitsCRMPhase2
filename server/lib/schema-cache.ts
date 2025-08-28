@@ -1,45 +1,33 @@
 
 import { supabaseAdmin } from './supabaseAdmin.js';
-import { createRequestLogger } from './log.js';
+import { logger } from './log.js';
 
 export async function reloadPostgrestSchemaCache() {
-  const logger = createRequestLogger({ method: 'POST', url: '/schema-reload' } as any);
-  
   try {
-    logger.info('🔄 RELOADING POSTGREST SCHEMA CACHE...');
-    
     // Method 1: Try using NOTIFY
     const { error: notifyError } = await supabaseAdmin
       .rpc('notify_schema_reload');
     
     if (notifyError) {
-      logger.warn('⚠️ NOTIFY method failed, trying direct approach...', notifyError);
-      
       // Method 2: Try direct SQL
       const { error: sqlError } = await supabaseAdmin
         .from('pg_notify')
         .insert([{ channel: 'pgrst', payload: 'reload schema' }]);
       
       if (sqlError) {
-        logger.error('❌ Direct SQL notify failed:', sqlError);
         return { success: false, error: sqlError };
       }
     }
     
-    logger.info('✅ SCHEMA CACHE RELOAD TRIGGERED');
     return { success: true };
     
   } catch (error: any) {
-    logger.error('💥 SCHEMA CACHE RELOAD FAILED:', error);
     return { success: false, error };
   }
 }
 
 export async function checkSchemaCache() {
-  const logger = createRequestLogger({ method: 'GET', url: '/schema-check' } as any);
-  
   try {
-    logger.info('🔍 CHECKING SCHEMA CACHE STATUS...');
     
     // Test if we can access the organizations table with expected columns
     const testColumns = [
