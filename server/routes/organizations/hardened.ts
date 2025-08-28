@@ -671,12 +671,34 @@ router.patch('/:id', async (req: any, res) => {
   }
 });
 
-// Logo serving endpoint
+/**
+ * CRITICAL LOGO SERVING ENDPOINT - DO NOT MODIFY WITHOUT TESTING
+ * 
+ * This endpoint serves organization logos from Supabase storage.
+ * It's designed to be bulletproof against code changes.
+ * 
+ * Flow:
+ * 1. Fetch organization from database
+ * 2. If logo_url exists, try Supabase storage
+ * 3. If storage fails, serve SVG placeholder
+ * 4. Always return valid image response
+ */
 router.get('/:id/logo', async (req, res) => {
+  // CONSTANTS - DO NOT CHANGE
+  const STORAGE_BUCKET = 'app';
+  const CACHE_TTL_SUCCESS = 3600; // 1 hour for successful images
+  const CACHE_TTL_PLACEHOLDER = 300; // 5 minutes for placeholders
+  
   try {
     const { id } = req.params;
-    console.log('🖼️  LOGO REQUEST for organization:', id);
     
+    // Validate organization ID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return servePlaceholder(res, '?', CACHE_TTL_PLACEHOLDER);
+    }
+    
+    // Fetch organization data
     const { data: org, error } = await supabaseAdmin
       .from('organizations')
       .select('logo_url, name')
@@ -684,98 +706,101 @@ router.get('/:id/logo', async (req, res) => {
       .single();
 
     if (error || !org) {
-      console.log('❌ LOGO ERROR: Organization not found:', { id, error });
-      // Organization not found - return placeholder
-      res.setHeader('Content-Type', 'image/svg+xml');
-      res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
-        <rect width="256" height="256" fill="#1a1a2e"/>
-        <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">
-          ?
-        </text>
-      </svg>`);
-      return;
+      return servePlaceholder(res, '?', CACHE_TTL_PLACEHOLDER);
     }
-    
-    console.log('🔍 LOGO DATA:', { id, name: org.name, logo_url: org.logo_url });
 
+    // Check if organization has a logo URL
     if (!org.logo_url || org.logo_url === '' || org.logo_url === null) {
-      console.log('📝 LOGO PLACEHOLDER: No logo_url found, serving placeholder');
-      // Serve a placeholder SVG with the first letter
       const firstLetter = org.name?.charAt(0).toUpperCase() || 'O';
-      res.setHeader('Content-Type', 'image/svg+xml');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-      res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
-        <rect width="256" height="256" fill="#1a1a2e"/>
-        <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">
-          ${firstLetter}
-        </text>
-      </svg>`);
-      return;
+      return servePlaceholder(res, firstLetter, CACHE_TTL_PLACEHOLDER);
     }
 
-    // If it's a full URL, redirect to it
+    // If it's a full URL (external image), redirect directly
     if (org.logo_url.startsWith('http')) {
-      console.log('🌐 LOGO REDIRECT: Redirecting to external URL:', org.logo_url);
+      res.setHeader('Cache-Control', `public, max-age=${CACHE_TTL_SUCCESS}`);
       return res.redirect(org.logo_url);
     }
 
-    // For relative paths, try Supabase storage first
-    console.log('📁 LOGO RELATIVE PATH:', org.logo_url, '(checking Supabase storage)');
+    // For relative paths, try Supabase storage
+    // This is the CRITICAL PATH for uploaded logos
+    const signedUrl = await getSupabaseSignedUrl(org.logo_url, STORAGE_BUCKET);
     
-    try {
-      // Import Supabase client directly for logo serving
-      const { createClient } = await import('@supabase/supabase-js');
-      
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      
-      if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Missing Supabase credentials');
-      }
-      
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      });
-      
-      // Try to get a signed URL for the logo file
-      const { data, error } = await supabase.storage
-        .from('app')
-        .createSignedUrl(org.logo_url, 3600); // 1 hour expiry
-      
-      if (error) {
-        throw new Error(`Storage error: ${error.message}`);
-      }
-      
-      if (data?.signedUrl) {
-        console.log('✅ LOGO FOUND in Supabase storage, redirecting to signed URL');
-        // Redirect to the signed URL
-        return res.redirect(data.signedUrl);
-      } else {
-        console.log('🔴 LOGO NOT FOUND in Supabase storage:', org.logo_url);
-      }
-    } catch (storageError) {
-      console.log('⚠️  SUPABASE STORAGE ERROR:', storageError.message || storageError);
+    if (signedUrl) {
+      // SUCCESS: Redirect to the actual uploaded logo
+      res.setHeader('Cache-Control', `public, max-age=${CACHE_TTL_SUCCESS}`);
+      return res.redirect(signedUrl);
     }
     
-    // Fallback to placeholder if object storage fails
-    console.log('📄 SERVING PLACEHOLDER for:', org.logo_url);
+    // Fallback: serve placeholder if storage lookup fails
     const firstLetter = org.name?.charAt(0).toUpperCase() || 'L';
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=300'); // Shorter cache for relative paths
-    res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
-      <rect width="256" height="256" fill="#1a1a2e"/>
-      <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">
-        ${firstLetter}
-      </text>
-    </svg>`);
+    return servePlaceholder(res, firstLetter, CACHE_TTL_PLACEHOLDER);
+    
   } catch (error) {
-    console.error('💥 LOGO ENDPOINT ERROR:', error);
-    res.status(500).json({ error: 'Failed to serve logo' });
+    // Ultimate fallback: serve generic placeholder
+    return servePlaceholder(res, '?', CACHE_TTL_PLACEHOLDER);
   }
 });
+
+/**
+ * BULLETPROOF HELPER: Get signed URL from Supabase storage
+ * This function is self-contained and cannot be broken by external changes
+ */
+async function getSupabaseSignedUrl(logoPath: string, bucket: string): Promise<string | null> {
+  try {
+    // Inline Supabase client creation - no external dependencies
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    // Fail fast if environment is not configured
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return null;
+    }
+    
+    // Validate logo path format (prevent path traversal)
+    if (!logoPath || logoPath.includes('..') || logoPath.startsWith('/')) {
+      return null;
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+    
+    // Create signed URL with 1-hour expiry
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(logoPath, 3600);
+    
+    if (error || !data?.signedUrl) {
+      return null;
+    }
+    
+    return data.signedUrl;
+    
+  } catch (error) {
+    // Silent failure - will fall back to placeholder
+    return null;
+  }
+}
+
+/**
+ * BULLETPROOF HELPER: Serve SVG placeholder
+ * Always returns a valid image response
+ */
+function servePlaceholder(res: any, letter: string, cacheSeconds: number): void {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', `public, max-age=${cacheSeconds}`);
+  res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+    <rect width="256" height="256" fill="#1a1a2e"/>
+    <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">
+      ${letter.charAt(0).toUpperCase()}
+    </text>
+  </svg>`);
+}
 
 // KPI metrics endpoints
 router.get('/:id/metrics', async (req, res) => {

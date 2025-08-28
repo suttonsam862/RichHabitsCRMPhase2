@@ -29,11 +29,6 @@ export default function DevOverlay(){
             style={{width:'100%',height:200,background:'transparent',border:'none',borderRadius:12}} />
           <div style={{padding:8,borderTop:'1px solid #333',maxHeight:120,overflow:'auto'}}>
             <div style={{color:'#ff6b6b',fontSize:11,fontFamily:'monospace'}}>
-              <strong>🔍 Logo Debug Info:</strong>
-              <div style={{color:'#ffd43b',marginTop:4}}>
-                Database mismatch detected! API has 13 orgs, SQL tool has 1 org.
-                SQL tool connects to different DB than Supabase API.
-              </div>
               <strong>🖼️ Image Errors:</strong>
               {errors.length === 0 ? (
                 <div style={{color:'#666',fontStyle:'italic'}}>No image errors detected</div>
