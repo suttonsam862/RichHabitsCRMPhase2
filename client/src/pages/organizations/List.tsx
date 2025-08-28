@@ -369,13 +369,24 @@ export default function OrganizationsList(){
                   {/* Header gradient */}
                   <div className="h-28 relative" style={{ background: g }}>
                     <div className="absolute inset-0 bg-black/20"></div>
+                    {/* Logo overlay on gradient */}
+                    {org.logoUrl && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <img 
+                          src={org.logoUrl.startsWith('http') ? org.logoUrl : `/api/organizations/${org.id}/logo`}
+                          alt=""
+                          className="w-24 h-24 object-contain opacity-10"
+                          aria-hidden="true"
+                        />
+                      </div>
+                    )}
                     {org.isArchived && (
-                      <div className="absolute top-3 left-3 px-2 py-1 bg-red-500/80 text-white text-xs rounded-md">
+                      <div className="absolute top-3 left-3 px-2 py-1 bg-red-500/80 text-white text-xs rounded-md z-10">
                         Archived
                       </div>
                     )}
                     {needsSetup && (
-                      <div className="absolute top-3 right-3 px-2 py-1 bg-yellow-500 text-black text-xs rounded-md font-semibold animate-pulse">
+                      <div className="absolute top-3 right-3 px-2 py-1 bg-yellow-500 text-black text-xs rounded-md font-semibold animate-pulse z-10">
                         SETUP NEEDED
                       </div>
                     )}
@@ -391,11 +402,16 @@ export default function OrganizationsList(){
                           className="h-full w-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement?.classList.add('logo-error');
+                            const fallback = document.createElement('div');
+                            fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-xl font-bold text-white';
+                            fallback.textContent = org.name.charAt(0);
+                            e.currentTarget.parentElement?.appendChild(fallback);
                           }}
                         />
                       ) : (
-                        <div className="text-xs text-white/50 text-center">No<br/>Logo</div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-xl font-bold text-white">
+                          {org.name.charAt(0)}
+                        </div>
                       )}
                       {/* Setup status indicator */}
                       {needsSetup && (

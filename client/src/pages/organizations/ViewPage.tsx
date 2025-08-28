@@ -102,13 +102,13 @@ export default function OrganizationViewPage() {
             </Link>
             <div className="flex items-center gap-4">
               {/* Logo Display */}
-              {organization.logoUrl && (
+              {(organization.logoUrl || organization.logo_url) && (
                 <div className="relative w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-cyan-500/30 shadow-lg">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                   <img 
-                    src={organization.logoUrl.startsWith('http') ? organization.logoUrl : `/api/organizations/${organization.id}/logo`}
+                    src={(organization.logoUrl || organization.logo_url)?.startsWith('http') ? (organization.logoUrl || organization.logo_url) : `/api/organizations/${organization.id}/logo`}
                     alt={`${organization.name} logo`}
-                    className="relative z-10 w-full h-full object-cover opacity-90"
+                    className="relative z-10 w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = document.createElement('div');

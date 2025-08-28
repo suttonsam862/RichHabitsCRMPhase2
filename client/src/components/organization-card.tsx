@@ -8,12 +8,14 @@ interface OrganizationCardProps {
   organization: OrganizationWithSports;
   onClick: () => void;
   gradientVariant?: 'default' | 'blue' | 'green' | 'orange';
+  showSetupBadge?: boolean;
 }
 
 export function OrganizationCard({ 
   organization, 
   onClick, 
-  gradientVariant = 'default' 
+  gradientVariant = 'default',
+  showSetupBadge = false
 }: OrganizationCardProps) {
   const { name, logo_url, sports, universal_discounts, state, is_business, created_at } = organization;
   
@@ -49,9 +51,30 @@ export function OrganizationCard({
           backgroundPosition: 'center',
         } : undefined}
       >
+        {/* Logo overlay on gradient background */}
+        {logo_url && !organization.title_card_url && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img 
+              src={logo_url.startsWith('http') ? logo_url : `/api/organizations/${organization.id}/logo`}
+              alt=""
+              className="w-32 h-32 object-contain opacity-10"
+              aria-hidden="true"
+            />
+          </div>
+        )}
+        
         {/* Overlay for readability when title card is present */}
         {organization.title_card_url && (
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        )}
+        
+        {/* Setup Needed Badge */}
+        {showSetupBadge && (
+          <div className="absolute top-4 right-4 z-20">
+            <Badge className="bg-yellow-500/80 text-black font-semibold px-3 py-1 animate-pulse">
+              SETUP NEEDED
+            </Badge>
+          </div>
         )}
         
         <div className="neon-card-inner h-full flex flex-col justify-between relative z-10">
@@ -64,10 +87,17 @@ export function OrganizationCard({
                     {/* Semitransparent logo overlay against gradient */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                     <img 
-                      src={logo_url.startsWith('http') ? logo_url : `https://via.placeholder.com/48x48/6EE7F9/ffffff?text=${name.charAt(0)}`} 
+                      src={logo_url.startsWith('http') ? logo_url : `/api/organizations/${organization.id}/logo`} 
                       alt={`${name} logo`}
-                      className="relative z-10 w-full h-full object-cover opacity-90"
+                      className="relative z-10 w-full h-full object-cover"
                       data-testid={`img-organization-logo-${organization.id}`}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = document.createElement('div');
+                        fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-lg font-bold text-white';
+                        fallback.textContent = name.charAt(0);
+                        e.currentTarget.parentElement?.appendChild(fallback);
+                      }}
                     />
                   </div>
                 ) : (
