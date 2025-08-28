@@ -493,7 +493,7 @@ export default function UsersManagement() {
             <div className="text-gray-400">Recent (30d)</div>
           </div>
           <div className="bg-gray-800/50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-400">{stats.byRole.contact || 0}</div>
+            <div className="text-2xl font-bold text-blue-400">{stats.byRole?.contact || 0}</div>
             <div className="text-gray-400">Sport Contacts</div>
           </div>
         </div>
