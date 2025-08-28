@@ -567,4 +567,107 @@ router.post('/:id/tax/apply', async (req: any, res) => {
   }
 });
 
+// PATCH route for general organization updates
+const UpdateOrganizationSchema = z.object({
+  name: z.string().min(1).optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  notes: z.string().optional(),
+  brandPrimary: z.string().optional(),
+  brandSecondary: z.string().optional(),
+  isBusiness: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
+  isArchived: z.boolean().optional(),
+  state: z.string().optional(),
+  logoUrl: z.string().optional()
+});
+
+router.patch('/:id', async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Organization ID is required'
+      });
+    }
+
+    const parse = UpdateOrganizationSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: parse.error.flatten()
+      });
+    }
+
+    // Map camelCase to snake_case for database
+    const patch: any = {};
+    const data = parse.data;
+    
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.address !== undefined) patch.address = data.address;
+    if (data.phone !== undefined) patch.phone = data.phone;
+    if (data.email !== undefined) patch.email = data.email;
+    if (data.notes !== undefined) patch.notes = data.notes;
+    if (data.brandPrimary !== undefined) patch.brand_primary = data.brandPrimary;
+    if (data.brandSecondary !== undefined) patch.brand_secondary = data.brandSecondary;
+    if (data.isBusiness !== undefined) patch.is_business = data.isBusiness;
+    if (data.tags !== undefined) patch.tags = data.tags;
+    if (data.isArchived !== undefined) patch.is_archived = data.isArchived;
+    if (data.state !== undefined) patch.state = data.state;
+    if (data.logoUrl !== undefined) patch.logo_url = data.logoUrl;
+    
+    // Add updated timestamp
+    patch.updated_at = new Date().toISOString();
+    
+    // Generate gradient if both brand colors are provided
+    if (patch.brand_primary && patch.brand_secondary) {
+      patch.gradient_css = `linear-gradient(135deg, ${patch.brand_primary} 0%, ${patch.brand_secondary} 100%)`;
+    }
+
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from('organizations')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) {
+      logSbError(req, 'orgs.update', updateError);
+      return res.status(400).json({
+        success: false,
+        error: 'Database update failed',
+        details: updateError.message
+      });
+    }
+
+    // Transform response to camelCase using the same service
+    const { OrganizationsService } = await import('../../services/OrganizationsService.js');
+    const result = await OrganizationsService.getOrganizationById(id, req);
+    
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    const rid = (res as any).locals?.rid;
+    logger.info({ rid, orgId: id, updates: Object.keys(patch) }, 'organizations.update ok');
+
+    return res.json({
+      success: true,
+      data: result.data
+    });
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.update.route', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 export default router;

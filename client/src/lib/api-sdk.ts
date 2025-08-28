@@ -119,7 +119,7 @@ export async function listOrganizations(
 }
 
 export async function getOrganization(id: string): Promise<OrganizationDTO> {
-  const response = await apiRequest<OrganizationDTO>(`/organizations/${id}`);
+  const response = await apiRequest<OrganizationDTO>(`/v1/organizations/${id}`);
   
   if (!response.success) {
     throw new ApiError(response.error || 'Failed to fetch organization', 404);
@@ -129,7 +129,7 @@ export async function getOrganization(id: string): Promise<OrganizationDTO> {
 }
 
 export async function createOrganization(data: Partial<OrganizationDTO>): Promise<OrganizationDTO> {
-  const response = await apiRequest<OrganizationDTO>('/organizations', {
+  const response = await apiRequest<OrganizationDTO>('/v1/organizations', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -145,7 +145,7 @@ export async function updateOrganization(
   id: string, 
   data: Partial<OrganizationDTO>
 ): Promise<OrganizationDTO> {
-  const response = await apiRequest<OrganizationDTO>(`/organizations/${id}`, {
+  const response = await apiRequest<OrganizationDTO>(`/v1/organizations/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
@@ -158,7 +158,7 @@ export async function updateOrganization(
 }
 
 export async function deleteOrganization(id: string): Promise<void> {
-  const response = await apiRequest<void>(`/organizations/${id}`, {
+  const response = await apiRequest<void>(`/v1/organizations/${id}`, {
     method: 'DELETE',
   });
   
@@ -177,7 +177,7 @@ export async function getOrganizationColumns(): Promise<{
     columns: string[];
     required: string[];
     optional: string[];
-  }>('/organizations/__columns');
+  }>('/v1/organizations/__columns');
   return response.data;
 }
 

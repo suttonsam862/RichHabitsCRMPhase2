@@ -8,7 +8,7 @@ interface Organization {
   createdBy?: string;
   sports?: string[];
 }
-const BASE_URL = '/api/organizations';
+const BASE_URL = '/api/v1/organizations';
 export const createOrganization = async (organizationData: Omit<Organization, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { sports?: string[] }): Promise<Organization> => {
   try {
     const token = (await sb?.auth.getSession())?.data.session?.access_token;

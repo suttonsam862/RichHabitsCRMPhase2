@@ -57,19 +57,19 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       brandPrimary: organization.brand_primary || "#6EE7F9",
       brandSecondary: organization.brand_secondary || "#A78BFA", 
       isBusiness: organization.is_business || false,
-      tags: organization.tags || [],
-      isArchived: organization.is_archived || false,
+      tags: (organization as any).tags || [],
+      isArchived: (organization as any).is_archived || false,
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateOrganizationData) =>
-      apiRequest(`/api/organizations/${organization.id}`, {
+      apiRequest(`/api/v1/organizations/${organization.id}`, {
         method: "PATCH",
         data: data,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/organizations"] });
       queryClient.invalidateQueries({ queryKey: ['org', organization.id] });
       toast({
         title: "Organization updated",

@@ -153,13 +153,13 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
   // Fetch organization summary using new endpoint
   const { data: summary, isLoading, error } = useQuery({
     queryKey: ['organizations', organizationId, 'summary'],
-    queryFn: () => apiRequest(`/api/organizations/${organizationId}/summary`),
+    queryFn: () => apiRequest(`/api/v1/organizations/${organizationId}/summary`),
     enabled: open && !!organizationId,
     staleTime: 30000, // Cache for 30 seconds
   });
 
   const deleteOrgMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/organizations/${organizationId}`, { method: 'DELETE' }),
+    mutationFn: () => apiRequest(`/api/v1/organizations/${organizationId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       onClose();

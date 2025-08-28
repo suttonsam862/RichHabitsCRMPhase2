@@ -28,7 +28,7 @@ export function OrganizationListPage() {
   async function fetchOrganizations() {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/organizations', {
+      const response = await fetch('/api/v1/organizations', {
         headers: {
           'Authorization': token ? `Bearer ${token}` : ''
         }

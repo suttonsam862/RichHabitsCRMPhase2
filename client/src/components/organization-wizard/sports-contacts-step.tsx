@@ -69,7 +69,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       };
 
       console.log("🔍 Sending organization payload:", payload);
-      const orgResponse = await apiRequest("/api/organizations", {
+      const orgResponse = await apiRequest("/api/v1/organizations", {
         method: "POST",
         data: payload,
       });
@@ -96,7 +96,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
     },
     onSuccess: (data) => {
       console.log("Organization created successfully:", data);
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/organizations"] });
       toast({
         title: "Organization created!",
         description: "Your organization has been created successfully.",

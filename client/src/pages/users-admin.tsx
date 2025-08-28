@@ -145,8 +145,8 @@ export default function UsersAdminPage() {
 
   // Fetch organizations for role assignment
   const { data: orgsData } = useQuery({
-    queryKey: ['/api/organizations'],
-    queryFn: () => apiRequest('/api/organizations'),
+    queryKey: ['/api/v1/organizations'],
+    queryFn: () => apiRequest('/api/v1/organizations'),
     staleTime: 300000,
   });
 
