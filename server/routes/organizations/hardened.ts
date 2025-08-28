@@ -432,11 +432,15 @@ router.get('/:id/setup', async (req: any, res) => {
   }
 });
 
-// POST setup save (finance email, colors confirm, set complete if all present)
+// POST setup save (all essential fields)
 const SetupSchema = z.object({
   brand_primary: z.string().optional(),
   brand_secondary: z.string().optional(),
   color_palette: z.array(z.string()).optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
   complete: z.boolean().optional()
 });
 
@@ -449,20 +453,42 @@ router.post('/:id/setup', async (req: any, res) => {
     const orgId = req.params.id;
     const patch: any = {};
     
+    // Brand colors
     if (parse.data.brand_primary) patch.brand_primary = parse.data.brand_primary;
     if (parse.data.brand_secondary) patch.brand_secondary = parse.data.brand_secondary;
     if (parse.data.color_palette) patch.color_palette = parse.data.color_palette;
     
+    // Address fields
+    if (parse.data.address) patch.address = parse.data.address;
+    if (parse.data.city) patch.city = parse.data.city;
+    if (parse.data.state) patch.state = parse.data.state;
+    if (parse.data.zip) patch.zip = parse.data.zip;
+    
+    // Generate gradient CSS if both brand colors are present
     if (patch.brand_primary && patch.brand_secondary) {
       patch.gradient_css = `linear-gradient(135deg, ${patch.brand_primary} 0%, ${patch.brand_secondary} 100%)`;
     }
     
-    // For now, just mark the organization as updated when complete is true
+    // Mark setup as complete when complete flag is true
     if (parse.data.complete) {
+      patch.setupComplete = 1; // Use camelCase to match database field
+      patch.setupCompletedAt = new Date().toISOString();
       patch.updated_at = new Date().toISOString();
     }
     
-    const up = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
+    // Use raw query to bypass schema cache issues
+    const up = await sb.rpc('update_organization_setup', { 
+      org_id: orgId,
+      patch_data: patch 
+    });
+    
+    // Fallback to direct table update if RPC doesn't exist
+    if (up.error && up.error.message?.includes('function')) {
+      const directUp = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
+      if (directUp.error) return sendErr(res, 'DB_ERROR', directUp.error.message, undefined, 400);
+      return sendOk(res, directUp.data);
+    }
+    
     if (up.error) return sendErr(res, 'DB_ERROR', up.error.message, undefined, 400);
     
     return sendOk(res, up.data);
@@ -899,6 +925,61 @@ router.get('/:id/sports', async (req, res) => {
       success: false,
       error: 'Internal server error',
       details: error.message
+    });
+  }
+});
+
+// GET organization summary for quick view dialog
+router.get('/:id/summary', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get organization basic info
+    const { data: org, error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (orgError || !org) {
+      return res.status(404).json({
+        success: false,
+        error: 'Organization not found'
+      });
+    }
+
+    // Get sports count
+    const { data: sports, count: sportsCount } = await supabaseAdmin
+      .from('org_sports')
+      .select('id', { count: 'exact' })
+      .eq('organization_id', id);
+
+    // Get users count
+    const { data: users, count: usersCount } = await supabaseAdmin
+      .from('org_users')
+      .select('id', { count: 'exact' })
+      .eq('organization_id', id);
+
+    // Return comprehensive summary in exact format expected by dialog
+    return res.json({
+      success: true,
+      data: {
+        organization: org,
+        stats: {
+          sportsCount: sportsCount || 0,
+          usersCount: usersCount || 0,
+        },
+        sports: sports || [],
+        users: users || [],
+        brandingFiles: [] // Placeholder for branding files
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('Error fetching organization summary:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch organization summary'
     });
   }
 });

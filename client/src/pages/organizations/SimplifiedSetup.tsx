@@ -231,7 +231,7 @@ export default function SimplifiedSetup() {
 
     setSaving(true);
     try {
-      // Update organization with essential fields
+      // Update organization with essential fields using setup endpoint
       const updatePayload = {
         address,
         city,
@@ -239,11 +239,10 @@ export default function SimplifiedSetup() {
         zip,
         brand_primary: brandPrimary,
         brand_secondary: brandSecondary,
-        setup_complete: true,
-        setup_completed_at: new Date().toISOString()
+        complete: true
       };
       
-      const updateResult = await api.patch(`/api/v1/organizations/${id}`, updatePayload);
+      const updateResult = await api.post(`/api/v1/organizations/${id}/setup`, updatePayload);
       
       if (!updateResult.success) {
         throw new Error(updateResult.error?.message || 'Failed to update organization');
