@@ -82,6 +82,7 @@ export default function OrganizationEditPage() {
           <EditOrganizationForm 
             organization={organization} 
             onSuccess={handleSuccess}
+            onCancel={() => navigate(`/organizations/${id}`)}
           />
         </GlowCard>
       </div>

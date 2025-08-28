@@ -128,7 +128,16 @@ export default function SetupWizard() {
         // Populate existing data
         if (r.data.org?.brand_primary) setBrandPrimary(r.data.org.brand_primary);
         if (r.data.org?.brand_secondary) setBrandSecondary(r.data.org.brand_secondary);
-        if (r.data.org?.logo_url) setLogoPreview(r.data.org.logo_url);
+        if (r.data.org?.logo_url) {
+          // Convert relative storage path to proper URL if needed
+          const logoUrl = r.data.org.logo_url;
+          if (logoUrl && !logoUrl.startsWith('http')) {
+            // For now use a placeholder, will be fixed when storage URLs are resolved
+            setLogoPreview(`https://via.placeholder.com/128x128/6EE7F9/ffffff?text=LOGO`);
+          } else {
+            setLogoPreview(logoUrl);
+          }
+        }
         
         // Set existing contact info from org data
         if (r.data.org) {

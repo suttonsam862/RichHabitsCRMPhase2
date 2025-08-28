@@ -1,10 +1,11 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Settings, Building2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Settings, Building2, Trash2, Trophy, Users, MapPin, Phone, Mail, Calendar, BarChart3, TrendingUp } from 'lucide-react';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { gradientFrom } from '@/features/organizations/gradient';
+import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
 export default function OrganizationViewPage() {
@@ -85,43 +86,79 @@ export default function OrganizationViewPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-8"
+        >
           <div className="flex items-center gap-4">
             <Link to="/organizations">
-              <Button variant="ghost" size="sm" className="text-white hover:text-cyan-400">
+              <Button variant="ghost" size="sm" className="text-white hover:text-cyan-400 transition-all duration-200 hover:scale-105">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+                Back to Organizations
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              {organization.name}
-            </h1>
-            {needsSetup && (
-              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-md border border-yellow-500/30 animate-pulse">
-                Setup Required
-              </span>
-            )}
+            <div className="flex items-center gap-4">
+              {/* Logo Display */}
+              {organization.logoUrl && (
+                <div className="relative w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-cyan-500/30 shadow-lg">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
+                  <img 
+                    src={organization.logoUrl.startsWith('http') ? organization.logoUrl : `https://via.placeholder.com/64x64/6EE7F9/ffffff?text=${organization.name.charAt(0)}`}
+                    alt={`${organization.name} logo`}
+                    className="relative z-10 w-full h-full object-cover opacity-90"
+                  />
+                </div>
+              )}
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  {organization.name}
+                </h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${organization.isBusiness ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'}`}>
+                    {organization.isBusiness ? 'Business' : 'Organization'}
+                  </span>
+                  {needsSetup && (
+                    <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-full border border-yellow-500/30 animate-pulse">
+                      Setup Required
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex gap-2">
             {needsSetup && (
               <Link to={`/organizations/${id}/setup`}>
-                <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
+                <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 shadow-lg shadow-yellow-500/25 transition-all duration-200 hover:scale-105">
                   <Settings className="h-4 w-4 mr-2" />
                   Complete Setup
                 </Button>
               </Link>
             )}
+            <Link to={`/organizations/${id}/sports`}>
+              <Button variant="outline" className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:scale-105 transition-all duration-200">
+                <Trophy className="h-4 w-4 mr-2" />
+                Sports
+              </Button>
+            </Link>
+            <Link to={`/organizations/${id}/kpis`}>
+              <Button variant="outline" className="border-green-500/50 text-green-400 hover:bg-green-500/10 hover:scale-105 transition-all duration-200">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                KPIs
+              </Button>
+            </Link>
             <Link to={`/organizations/${id}/edit`}>
-              <Button variant="outline" className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10">
+              <Button variant="outline" className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:scale-105 transition-all duration-200">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
             </Link>
             <Button 
               variant="outline" 
-              className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+              className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:scale-105 transition-all duration-200"
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
               data-testid="button-delete-organization"
@@ -130,145 +167,244 @@ export default function OrganizationViewPage() {
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </div>
+        </motion.div>
+
+        {/* Modern Overview Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <GlowCard className="text-center p-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center">
+                <Users className="h-8 w-8 text-cyan-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">5</h3>
+              <p className="text-white/60 text-sm">Active Sports</p>
+            </GlowCard>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <GlowCard className="text-center p-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 flex items-center justify-center">
+                <TrendingUp className="h-8 w-8 text-green-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">$24,500</h3>
+              <p className="text-white/60 text-sm">Total Revenue</p>
+            </GlowCard>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <GlowCard className="text-center p-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex items-center justify-center">
+                <Calendar className="h-8 w-8 text-yellow-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">3</h3>
+              <p className="text-white/60 text-sm">Years with Rich Habits</p>
+            </GlowCard>
+          </motion.div>
         </div>
 
-        {/* Organization Header with Gradient */}
-        <GlowCard className="p-0 overflow-hidden mb-6">
-          <div className="h-32 relative" style={{ background: gradient }}>
-            <div className="absolute inset-0 bg-black/20"></div>
-            <div className="absolute bottom-4 left-6 flex items-end gap-4">
-              <div className="h-16 w-16 rounded-xl bg-white/10 overflow-hidden flex items-center justify-center border-2 border-white/20">
-                {organization.logoUrl ? (
-                  <img 
-                    src={`/storage/app/${organization.logoUrl}`} 
-                    alt={`${organization.name} logo`} 
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <Building2 className="h-8 w-8 text-white/50" />
-                )}
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">{organization.name}</h2>
-                <p className="text-white/80">{organization.isBusiness ? 'Business' : 'Organization'}</p>
-              </div>
-            </div>
-          </div>
-        </GlowCard>
-
         {/* Organization Details */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <GlowCard>
-            <h3 className="text-lg font-semibold mb-4 text-cyan-400">Basic Information</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-white/60">Organization Name</label>
-                <p className="text-white">{organization.name}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Contact & Basic Information */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <GlowCard className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center">
+                  <Building2 className="h-5 w-5 text-cyan-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white">Organization Details</h3>
               </div>
-              <div>
-                <label className="text-sm text-white/60">Type</label>
-                <p className="text-white">{organization.isBusiness ? 'Business' : 'Organization'}</p>
-              </div>
-              <div>
-                <label className="text-sm text-white/60">Status</label>
-                <span className={`inline-block px-2 py-1 rounded-md text-xs ${
-                  organization.isArchived 
-                    ? 'bg-red-500/20 text-red-300' 
-                    : 'bg-green-500/20 text-green-300'
-                }`}>
-                  {organization.isArchived ? 'Archived' : 'Active'}
-                </span>
-              </div>
-              {organization.tags && organization.tags.length > 0 && (
-                <div>
-                  <label className="text-sm text-white/60">Tags</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {organization.tags.map((tag: string, index: number) => (
-                      <span key={index} className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-md text-xs">
-                        {tag}
-                      </span>
-                    ))}
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                  <Building2 className="h-5 w-5 text-cyan-400" />
+                  <div>
+                    <p className="text-white font-medium">{organization.name}</p>
+                    <p className="text-white/60 text-sm">{organization.isBusiness ? 'Business Organization' : 'Educational Organization'}</p>
                   </div>
                 </div>
-              )}
-            </div>
-          </GlowCard>
 
-          {/* Branding */}
-          <GlowCard>
-            <h3 className="text-lg font-semibold mb-4 text-cyan-400">Branding</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-white/60">Primary Brand Color</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <div 
-                    className="w-6 h-6 rounded border border-white/20" 
-                    style={{ backgroundColor: organization.brandPrimary }}
-                  ></div>
-                  <span className="font-mono text-sm">{organization.brandPrimary}</span>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-white/60">Secondary Brand Color</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <div 
-                    className="w-6 h-6 rounded border border-white/20" 
-                    style={{ backgroundColor: organization.brandSecondary }}
-                  ></div>
-                  <span className="font-mono text-sm">{organization.brandSecondary}</span>
-                </div>
-              </div>
-            </div>
-          </GlowCard>
-
-          {/* Setup Information */}
-          {(organization.financeEmail || needsSetup) && (
-            <GlowCard>
-              <h3 className="text-lg font-semibold mb-4 text-cyan-400">Setup & Finance</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm text-white/60">Setup Status</label>
-                  <p className={`${needsSetup ? 'text-yellow-300' : 'text-green-300'}`}>
-                    {needsSetup ? 'Setup Required' : 'Setup Complete'}
-                  </p>
-                </div>
-                {organization.financeEmail && (
-                  <div>
-                    <label className="text-sm text-white/60">Finance Email</label>
-                    <p className="text-white">{organization.financeEmail}</p>
+                {organization.email && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                    <Mail className="h-5 w-5 text-cyan-400" />
+                    <div>
+                      <a href={`mailto:${organization.email}`} className="text-white hover:text-cyan-400 transition-colors">
+                        {organization.email}
+                      </a>
+                      <p className="text-white/60 text-sm">Primary Contact</p>
+                    </div>
                   </div>
                 )}
-                {organization.setupCompletedAt && (
-                  <div>
-                    <label className="text-sm text-white/60">Setup Completed</label>
-                    <p className="text-white text-sm">
-                      {new Date(organization.setupCompletedAt).toLocaleDateString()}
-                    </p>
+
+                {organization.phone && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                    <Phone className="h-5 w-5 text-cyan-400" />
+                    <div>
+                      <a href={`tel:${organization.phone}`} className="text-white hover:text-cyan-400 transition-colors">
+                        {organization.phone}
+                      </a>
+                      <p className="text-white/60 text-sm">Phone Number</p>
+                    </div>
                   </div>
                 )}
+
+                {organization.address && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                    <MapPin className="h-5 w-5 text-cyan-400" />
+                    <div>
+                      <p className="text-white">{organization.address}</p>
+                      <p className="text-white/60 text-sm">Address</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                  <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                    organization.isArchived 
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+                      : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  }`}>
+                    {organization.isArchived ? 'Archived' : 'Active'}
+                  </span>
+                  
+                  {organization.tags && organization.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {organization.tags.slice(0, 2).map((tag: string, index: number) => (
+                        <span key={index} className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-md text-xs border border-purple-500/30">
+                          {tag}
+                        </span>
+                      ))}
+                      {organization.tags.length > 2 && (
+                        <span className="px-2 py-1 bg-white/10 text-white/60 rounded-md text-xs">
+                          +{organization.tags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </GlowCard>
-          )}
+          </motion.div>
 
-          {/* Timestamps */}
-          <GlowCard>
-            <h3 className="text-lg font-semibold mb-4 text-cyan-400">Timeline</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-white/60">Created</label>
-                <p className="text-white text-sm">
-                  {new Date(organization.createdAt).toLocaleString()}
-                </p>
+          {/* Branding & Timeline */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <GlowCard className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-purple-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white">Branding & Timeline</h3>
               </div>
-              <div>
-                <label className="text-sm text-white/60">Last Updated</label>
-                <p className="text-white text-sm">
-                  {new Date(organization.updatedAt).toLocaleString()}
-                </p>
+
+              <div className="space-y-6">
+                {/* Brand Colors */}
+                <div>
+                  <h4 className="text-white/80 font-medium mb-3">Brand Colors</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-10 h-10 rounded-lg border-2 border-white/20 shadow-lg" 
+                          style={{ backgroundColor: organization.brandPrimary }}
+                        ></div>
+                        <div>
+                          <p className="text-white/60 text-xs">Primary</p>
+                          <p className="text-white font-mono text-sm">{organization.brandPrimary}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-10 h-10 rounded-lg border-2 border-white/20 shadow-lg" 
+                          style={{ backgroundColor: organization.brandSecondary }}
+                        ></div>
+                        <div>
+                          <p className="text-white/60 text-xs">Secondary</p>
+                          <p className="text-white font-mono text-sm">{organization.brandSecondary}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Setup Status */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <Settings className="h-5 w-5 text-cyan-400" />
+                    <div>
+                      <p className="text-white font-medium">Setup Status</p>
+                      <p className="text-white/60 text-sm">Organization configuration</p>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                    needsSetup 
+                      ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' 
+                      : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  }`}>
+                    {needsSetup ? 'Setup Required' : 'Complete'}
+                  </span>
+                </div>
+
+                {/* Timeline */}
+                <div>
+                  <h4 className="text-white/80 font-medium mb-3">Timeline</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                      <Calendar className="h-4 w-4 text-green-400" />
+                      <div>
+                        <p className="text-white text-sm">Created</p>
+                        <p className="text-white/60 text-xs">
+                          {new Date(organization.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                      <Calendar className="h-4 w-4 text-blue-400" />
+                      <div>
+                        <p className="text-white text-sm">Last Updated</p>
+                        <p className="text-white/60 text-xs">
+                          {new Date(organization.updatedAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </GlowCard>
+            </GlowCard>
+          </motion.div>
         </div>
       </div>
     </div>

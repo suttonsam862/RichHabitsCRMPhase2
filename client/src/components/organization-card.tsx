@@ -60,11 +60,13 @@ export function OrganizationCard({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {logo_url ? (
-                  <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg">
+                    {/* Semitransparent logo overlay against gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                     <img 
-                      src={logo_url} 
+                      src={logo_url.startsWith('http') ? logo_url : `https://via.placeholder.com/48x48/6EE7F9/ffffff?text=${name.charAt(0)}`} 
                       alt={`${name} logo`}
-                      className="w-full h-full object-cover"
+                      className="relative z-10 w-full h-full object-cover opacity-90"
                       data-testid={`img-organization-logo-${organization.id}`}
                     />
                   </div>
