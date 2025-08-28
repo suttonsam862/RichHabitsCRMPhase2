@@ -712,9 +712,17 @@ router.get('/:id/logo', async (req, res) => {
       return res.redirect(org.logo_url);
     }
 
-    // For relative paths, try to serve from object storage
-    const objectStoragePath = `/public-objects/${org.logo_url}`;
-    res.redirect(objectStoragePath);
+    // For relative paths, serve placeholder until object storage is configured
+    // TODO: Implement proper object storage serving when available
+    const firstLetter = org.name?.charAt(0).toUpperCase() || 'L';
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=300'); // Shorter cache for relative paths
+    res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+      <rect width="256" height="256" fill="#1a1a2e"/>
+      <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">
+        ${firstLetter}
+      </text>
+    </svg>`);
   } catch (error) {
     console.error('Error serving logo:', error);
     res.status(500).json({ error: 'Failed to serve logo' });
