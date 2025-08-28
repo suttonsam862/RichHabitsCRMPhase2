@@ -42,6 +42,19 @@ export function logDatabaseOperation(req: Request, operation: string, table: str
   }, 'Database operation');
 }
 
+/**
+ * Create child logger with request context
+ */
+export function createRequestLogger(req: Request) {
+  const rid = (req as any)?.res?.locals?.rid || shortRid();
+  return logger.child({
+    rid,
+    method: req.method,
+    url: req.url,
+    userAgent: req.headers['user-agent']
+  });
+}
+
 // Export common log methods for convenience
 export const log = {
   info: logger.info.bind(logger),
