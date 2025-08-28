@@ -675,6 +675,8 @@ router.patch('/:id', async (req: any, res) => {
 router.get('/:id/logo', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🖼️  LOGO REQUEST for organization:', id);
+    
     const { data: org, error } = await supabaseAdmin
       .from('organizations')
       .select('logo_url, name')
@@ -682,6 +684,7 @@ router.get('/:id/logo', async (req, res) => {
       .single();
 
     if (error || !org) {
+      console.log('❌ LOGO ERROR: Organization not found:', { id, error });
       // Organization not found - return placeholder
       res.setHeader('Content-Type', 'image/svg+xml');
       res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
@@ -692,8 +695,11 @@ router.get('/:id/logo', async (req, res) => {
       </svg>`);
       return;
     }
+    
+    console.log('🔍 LOGO DATA:', { id, name: org.name, logo_url: org.logo_url });
 
     if (!org.logo_url || org.logo_url === '' || org.logo_url === null) {
+      console.log('📝 LOGO PLACEHOLDER: No logo_url found, serving placeholder');
       // Serve a placeholder SVG with the first letter
       const firstLetter = org.name?.charAt(0).toUpperCase() || 'O';
       res.setHeader('Content-Type', 'image/svg+xml');
@@ -709,11 +715,53 @@ router.get('/:id/logo', async (req, res) => {
 
     // If it's a full URL, redirect to it
     if (org.logo_url.startsWith('http')) {
+      console.log('🌐 LOGO REDIRECT: Redirecting to external URL:', org.logo_url);
       return res.redirect(org.logo_url);
     }
 
-    // For relative paths, serve placeholder until object storage is configured
-    // TODO: Implement proper object storage serving when available
+    // For relative paths, try Supabase storage first
+    console.log('📁 LOGO RELATIVE PATH:', org.logo_url, '(checking Supabase storage)');
+    
+    try {
+      // Import Supabase client directly for logo serving
+      const { createClient } = await import('@supabase/supabase-js');
+      
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error('Missing Supabase credentials');
+      }
+      
+      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      });
+      
+      // Try to get a signed URL for the logo file
+      const { data, error } = await supabase.storage
+        .from('app')
+        .createSignedUrl(org.logo_url, 3600); // 1 hour expiry
+      
+      if (error) {
+        throw new Error(`Storage error: ${error.message}`);
+      }
+      
+      if (data?.signedUrl) {
+        console.log('✅ LOGO FOUND in Supabase storage, redirecting to signed URL');
+        // Redirect to the signed URL
+        return res.redirect(data.signedUrl);
+      } else {
+        console.log('🔴 LOGO NOT FOUND in Supabase storage:', org.logo_url);
+      }
+    } catch (storageError) {
+      console.log('⚠️  SUPABASE STORAGE ERROR:', storageError.message || storageError);
+    }
+    
+    // Fallback to placeholder if object storage fails
+    console.log('📄 SERVING PLACEHOLDER for:', org.logo_url);
     const firstLetter = org.name?.charAt(0).toUpperCase() || 'L';
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'public, max-age=300'); // Shorter cache for relative paths
@@ -724,7 +772,7 @@ router.get('/:id/logo', async (req, res) => {
       </text>
     </svg>`);
   } catch (error) {
-    console.error('Error serving logo:', error);
+    console.error('💥 LOGO ENDPOINT ERROR:', error);
     res.status(500).json({ error: 'Failed to serve logo' });
   }
 });

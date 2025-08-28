@@ -110,6 +110,7 @@ export default function OrganizationViewPage() {
                     alt={`${organization.name} logo`}
                     className="relative z-10 w-full h-full object-cover"
                     onError={(e) => {
+                      console.error('🖼️ FRONTEND: ViewPage logo failed to load for org:', organization.id, 'URL:', e.currentTarget.src, 'logoUrl:', organization.logoUrl, 'logo_url:', organization.logo_url);
                       e.currentTarget.style.display = 'none';
                       const fallback = document.createElement('div');
                       fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-2xl font-bold text-white';

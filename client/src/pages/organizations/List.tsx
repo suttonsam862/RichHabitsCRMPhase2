@@ -378,6 +378,7 @@ export default function OrganizationsList(){
                           className="w-full h-auto object-cover opacity-10"
                           aria-hidden="true"
                           style={{ minHeight: '150%' }}
+                          onError={() => console.error('🖼️ FRONTEND: Background logo failed to load for org:', org.id, 'logoUrl:', org.logoUrl)}
                         />
                       </div>
                     )}
@@ -402,6 +403,7 @@ export default function OrganizationsList(){
                           alt={`${org.name} logo`} 
                           className="h-full w-full object-cover"
                           onError={(e) => {
+                            console.error('🖼️ FRONTEND: Logo failed to load for org:', org.id, 'URL:', e.currentTarget.src);
                             e.currentTarget.style.display = 'none';
                             const fallback = document.createElement('div');
                             fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-xl font-bold text-white';

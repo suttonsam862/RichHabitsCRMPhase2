@@ -93,6 +93,7 @@ export function OrganizationCard({
                       className="relative z-10 w-full h-full object-cover"
                       data-testid={`img-organization-logo-${organization.id}`}
                       onError={(e) => {
+                        console.error('🖼️ FRONTEND: OrganizationCard logo failed to load for org:', organization.id, 'URL:', e.currentTarget.src, 'logo_url:', logo_url);
                         e.currentTarget.style.display = 'none';
                         const fallback = document.createElement('div');
                         fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-lg font-bold text-white';
