@@ -30,7 +30,7 @@ export default function OrganizationSportsPage() {
   // Fetch sports data from API
   const { data: sportsData, isLoading: sportsLoading } = useQuery({
     queryKey: ['organization-sports', id],
-    queryFn: () => api.get(`/api/organizations/${id}/sports`),
+    queryFn: () => api.get(`/api/v1/organizations/${id}/sports`),
     enabled: !!id && org?.success
   });
 

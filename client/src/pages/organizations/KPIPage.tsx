@@ -18,7 +18,7 @@ export default function OrganizationKPIPage() {
   // Fetch KPI metrics from API
   const { data: metricsData, isLoading: metricsLoading } = useQuery({
     queryKey: ['organization-metrics', id],
-    queryFn: () => api.get(`/api/organizations/${id}/metrics`),
+    queryFn: () => api.get(`/api/v1/organizations/${id}/metrics`),
     enabled: !!id && org?.success
   });
 

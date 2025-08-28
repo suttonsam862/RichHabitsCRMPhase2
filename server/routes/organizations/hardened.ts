@@ -127,7 +127,9 @@ function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: s
     contact_name: sport.contactName,
     contact_email: sport.contactEmail,
     contact_phone: sport.contactPhone || null,
-    contact_user_id: null
+    contact_user_id: null,
+    is_primary_contact: 0, // Add missing field with default value
+    updated_at: new Date().toISOString() // Add missing field
   }));
 }
 
@@ -850,6 +852,57 @@ function servePlaceholder(res: any, letter: string, cacheSeconds: number): void 
 }
 
 // KPI metrics endpoints
+// GET organization sports endpoint
+router.get('/:id/sports', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Fetch sports for the organization
+    const { data: sportsData, error: sportsError } = await supabaseAdmin
+      .from('org_sports')
+      .select(`
+        *,
+        sport:sports!inner(id, name)
+      `)
+      .eq('organization_id', id);
+
+    if (sportsError) {
+      logSbError(req, 'orgs.sports.fetch', sportsError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch organization sports',
+        details: sportsError
+      });
+    }
+
+    // Map to expected format
+    const mappedSports = (sportsData || []).map((orgSport: any) => ({
+      id: orgSport.sport?.id,
+      name: orgSport.sport?.name,
+      assigned_salesperson: null, // You can add this field later
+      contact_name: orgSport.contact_name,
+      contact_email: orgSport.contact_email,
+      contact_phone: orgSport.contact_phone,
+      created_at: orgSport.created_at,
+      updated_at: orgSport.updated_at
+    }));
+
+    return res.json({
+      success: true,
+      data: mappedSports,
+      count: mappedSports.length
+    });
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.error', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+});
+
 router.get('/:id/metrics', async (req, res) => {
   try {
     const { id } = req.params;
