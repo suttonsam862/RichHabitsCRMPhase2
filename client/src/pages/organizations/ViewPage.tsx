@@ -1,19 +1,50 @@
-import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Settings, Building2 } from 'lucide-react';
+import { ArrowLeft, Edit, Settings, Building2, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { gradientFrom } from '@/features/organizations/gradient';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OrganizationViewPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: org, isLoading, error } = useQuery({
     queryKey: ['organization', id],
     queryFn: () => api.get(`/api/v1/organizations/${id}`),
     enabled: !!id
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete(`/api/v1/organizations/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      toast({
+        title: "Organization deleted",
+        description: "The organization has been successfully deleted.",
+      });
+      navigate('/organizations');
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete organization. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = () => {
+    if (!org?.data?.name) return;
+    if (!confirm(`Are you sure you want to delete "${org.data.name}"? This action cannot be undone.`)) {
+      return;
+    }
+    deleteMutation.mutate();
+  };
 
   if (isLoading) {
     return (
@@ -88,6 +119,16 @@ export default function OrganizationViewPage() {
                 Edit
               </Button>
             </Link>
+            <Button 
+              variant="outline" 
+              className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              data-testid="button-delete-organization"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
           </div>
         </div>
 

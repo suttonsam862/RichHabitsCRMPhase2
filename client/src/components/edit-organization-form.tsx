@@ -4,11 +4,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertOrganizationSchema } from "../../../shared/supabase-schema";
 import type { InsertOrganization, Organization } from "../../../shared/supabase-schema";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
+
+import { useState } from "react";
 
 interface EditOrganizationFormProps {
   organization: Organization;
@@ -27,11 +32,17 @@ type UpdateOrganizationData = {
   phone?: string;
   email?: string;
   notes?: string;
+  brandPrimary?: string;
+  brandSecondary?: string;
+  isBusiness?: boolean;
+  tags?: string[];
+  isArchived?: boolean;
 };
 
 export function EditOrganizationForm({ organization, onSuccess, onCancel }: EditOrganizationFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [tagInput, setTagInput] = useState("");
 
   const form = useForm<UpdateOrganizationData>({
     resolver: zodResolver(updateOrganizationSchema),
@@ -43,6 +54,11 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       phone: organization.phone || "",
       email: organization.email || "",
       notes: organization.notes || "",
+      brandPrimary: organization.brand_primary || "#6EE7F9",
+      brandSecondary: organization.brand_secondary || "#A78BFA", 
+      isBusiness: organization.is_business || false,
+      tags: organization.tags || [],
+      isArchived: organization.is_archived || false,
     },
   });
 
@@ -70,6 +86,19 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     },
   });
 
+  const addTag = () => {
+    if (tagInput.trim() && !form.getValues('tags')?.includes(tagInput.trim())) {
+      const currentTags = form.getValues('tags') || [];
+      form.setValue('tags', [...currentTags, tagInput.trim()]);
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    const currentTags = form.getValues('tags') || [];
+    form.setValue('tags', currentTags.filter(tag => tag !== tagToRemove));
+  };
+
   const onSubmit = (data: UpdateOrganizationData) => {
     // Clean up empty strings to undefined for optional fields
     const cleanedData: any = {
@@ -79,6 +108,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       phone: data.phone || undefined,
       email: data.email || undefined,
       notes: data.notes || undefined,
+      brandPrimary: data.brandPrimary || undefined,
+      brandSecondary: data.brandSecondary || undefined,
     };
     updateMutation.mutate(cleanedData);
   };
@@ -204,6 +235,149 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
             )}
           />
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="brandPrimary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Primary Brand Color</FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="color"
+                      className="w-16 h-10 rounded border-0 p-1"
+                      data-testid="input-edit-org-brand-primary"
+                      {...field}
+                    />
+                    <Input
+                      placeholder="#6EE7F9"
+                      className="glass flex-1"
+                      {...field}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="brandSecondary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Secondary Brand Color</FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="color"
+                      className="w-16 h-10 rounded border-0 p-1"
+                      data-testid="input-edit-org-brand-secondary"
+                      {...field}
+                    />
+                    <Input
+                      placeholder="#A78BFA"
+                      className="glass flex-1"
+                      {...field}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="isBusiness"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    data-testid="checkbox-edit-org-is-business"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    Business Organization
+                  </FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Check if this is a business rather than a regular organization
+                  </p>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isArchived"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    data-testid="checkbox-edit-org-is-archived"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    Archived
+                  </FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Archive this organization (it will be hidden by default)
+                  </p>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="tags"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tags</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add a tag..."
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                      className="glass"
+                      data-testid="input-add-tag"
+                    />
+                    <Button type="button" onClick={addTag} variant="outline" size="sm">
+                      Add
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {field.value?.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <X 
+                          className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                          onClick={() => removeTag(tag)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

@@ -273,4 +273,82 @@ router.post('/', async (req, res) => {
   }
 });
 
+// DELETE route to delete an organization - HARDENED IMPLEMENTATION
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid organization ID format'
+      });
+    }
+
+    // Check if organization exists first
+    const { data: existing, error: checkError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name')
+      .eq('id', id)
+      .single();
+
+    if (checkError || !existing) {
+      return res.status(404).json({
+        success: false,
+        error: 'Organization not found'
+      });
+    }
+
+    // Delete related org_sports first (foreign key constraint)
+    const { error: sportsError } = await supabaseAdmin
+      .from('org_sports')
+      .delete()
+      .eq('organization_id', id);
+
+    if (sportsError) {
+      logSbError(req, 'orgs.delete.sports', sportsError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to delete organization sports',
+        details: sportsError
+      });
+    }
+
+    // Delete the organization
+    const { error: deleteError } = await supabaseAdmin
+      .from('organizations')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      logSbError(req, 'orgs.delete.main', deleteError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to delete organization',
+        details: deleteError
+      });
+    }
+
+    // Success log
+    const rid = (res as any).locals?.rid;
+    logger.info({ rid, orgId: id, orgName: existing.name }, 'organizations.delete ok');
+
+    return res.json({
+      success: true,
+      message: `Organization "${existing.name}" deleted successfully`
+    });
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.delete.route', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 export default router;

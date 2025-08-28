@@ -58,6 +58,24 @@ export default function OrganizationsList(){
     }
   }
 
+  async function deleteOrganization(orgId: string, orgName: string) {
+    if (!confirm(`Are you sure you want to delete "${orgName}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const r = await api.delete(`/api/v1/organizations/${orgId}`);
+      if (r.success) {
+        load(); // Refresh list
+        // Show success message (you could add a toast here)
+      } else {
+        alert('Failed to delete organization: ' + (r.error || 'Unknown error'));
+      }
+    } catch (error) {
+      alert('Failed to delete organization: ' + error);
+    }
+  }
+
   // Check if user can manage setup (admin or sales role)
   const canManageSetup = useMemo(() => {
     return currentUser?.role === Role.ADMIN || currentUser?.role === Role.SALES;
@@ -249,6 +267,14 @@ export default function OrganizationsList(){
                         >
                           Edit
                         </Link>
+                        <button 
+                          className="px-2 py-2 text-sm rounded-xl bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-colors text-xs text-red-300 hover:text-red-200"
+                          onClick={(e) => { e.stopPropagation(); deleteOrganization(org.id, org.name); }}
+                          data-testid={`button-delete-${org.id}`}
+                          title="Delete organization"
+                        >
+                          Delete
+                        </button>
                       </>
                     ) : (
                       <>
@@ -266,6 +292,14 @@ export default function OrganizationsList(){
                         >
                           Edit
                         </Link>
+                        <button 
+                          className="px-3 py-2 text-sm rounded-xl bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-colors text-red-300 hover:text-red-200"
+                          onClick={(e) => { e.stopPropagation(); deleteOrganization(org.id, org.name); }}
+                          data-testid={`button-delete-${org.id}`}
+                          title="Delete organization"
+                        >
+                          Delete
+                        </button>
                       </>
                     )}
                   </div>
