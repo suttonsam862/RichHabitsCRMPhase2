@@ -324,7 +324,7 @@ export default function UsersManagement() {
       email: user.email,
       fullName: user.fullName,
       phone: user.phone || '',
-      role: user.role,
+      role: user.role || 'customer', // Ensure role always has a valid value
       password: '', // Don't pre-fill password
       addressLine1: user.address.line1 || '',
       addressLine2: user.address.line2 || '',
