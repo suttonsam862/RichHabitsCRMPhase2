@@ -1,0 +1,55 @@
+[18:38:20.535] ERROR (1989): GET 500 290ms /api/v1/users/comprehensive?page=1&limit=20&search=&role=&is_active=
+    rid: "33wd8895"
+    method: "GET"
+    path: "/api/v1/users/comprehensive?page=1&limit=20&search=&role=&is_active="
+    status: 500
+    ms: 290
+[18:38:20.743] ERROR (1989): 🔴 Supabase error
+    rid: "gtlonjhu"
+    ctx: "users.get"
+    code: "42P01"
+    message: "relation \"public.users\" does not exist"
+    details: {
+      "code": "42P01",
+      "details": null,
+      "hint": null,
+      "message": "relation \"public.users\" does not exist"
+    }
+[18:38:20.744] WARN (1989): GET 400 504ms /api/v1/users/comprehensive/__stats
+    rid: "gtlonjhu"
+    method: "GET"
+    path: "/api/v1/users/comprehensive/__stats"
+    status: 400
+    ms: 504
+Database error during fetch user: Error: @supabase/auth-js: Expected parameter to be UUID but is not
+    at validateUUID (/home/runner/workspace/node_modules/@supabase/auth-js/src/lib/helpers.ts:367:11)
+    at GoTrueAdminApi.getUserById (/home/runner/workspace/node_modules/@supabase/auth-js/src/GoTrueAdminApi.ts:230:17)
+    at <anonymous> (/home/runner/workspace/server/routes/users/index.ts:121:66)
+    at <anonymous> (/home/runner/workspace/server/routes/middleware/asyncHandler.ts:12:21)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/runner/workspace/server/middleware/auth.ts:42:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[18:38:20.832] ERROR (1989): GET 500 247ms /api/v1/users/comprehensive?page=1&limit=20&search=&role=&is_active=
+    rid: "153tlqft"
+    method: "GET"
+    path: "/api/v1/users/comprehensive?page=1&limit=20&search=&role=&is_active="
+    status: 500
+    ms: 247
+[18:38:21.133] ERROR (1989): 🔴 Supabase error
+    rid: "nbjdi0u1"
+    ctx: "users.get"
+    code: "42P01"
+    message: "relation \"public.users\" does not exist"
+    details: {
+      "code": "42P01",
+      "details": null,
+      "hint": null,
+      "message": "relation \"public.users\" does not exist"
+    }
+[18:38:21.134] WARN (1989): GET 400 341ms /api/v1/users/comprehensive/__stats
+    rid: "nbjdi0u1"
+    method: "GET"
+    path: "/api/v1/users/comprehensive/__stats"
+    status: 400
+    ms: 341
