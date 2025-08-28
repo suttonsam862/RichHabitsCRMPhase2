@@ -84,11 +84,7 @@ router.get('/', requireAuth, async (req, res) => {
         email_verified,
         notes,
         created_at,
-        updated_at,
-        organizations (
-          id,
-          name
-        )
+        updated_at
       `)
       .range(offset, offset + limitNum - 1)
       .order('created_at', { ascending: false });
@@ -144,7 +140,7 @@ router.get('/', requireAuth, async (req, res) => {
       phone: user.phone,
       role: user.role,
       organizationId: user.organization_id,
-      organizationName: user.organizations?.name || null,
+      organizationName: null, // Temporarily disabled due to join issues
       isActive: user.is_active === 1,
       address: {
         line1: user.address_line1,
@@ -194,11 +190,7 @@ router.get('/:id', requireAuth, async (req, res) => {
         email_verified,
         notes,
         created_at,
-        updated_at,
-        organizations (
-          id,
-          name
-        )
+        updated_at
       `)
       .eq('id', id)
       .single();
@@ -218,7 +210,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       phone: user.phone,
       role: user.role,
       organizationId: user.organization_id,
-      organizationName: user.organizations?.name || null,
+      organizationName: null, // Temporarily disabled due to join issues
       isActive: user.is_active === 1,
       address: {
         line1: user.address_line1,
@@ -424,11 +416,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
         email_verified,
         notes,
         created_at,
-        updated_at,
-        organizations (
-          id,
-          name
-        )
+        updated_at
       `)
       .single();
 
@@ -444,7 +432,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
       phone: updatedUser.phone,
       role: updatedUser.role,
       organizationId: updatedUser.organization_id,
-      organizationName: updatedUser.organizations?.name || null,
+      organizationName: null, // Temporarily disabled due to join issues
       isActive: updatedUser.is_active === 1,
       address: {
         line1: updatedUser.address_line1,
