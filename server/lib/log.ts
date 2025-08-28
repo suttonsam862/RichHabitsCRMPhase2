@@ -41,3 +41,11 @@ export function logDatabaseOperation(req: Request, operation: string, table: str
     data
   }, 'Database operation');
 }
+
+// Export common log methods for convenience
+export const log = {
+  info: logger.info.bind(logger),
+  warn: logger.warn.bind(logger),
+  error: logger.error.bind(logger),
+  debug: logger.debug.bind(logger)
+};
