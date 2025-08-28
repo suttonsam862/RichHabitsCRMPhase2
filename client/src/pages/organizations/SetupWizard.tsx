@@ -272,22 +272,48 @@ export default function SetupWizard() {
       
       // Update organization with comprehensive details using PATCH
       const updatePayload = {
-        phone: contactInfo.mainPhone,
-        email: contactInfo.mainEmail,
-        address: contactInfo.address,
-        notes: `Website: ${orgDetails.website}\nDescription: ${orgDetails.description}\nFounded: ${orgDetails.foundedYear}\nEmployees: ${orgDetails.employeeCount}\nIndustry: ${orgDetails.industry}\nTimezone: ${orgDetails.timezone}\n\nSupport Email: ${contactInfo.supportEmail}\nCity: ${contactInfo.city}\nState: ${contactInfo.state}\nZip: ${contactInfo.zipCode}\nCountry: ${contactInfo.country}\n\nFinance Email: ${financeInfo.financeEmail}\nAccounting Email: ${financeInfo.accountingEmail}\nTax ID: ${financeInfo.taxId}\nBusiness License: ${financeInfo.businessLicense}\nNon-Profit: ${financeInfo.isNonProfit ? 'Yes' : 'No'}\nTax Exemption: ${financeInfo.hasTaxExemption ? 'Yes' : 'No'}\n\nSocial Media:\nFacebook: ${socialInfo.facebookUrl}\nTwitter: ${socialInfo.twitterUrl}\nInstagram: ${socialInfo.instagramUrl}\nLinkedIn: ${socialInfo.linkedinUrl}\nYouTube: ${socialInfo.youtubeUrl}\nMarketing Email: ${socialInfo.marketingEmail}`
+        phone: contactInfo.mainPhone || undefined,
+        email: contactInfo.mainEmail || undefined,
+        address: contactInfo.address || undefined,
+        notes: [
+          orgDetails.website && `Website: ${orgDetails.website}`,
+          orgDetails.description && `Description: ${orgDetails.description}`,
+          orgDetails.foundedYear && `Founded: ${orgDetails.foundedYear}`,
+          orgDetails.employeeCount && `Employees: ${orgDetails.employeeCount}`,
+          orgDetails.industry && `Industry: ${orgDetails.industry}`,
+          orgDetails.timezone && `Timezone: ${orgDetails.timezone}`,
+          contactInfo.supportEmail && `Support Email: ${contactInfo.supportEmail}`,
+          contactInfo.city && `City: ${contactInfo.city}`,
+          contactInfo.state && `State: ${contactInfo.state}`,
+          contactInfo.zipCode && `Zip: ${contactInfo.zipCode}`,
+          contactInfo.country && `Country: ${contactInfo.country}`,
+          financeInfo.financeEmail && `Finance Email: ${financeInfo.financeEmail}`,
+          financeInfo.accountingEmail && `Accounting Email: ${financeInfo.accountingEmail}`,
+          financeInfo.taxId && `Tax ID: ${financeInfo.taxId}`,
+          financeInfo.businessLicense && `Business License: ${financeInfo.businessLicense}`,
+          financeInfo.isNonProfit && `Non-Profit: Yes`,
+          financeInfo.hasTaxExemption && `Tax Exemption: Yes`,
+          socialInfo.facebookUrl && `Facebook: ${socialInfo.facebookUrl}`,
+          socialInfo.twitterUrl && `Twitter: ${socialInfo.twitterUrl}`,
+          socialInfo.instagramUrl && `Instagram: ${socialInfo.instagramUrl}`,
+          socialInfo.linkedinUrl && `LinkedIn: ${socialInfo.linkedinUrl}`,
+          socialInfo.youtubeUrl && `YouTube: ${socialInfo.youtubeUrl}`,
+          socialInfo.marketingEmail && `Marketing Email: ${socialInfo.marketingEmail}`
+        ].filter(Boolean).join('\n') || undefined
       };
       
-      const updateResult = await fetch(`/api/v1/organizations/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatePayload)
-      });
+      // Remove undefined values
+      Object.keys(updatePayload).forEach(key => 
+        updatePayload[key as keyof typeof updatePayload] === undefined && delete updatePayload[key as keyof typeof updatePayload]
+      );
       
-      if (!updateResult.ok) {
-        throw new Error('Failed to update organization details');
+      console.log('Update payload:', updatePayload);
+      
+      const updateResult = await api.patch(`/api/v1/organizations/${id}`, updatePayload);
+      
+      if (!updateResult.success) {
+        console.error('Update failed:', updateResult);
+        throw new Error(updateResult.error?.message || 'Failed to update organization details');
       }
       
       toast({
