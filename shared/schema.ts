@@ -9,12 +9,18 @@ export const users = pgTable('users', {
   password_hash: text('password_hash'), // null for auto-generated accounts
   full_name: text('full_name').notNull(),
   phone: text('phone'),
-  role: text('role').notNull().default('customer'), // customer, contact, admin, etc
-  avatar_url: text('avatar_url'),
+  role: text('role').notNull().default('customer'), // admin, sales, designer, manufacturing, customer
+  subrole: text('subrole'), // salesperson, designer, manufacturer (for staff roles)
+  avatar_url: text('avatar_url'), // profile picture
   is_active: integer('is_active').default(1).notNull(), // 1 = active, 0 = inactive
   
   // Organization relationship
   organization_id: varchar('organization_id').references(() => organizations.id),
+  
+  // Enhanced profile fields
+  job_title: text('job_title'),
+  department: text('department'),
+  hire_date: timestamp('hire_date'),
   
   // Customer/Contact specific fields
   address_line1: text('address_line1'),
@@ -29,6 +35,10 @@ export const users = pgTable('users', {
   password_reset_token: text('password_reset_token'),
   password_reset_expires: timestamp('password_reset_expires'),
   email_verified: integer('email_verified').default(0), // 0 = unverified, 1 = verified
+  
+  // Permissions and access
+  permissions: jsonb('permissions').default('{}'), // Detailed action-level permissions
+  page_access: jsonb('page_access').default('{}'), // Page and subpage access control
   
   // Metadata
   notes: text('notes'),
@@ -90,7 +100,8 @@ export const orgSports = pgTable('org_sports', {
 export const usersRelations = relations(users, ({ one, many }) => ({ 
   organization: one(organizations, { fields: [users.organization_id], references: [organizations.id] }),
   createdBy: one(users, { fields: [users.created_by], references: [users.id] }),
-  orgSports: many(orgSports)
+  orgSports: many(orgSports),
+  userRoles: many(userRoles)
 }));
 export const organizationsRelations = relations(organizations, ({ one, many }) => ({ 
   createdBy: one(users, { fields: [organizations.created_by], references: [users.id] }), 
@@ -124,7 +135,53 @@ export const organizationMetricsRelations = relations(organizationMetrics, ({ on
   organization: one(organizations, { fields: [organizationMetrics.organization_id], references: [organizations.id] })
 }));
 
-// Export types for TypeScript
+// Permissions and roles tables for enhanced user management
+export const permissions = pgTable('permissions', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  category: text('category').notNull(), // 'organizations', 'users', 'orders', etc.
+  action: text('action').notNull(), // 'create', 'read', 'update', 'delete', etc.
+  resource: text('resource'), // specific resource like 'org_sports', 'user_roles', etc.
+  description: text('description').notNull(),
+  created_at: timestamp('created_at').defaultNow().notNull()
+});
+
+export const roles = pgTable('roles', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  is_staff: integer('is_staff').default(0).notNull(), // 1 = staff role, 0 = customer role
+  default_permissions: jsonb('default_permissions').default('{}'),
+  created_at: timestamp('created_at').defaultNow().notNull()
+});
+
+export const userRoles = pgTable('user_roles', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar('user_id').references(() => users.id).notNull(),
+  role_id: varchar('role_id').references(() => roles.id).notNull(),
+  organization_id: varchar('organization_id').references(() => organizations.id), // null for global roles
+  assigned_by: varchar('assigned_by').references(() => users.id),
+  assigned_at: timestamp('assigned_at').defaultNow().notNull(),
+  expires_at: timestamp('expires_at') // for temporary role assignments
+}, (t) => ({ pk: primaryKey({ columns: [t.user_id, t.role_id, t.organization_id] }) }));
+
+// Relations for new tables
+export const permissionsRelations = relations(permissions, ({ many }) => ({
+  // permissions don't have direct relations, they're referenced by role permissions
+}));
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  userRoles: many(userRoles)
+}));
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, { fields: [userRoles.user_id], references: [users.id] }),
+  role: one(roles, { fields: [userRoles.role_id], references: [roles.id] }),
+  organization: one(organizations, { fields: [userRoles.organization_id], references: [organizations.id] }),
+  assignedBy: one(users, { fields: [userRoles.assigned_by], references: [users.id] })
+}));
+
+// Export types for TypeScript  
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
@@ -136,3 +193,12 @@ export type InsertSport = typeof sports.$inferInsert;
 
 export type OrgSport = typeof orgSports.$inferSelect;
 export type InsertOrgSport = typeof orgSports.$inferInsert;
+
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = typeof permissions.$inferInsert;
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = typeof roles.$inferInsert;
+
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = typeof userRoles.$inferInsert;

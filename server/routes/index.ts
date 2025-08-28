@@ -3,6 +3,7 @@ import authRoutes from './auth';
 import { usersRouter } from './users';
 import adminUsersRouter from './users/admin';
 import { comprehensiveUsersRouter } from './users/comprehensive';
+import enhancedUsersRouter from './users/enhanced';
 import hardenedOrganizationsRoutes from './organizations/hardened';
 import sportsRoutes from './sports/index';
 import uploadRoutes from './upload';
@@ -13,6 +14,7 @@ router.get('/healthcheck', (req, res) => res.status(200).json({ status: 'ok', ti
 router.use('/auth', authRoutes);
 router.use('/users/comprehensive', comprehensiveUsersRouter);
 router.use('/users/admin', adminUsersRouter);
+router.use('/users/enhanced', enhancedUsersRouter);
 router.use('/users', usersRouter);
 router.use('/organizations', hardenedOrganizationsRoutes);
 router.use('/sports', sportsRoutes);
