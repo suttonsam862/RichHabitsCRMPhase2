@@ -15,19 +15,25 @@ export default function OrganizationKPIPage() {
     enabled: !!id
   });
 
-  // Mock KPI data - will be replaced with real data from API
-  const kpiData = {
-    totalRevenue: 24500,
-    totalOrders: 127,
-    activeSports: 5,
-    yearsWithRichHabits: 3,
-    averageOrderValue: 193,
-    repeatCustomerRate: 68,
-    growthRate: 24,
-    satisfactionScore: 4.8
+  // Fetch KPI metrics from API
+  const { data: metricsData, isLoading: metricsLoading } = useQuery({
+    queryKey: ['organization-metrics', id],
+    queryFn: () => api.get(`/api/organizations/${id}/metrics`),
+    enabled: !!id && org?.success
+  });
+
+  const kpiData = metricsData?.data || {
+    totalRevenue: 0,
+    totalOrders: 0,
+    activeSports: 0,
+    yearsWithRichHabits: 0,
+    averageOrderValue: 0,
+    repeatCustomerRate: 0,
+    growthRate: 0,
+    satisfactionScore: 0
   };
 
-  if (orgLoading) {
+  if (orgLoading || metricsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
         <div className="max-w-6xl mx-auto">

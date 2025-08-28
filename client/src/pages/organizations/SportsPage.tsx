@@ -27,40 +27,16 @@ export default function OrganizationSportsPage() {
     enabled: !!id
   });
 
-  // For now, we'll use mock sports data until the sports API is implemented
-  const mockSports: Sport[] = [
-    {
-      id: '1',
-      name: 'Football',
-      assigned_salesperson: 'John Smith',
-      contact_name: 'Coach Mike Johnson',
-      contact_email: 'coach.johnson@school.edu',
-      contact_phone: '(555) 123-4567',
-      created_at: '2024-08-01T00:00:00Z',
-      updated_at: '2024-08-15T00:00:00Z'
-    },
-    {
-      id: '2', 
-      name: 'Basketball',
-      assigned_salesperson: 'Sarah Davis',
-      contact_name: 'Coach Lisa Williams',
-      contact_email: 'l.williams@school.edu',
-      contact_phone: '(555) 234-5678',
-      created_at: '2024-08-05T00:00:00Z',
-      updated_at: '2024-08-20T00:00:00Z'
-    },
-    {
-      id: '3',
-      name: 'Soccer',
-      contact_name: 'Coach Roberto Martinez',
-      contact_email: 'r.martinez@school.edu',
-      contact_phone: '(555) 345-6789',
-      created_at: '2024-08-10T00:00:00Z',
-      updated_at: '2024-08-25T00:00:00Z'
-    }
-  ];
+  // Fetch sports data from API
+  const { data: sportsData, isLoading: sportsLoading } = useQuery({
+    queryKey: ['organization-sports', id],
+    queryFn: () => api.get(`/api/organizations/${id}/sports`),
+    enabled: !!id && org?.success
+  });
 
-  if (orgLoading) {
+  const sports: Sport[] = sportsData?.data || [];
+
+  if (orgLoading || sportsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
         <div className="max-w-6xl mx-auto">
@@ -129,8 +105,26 @@ export default function OrganizationSportsPage() {
         </motion.div>
 
         {/* Sports Grid */}
+        {sports.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <Trophy className="h-16 w-16 text-white/20 mx-auto mb-4" />
+            <h3 className="text-xl font-medium text-white/60 mb-2">No Sports Assigned</h3>
+            <p className="text-white/40 mb-6">No sports have been assigned to this organization yet.</p>
+            <Button 
+              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+              onClick={() => navigate(`/organizations/${id}/sports/new`)}
+            >
+              <Trophy className="h-4 w-4 mr-2" />
+              Add First Sport
+            </Button>
+          </motion.div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockSports.map((sport, index) => (
+          {sports.map((sport, index) => (
             <motion.div
               key={sport.id}
               initial={{ opacity: 0, y: 20 }}
@@ -218,9 +212,10 @@ export default function OrganizationSportsPage() {
             </motion.div>
           ))}
         </div>
+        )}
 
-        {/* Empty State */}
-        {mockSports.length === 0 && (
+        {/* Empty State - This is already handled above, so we can remove this duplicate */}
+        {false && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

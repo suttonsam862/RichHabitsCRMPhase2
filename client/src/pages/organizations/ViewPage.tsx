@@ -106,9 +106,16 @@ export default function OrganizationViewPage() {
                 <div className="relative w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-cyan-500/30 shadow-lg">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                   <img 
-                    src={organization.logoUrl.startsWith('http') ? organization.logoUrl : `https://via.placeholder.com/64x64/6EE7F9/ffffff?text=${organization.name.charAt(0)}`}
+                    src={organization.logoUrl.startsWith('http') ? organization.logoUrl : `/api/organizations/${organization.id}/logo`}
                     alt={`${organization.name} logo`}
                     className="relative z-10 w-full h-full object-cover opacity-90"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = document.createElement('div');
+                      fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-2xl font-bold text-white';
+                      fallback.textContent = organization.name.charAt(0);
+                      e.currentTarget.parentElement?.appendChild(fallback);
+                    }}
                   />
                 </div>
               )}

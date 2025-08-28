@@ -386,9 +386,13 @@ export default function OrganizationsList(){
                     <div className="h-12 w-12 rounded-xl bg-white/10 overflow-hidden flex items-center justify-center border border-white/10 relative">
                       {org.logoUrl ? (
                         <img 
-                          src={`/storage/app/${org.logoUrl}`} 
+                          src={org.logoUrl.startsWith('http') ? org.logoUrl : `/api/organizations/${org.id}/logo`} 
                           alt={`${org.name} logo`} 
                           className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.classList.add('logo-error');
+                          }}
                         />
                       ) : (
                         <div className="text-xs text-white/50 text-center">No<br/>Logo</div>

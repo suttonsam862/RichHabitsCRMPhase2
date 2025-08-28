@@ -42,3 +42,23 @@ export const orgSportsRelations = relations(orgSports, ({ one }) => ({
     organization: one(organizations, { fields: [orgSports.organizationId], references: [organizations.id] }),
     sport: one(sports, { fields: [orgSports.sportId], references: [sports.id] }),
 }));
+
+// KPI metrics table for tracking organization performance
+export const organizationMetrics = pgTable('organization_metrics', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  totalRevenue: integer('total_revenue').default(0),
+  totalOrders: integer('total_orders').default(0),
+  activeSports: integer('active_sports').default(0),
+  yearsWithCompany: integer('years_with_company').default(0),
+  averageOrderValue: integer('average_order_value').default(0),
+  repeatCustomerRate: integer('repeat_customer_rate').default(0),
+  growthRate: integer('growth_rate').default(0),
+  satisfactionScore: integer('satisfaction_score').default(0), // stored as 0-50 (divide by 10 for 0-5.0 scale)
+  lastUpdated: timestamp('last_updated').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const organizationMetricsRelations = relations(organizationMetrics, ({ one }) => ({
+  organization: one(organizations, { fields: [organizationMetrics.organizationId], references: [organizations.id] })
+}));
