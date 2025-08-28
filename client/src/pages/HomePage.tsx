@@ -63,42 +63,39 @@ export function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card/50 backdrop-blur-md shadow-sm border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-foreground bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                Rich Habits Custom Clothing
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground" data-testid="text-user-email">
-                {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                data-testid="button-signout"
-                className="hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold text-white bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+          Welcome to Rich Habits
+        </h1>
+        <p className="text-xl text-gray-300">
+          Business Management System
+        </p>
+        <div className="flex items-center justify-center space-x-4 mt-4">
+          <span className="text-sm text-gray-400" data-testid="text-user-email">
+            {user?.email}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            data-testid="button-signout"
+            className="hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            Welcome back!
+      {/* Main Dashboard */}
+      <div className="space-y-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Select a Module
           </h2>
-          <p className="mt-2 text-muted-foreground">Select a module to get started</p>
+          <p className="text-gray-400">Choose what you'd like to work on</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -111,15 +108,15 @@ export function HomePage() {
                 className="transform transition-all duration-300 hover:scale-105"
                 data-testid={`link-${card.href.slice(1)}`}
               >
-                <Card className={`h-full bg-card/50 backdrop-blur-md border-border/50 hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 cursor-pointer group`}>
+                <Card className="h-full bg-gray-800/50 backdrop-blur-md border-gray-700/50 hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 cursor-pointer group">
                   <CardHeader>
-                    <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center mb-3 shadow-lg ${card.glowColor} group-hover:shadow-xl group-hover:${card.glowColor} transition-all duration-300`}>
+                    <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center mb-3 shadow-lg ${card.glowColor} group-hover:shadow-xl transition-all duration-300`}>
                       <Icon className="h-6 w-6 text-white" />
                     </div>
-                    <CardTitle className="text-lg text-foreground group-hover:text-cyan-400 transition-colors">
+                    <CardTitle className="text-lg text-white group-hover:text-cyan-400 transition-colors">
                       {card.title}
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground group-hover:text-cyan-300 transition-colors">
+                    <CardDescription className="text-gray-400 group-hover:text-cyan-300 transition-colors">
                       {card.description}
                     </CardDescription>
                   </CardHeader>
@@ -130,19 +127,19 @@ export function HomePage() {
         </div>
 
         {/* Settings Card */}
-        <div className="mt-8">
+        <div className="max-w-md mx-auto">
           <Link to="/settings" data-testid="link-settings">
-            <Card className="bg-card/50 backdrop-blur-md border-border/50 hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 cursor-pointer group">
+            <Card className="bg-gray-800/50 backdrop-blur-md border-gray-700/50 hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 cursor-pointer group">
               <CardHeader>
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/25 group-hover:shadow-xl group-hover:shadow-purple-500/25 transition-all duration-300">
+                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/25 group-hover:shadow-xl transition-all duration-300">
                     <Settings className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg text-foreground group-hover:text-purple-400 transition-colors">
+                    <CardTitle className="text-lg text-white group-hover:text-purple-400 transition-colors">
                       Settings
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground group-hover:text-purple-300 transition-colors">
+                    <CardDescription className="text-gray-400 group-hover:text-purple-300 transition-colors">
                       System configuration and preferences
                     </CardDescription>
                   </div>
@@ -151,7 +148,7 @@ export function HomePage() {
             </Card>
           </Link>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

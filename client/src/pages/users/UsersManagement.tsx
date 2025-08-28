@@ -97,8 +97,8 @@ export default function UsersManagement() {
   
   // Filters and pagination
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [activeFilter, setActiveFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   
@@ -132,8 +132,8 @@ export default function UsersManagement() {
         page: page.toString(),
         limit: '20',
         search,
-        role: roleFilter,
-        is_active: activeFilter
+        role: roleFilter === 'all' ? '' : roleFilter,
+        is_active: activeFilter === 'all' ? '' : activeFilter
       });
 
       const response = await api.get(`/api/v1/users/comprehensive?${params}`);
@@ -520,7 +520,7 @@ export default function UsersManagement() {
               <SelectValue placeholder="All Roles" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="">All Roles</SelectItem>
+              <SelectItem value="all">All Roles</SelectItem>
               {USER_ROLES.map(role => (
                 <SelectItem key={role.value} value={role.value}>
                   {role.label}
@@ -534,7 +534,7 @@ export default function UsersManagement() {
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="1">Active</SelectItem>
               <SelectItem value="0">Inactive</SelectItem>
             </SelectContent>

@@ -1,0 +1,48 @@
+Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=93237450:850:7
+    at _c11 (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/select.tsx:208:13)
+    at div
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGB5EC7Y.js?v=93237450:42:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6B2F6LNU.js?v=93237450:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6B2F6LNU.js?v=93237450:56:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5USVAUPO.js?v=93237450:39:15
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=93237450:761:13
+    at div
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6B2F6LNU.js?v=93237450:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6B2F6LNU.js?v=93237450:56:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5USVAUPO.js?v=93237450:39:15
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P6HMMFCN.js?v=93237450:48:15)
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=93237450:304:58
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6B2F6LNU.js?v=93237450:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6B2F6LNU.js?v=93237450:56:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGB5EC7Y.js?v=93237450:42:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-D27HVVGD.js?v=93237450:258:22
+    at SelectPortal
+    at _c7 (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/select.tsx:123:12)
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P6HMMFCN.js?v=93237450:48:15)
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P6HMMFCN.js?v=93237450:48:15)
+    at CollectionProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5USVAUPO.js?v=93237450:29:13)
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P6HMMFCN.js?v=93237450:48:15)
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P6HMMFCN.js?v=93237450:48:15)
+    at Popper (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BEM56UKU.js?v=93237450:1919:11)
+    at Select (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=93237450:92:5)
+    at div
+    at div
+    at div
+    at UsersManagement (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/pages/users/UsersManagement.tsx:69:21)
+    at RenderedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=93237450:5653:26)
+    at Outlet (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=93237450:6323:26)
+    at ProtectedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/auth/ProtectedRoute.tsx:22:20)
+    at RenderedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=93237450:5653:26)
+    at Routes (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=93237450:6389:3)
+    at Suspense
+    at AuthProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/auth/AuthProvider.tsx:21:32)
+    at Router (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=93237450:6332:13)
+    at BrowserRouter (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=93237450:9416:3)
+    at ErrorBoundary (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ErrorBoundary.tsx:25:5)
+    at AppRoutes
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-P6HMMFCN.js?v=93237450:48:15)
+    at TooltipProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=93237450:59:5)
+    at QueryClientProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=93237450:2805:3)
+    at _a (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-helmet-async.js?v=93237450:624:5)
+    at App
