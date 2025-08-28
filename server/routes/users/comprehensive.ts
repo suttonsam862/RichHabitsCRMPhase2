@@ -47,6 +47,49 @@ async function hashPassword(password: string): Promise<string> {
   return `hashed_${password}`;
 }
 
+// Statistics endpoint MUST come before /:id route to avoid conflicts
+router.get('/__stats', requireAuth, async (req, res) => {
+  try {
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('users')
+      .select('id, role, is_active, created_at');
+
+    if (usersError) {
+      logSbError(req, 'users.stats', usersError);
+      return sendErr(res, 'DB_ERROR', usersError.message, undefined, 400);
+    }
+
+    const totalUsers = users?.length || 0;
+    const activeUsers = users?.filter(u => u.is_active === 1).length || 0;
+    const recentUsers = users?.filter(u => {
+      if (!u.created_at) return false;
+      const createdDate = new Date(u.created_at);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return createdDate >= thirtyDaysAgo;
+    }).length || 0;
+
+    // Role breakdown
+    const roleBreakdown = users?.reduce((acc: Record<string, number>, user) => {
+      const role = user.role || 'unknown';
+      acc[role] = (acc[role] || 0) + 1;
+      return acc;
+    }, {}) || {};
+
+    const stats = {
+      totalUsers,
+      activeUsers,
+      recentUsers,
+      roleBreakdown
+    };
+
+    sendOk(res, stats);
+  } catch (error: any) {
+    logger.error({ error: error.message, rid: req.id }, 'Failed to get user statistics');
+    sendErr(res, 'INTERNAL_ERROR', 'Failed to get user statistics', undefined, 500);
+  }
+});
+
 // List users with filtering and pagination
 router.get('/', requireAuth, async (req, res) => {
   try {
@@ -496,59 +539,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Get user statistics
-router.get('/__stats', requireAuth, async (req, res) => {
-  try {
-    const stats = await Promise.all([
-      // Total users
-      supabaseAdmin
-        .from('users')
-        .select('*', { count: 'exact', head: true }),
-      
-      // Active users
-      supabaseAdmin
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', 1),
-      
-      // Users by role
-      supabaseAdmin
-        .from('users')
-        .select('role')
-        .eq('is_active', 1),
-      
-      // Recent users (last 30 days)
-      supabaseAdmin
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-    ]);
-
-    const [totalResult, activeResult, rolesResult, recentResult] = stats;
-
-    // Count users by role
-    const roleStats: Record<string, number> = {};
-    if (rolesResult.data) {
-      rolesResult.data.forEach((user: any) => {
-        roleStats[user.role] = (roleStats[user.role] || 0) + 1;
-      });
-    }
-
-    const statsData = {
-      total: totalResult.count || 0,
-      active: activeResult.count || 0,
-      inactive: (totalResult.count || 0) - (activeResult.count || 0),
-      recent: recentResult.count || 0,
-      byRole: roleStats
-    };
-
-    return sendOk(res, statsData);
-
-  } catch (error: any) {
-    logSbError(req, 'users.stats.route', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Failed to fetch user statistics', error.message, 500);
-  }
-});
 
 export { router as comprehensiveUsersRouter };
 export default router;
