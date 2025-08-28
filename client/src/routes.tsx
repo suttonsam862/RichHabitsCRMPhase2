@@ -21,12 +21,12 @@ import { lazy, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 // Lazy loaded pages
-const SetupWizard = lazy(() => import('@/pages/organizations/SetupWizard').then(m => ({ default: m.default })));
+const SimplifiedSetup = lazy(() => import('@/pages/organizations/SimplifiedSetup').then(m => ({ default: m.default })));
 const OrganizationViewPage = lazy(() => import('@/pages/organizations/ViewPage').then(m => ({ default: m.default })));
 const OrganizationEditPage = lazy(() => import('@/pages/organizations/EditPage').then(m => ({ default: m.default })));
 const OrganizationSportsPage = lazy(() => import('@/pages/organizations/SportsPage').then(m => ({ default: m.default })));
 const OrganizationKPIPage = lazy(() => import('@/pages/organizations/KPIPage').then(m => ({ default: m.default })));
-const UsersPage = lazy(() => import('@/pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
+const UsersManagement = lazy(() => import('@/pages/users/UsersManagement').then(m => ({ default: m.default })));
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
@@ -66,13 +66,13 @@ export function AppRoutes() {
                 <Route path="create" element={<CreateWizard />} />
                 <Route path=":id" element={<OrganizationViewPage />} />
                 <Route path=":id/edit" element={<OrganizationEditPage />} />
-                <Route path=":id/setup" element={<SetupWizard />} />
+                <Route path=":id/setup" element={<SimplifiedSetup />} />
                 <Route path=":id/sports" element={<OrganizationSportsPage />} />
                 <Route path=":id/kpis" element={<OrganizationKPIPage />} />
               </Route>
               
               <Route path="/users" element={<ProtectedRoute />}>
-                <Route index element={<UsersPage />} />
+                <Route index element={<UsersManagement />} />
               </Route>
               
               <Route path="/quotes" element={<ProtectedRoute />}>

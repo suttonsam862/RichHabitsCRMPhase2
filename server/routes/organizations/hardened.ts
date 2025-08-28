@@ -72,6 +72,53 @@ async function validateDatabaseSchema() {
   }
 }
 
+// User auto-creation helper function
+async function createUserFromContact(contactEmail: string, contactName: string, organizationId: string) {
+  try {
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', contactEmail)
+      .single();
+
+    if (existingUser) {
+      return { success: true, data: existingUser };
+    }
+
+    // Create new user
+    const userData = {
+      email: contactEmail,
+      full_name: contactName,
+      role: 'contact',
+      organization_id: organizationId,
+      is_active: 1,
+      email_verified: 0,
+      password_hash: null, // Auto-generated accounts don't have passwords initially
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: newUser, error: userError } = await supabaseAdmin
+      .from('users')
+      .insert([userData])
+      .select('id')
+      .single();
+
+    if (userError) {
+      logger.error('Failed to create user from contact:', userError);
+      return { success: false, error: userError };
+    }
+
+    logger.info(`Auto-created user for contact: ${contactEmail}`);
+    return { success: true, data: newUser };
+
+  } catch (error: any) {
+    logger.error('Error in createUserFromContact:', error);
+    return { success: false, error };
+  }
+}
+
 // Prepare sports data for insertion
 function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: string) {
   return sports.map(sport => ({
@@ -890,6 +937,82 @@ router.get('/:id/sports', async (req, res) => {
   } catch (error) {
     console.error('Error fetching sports:', error);
     res.status(500).json({ error: 'Failed to fetch sports' });
+  }
+});
+
+// POST endpoint to save sports and auto-create users from contacts
+const SportsSchema = z.object({
+  sports: z.array(z.object({
+    sport_id: z.string(),
+    contact_name: z.string().min(1),
+    contact_email: z.string().email(),
+    contact_phone: z.string().optional()
+  }))
+});
+
+router.post('/:id/sports', async (req, res) => {
+  try {
+    const { id: organizationId } = req.params;
+    const parseResult = SportsSchema.safeParse(req.body);
+    
+    if (!parseResult.success) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Invalid sports data', parseResult.error.flatten(), 400);
+    }
+    
+    const { sports } = parseResult.data;
+    const orgSportsData = [];
+    
+    // Process each sport and auto-create users
+    for (const sport of sports) {
+      // Auto-create user from contact
+      const userResult = await createUserFromContact(
+        sport.contact_email,
+        sport.contact_name,
+        organizationId
+      );
+      
+      if (!userResult.success) {
+        logger.warn(`Failed to create user for contact ${sport.contact_email}:`, userResult.error);
+        // Continue processing other sports even if one user creation fails
+      }
+      
+      // Prepare org_sports record
+      const orgSportRecord = {
+        organization_id: organizationId,
+        sport_id: sport.sport_id,
+        contact_name: sport.contact_name,
+        contact_email: sport.contact_email,
+        contact_phone: sport.contact_phone || null,
+        contact_user_id: userResult.success ? userResult.data.id : null,
+        is_primary_contact: 0, // Default to not primary
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      orgSportsData.push(orgSportRecord);
+    }
+    
+    // Insert sports data
+    const { data: insertedSports, error: sportsError } = await supabaseAdmin
+      .from('org_sports')
+      .insert(orgSportsData)
+      .select('*');
+    
+    if (sportsError) {
+      logSbError(req, 'orgs.sports.create', sportsError);
+      return sendErr(res, 'DB_ERROR', sportsError.message, undefined, 400);
+    }
+    
+    logger.info(`Created ${insertedSports.length} sport records for organization ${organizationId}`);
+    
+    return sendOk(res, {
+      message: `Successfully saved ${insertedSports.length} sports and auto-created users from contacts`,
+      sports: insertedSports
+    });
+    
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.create.route', error);
+    return sendErr(res, 'INTERNAL_ERROR', 'Failed to save sports data', error.message, 500);
   }
 });
 

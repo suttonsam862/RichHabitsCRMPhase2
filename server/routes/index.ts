@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth';
 import { usersRouter } from './users';
 import adminUsersRouter from './users/admin';
+import { comprehensiveUsersRouter } from './users/comprehensive';
 import hardenedOrganizationsRoutes from './organizations/hardened';
 import sportsRoutes from './sports/index';
 import uploadRoutes from './upload';
@@ -12,6 +13,7 @@ router.get('/healthcheck', (req, res) => res.status(200).json({ status: 'ok', ti
 router.use('/auth', authRoutes);
 router.use('/users', usersRouter);
 router.use('/users/admin', adminUsersRouter);
+router.use('/users/comprehensive', comprehensiveUsersRouter);
 router.use('/organizations', hardenedOrganizationsRoutes);
 router.use('/sports', sportsRoutes);
 router.use('/upload', uploadRoutes);
@@ -19,7 +21,7 @@ router.use('/upload', uploadRoutes);
 // Temporary placeholder for public objects until object storage is properly configured
 router.get('/public-objects/*', (req, res) => {
   // Extract path info for debugging
-  const path = req.params[0];
+  const path = (req.params as any)[0] || '';
   console.log('Public objects request for path:', path);
   
   // For now, return a generic placeholder
