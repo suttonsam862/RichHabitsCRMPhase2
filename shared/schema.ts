@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 
@@ -12,7 +12,7 @@ export const users = pgTable('users', {
   role: text('role').notNull().default('customer'), // admin, sales, designer, manufacturing, customer
   subrole: text('subrole'), // salesperson, designer, manufacturer (for staff roles)
   avatar_url: text('avatar_url'), // profile picture
-  is_active: integer('is_active').default(1).notNull(), // 1 = active, 0 = inactive
+  is_active: boolean('is_active').default(true).notNull(), // true = active, false = inactive
   
   // Organization relationship
   organization_id: varchar('organization_id').references(() => organizations.id),
@@ -34,7 +34,7 @@ export const users = pgTable('users', {
   last_login: timestamp('last_login'),
   password_reset_token: text('password_reset_token'),
   password_reset_expires: timestamp('password_reset_expires'),
-  email_verified: integer('email_verified').default(0), // 0 = unverified, 1 = verified
+  email_verified: boolean('email_verified').default(false), // false = unverified, true = verified
   
   // Permissions and access
   permissions: jsonb('permissions').default('{}'), // Detailed action-level permissions
@@ -57,6 +57,7 @@ export const organizations = pgTable('organizations', {
   zip: text('zip'), // ZIP/Postal Code field
   phone: text('phone'),
   email: text('email'),
+  finance_email: text('finance_email'), // Finance contact email
   
   // Branding (required setup fields)
   logo_url: text('logo_url'), // Organization Logo
@@ -73,12 +74,12 @@ export const organizations = pgTable('organizations', {
   gradient_css: text('gradient_css'),
   
   // Business type and setup status
-  is_business: integer('is_business').default(0).notNull(), // 0 = school, 1 = business
-  setup_complete: integer('setup_complete').default(0).notNull(), // 0 = incomplete, 1 = complete
+  is_business: boolean('is_business').default(false).notNull(), // false = school, true = business
+  setup_complete: boolean('setup_complete').default(false).notNull(), // false = incomplete, true = complete
   setup_completed_at: timestamp('setup_completed_at'),
   
   // Audit fields
-  is_archived: integer('is_archived').default(0).notNull(),
+  is_archived: boolean('is_archived').default(false).notNull(),
   status: text('status').default('active').notNull(),
   notes: text('notes'),
   created_at: timestamp('created_at').defaultNow().notNull(),
@@ -93,7 +94,7 @@ export const orgSports = pgTable('org_sports', {
     contact_name: text('contact_name').notNull(),
     contact_email: text('contact_email').notNull(),
     contact_phone: text('contact_phone'),
-    is_primary_contact: integer('is_primary_contact').default(0).notNull(), // 0 = no, 1 = yes
+    is_primary_contact: boolean('is_primary_contact').default(false).notNull(), // false = no, true = yes
     created_at: timestamp('created_at').defaultNow().notNull(),
     updated_at: timestamp('updated_at').defaultNow().notNull(),
 }, (t) => ({ pk: primaryKey({ columns: [t.organization_id, t.sport_id] }) }));
@@ -150,7 +151,7 @@ export const roles = pgTable('roles', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   description: text('description'),
-  is_staff: integer('is_staff').default(0).notNull(), // 1 = staff role, 0 = customer role
+  is_staff: boolean('is_staff').default(false).notNull(), // true = staff role, false = customer role
   default_permissions: jsonb('default_permissions').default('{}'),
   created_at: timestamp('created_at').defaultNow().notNull()
 });

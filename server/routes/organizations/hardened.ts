@@ -494,6 +494,7 @@ const SetupSchema = z.object({
   brand_primary: z.string().optional(),
   brand_secondary: z.string().optional(),
   color_palette: z.array(z.string()).optional(),
+  finance_email: z.string().email().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -515,6 +516,9 @@ router.post('/:id/setup', async (req: any, res) => {
     if (parse.data.brand_secondary) patch.brand_secondary = parse.data.brand_secondary;
     if (parse.data.color_palette) patch.color_palette = parse.data.color_palette;
     
+    // Finance contact
+    if (parse.data.finance_email) patch.finance_email = parse.data.finance_email;
+    
     // Address fields
     if (parse.data.address) patch.address = parse.data.address;
     if (parse.data.city) patch.city = parse.data.city;
@@ -533,19 +537,8 @@ router.post('/:id/setup', async (req: any, res) => {
       patch.updated_at = new Date().toISOString();
     }
     
-    // Use raw query to bypass schema cache issues
-    const up = await sb.rpc('update_organization_setup', { 
-      org_id: orgId,
-      patch_data: patch 
-    });
-    
-    // Fallback to direct table update if RPC doesn't exist
-    if (up.error && up.error.message?.includes('function')) {
-      const directUp = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
-      if (directUp.error) return sendErr(res, 'DB_ERROR', directUp.error.message, undefined, 400);
-      return sendOk(res, directUp.data);
-    }
-    
+    // Direct table update
+    const up = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
     if (up.error) return sendErr(res, 'DB_ERROR', up.error.message, undefined, 400);
     
     return sendOk(res, up.data);
@@ -935,56 +928,6 @@ function servePlaceholder(res: any, letter: string, cacheSeconds: number): void 
 }
 
 // KPI metrics endpoints
-// GET organization sports endpoint
-router.get('/:id/sports', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    // Fetch sports for the organization
-    const { data: sportsData, error: sportsError } = await supabaseAdmin
-      .from('org_sports')
-      .select(`
-        *,
-        sport:sports!inner(id, name)
-      `)
-      .eq('organization_id', id);
-
-    if (sportsError) {
-      logSbError(req, 'orgs.sports.fetch', sportsError);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to fetch organization sports',
-        details: sportsError
-      });
-    }
-
-    // Map to expected format
-    const mappedSports = (sportsData || []).map((orgSport: any) => ({
-      id: orgSport.sport?.id,
-      name: orgSport.sport?.name,
-      assigned_salesperson: null, // You can add this field later
-      contact_name: orgSport.contact_name,
-      contact_email: orgSport.contact_email,
-      contact_phone: orgSport.contact_phone,
-      created_at: orgSport.created_at,
-      updated_at: orgSport.updated_at
-    }));
-
-    return res.json({
-      success: true,
-      data: mappedSports,
-      count: mappedSports.length
-    });
-
-  } catch (error: any) {
-    logSbError(req, 'orgs.sports.error', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      details: error.message
-    });
-  }
-});
 
 // GET organization summary for quick view dialog
 router.get('/:id/summary', async (req, res) => {
@@ -1207,81 +1150,6 @@ router.post('/:id/sports', async (req, res) => {
   }
 });
 
-// GET organization sports endpoint
-router.get('/:id/sports', async (req, res) => {
-  try {
-    const { id: organizationId } = req.params;
-    
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(organizationId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid organization ID format'
-      });
-    }
-
-    // Check if organization exists
-    const { data: org, error: orgError } = await supabaseAdmin
-      .from('organizations')
-      .select('id, name')
-      .eq('id', organizationId)
-      .single();
-
-    if (orgError || !org) {
-      return res.status(404).json({
-        success: false,
-        error: 'Organization not found'
-      });
-    }
-
-    // Get sports data with related sport info
-    const { data: sportsData, error: sportsError } = await supabaseAdmin
-      .from('org_sports')
-      .select(`
-        *,
-        sport:sports!inner(id, name)
-      `)
-      .eq('organization_id', organizationId)
-      .order('created_at', { ascending: false });
-
-    if (sportsError) {
-      logSbError(req, 'orgs.sports.get', sportsError);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to fetch sports data',
-        details: sportsError
-      });
-    }
-
-    // Transform the data to match frontend expectations
-    const transformedSports = sportsData?.map(orgSport => ({
-      id: orgSport.sport_id,
-      name: orgSport.sport?.name || 'Unknown Sport',
-      contact_name: orgSport.contact_name,
-      contact_email: orgSport.contact_email,
-      contact_phone: orgSport.contact_phone,
-      assigned_salesperson: null, // TODO: Add when salesperson assignment is implemented
-      created_at: orgSport.created_at,
-      updated_at: orgSport.updated_at
-    })) || [];
-
-    logger.info(`Retrieved ${transformedSports.length} sports for organization ${organizationId}`);
-
-    return res.json({
-      success: true,
-      data: transformedSports
-    });
-
-  } catch (error: any) {
-    logSbError(req, 'orgs.sports.route', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      message: error.message
-    });
-  }
-});
 
 // GET organization metrics/KPIs endpoint
 router.get('/:id/metrics', async (req, res) => {

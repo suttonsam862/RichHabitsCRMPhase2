@@ -3,13 +3,13 @@ import { Router } from 'express';
 import createRouter from './create.js';
 import hardenedRouter from './hardened.js';
 import diagnosticsRouter from './diagnostics.js';
-import setupRouter from './setup.js';
+// Removed setupRouter to avoid conflicts with hardened.ts setup endpoint
 
 const router = Router();
 
 router.use('/', createRouter);
 router.use('/', hardenedRouter);
 router.use('/', diagnosticsRouter);
-router.use('/', setupRouter);
+// Removed setupRouter mounting to avoid route conflicts
 
 export default router;
