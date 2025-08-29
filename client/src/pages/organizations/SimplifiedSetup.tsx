@@ -137,13 +137,29 @@ export default function SimplifiedSetup() {
     // Upload to storage
     setUploadingLogo(true);
     try {
-      const uploadResult = await api.post(`/api/v1/organizations/${id}/logo`, {
+      // Step 1: Upload file to general upload endpoint
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload/logo', {
         method: 'POST',
-        body: file
+        body: formData,
       });
 
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.error?.message || 'Logo upload failed');
+      const uploadResult = await response.json();
+
+      if (!response.ok || uploadResult.error) {
+        throw new Error(uploadResult.error || 'Logo upload failed');
+      }
+
+      // Step 2: Set the logo on the organization using the filename
+      const filename = uploadResult.filename || file.name;
+      const setLogoResult = await api.post(`/api/v1/organizations/${id}/logo`, {
+        filename: filename
+      });
+
+      if (!setLogoResult.success) {
+        throw new Error(setLogoResult.error?.message || 'Failed to set organization logo');
       }
 
       toast({
