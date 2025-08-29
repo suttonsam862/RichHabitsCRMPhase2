@@ -7,6 +7,7 @@ import enhancedUsersRouter from './users/enhanced';
 import hardenedOrganizationsRoutes from './organizations/hardened';
 import sportsRoutes from './sports/index';
 import uploadRoutes from './upload';
+import { brandingRouter } from './files/branding.js';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use('/users/admin', adminUsersRouter);
 router.use('/users/enhanced', enhancedUsersRouter);
 router.use('/users', usersRouter);
 router.use('/organizations', hardenedOrganizationsRoutes);
+router.use('/organizations', brandingRouter); // Mount branding routes under /organizations
 router.use('/sports', sportsRoutes);
 router.use('/upload', uploadRoutes);
 
@@ -25,7 +27,7 @@ router.get('/public-objects/*', (req, res) => {
   // Extract path info for debugging
   const path = (req.params as any)[0] || '';
   console.log('Public objects request for path:', path);
-  
+
   // For now, return a generic placeholder
   res.setHeader('Content-Type', 'image/svg+xml');
   res.setHeader('Cache-Control', 'public, max-age=300');
