@@ -152,14 +152,14 @@ export default function SimplifiedSetup() {
         throw new Error(uploadResult.error || 'Logo upload failed');
       }
 
-      // Step 2: Set the logo on the organization using the filename
-      const filename = uploadResult.filename || file.name;
-      const setLogoResult = await api.post(`/api/v1/organizations/${id}/logo`, {
-        filename: filename
+      // Step 2: Apply the logo using the uploaded file's path
+      const logoPath = uploadResult.path; // Use the path returned from upload
+      const applyResult = await api.post(`/api/v1/organizations/${id}/logo/apply`, {
+        key: logoPath
       });
 
-      if (!setLogoResult.success) {
-        throw new Error(setLogoResult.error?.message || 'Failed to set organization logo');
+      if (!applyResult.success) {
+        throw new Error(applyResult.error?.message || 'Failed to apply organization logo');
       }
 
       toast({
