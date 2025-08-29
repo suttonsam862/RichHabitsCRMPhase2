@@ -446,33 +446,33 @@ export default function OrganizationsList(){
                   </div>
                   
                   {/* Actions */}
-                  <div className="px-4 pb-4 flex gap-2">
+                  <div className="px-4 pb-4 flex gap-2 h-12">
                     {needsSetup && canManageOrgSetup(org.id) ? (
                       /* Setup needed layout: Large setup button + compact action buttons */
                       <>
                         <Link 
-                          className="flex-[2] text-center py-3 text-sm rounded-lg bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/70 hover:border-yellow-400 transition-all duration-300 text-yellow-300 hover:text-yellow-200 font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-yellow-500/30" 
+                          className="flex-[2.5] flex items-center justify-center text-sm rounded-md bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/70 hover:border-yellow-400 transition-all duration-300 text-yellow-300 hover:text-yellow-200 font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-yellow-500/30" 
                           to={`/organizations/${org.id}/setup`}
                           data-testid={`link-setup-${org.id}`}
                         >
                           🚀 Complete Setup
                         </Link>
                         <Link 
-                          className="flex-1 text-center py-3 text-sm rounded-lg bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-all duration-200 font-medium"
+                          className="flex-1 flex items-center justify-center text-xs rounded-md bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-all duration-200 font-medium"
                           to={`/organizations/${org.id}`}
                           data-testid={`link-view-${org.id}`}
                         >
                           View
                         </Link>
                         <Link 
-                          className="flex-1 text-center py-3 text-sm rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200 font-medium"
+                          className="flex-1 flex items-center justify-center text-xs rounded-md bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200 font-medium"
                           to={`/organizations/${org.id}/edit`}
                           data-testid={`link-edit-${org.id}`}
                         >
                           Edit
                         </Link>
                         <button 
-                          className="flex-1 py-3 text-sm rounded-lg bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-all duration-200 font-medium text-red-300 hover:text-red-200"
+                          className="flex-1 flex items-center justify-center text-xs rounded-md bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-all duration-200 font-medium text-red-300 hover:text-red-200"
                           onClick={(e) => { e.stopPropagation(); deleteOrganization(org.id, org.name); }}
                           data-testid={`button-delete-${org.id}`}
                           title="Delete organization"
@@ -484,21 +484,21 @@ export default function OrganizationsList(){
                       /* Setup complete layout: All buttons fill space evenly */
                       <>
                         <Link 
-                          className="flex-1 text-center py-3 text-sm rounded-lg bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-all duration-200 font-medium"
+                          className="flex-1 flex items-center justify-center text-sm rounded-md bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 hover:border-cyan-400 transition-all duration-200 font-medium"
                           to={`/organizations/${org.id}`}
                           data-testid={`link-view-${org.id}`}
                         >
                           View
                         </Link>
                         <Link 
-                          className="flex-1 text-center py-3 text-sm rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200 font-medium"
+                          className="flex-1 flex items-center justify-center text-sm rounded-md bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200 font-medium"
                           to={`/organizations/${org.id}/edit`}
                           data-testid={`link-edit-${org.id}`}
                         >
                           Edit
                         </Link>
                         <button 
-                          className="flex-1 py-3 text-sm rounded-lg bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-all duration-200 font-medium text-red-300 hover:text-red-200"
+                          className="flex-1 flex items-center justify-center text-sm rounded-md bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-all duration-200 font-medium text-red-300 hover:text-red-200"
                           onClick={(e) => { e.stopPropagation(); deleteOrganization(org.id, org.name); }}
                           data-testid={`button-delete-${org.id}`}
                           title="Delete organization"
