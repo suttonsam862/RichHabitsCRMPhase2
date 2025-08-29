@@ -20,10 +20,10 @@ const CORE_COLUMNS = [
   'tags', 'status', 'is_archived', 'created_at', 'updated_at', 'logo_url'
 ];
 
-// EMERGENCY: PostgREST cache issue - temporarily disable setup columns
-const SETUP_COLUMNS: string[] = []; // Disabled due to PostgREST cache
+// Setup columns re-enabled after cache fix
+const SETUP_COLUMNS: string[] = ['setup_complete', 'finance_email', 'setup_completed_at', 'tax_exempt_doc_key'];
 
-const ALL_COLUMNS = [...CORE_COLUMNS]; // Core only until cache resolved
+const ALL_COLUMNS = [...CORE_COLUMNS, ...SETUP_COLUMNS]; // Include setup fields
 
 export interface OrganizationData {
   id: string;
@@ -139,11 +139,11 @@ export class OrganizationsService {
       updatedAt: dbRow.updated_at,
       logoUrl: dbRow.logo_url || null,
       
-      // Setup fields (hardcoded until PostgREST cache fixed)
-      setupComplete: false, // All orgs will show as needing setup
-      financeEmail: null,
-      setupCompletedAt: null,
-      taxExemptDocKey: null
+      // Setup fields (now reading from database)
+      setupComplete: dbRow.setup_complete || false,
+      financeEmail: dbRow.finance_email || null,
+      setupCompletedAt: dbRow.setup_completed_at || null,
+      taxExemptDocKey: dbRow.tax_exempt_doc_key || null
     };
   }
 

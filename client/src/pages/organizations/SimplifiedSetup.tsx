@@ -21,23 +21,13 @@ import {
   Search,
   User
 } from 'lucide-react';
-// Sports available for organizations
+// Sports available for organizations - using real database IDs
 const AVAILABLE_SPORTS = [
-  { id: "550e8400-e29b-41d4-a716-446655440001", name: "Football" },
-  { id: "550e8400-e29b-41d4-a716-446655440002", name: "Basketball" },
-  { id: "550e8400-e29b-41d4-a716-446655440003", name: "Soccer" },
-  { id: "550e8400-e29b-41d4-a716-446655440004", name: "Baseball" },
-  { id: "550e8400-e29b-41d4-a716-446655440005", name: "Track & Field" },
-  { id: "550e8400-e29b-41d4-a716-446655440006", name: "Swimming" },
-  { id: "550e8400-e29b-41d4-a716-446655440007", name: "Volleyball" },
-  { id: "550e8400-e29b-41d4-a716-446655440008", name: "Tennis" },
-  { id: "550e8400-e29b-41d4-a716-446655440009", name: "Wrestling" },
-  { id: "550e8400-e29b-41d4-a716-446655440010", name: "Golf" },
-  { id: "550e8400-e29b-41d4-a716-446655440011", name: "Cross Country" },
-  { id: "550e8400-e29b-41d4-a716-446655440012", name: "Lacrosse" },
-  { id: "550e8400-e29b-41d4-a716-446655440013", name: "Hockey" },
-  { id: "550e8400-e29b-41d4-a716-446655440014", name: "Softball" },
-  { id: "550e8400-e29b-41d4-a716-446655440015", name: "Cheerleading" },
+  { id: "1e5fa927-1fa6-41d9-b8cc-ca46bb1d4f14", name: "Baseball" },
+  { id: "98372dc5-c700-4271-ba5c-abc05256a759", name: "Basketball" },
+  { id: "3644a4a6-301e-4d89-9360-7893b0f73448", name: "Football" },
+  { id: "6b19f4ab-0005-4753-9ac0-a96e773d3c6e", name: "Soccer" },
+  { id: "1ffcad10-6450-44f4-9876-f7c60fab03ac", name: "Wrestling" },
 ];
 
 interface SportContact {

@@ -1,0 +1,431 @@
+    rid: "f4hzmvrj"
+    method: "GET"
+    path: "/src/components/DevOverlay.tsx"
+    status: 304
+    ms: 0
+[18:46:17.296] INFO (7223): GET 304 1ms /src/lib/utils.ts
+    rid: "mwqk333h"
+    method: "GET"
+    path: "/src/lib/utils.ts"
+    status: 304
+    ms: 1
+[18:46:17.320] INFO (7223): GET 304 24ms /src/hooks/use-toast.ts
+    rid: "gidcoqjs"
+    method: "GET"
+    path: "/src/hooks/use-toast.ts"
+    status: 304
+    ms: 24
+[18:46:17.335] INFO (7223): GET 304 0ms /src/components/ui/toast.tsx
+    rid: "9y1usg6m"
+    method: "GET"
+    path: "/src/components/ui/toast.tsx"
+    status: 304
+    ms: 0
+[18:46:17.343] INFO (7223): GET 304 0ms /src/pages/auth/RegisterPage.tsx
+    rid: "4kfewceu"
+    method: "GET"
+    path: "/src/pages/auth/RegisterPage.tsx"
+    status: 304
+    ms: 0
+[18:46:17.362] INFO (7223): GET 304 0ms /src/components/ErrorBoundary.tsx
+    rid: "j0zgq34d"
+    method: "GET"
+    path: "/src/components/ErrorBoundary.tsx"
+    status: 304
+    ms: 0
+[18:46:17.380] INFO (7223): GET 304 1ms /src/pages/auth/AuthConfirmedPage.tsx
+    rid: "o7upsxrg"
+    method: "GET"
+    path: "/src/pages/auth/AuthConfirmedPage.tsx"
+    status: 304
+    ms: 1
+[18:46:17.479] INFO (7223): GET 304 1ms /src/pages/HomePage.tsx
+    rid: "dl1l3zgb"
+    method: "GET"
+    path: "/src/pages/HomePage.tsx"
+    status: 304
+    ms: 1
+[18:46:17.480] INFO (7223): GET 304 1ms /src/pages/organizations/List.tsx
+    rid: "qpo0vdda"
+    method: "GET"
+    path: "/src/pages/organizations/List.tsx"
+    status: 304
+    ms: 1
+[18:46:17.511] INFO (7223): GET 304 0ms /src/pages/auth/ResetPasswordPage.tsx
+    rid: "xut9zkrw"
+    method: "GET"
+    path: "/src/pages/auth/ResetPasswordPage.tsx"
+    status: 304
+    ms: 0
+[18:46:17.516] INFO (7223): GET 304 0ms /src/pages/auth/LoginPage.tsx
+    rid: "cqqi78f7"
+    method: "GET"
+    path: "/src/pages/auth/LoginPage.tsx"
+    status: 304
+    ms: 0
+[18:46:17.517] INFO (7223): GET 304 0ms /src/auth/AuthProvider.tsx
+    rid: "ykg0ttz9"
+    method: "GET"
+    path: "/src/auth/AuthProvider.tsx"
+    status: 304
+    ms: 0
+[18:46:17.528] INFO (7223): GET 304 0ms /src/auth/ProtectedRoute.tsx
+    rid: "58c8fbo3"
+    method: "GET"
+    path: "/src/auth/ProtectedRoute.tsx"
+    status: 304
+    ms: 0
+[18:46:17.581] INFO (7223): GET 304 0ms /src/pages/organizations/CreateWizard.tsx
+    rid: "0piywz09"
+    method: "GET"
+    path: "/src/pages/organizations/CreateWizard.tsx"
+    status: 304
+    ms: 0
+[18:46:17.583] INFO (7223): GET 304 0ms /src/components/NotFound.tsx
+    rid: "8yqo7if2"
+    method: "GET"
+    path: "/src/components/NotFound.tsx"
+    status: 304
+    ms: 0
+[18:46:17.616] INFO (7223): GET 304 0ms /src/components/ui/card.tsx
+    rid: "fpx2t7hd"
+    method: "GET"
+    path: "/src/components/ui/card.tsx"
+    status: 304
+    ms: 0
+[18:46:17.618] INFO (7223): GET 304 0ms /src/components/ui/button.tsx
+    rid: "5m4t6dxc"
+    method: "GET"
+    path: "/src/components/ui/button.tsx"
+    status: 304
+    ms: 0
+[18:46:17.619] INFO (7223): GET 304 0ms /src/components/ui/label.tsx
+    rid: "3fzev6db"
+    method: "GET"
+    path: "/src/components/ui/label.tsx"
+    status: 304
+    ms: 0
+[18:46:17.631] INFO (7223): GET 304 0ms /src/components/ui/input.tsx
+    rid: "rt3i7bv1"
+    method: "GET"
+    path: "/src/components/ui/input.tsx"
+    status: 304
+    ms: 0
+[18:46:17.683] INFO (7223): GET 304 0ms /src/components/ui/alert.tsx
+    rid: "mooot8d6"
+    method: "GET"
+    path: "/src/components/ui/alert.tsx"
+    status: 304
+    ms: 0
+[18:46:17.686] INFO (7223): GET 304 0ms /src/lib/paths.ts
+    rid: "6s0pk0gy"
+    method: "GET"
+    path: "/src/lib/paths.ts"
+    status: 304
+    ms: 0
+[18:46:17.719] INFO (7223): GET 304 0ms /src/lib/supabase.ts
+    rid: "i7f1byui"
+    method: "GET"
+    path: "/src/lib/supabase.ts"
+    status: 304
+    ms: 0
+[18:46:17.721] INFO (7223): GET 304 0ms /src/components/ui/GlowCard.tsx
+    rid: "r5zcfgz4"
+    method: "GET"
+    path: "/src/components/ui/GlowCard.tsx"
+    status: 304
+    ms: 0
+[18:46:17.723] INFO (7223): GET 304 1ms /src/lib/api.ts
+    rid: "fs74mmye"
+    method: "GET"
+    path: "/src/lib/api.ts"
+    status: 304
+    ms: 1
+[18:46:17.734] INFO (7223): GET 304 0ms /src/auth/roles.ts
+    rid: "ev0uywf2"
+    method: "GET"
+    path: "/src/auth/roles.ts"
+    status: 304
+    ms: 0
+[18:46:17.786] INFO (7223): GET 304 0ms /src/features/organizations/gradient.ts
+    rid: "lbj9mb6m"
+    method: "GET"
+    path: "/src/features/organizations/gradient.ts"
+    status: 304
+    ms: 0
+[18:46:17.789] INFO (7223): GET 304 0ms /src/auth/guard.tsx
+    rid: "9wgnc375"
+    method: "GET"
+    path: "/src/auth/guard.tsx"
+    status: 304
+    ms: 0
+[18:46:17.822] INFO (7223): GET 304 0ms /src/layouts/AppLayout.tsx
+    rid: "v1kr934h"
+    method: "GET"
+    path: "/src/layouts/AppLayout.tsx"
+    status: 304
+    ms: 0
+[18:46:17.825] INFO (7223): GET 304 0ms /src/lib/devtools.ts
+    rid: "djbml3z8"
+    method: "GET"
+    path: "/src/lib/devtools.ts"
+    status: 304
+    ms: 0
+[18:46:21.143] INFO (7223): organizations.list ok
+    rid: "4vsc5x3t"
+    count: 2
+[18:46:21.144] INFO (7223): GET 304 287ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "4vsc5x3t"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 287
+[18:46:21.573] INFO (7223): organizations.list ok
+    rid: "syyt3e3c"
+    count: 2
+[18:46:21.574] INFO (7223): GET 304 323ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "syyt3e3c"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 323
+[18:47:14.873] INFO (7223): GET 304 245ms /src/pages/organizations/SimplifiedSetup.tsx
+    rid: "qjssvq3l"
+    method: "GET"
+    path: "/src/pages/organizations/SimplifiedSetup.tsx"
+    status: 304
+    ms: 245
+[18:47:14.993] INFO (7223): GET 304 0ms /src/components/ui/radio-group.tsx
+    rid: "70f89ozj"
+    method: "GET"
+    path: "/src/components/ui/radio-group.tsx"
+    status: 304
+    ms: 0
+[18:47:15.408] INFO (7223): GET 200 275ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup
+    rid: "aa6l3k5x"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup"
+    status: 200
+    ms: 275
+6:47:15 PM [vite] Skipping frontend handler for static asset: /organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/org-logos/4debcc4f-103d-452a-9e0d-c5691c09c8bd.svg
+[18:47:15.777] INFO (7223): GET 304 265ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup
+    rid: "rt0inuwq"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup"
+    status: 304
+    ms: 265
+[18:47:15.915] WARN (7223): GET 404 4ms /organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/org-logos/4debcc4f-103d-452a-9e0d-c5691c09c8bd.svg
+    rid: "y527osu5"
+    method: "GET"
+    path: "/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/org-logos/4debcc4f-103d-452a-9e0d-c5691c09c8bd.svg"
+    status: 404
+    ms: 4
+🔍 Logo upload request received: {
+  hasFile: true,
+  fileName: 'OM.svg',
+  fileSize: 242899,
+  mimeType: 'image/svg+xml'
+}
+🪣 Ensuring bucket exists...
+✅ Bucket logos already exists
+☁️ Uploading to Supabase: {
+  filePath: 'org-logos/ede1f61b-6bc9-4020-90e4-8d0d7cfb6acc.svg',
+  contentType: 'image/svg+xml',
+  size: 242899
+}
+✅ Upload successful: {
+  filePath: 'org-logos/ede1f61b-6bc9-4020-90e4-8d0d7cfb6acc.svg',
+  publicUrl: 'https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/public/logos/org-logos/ede1f61b-6bc9-4020-90e4-8d0d7cfb6acc.svg'
+}
+[18:47:27.842] INFO (7223): POST 200 1496ms /api/v1/upload/logo
+    rid: "2xoi7n6n"
+    method: "POST"
+    path: "/api/v1/upload/logo"
+    status: 200
+    ms: 1496
+[18:47:28.187] INFO (7223): POST 200 236ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo/apply
+    rid: "02m8o4tj"
+    method: "POST"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo/apply"
+    status: 200
+    ms: 236
+[18:47:34.232] INFO (7223): GET 304 243ms /api/v1/users?limit=10
+    rid: "2sbt1m0s"
+    method: "GET"
+    path: "/api/v1/users?limit=10"
+    status: 304
+    ms: 243
+[18:47:42.219] INFO (7223): POST 200 210ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup
+    rid: "f7zvn57r"
+    method: "POST"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup"
+    status: 200
+    ms: 210
+[18:47:42.728] ERROR (7223): 🔴 Supabase error
+    rid: "ix1d5686"
+    ctx: "orgs.sports.create"
+    code: "23503"
+    message: "insert or update on table \"org_sports\" violates foreign key constraint \"org_sports_sport_id_fkey\""
+    details: {
+      "code": "23503",
+      "details": "Key (sport_id)=(550e8400-e29b-41d4-a716-446655440009) is not present in table \"sports\".",
+      "hint": null,
+      "message": "insert or update on table \"org_sports\" violates foreign key constraint \"org_sports_sport_id_fkey\""
+    }
+[18:47:42.729] WARN (7223): POST 400 404ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/sports
+    rid: "ix1d5686"
+    method: "POST"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/sports"
+    status: 400
+    ms: 404
+[18:47:42.920] INFO (7223): GET 200 76ms /src/pages/organizations/ViewPage.tsx
+    rid: "qammora2"
+    method: "GET"
+    path: "/src/pages/organizations/ViewPage.tsx"
+    status: 200
+    ms: 76
+[18:47:43.260] INFO (7223): GET 200 122ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8
+    rid: "cxx4qdoo"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8"
+    status: 200
+    ms: 122
+[18:47:43.769] INFO (7223): GET 304 393ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo
+    rid: "krvhfwxp"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo"
+    status: 304
+    ms: 393
+[18:47:53.789] INFO (7223): GET 200 55ms /src/pages/organizations/SportsPage.tsx
+    rid: "dy5x4xoc"
+    method: "GET"
+    path: "/src/pages/organizations/SportsPage.tsx"
+    status: 200
+    ms: 55
+[18:47:54.160] INFO (7223): GET 200 159ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/sports
+    rid: "tb69xb4q"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/sports"
+    status: 200
+    ms: 159
+Error fetching metrics: TypeError: Cannot read properties of null (reading 'total_revenue')
+    at <anonymous> (/home/runner/workspace/server/routes/organizations/hardened.ts:1039:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[18:47:58.309] INFO (7223): GET 200 114ms /src/pages/organizations/KPIPage.tsx
+    rid: "uaeth3ac"
+    method: "GET"
+    path: "/src/pages/organizations/KPIPage.tsx"
+    status: 200
+    ms: 114
+[18:47:58.913] ERROR (7223): GET 500 393ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/metrics
+    rid: "t1omqtjc"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/metrics"
+    status: 500
+    ms: 393
+[18:48:03.569] INFO (7223): organizations.list ok
+    rid: "k4js8fhl"
+    count: 2
+[18:48:03.569] INFO (7223): GET 200 126ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "k4js8fhl"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 126
+[18:48:03.919] INFO (7223): organizations.list ok
+    rid: "wjvf3ppr"
+    count: 2
+[18:48:03.919] INFO (7223): GET 304 245ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "wjvf3ppr"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 245
+[18:49:11.956] INFO (7223): GET 200 351ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup
+    rid: "o4do654t"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup"
+    status: 200
+    ms: 351
+[18:49:12.304] INFO (7223): GET 304 244ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup
+    rid: "zcdpcwtn"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup"
+    status: 304
+    ms: 244
+6:49:12 PM [vite] Skipping frontend handler for static asset: /organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/org-logos/ede1f61b-6bc9-4020-90e4-8d0d7cfb6acc.svg
+[18:49:12.445] WARN (7223): GET 404 1ms /organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/org-logos/ede1f61b-6bc9-4020-90e4-8d0d7cfb6acc.svg
+    rid: "c3ejsphi"
+    method: "GET"
+    path: "/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/org-logos/ede1f61b-6bc9-4020-90e4-8d0d7cfb6acc.svg"
+    status: 404
+    ms: 1
+🔍 Logo upload request received: {
+  hasFile: true,
+  fileName: 'OM.svg',
+  fileSize: 242899,
+  mimeType: 'image/svg+xml'
+}
+🪣 Ensuring bucket exists...
+✅ Bucket logos already exists
+☁️ Uploading to Supabase: {
+  filePath: 'org-logos/be2c1c54-3c0b-4c2b-a6da-1bf6b37d1143.svg',
+  contentType: 'image/svg+xml',
+  size: 242899
+}
+✅ Upload successful: {
+  filePath: 'org-logos/be2c1c54-3c0b-4c2b-a6da-1bf6b37d1143.svg',
+  publicUrl: 'https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/public/logos/org-logos/be2c1c54-3c0b-4c2b-a6da-1bf6b37d1143.svg'
+}
+[18:49:23.756] INFO (7223): POST 200 1426ms /api/v1/upload/logo
+    rid: "xf38tc80"
+    method: "POST"
+    path: "/api/v1/upload/logo"
+    status: 200
+    ms: 1426
+[18:49:24.100] INFO (7223): POST 200 237ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo/apply
+    rid: "f8e6dpla"
+    method: "POST"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo/apply"
+    status: 200
+    ms: 237
+[18:49:37.265] INFO (7223): POST 200 1626ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup
+    rid: "ah052eqm"
+    method: "POST"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/setup"
+    status: 200
+    ms: 1626
+[18:49:37.611] ERROR (7223): 🔴 Supabase error
+    rid: "d5qsehhk"
+    ctx: "orgs.sports.create"
+    code: "23503"
+    message: "insert or update on table \"org_sports\" violates foreign key constraint \"org_sports_sport_id_fkey\""
+    details: {
+      "code": "23503",
+      "details": "Key (sport_id)=(550e8400-e29b-41d4-a716-446655440009) is not present in table \"sports\".",
+      "hint": null,
+      "message": "insert or update on table \"org_sports\" violates foreign key constraint \"org_sports_sport_id_fkey\""
+    }
+[18:49:37.611] WARN (7223): POST 400 240ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/sports
+    rid: "d5qsehhk"
+    method: "POST"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/sports"
+    status: 400
+    ms: 240
+[18:49:41.975] INFO (7223): organizations.list ok
+    rid: "i5zyd4b3"
+    count: 2
+[18:49:41.975] INFO (7223): GET 200 287ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "i5zyd4b3"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 287
+[18:49:42.384] INFO (7223): organizations.list ok
+    rid: "miygoua0"
+    count: 2
+[18:49:42.385] INFO (7223): GET 304 302ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "miygoua0"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
