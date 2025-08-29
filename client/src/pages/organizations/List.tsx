@@ -451,7 +451,7 @@ export default function OrganizationsList(){
                       /* Setup needed layout: Large setup button + compact action buttons */
                       <>
                         <Link 
-                          className="flex-[2.5] flex items-center justify-center text-sm rounded-md bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/70 hover:border-yellow-400 transition-all duration-300 text-yellow-300 hover:text-yellow-200 font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-yellow-500/30" 
+                          className="flex-[2.5] flex items-center justify-center text-xs rounded-md bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/70 hover:border-yellow-400 transition-all duration-300 text-yellow-300 hover:text-yellow-200 font-semibold animate-pulse hover:animate-none hover:shadow-lg hover:shadow-yellow-500/30 whitespace-nowrap" 
                           to={`/organizations/${org.id}/setup`}
                           data-testid={`link-setup-${org.id}`}
                         >
