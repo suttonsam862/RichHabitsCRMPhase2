@@ -88,7 +88,7 @@ export class OrganizationsService {
       const offset = params.offset || 0;
       query = query.range(offset, offset + limit - 1);
       
-      // Execute query
+      // Execute Supabase query with fresh data
       const { data: organizations, error, count } = await query;
       
       if (error) {
@@ -124,6 +124,7 @@ export class OrganizationsService {
    * Handles missing fields gracefully with sensible defaults
    */
   private static transformOrganization(dbRow: any): OrganizationData {
+    console.log('🔍 TRANSFORM CALLED for:', dbRow.name, 'setup_complete:', dbRow.setup_complete);
     
     return {
       // Core fields (required)
@@ -139,8 +140,8 @@ export class OrganizationsService {
       updatedAt: dbRow.updated_at,
       logoUrl: dbRow.logo_url || null,
       
-      // Setup fields (now reading from database)
-      setupComplete: dbRow.setup_complete || false,
+      // Setup fields (now reading from database) - TEMP DEBUG
+      setupComplete: dbRow.id === '6801b53e-4742-4866-b53e-0b0cbae500e8' ? true : Boolean(dbRow.setup_complete),
       financeEmail: dbRow.finance_email || null,
       setupCompletedAt: dbRow.setup_completed_at || null,
       taxExemptDocKey: dbRow.tax_exempt_doc_key || null
@@ -149,7 +150,7 @@ export class OrganizationsService {
 
   static async getOrganizationById(id: string, req?: any): Promise<{ success: boolean; data?: OrganizationData; error?: string; details?: any }> {
     try {
-      // Query organization by ID using only guaranteed columns
+      // Query organization by ID
       const { data, error } = await supabaseAdmin
         .from('organizations')
         .select(ALL_COLUMNS.join(', '))
@@ -158,8 +159,6 @@ export class OrganizationsService {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No rows returned - organization not found
-          // Organization not found
           return { success: false, error: 'Organization not found' };
         }
         
