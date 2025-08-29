@@ -27,6 +27,7 @@ const OrganizationEditPage = lazy(() => import('@/pages/organizations/EditPage')
 const OrganizationSportsPage = lazy(() => import('@/pages/organizations/SportsPage').then(m => ({ default: m.default })));
 // AddSportsPage component doesn't exist, removing for now
 const OrganizationKPIPage = lazy(() => import('@/pages/organizations/KPIPage').then(m => ({ default: m.default })));
+// Comprehensive users management with full CRUD, roles, and permissions
 const UsersManagement = lazy(() => import('@/pages/users/UsersManagement').then(m => ({ default: m.default })));
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
