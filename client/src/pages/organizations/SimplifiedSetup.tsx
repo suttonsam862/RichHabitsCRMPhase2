@@ -141,7 +141,7 @@ export default function SimplifiedSetup() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/upload/logo', {
+      const response = await fetch('/api/v1/upload/logo', {
         method: 'POST',
         body: formData,
       });
