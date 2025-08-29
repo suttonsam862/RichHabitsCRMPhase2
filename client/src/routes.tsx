@@ -84,7 +84,7 @@ export function AppRoutes() {
               </Route>
               
               <Route path="/quote" element={<ProtectedRoute />}>
-                <Route index element={<QuoteGenerator />} />
+                {/* Quotes listing page - quote generation is at /quote */}
               </Route>
               
               <Route path="/orders" element={<ProtectedRoute />}>

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, FileText, History, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { QuoteGenerator } from '@/components/quotes/QuoteGenerator';
+// QuoteGenerator component moved to dedicated page route
 import { useToast } from '@/hooks/use-toast';
 
 export function QuotesPage() {
@@ -72,7 +72,11 @@ export function QuotesPage() {
           </div>
 
           <TabsContent value="create" className="space-y-6">
-            <QuoteGenerator 
+            {/* QuoteGenerator moved to /quote route - see routes.tsx */}
+            <div className="p-4 text-center text-white/70">
+              <p>Quote generation is available at the <a href="/quote" className="text-blue-400 hover:underline">/quote</a> route</p>
+            </div>
+            <div 
               onQuoteGenerated={handleQuoteGenerated}
               onQuoteSaved={handleQuoteSaved}
             />
