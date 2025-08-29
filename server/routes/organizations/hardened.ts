@@ -1198,6 +1198,35 @@ router.post('/:id/sports', async (req, res) => {
 });
 
 
+// DEBUG: Test endpoint to check setup_complete field
+router.get('/:id/debug-setup', async (req: any, res) => {
+  try {
+    const orgId = req.params.id;
+    
+    // Test direct Supabase query
+    const { data: supabaseData, error: supabaseError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name, setup_complete, logo_url')
+      .eq('id', orgId)
+      .single();
+    
+    // Test direct PostgreSQL query
+    const { Pool } = await import('pg');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pgResult = await pool.query(
+      'SELECT id, name, setup_complete, logo_url FROM organizations WHERE id = $1',
+      [orgId]
+    );
+    await pool.end();
+    
+    return sendOk(res, {
+      supabase: { data: supabaseData, error: supabaseError },
+      postgresql: { data: pgResult.rows[0] || null }
+    });
+  } catch (error: any) {
+    return sendErr(res, 'DEBUG_ERROR', error.message, undefined, 500);
+  }
+});
 
 // GET organization metrics/KPIs endpoint
 router.get('/:id/metrics', async (req, res) => {
