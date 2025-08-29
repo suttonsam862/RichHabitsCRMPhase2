@@ -88,17 +88,44 @@ export class OrganizationsService {
       const offset = params.offset || 0;
       query = query.range(offset, offset + limit - 1);
       
-      // Execute Supabase query with fresh data
-      const { data: organizations, error, count } = await query;
+      // Use direct PostgreSQL to bypass Supabase cache issues
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
       
-      if (error) {
-        logSbError(req, 'orgs.service.list', error);
-        return {
-          success: false,
-          error: 'Database query failed',
-          details: error
-        };
+      const whereConditions = [];
+      const queryValues = [];
+      let paramIndex = 1;
+      
+      if (params.q) {
+        whereConditions.push(`name ILIKE $${paramIndex}`);
+        queryValues.push(`%${params.q}%`);
+        paramIndex++;
       }
+      
+      if (params.includeArchived !== 'true') {
+        whereConditions.push(`is_archived = $${paramIndex}`);
+        queryValues.push(false);
+        paramIndex++;
+      }
+      
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+      const sortColumn = params.sort === 'updated' ? 'updated_at' : 'name';
+      const sortDirection = params.dir === 'asc' ? 'ASC' : 'DESC';
+      const limit = params.limit || 24;
+      const offset = params.offset || 0;
+      
+      const sqlQuery = `
+        SELECT * FROM organizations 
+        ${whereClause}
+        ORDER BY ${sortColumn} ${sortDirection}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+      
+      queryValues.push(limit, offset);
+      
+      const result = await pool.query(sqlQuery, queryValues);
+      const organizations = result.rows;
+      await pool.end();
       
       // Transform data using hardened mapping
       const transformedData = organizations?.map(org => this.transformOrganization(org)) || [];
@@ -124,8 +151,6 @@ export class OrganizationsService {
    * Handles missing fields gracefully with sensible defaults
    */
   private static transformOrganization(dbRow: any): OrganizationData {
-    console.log('🔍 TRANSFORM CALLED for:', dbRow.name, 'setup_complete:', dbRow.setup_complete);
-    
     return {
       // Core fields (required)
       id: dbRow.id,
@@ -140,8 +165,8 @@ export class OrganizationsService {
       updatedAt: dbRow.updated_at,
       logoUrl: dbRow.logo_url || null,
       
-      // Setup fields (now reading from database) - TEMP DEBUG
-      setupComplete: dbRow.id === '6801b53e-4742-4866-b53e-0b0cbae500e8' ? true : Boolean(dbRow.setup_complete),
+      // Setup fields - read directly from database with fallback
+      setupComplete: dbRow.setup_complete ?? false,
       financeEmail: dbRow.finance_email || null,
       setupCompletedAt: dbRow.setup_completed_at || null,
       taxExemptDocKey: dbRow.tax_exempt_doc_key || null
@@ -150,35 +175,22 @@ export class OrganizationsService {
 
   static async getOrganizationById(id: string, req?: any): Promise<{ success: boolean; data?: OrganizationData; error?: string; details?: any }> {
     try {
-      // Query organization by ID
-      const { data, error } = await supabaseAdmin
-        .from('organizations')
-        .select(ALL_COLUMNS.join(', '))
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return { success: false, error: 'Organization not found' };
-        }
-        
-        logSbError(req, 'orgs.service.getById', error);
-        return { 
-          success: false, 
-          error: 'Database query failed',
-          details: error
-        };
-      }
-
-      if (!data) {
-        // Organization not found
+      // Use direct PostgreSQL to get accurate data
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      
+      const result = await pool.query(
+        'SELECT * FROM organizations WHERE id = $1',
+        [id]
+      );
+      await pool.end();
+      
+      if (result.rows.length === 0) {
         return { success: false, error: 'Organization not found' };
       }
 
-      // Organization found
-
       // Map database result to DTO using the existing transform method
-      const mappedData = this.transformOrganization(data);
+      const mappedData = this.transformOrganization(result.rows[0]);
       
       return { success: true, data: mappedData };
       
