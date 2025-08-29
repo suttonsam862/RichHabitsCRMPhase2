@@ -107,7 +107,7 @@ async function createUserFromContact(contactEmail: string, contactName: string, 
 
     if (userError) {
       logger.error('Failed to create user from contact:', userError);
-      return { success: false, error: userError };
+      return { success: false, error: userError.message || userError };
     }
 
     logger.info(`Auto-created user for contact: ${contactEmail}`);
@@ -285,11 +285,55 @@ router.post('/', async (req, res) => {
     
     // Handle sports contacts if any
     if (validatedData.sports.length > 0) {
-      const sportsPayload = prepareSportsData(validatedData.sports, orgData.id);
+      const sportsWithUsers = [];
       
+      // First, create users for each contact
+      for (const sport of validatedData.sports) {
+        try {
+          // Auto-create user from contact
+          const userResult = await createUserFromContact(
+            sport.contactEmail,
+            sport.contactName,
+            orgData.id
+          );
+          
+          if (!userResult.success) {
+            logger.warn(`Failed to create user for contact ${sport.contactEmail}:`, userResult.error);
+          }
+          
+          // Add the user_id to sport data
+          sportsWithUsers.push({
+            organization_id: orgData.id,
+            sport_id: sport.sportId,
+            contact_name: sport.contactName,
+            contact_email: sport.contactEmail,
+            contact_phone: sport.contactPhone || null,
+            contact_user_id: userResult.success && userResult.data ? userResult.data.id : null,
+            is_primary_contact: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        } catch (error: any) {
+          logger.error('Error creating user for contact:', error);
+          // Continue with other contacts even if one fails
+          sportsWithUsers.push({
+            organization_id: orgData.id,
+            sport_id: sport.sportId,
+            contact_name: sport.contactName,
+            contact_email: sport.contactEmail,
+            contact_phone: sport.contactPhone || null,
+            contact_user_id: null,
+            is_primary_contact: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+      
+      // Insert sports data with user associations
       const { data: sportsData, error: sportsError } = await supabaseAdmin
         .from('org_sports')
-        .insert(sportsPayload)
+        .insert(sportsWithUsers)
         .select();
       
       if (sportsError) {
@@ -302,6 +346,8 @@ router.post('/', async (req, res) => {
           sportsError: sportsError
         });
       }
+      
+      logger.info(`Created ${sportsData.length} sports with user associations for organization ${orgData.id}`);
     }
     
     return res.status(201).json({
@@ -419,7 +465,7 @@ router.get('/:id/setup', async (req: any, res) => {
     if (org.error) return sendErr(res, 'DB_ERROR', org.error.message, undefined, 400);
     
     // For now, just return org data without sports until shipping fields are added to schema
-    const sports = []; // TODO: Implement sports shipping addresses when schema is ready
+    const sports: any[] = []; // TODO: Implement sports shipping addresses when schema is ready
     
     return sendOk(res, { org: org.data, sports });
   } catch (error: any) {
@@ -1117,7 +1163,7 @@ router.post('/:id/sports', async (req, res) => {
         contact_name: sport.contact_name,
         contact_email: sport.contact_email,
         contact_phone: sport.contact_phone || null,
-        contact_user_id: userResult.success ? userResult.data.id : null,
+        contact_user_id: userResult.success && userResult.data ? userResult.data.id : null,
         is_primary_contact: 0, // Default to not primary
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -1147,6 +1193,161 @@ router.post('/:id/sports', async (req, res) => {
   } catch (error: any) {
     logSbError(req, 'orgs.sports.create.route', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Failed to save sports data', error.message, 500);
+  }
+});
+
+// GET organization sports endpoint
+router.get('/:id/sports', async (req, res) => {
+  try {
+    const { id: organizationId } = req.params;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(organizationId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid organization ID format'
+      });
+    }
+
+    // Check if organization exists
+    const { data: org, error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name')
+      .eq('id', organizationId)
+      .single();
+
+    if (orgError || !org) {
+      return res.status(404).json({
+        success: false,
+        error: 'Organization not found'
+      });
+    }
+
+    // Get sports data with related sport info
+    const { data: sportsData, error: sportsError } = await supabaseAdmin
+      .from('org_sports')
+      .select(`
+        *,
+        sport:sports!inner(id, name)
+      `)
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false });
+
+    if (sportsError) {
+      logSbError(req, 'orgs.sports.get', sportsError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch sports data',
+        details: sportsError
+      });
+    }
+
+    // Transform the data to match frontend expectations
+    const transformedSports = sportsData?.map(orgSport => ({
+      id: orgSport.sport_id,
+      name: orgSport.sport?.name || 'Unknown Sport',
+      contact_name: orgSport.contact_name,
+      contact_email: orgSport.contact_email,
+      contact_phone: orgSport.contact_phone,
+      assigned_salesperson: null, // TODO: Add when salesperson assignment is implemented
+      created_at: orgSport.created_at,
+      updated_at: orgSport.updated_at
+    })) || [];
+
+    logger.info(`Retrieved ${transformedSports.length} sports for organization ${organizationId}`);
+
+    return res.json({
+      success: true,
+      data: transformedSports
+    });
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.route', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// GET organization metrics/KPIs endpoint
+router.get('/:id/metrics', async (req, res) => {
+  try {
+    const { id: organizationId } = req.params;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(organizationId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid organization ID format'
+      });
+    }
+
+    // Check if organization exists
+    const { data: org, error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name, created_at')
+      .eq('id', organizationId)
+      .single();
+
+    if (orgError || !org) {
+      return res.status(404).json({
+        success: false,
+        error: 'Organization not found'
+      });
+    }
+
+    // Get sports count
+    const { data: sportsData, error: sportsError } = await supabaseAdmin
+      .from('org_sports')
+      .select('id')
+      .eq('organization_id', organizationId);
+
+    const activeSports = sportsData?.length || 0;
+
+    // Calculate years with Rich Habits (from creation date)
+    const createdAt = new Date(org.created_at);
+    const now = new Date();
+    const yearsWithRichHabits = Math.max(0, Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24 * 365)));
+
+    // Try to get real metrics from organization_metrics table if it exists
+    const { data: metricsData } = await supabaseAdmin
+      .from('organization_metrics')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    // Build metrics response with real data where available, fallbacks otherwise
+    const metrics = {
+      totalRevenue: metricsData?.total_revenue || 0,
+      totalOrders: metricsData?.total_orders || 0,
+      activeSports: activeSports,
+      yearsWithRichHabits: yearsWithRichHabits || 0,
+      averageOrderValue: metricsData?.average_order_value || 0,
+      repeatCustomerRate: metricsData?.repeat_customer_rate || 0,
+      growthRate: metricsData?.growth_rate || 0,
+      satisfactionScore: metricsData?.satisfaction_score || 0
+    };
+
+    logger.info(`Retrieved metrics for organization ${organizationId}: ${activeSports} sports, ${yearsWithRichHabits} years`);
+
+    return res.json({
+      success: true,
+      data: metrics
+    });
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.metrics.route', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
   }
 });
 
