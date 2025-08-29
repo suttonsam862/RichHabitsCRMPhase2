@@ -106,7 +106,7 @@ async function createUserFromContact(contactEmail: string, contactName: string, 
       .single();
 
     if (userError) {
-      logger.error('Failed to create user from contact:', userError.message);
+      logger.error(`Failed to create user from contact: ${userError.message}`);
       return { success: false, error: userError.message };
     }
 
