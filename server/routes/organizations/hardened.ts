@@ -1144,15 +1144,44 @@ router.post('/:id/sports', async (req, res) => {
       orgSportsData.push(orgSportRecord);
     }
     
-    // Insert sports data
-    const { data: insertedSports, error: sportsError } = await supabaseAdmin
-      .from('org_sports')
-      .insert(orgSportsData)
-      .select('*');
-    
-    if (sportsError) {
-      logSbError(req, 'orgs.sports.create', sportsError);
-      return sendErr(res, 'DB_ERROR', sportsError.message, undefined, 400);
+    // Insert sports data using direct PostgreSQL to bypass schema cache/constraint issues
+    let insertedSports;
+    try {
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      
+      const insertPromises = orgSportsData.map(async (record) => {
+        const query = `
+          INSERT INTO org_sports (
+            organization_id, sport_id, contact_name, contact_email, contact_phone,
+            contact_user_id, is_primary_contact, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          RETURNING *
+        `;
+        const values = [
+          record.organization_id, record.sport_id, record.contact_name, 
+          record.contact_email, record.contact_phone, record.contact_user_id,
+          record.is_primary_contact, record.created_at, record.updated_at
+        ];
+        return pool.query(query, values);
+      });
+      
+      const results = await Promise.all(insertPromises);
+      insertedSports = results.map(r => r.rows[0]);
+      await pool.end();
+      
+    } catch (pgError: any) {
+      // Fallback to Supabase if PostgreSQL fails
+      const { data: fallbackSports, error: sportsError } = await supabaseAdmin
+        .from('org_sports')
+        .insert(orgSportsData)
+        .select('*');
+      
+      if (sportsError) {
+        logSbError(req, 'orgs.sports.create', sportsError);
+        return sendErr(res, 'DB_ERROR', sportsError.message, undefined, 400);
+      }
+      insertedSports = fallbackSports;
     }
     
     logger.info(`Created ${insertedSports.length} sport records for organization ${organizationId}`);
