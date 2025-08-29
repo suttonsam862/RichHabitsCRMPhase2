@@ -4,7 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Building, 
   Palette, 
@@ -15,7 +17,9 @@ import {
   X,
   Plus,
   Trash2,
-  Sparkles
+  Sparkles,
+  Search,
+  User
 } from 'lucide-react';
 // Sports available for organizations
 const AVAILABLE_SPORTS = [
@@ -43,6 +47,7 @@ interface SportContact {
   contact_name: string;
   contact_email: string;
   contact_phone?: string;
+  user_id?: string; // For existing users
 }
 
 export default function SimplifiedSetup() {
@@ -74,6 +79,22 @@ export default function SimplifiedSetup() {
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [contactType, setContactType] = useState<"new" | "existing">("new");
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  // Fetch users for selection
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/v1/users", userSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (userSearch) params.append("search", userSearch);
+      params.append("limit", "10");
+      const response = await api.get(`/api/v1/users?${params.toString()}`);
+      return response;
+    },
+    enabled: contactType === "existing",
+  });
 
   // Load organization data
   useEffect(() => {
@@ -190,23 +211,56 @@ export default function SimplifiedSetup() {
   const addSportContact = () => {
     const sportName = AVAILABLE_SPORTS.find(s => s.id === selectedSportId)?.name;
     
-    if (!selectedSportId || !sportName || !contactName || !contactEmail) {
+    if (!selectedSportId || !sportName) {
       toast({
         title: "Missing Information",
-        description: "Please select a sport and enter contact name and email.",
+        description: "Please select a sport.",
         variant: "destructive"
       });
       return;
     }
 
-    const newContact: SportContact = {
-      id: Date.now().toString(),
-      sportId: selectedSportId,
-      sportName,
-      contact_name: contactName,
-      contact_email: contactEmail,
-      contact_phone: contactPhone,
-    };
+    let newContact: SportContact;
+
+    if (contactType === "new") {
+      if (!contactName || !contactEmail) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter contact name and email.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      newContact = {
+        id: Date.now().toString(),
+        sportId: selectedSportId,
+        sportName,
+        contact_name: contactName,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+      };
+    } else {
+      // Using existing user
+      if (!selectedUser) {
+        toast({
+          title: "Missing Information",
+          description: "Please select a user.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      newContact = {
+        id: Date.now().toString(),
+        sportId: selectedSportId,
+        sportName,
+        contact_name: selectedUser.fullName || selectedUser.email,
+        contact_email: selectedUser.email,
+        contact_phone: selectedUser.phone || "",
+        user_id: selectedUser.id, // Store the user ID for existing users
+      };
+    }
 
     setSports([...sports, newContact]);
     
@@ -215,6 +269,9 @@ export default function SimplifiedSetup() {
     setContactName('');
     setContactEmail('');
     setContactPhone('');
+    setSelectedUser(null);
+    setUserSearch("");
+    setContactType("new");
   };
 
   const removeSportContact = (id: string) => {
@@ -511,7 +568,8 @@ export default function SimplifiedSetup() {
             </p>
 
             {/* Add Sport Form */}
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <div className="space-y-6 mb-6">
+              {/* Sport Selection */}
               <div>
                 <Label className="text-white font-medium mb-2 block">Sport</Label>
                 <select
@@ -529,44 +587,134 @@ export default function SimplifiedSetup() {
                 </select>
               </div>
 
-              <div>
-                <Label className="text-white font-medium mb-2 block">Contact Name</Label>
-                <Input
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  placeholder="John Smith"
-                  className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
-                  data-testid="input-contact-name"
-                />
+              {/* Contact Type Toggle */}
+              <div className="space-y-3">
+                <Label className="text-white font-medium">Contact Type</Label>
+                <RadioGroup 
+                  value={contactType} 
+                  onValueChange={(value: "new" | "existing") => setContactType(value)}
+                  className="flex gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="new" id="new" className="border-white/40 text-cyan-400" />
+                    <Label htmlFor="new" className="text-white cursor-pointer">Add New Contact</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="existing" id="existing" className="border-white/40 text-cyan-400" />
+                    <Label htmlFor="existing" className="text-white cursor-pointer">Select Existing User</Label>
+                  </div>
+                </RadioGroup>
               </div>
 
-              <div>
-                <Label className="text-white font-medium mb-2 block">Contact Email</Label>
-                <Input
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  placeholder="john@school.edu"
-                  type="email"
-                  className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
-                  data-testid="input-contact-email"
-                />
-              </div>
+              {contactType === "new" ? (
+                /* New Contact Form */
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-white font-medium mb-2 block">Contact Name</Label>
+                    <Input
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      placeholder="John Smith"
+                      className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
+                      data-testid="input-contact-name"
+                    />
+                  </div>
 
-              <div>
-                <Label className="text-white font-medium mb-2 block">Contact Phone (Optional)</Label>
-                <Input
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  placeholder="(555) 123-4567"
-                  className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
-                  data-testid="input-contact-phone"
-                />
-              </div>
+                  <div>
+                    <Label className="text-white font-medium mb-2 block">Contact Email</Label>
+                    <Input
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="john@school.edu"
+                      type="email"
+                      className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
+                      data-testid="input-contact-email"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label className="text-white font-medium mb-2 block">Contact Phone (Optional)</Label>
+                    <Input
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="(555) 123-4567"
+                      className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
+                      data-testid="input-contact-phone"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* User Selection */
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-white font-medium">Search Users</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-white/40" />
+                      <Input
+                        placeholder="Search by name or email..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50 pl-10"
+                        data-testid="input-user-search"
+                      />
+                    </div>
+                  </div>
+
+                  {/* User Selection List */}
+                  {contactType === "existing" && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {usersLoading ? (
+                        <div className="text-white/60 text-center py-4">Loading users...</div>
+                      ) : usersData?.data?.length > 0 ? (
+                        usersData.data.map((user: any) => (
+                          <div
+                            key={user.id}
+                            onClick={() => setSelectedUser(user)}
+                            className={`p-3 rounded border cursor-pointer transition-colors ${
+                              selectedUser?.id === user.id
+                                ? 'border-cyan-400 bg-cyan-400/10'
+                                : 'border-white/20 bg-white/5 hover:bg-white/10'
+                            }`}
+                            data-testid={`user-option-${user.id}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <User className="w-4 h-4 text-white/60" />
+                              <div>
+                                <div className="text-white font-medium">
+                                  {user.fullName || user.email}
+                                </div>
+                                <div className="text-white/60 text-sm">{user.email}</div>
+                                {user.phone && (
+                                  <div className="text-white/60 text-sm">{user.phone}</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : userSearch ? (
+                        <div className="text-white/60 text-center py-4">No users found</div>
+                      ) : (
+                        <div className="text-white/60 text-center py-4">
+                          Start typing to search for users
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedUser && (
+                    <div className="p-3 border border-green-400/50 rounded bg-green-400/10">
+                      <div className="text-white font-medium">Selected User:</div>
+                      <div className="text-white/80">{selectedUser.fullName || selectedUser.email}</div>
+                      <div className="text-white/60 text-sm">{selectedUser.email}</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <Button
               onClick={addSportContact}
-              disabled={!selectedSportId || !contactName || !contactEmail}
+              disabled={!selectedSportId || (contactType === "new" ? (!contactName || !contactEmail) : !selectedUser)}
               className="mb-6 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
               data-testid="button-add-sport"
             >
