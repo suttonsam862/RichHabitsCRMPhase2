@@ -27,6 +27,10 @@ const SetupSchema = z.object({
   brand_secondary: z.string().optional(),
   color_palette: z.array(z.string()).optional(),
   finance_email: z.string().email().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
   complete: z.boolean().optional()
 });
 
@@ -40,6 +44,10 @@ router.post('/:id/setup', async (req:any,res)=>{
   if (parse.data.brand_secondary) patch.brand_secondary = parse.data.brand_secondary;
   if (parse.data.color_palette)   patch.color_palette   = parse.data.color_palette;
   if (parse.data.finance_email)   patch.finance_email   = parse.data.finance_email;
+  if (parse.data.address)         patch.address         = parse.data.address;
+  if (parse.data.city)            patch.city            = parse.data.city;
+  if (parse.data.state)           patch.state           = parse.data.state;
+  if (parse.data.zip)             patch.zip             = parse.data.zip;
   if (patch.brand_primary && patch.brand_secondary) {
     patch.gradient_css = `linear-gradient(135deg, ${patch.brand_primary} 0%, ${patch.brand_secondary} 100%)`;
   }

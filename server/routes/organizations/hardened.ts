@@ -106,7 +106,7 @@ async function createUserFromContact(contactEmail: string, contactName: string, 
       .single();
 
     if (userError) {
-      logger.error('Failed to create user from contact:', userError.message || 'Unknown error');
+      logger.error('Failed to create user from contact:', userError.message || userError);
       return { success: false, error: userError.message || userError };
     }
 
@@ -517,8 +517,8 @@ router.post('/:id/setup', async (req: any, res) => {
     
     // Mark setup as complete when complete flag is true
     if (parse.data.complete) {
-      patch.setupComplete = 1; // Use camelCase to match database field
-      patch.setupCompletedAt = new Date().toISOString();
+      patch.setup_complete = true; // Use snake_case to match database field
+      patch.setup_completed_at = new Date().toISOString();
       patch.updated_at = new Date().toISOString();
     }
     
