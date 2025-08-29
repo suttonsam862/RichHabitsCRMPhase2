@@ -29,7 +29,8 @@ const CreateOrganizationSchema = z.object({
     sportId: z.string().uuid(),
     contactName: z.string(),
     contactEmail: z.string().email(),
-    contactPhone: z.string().optional()
+    contactPhone: z.string().optional(),
+    userId: z.string().uuid().optional() // For existing users
   })).default([])
 });
 
@@ -287,34 +288,44 @@ router.post('/', async (req, res) => {
     if (validatedData.sports.length > 0) {
       const sportsWithUsers = [];
       
-      // First, create users for each contact
+      // Process each sport contact (either existing user or new contact)
       for (const sport of validatedData.sports) {
         try {
-          // Auto-create user from contact
-          const userResult = await createUserFromContact(
-            sport.contactEmail,
-            sport.contactName,
-            orgData.id
-          );
+          let contactUserId = null;
           
-          if (!userResult.success) {
-            logger.warn(`Failed to create user for contact ${sport.contactEmail}:`, userResult.error);
+          if (sport.userId) {
+            // Using existing user
+            logger.info(`Associating existing user ${sport.userId} with sport ${sport.sportId}`);
+            contactUserId = sport.userId;
+          } else {
+            // Auto-create user from contact
+            const userResult = await createUserFromContact(
+              sport.contactEmail,
+              sport.contactName,
+              orgData.id
+            );
+            
+            if (!userResult.success) {
+              logger.warn(`Failed to create user for contact ${sport.contactEmail}:`, userResult.error);
+            } else {
+              contactUserId = userResult.data?.id || null;
+            }
           }
           
-          // Add the user_id to sport data
+          // Add the sport data with user association
           sportsWithUsers.push({
             organization_id: orgData.id,
             sport_id: sport.sportId,
             contact_name: sport.contactName,
             contact_email: sport.contactEmail,
             contact_phone: sport.contactPhone || null,
-            contact_user_id: userResult.success && userResult.data ? userResult.data.id : null,
+            contact_user_id: contactUserId,
             is_primary_contact: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
         } catch (error: any) {
-          logger.error('Error creating user for contact:', error);
+          logger.error('Error processing sport contact:', error);
           // Continue with other contacts even if one fails
           sportsWithUsers.push({
             organization_id: orgData.id,

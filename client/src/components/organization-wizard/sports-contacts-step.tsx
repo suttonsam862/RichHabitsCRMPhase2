@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Plus, Trash2, Search, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { type CreateOrgFormData, type SportContact } from "./types";
@@ -42,6 +44,9 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedSportId, setSelectedSportId] = useState<string | undefined>(undefined);
+  const [contactType, setContactType] = useState<"new" | "existing">("new");
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const form = useForm({
     resolver: zodResolver(contactSchema),
@@ -50,6 +55,18 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       contact_email: "",
       contact_phone: "",
     },
+  });
+
+  // Fetch users for selection
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/v1/users", userSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (userSearch) params.append("search", userSearch);
+      params.append("limit", "10");
+      return apiRequest(`/api/v1/users?${params.toString()}`, { method: "GET" });
+    },
+    enabled: contactType === "existing",
   });
 
   const createOrgMutation = useMutation({
@@ -86,6 +103,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
                 contactName: sport.contact_name,
                 contactEmail: sport.contact_email,
                 contactPhone: sport.contact_phone,
+                userId: sport.user_id, // Include user_id for existing users
               },
             })
           )
@@ -115,21 +133,59 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
   });
 
   const addSportContact = () => {
-    const formValues = form.getValues();
     const sportName = AVAILABLE_SPORTS.find(s => s.id === selectedSportId)?.name;
-
-    if (!selectedSportId || !sportName || !formValues.contact_name || !formValues.contact_email) {
+    
+    if (!selectedSportId || !sportName) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a sport.",
+        variant: "destructive",
+      });
       return;
     }
 
-    const newContact: SportContact = {
-      id: Date.now().toString(),
-      sportId: selectedSportId,
-      sportName,
-      contact_name: formValues.contact_name,
-      contact_email: formValues.contact_email,
-      contact_phone: formValues.contact_phone,
-    };
+    let newContact: SportContact;
+
+    if (contactType === "new") {
+      const formValues = form.getValues();
+      if (!formValues.contact_name || !formValues.contact_email) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter contact name and email.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      newContact = {
+        id: Date.now().toString(),
+        sportId: selectedSportId,
+        sportName,
+        contact_name: formValues.contact_name,
+        contact_email: formValues.contact_email,
+        contact_phone: formValues.contact_phone,
+      };
+    } else {
+      // Using existing user
+      if (!selectedUser) {
+        toast({
+          title: "Missing Information",
+          description: "Please select a user.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      newContact = {
+        id: Date.now().toString(),
+        sportId: selectedSportId,
+        sportName,
+        contact_name: selectedUser.fullName || selectedUser.email,
+        contact_email: selectedUser.email,
+        contact_phone: selectedUser.phone || "",
+        user_id: selectedUser.id, // Store the user ID for existing users
+      };
+    }
 
     const updatedSports = [...(formData.sports || []), newContact];
     updateFormData({ sports: updatedSports });
@@ -137,6 +193,9 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
     // Reset form and selection
     form.reset();
     setSelectedSportId("");
+    setSelectedUser(null);
+    setUserSearch("");
+    setContactType("new");
   };
 
   const removeSportContact = (id: string) => {
@@ -179,95 +238,183 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       <div className="space-y-4 p-4 border border-white/20 rounded-lg bg-white/5">
         <h4 className="text-lg font-medium text-white">Add Sport Contact</h4>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Sport Selection */}
-          <div className="space-y-2">
-            <label className="text-white text-sm font-medium">Sport</label>
-            <Select value={selectedSportId && selectedSportId !== "" ? selectedSportId : undefined} onValueChange={setSelectedSportId}>
-              <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-sport">
-                <SelectValue placeholder="Select sport" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-white/20">
-                {AVAILABLE_SPORTS
-                  .filter(sport => !(formData.sports || []).some(s => s.sportId === sport.id))
-                  .map((sport) => (
-                  <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
-                    {sport.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Sport Selection */}
+        <div className="space-y-2">
+          <label className="text-white text-sm font-medium">Sport</label>
+          <Select value={selectedSportId && selectedSportId !== "" ? selectedSportId : undefined} onValueChange={setSelectedSportId}>
+            <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-sport">
+              <SelectValue placeholder="Select sport" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-white/20">
+              {AVAILABLE_SPORTS
+                .filter(sport => !(formData.sports || []).some(s => s.sportId === sport.id))
+                .map((sport) => (
+                <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
+                  {sport.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Contact Type Toggle */}
+        <div className="space-y-3">
+          <label className="text-white text-sm font-medium">Contact Type</label>
+          <RadioGroup 
+            value={contactType} 
+            onValueChange={(value: "new" | "existing") => setContactType(value)}
+            className="flex gap-6"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="new" id="new" className="border-white/40 text-blue-400" />
+              <Label htmlFor="new" className="text-white cursor-pointer">Add New Contact</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="existing" id="existing" className="border-white/40 text-blue-400" />
+              <Label htmlFor="existing" className="text-white cursor-pointer">Select Existing User</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {contactType === "new" ? (
+          /* New Contact Form */
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Form {...form}>
+                <FormField
+                  control={form.control}
+                  name="contact_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">Contact Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter contact name"
+                          className="glass text-white border-white/20 focus:border-blue-400"
+                          data-testid="input-contact-name"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contact_email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">Contact Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="contact@example.com"
+                          className="glass text-white border-white/20 focus:border-blue-400"
+                          data-testid="input-contact-email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </Form>
+            </div>
+
+            <Form {...form}>
+              <FormField
+                control={form.control}
+                name="contact_phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Contact Phone (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="(555) 123-4567"
+                        className="glass text-white border-white/20 focus:border-blue-400"
+                        data-testid="input-contact-phone"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </Form>
           </div>
+        ) : (
+          /* User Selection */
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-white text-sm font-medium">Search Users</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-white/40" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="glass text-white border-white/20 focus:border-blue-400 pl-10"
+                  data-testid="input-user-search"
+                />
+              </div>
+            </div>
 
-          <Form {...form}>
-            <FormField
-              control={form.control}
-              name="contact_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Contact Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter contact name"
-                      className="glass text-white border-white/20 focus:border-blue-400"
-                      data-testid="input-contact-name"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </Form>
-        </div>
+            {/* User Selection List */}
+            {contactType === "existing" && (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {usersLoading ? (
+                  <div className="text-white/60 text-center py-4">Loading users...</div>
+                ) : usersData?.data?.length > 0 ? (
+                  usersData.data.map((user: any) => (
+                    <div
+                      key={user.id}
+                      onClick={() => setSelectedUser(user)}
+                      className={`p-3 rounded border cursor-pointer transition-colors ${
+                        selectedUser?.id === user.id
+                          ? 'border-blue-400 bg-blue-400/10'
+                          : 'border-white/20 bg-white/5 hover:bg-white/10'
+                      }`}
+                      data-testid={`user-option-${user.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <User className="w-4 h-4 text-white/60" />
+                        <div>
+                          <div className="text-white font-medium">
+                            {user.fullName || user.email}
+                          </div>
+                          <div className="text-white/60 text-sm">{user.email}</div>
+                          {user.phone && (
+                            <div className="text-white/60 text-sm">{user.phone}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : userSearch ? (
+                  <div className="text-white/60 text-center py-4">No users found</div>
+                ) : (
+                  <div className="text-white/60 text-center py-4">
+                    Start typing to search for users
+                  </div>
+                )}
+              </div>
+            )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Form {...form}>
-            <FormField
-              control={form.control}
-              name="contact_email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Contact Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="contact@example.com"
-                      className="glass text-white border-white/20 focus:border-blue-400"
-                      data-testid="input-contact-email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="contact_phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Contact Phone (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="(555) 123-4567"
-                      className="glass text-white border-white/20 focus:border-blue-400"
-                      data-testid="input-contact-phone"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </Form>
-        </div>
+            {selectedUser && (
+              <div className="p-3 border border-green-400/50 rounded bg-green-400/10">
+                <div className="text-white font-medium">Selected User:</div>
+                <div className="text-white/80">{selectedUser.fullName || selectedUser.email}</div>
+                <div className="text-white/60 text-sm">{selectedUser.email}</div>
+              </div>
+            )}
+          </div>
+        )}
 
         <Button
           type="button"
           onClick={addSportContact}
-          disabled={!canAddSport}
+          disabled={!selectedSportId || (contactType === "new" ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUser)}
           className="neon-button w-full"
           data-testid="button-add-sport"
         >

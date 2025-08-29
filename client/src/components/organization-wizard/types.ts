@@ -7,6 +7,7 @@ export interface SportContact {
   contact_name: string;
   contact_email: string;
   contact_phone?: string;
+  user_id?: string; // For existing users
 }
 
 export interface CreateOrgFormData {
