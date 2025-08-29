@@ -25,7 +25,7 @@ const SimplifiedSetup = lazy(() => import('@/pages/organizations/SimplifiedSetup
 const OrganizationViewPage = lazy(() => import('@/pages/organizations/ViewPage').then(m => ({ default: m.default })));
 const OrganizationEditPage = lazy(() => import('@/pages/organizations/EditPage').then(m => ({ default: m.default })));
 const OrganizationSportsPage = lazy(() => import('@/pages/organizations/SportsPage').then(m => ({ default: m.default })));
-const AddSportsPage = lazy(() => import('@/pages/organizations/AddSportsPage').then(m => ({ default: m.default })));
+// AddSportsPage component doesn't exist, removing for now
 const OrganizationKPIPage = lazy(() => import('@/pages/organizations/KPIPage').then(m => ({ default: m.default })));
 const UsersManagement = lazy(() => import('@/pages/users/UsersManagement').then(m => ({ default: m.default })));
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
@@ -33,6 +33,7 @@ const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ d
 const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
 const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ default: m.default })));
 
 // Loading component for lazy loaded pages
 function PageLoader() {
@@ -69,7 +70,7 @@ export function AppRoutes() {
                 <Route path=":id/edit" element={<OrganizationEditPage />} />
                 <Route path=":id/setup" element={<SimplifiedSetup />} />
                 <Route path=":id/sports" element={<OrganizationSportsPage />} />
-                <Route path=":id/sports/new" element={<AddSportsPage />} />
+                {/* AddSportsPage route removed - component doesn't exist */}
                 <Route path=":id/kpis" element={<OrganizationKPIPage />} />
               </Route>
               
@@ -79,6 +80,10 @@ export function AppRoutes() {
               
               <Route path="/quotes" element={<ProtectedRoute />}>
                 <Route index element={<QuotesPage />} />
+              </Route>
+              
+              <Route path="/quote" element={<ProtectedRoute />}>
+                <Route index element={<QuoteGenerator />} />
               </Route>
               
               <Route path="/orders" element={<ProtectedRoute />}>
