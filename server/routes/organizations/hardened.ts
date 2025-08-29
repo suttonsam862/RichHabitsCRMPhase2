@@ -537,11 +537,29 @@ router.post('/:id/setup', async (req: any, res) => {
       patch.updated_at = new Date().toISOString();
     }
     
-    // Direct table update
-    const up = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
-    if (up.error) return sendErr(res, 'DB_ERROR', up.error.message, undefined, 400);
-    
-    return sendOk(res, up.data);
+    // Use PostgreSQL client directly to bypass schema cache issues  
+    try {
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      
+      const setClause = Object.keys(patch).map((key, index) => `${key} = $${index + 2}`).join(', ');
+      const values = [orgId, ...Object.values(patch)];
+      const query = `UPDATE organizations SET ${setClause} WHERE id = $1 RETURNING *`;
+      
+      const result = await pool.query(query, values);
+      await pool.end();
+      
+      if (result.rows.length === 0) {
+        return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
+      }
+      
+      return sendOk(res, result.rows[0]);
+    } catch (pgError: any) {
+      // Fallback to Supabase if PostgreSQL fails
+      const directUp = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
+      if (directUp.error) return sendErr(res, 'DB_ERROR', directUp.error.message, undefined, 400);
+      return sendOk(res, directUp.data);
+    }
   } catch (error: any) {
     logSbError(req, 'orgs.setup.save', error);
     return res.status(500).json({
