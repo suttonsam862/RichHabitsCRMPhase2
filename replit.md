@@ -1,78 +1,63 @@
-# Overview
+# 🚨 Agent Enforcement Protocol (CR-999)
 
-This is a full-stack CRM application for managing organizations, orders, and users with role-based access control. The system is built as a modern web application with a React frontend and Express.js backend, using PostgreSQL for data persistence and Supabase for authentication and database hosting. The application follows a schema-first approach with strict validation gates and database integrity checks.
+## 🧠 Model Enforcement
+Always use **OpenAI GPT-5** via the integrated API key for all reasoning and coding tasks.  
+If GPT-5 is unavailable, fallback to **GPT-4.1**.  
+Do not use Replit default (Claude/Ghostwriter) unless explicitly instructed.  
+Confirm model choice at the PLAN gate before edits.
 
-# User Preferences
+You are the Replit build agent for Sam Sutton. Your highest priority is database
+schema/data integrity and CR-999 compliance. You must execute the gates in order and
+refuse to proceed if any blocker fails.
 
-Preferred communication style: Simple, everyday language.
+## Hard Gates (must pass in this order)
+1) PLAN → state assumptions & verify plan
+2) ENV → `npm run db:preflight`
+3) SCHEMA → `npm run db:validate` (if fail → migrate/apply → refresh → validate)
+4) AUTH/RLS → validate policy/role model
+5) TYPES → DB types/DTO parity
+6) LINT/FORMAT → code quality
+7) UNIT / INTEGRATION / E2E (smoke is advisory)
+8) DOCS → update if API/schema changed
+9) READY_TO_EDIT → perform edits
+10) FINAL_VALIDATE → `npm run db:validate` + tests; update checklist/snapshot
 
-# System Architecture
+## Strict Rules
+- SCHEMA-FIRST: never code against unknown/stale schema.
+- DATA-FIRST: verify key invariants before/after; fix projection (views) not truth.
+- AUTH/RLS-FIRST: solve permissions correctly; don't sidestep policies.
+- TYPE-SAFE-FIRST: regenerate types; block on mismatches.
+- TEST-FIRST: green tests required.
+- DETERMINISTIC TOOLING: one command per purpose; pinned versions.
+- IDEMPOTENT MIGRATIONS: re-runnable SQL; refresh cache; retry once.
+- SECURITY-FIRST: least privilege; validate/sanitize.
+- OBSERVABILITY-FIRST: minimal structured logs at edges.
+- REVERSIBLE-FIRST: provide rollback; require approval for destructive ops.
 
-## Frontend Architecture
-- **Framework**: React 18 with TypeScript for type safety
-- **Styling**: Tailwind CSS with shadcn/ui component library for consistent design
-- **Routing**: React Router v6 with lazy loading boundaries for performance
-- **State Management**: TanStack Query for server state and caching
-- **Build Tool**: Vite for fast development and optimized builds
-- **Layout System**: Role-based layouts (Admin, Sales, Manufacturing, Designer, Customer) with print/export routes
+## Output Format
+Always output: **PLAN → ACTIONS → RESULTS** (with commands and pass/fail).
 
-## Backend Architecture
-- **Framework**: Express.js with TypeScript running on Node.js
-- **Database ORM**: Drizzle ORM for type-safe database operations
-- **API Design**: RESTful APIs with structured error handling and validation
-- **Authentication**: Supabase Auth with JWT tokens and middleware
-- **Validation**: Zod schemas for request/response validation
-- **Logging**: Structured logging with request IDs for traceability
+---
 
-## Database Design
-- **Primary Database**: PostgreSQL hosted on Supabase
-- **Schema Management**: Drizzle Kit for migrations with idempotent SQL
-- **Security**: Row Level Security (RLS) policies for data access control
-- **Core Entities**: Organizations, Users, Sports, Orders with proper foreign key relationships
-- **Schema Validation**: Automated schema checking and validation gates
+# 📊 System Architecture (compressed authoritative overview)
 
-## Development Workflow
-- **Gate System**: 10-step validation process (PLAN → ENV → SCHEMA → AUTH/RLS → TYPES → LINT/FORMAT → TESTS → DOCS → READY_TO_EDIT → FINAL_VALIDATE)
-- **Schema-First**: All changes must validate against current database schema
-- **Change Requests**: Structured YAML-based change request system for all features
-- **Type Safety**: Shared TypeScript types between frontend and backend
+## Frontend
+- React + TypeScript, Tailwind, shadcn/ui
+- React Router v6 (lazy boundaries), TanStack Query for server state
+- Role-based layouts (Admin, Sales, Manufacturing, Designer, Customer)
+- Print/export routes; smooth transitions with reduced-motion safety
 
-## Security Architecture
-- **Authentication**: Supabase Auth with service role and anon keys
-- **Authorization**: Role-based access control with RLS policies
-- **API Security**: JWT validation middleware on protected routes
-- **Data Validation**: Input sanitization and validation at API boundaries
+## Backend
+- Express + TypeScript; Drizzle ORM to Supabase Postgres
+- REST endpoints, Zod DTO validation; feature-based folder structure
+- RBAC with five roles; server-side admin ops via service-role key
 
-# External Dependencies
+## Database
+- Supabase Postgres; RLS policies enforced
+- Schema validated via CR-999; types generated post-migration
+- Idempotent migrations; PostgREST schema cache refreshed after DDL
 
-## Core Services
-- **Supabase**: Database hosting, authentication, and real-time features
-- **Neon Database**: PostgreSQL database provider (alternative to Supabase DB)
-
-## Development Tools
-- **Drizzle Kit**: Database schema management and migrations
-- **ESLint**: Code linting with TypeScript support
-- **Vitest**: Testing framework with coverage reporting
-- **PostCSS**: CSS processing with Tailwind CSS
-
-## UI/UX Libraries
-- **Radix UI**: Accessible component primitives
-- **shadcn/ui**: Pre-built component library
-- **Framer Motion**: Animation and transitions
-- **React Helmet Async**: Dynamic head management
-
-## Utility Libraries
-- **TanStack Query**: Server state management and caching
-- **React Hook Form**: Form handling with validation
-- **Zod**: Schema validation for TypeScript
-- **date-fns**: Date manipulation utilities
-
-## Build and Deployment
-- **Vite**: Frontend build tool and dev server
-- **esbuild**: Fast JavaScript bundler for backend
-- **tsx**: TypeScript execution for development
-- **dotenvx**: Environment variable management
-
-## Email and External APIs
-- **SendGrid**: Email delivery service
-- **OpenAI API**: AI integration capabilities
+## Integrations
+- Supabase Storage for branding assets
+- OpenAI for creative generation (guardrails: sanitize paths, size limits)
+- CI: run gates before deploy

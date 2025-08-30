@@ -555,9 +555,14 @@ router.post('/:id/setup', async (req: any, res) => {
       
       return sendOk(res, result.rows[0]);
     } catch (pgError: any) {
-      // Fallback to Supabase if PostgreSQL fails
-      const directUp = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
-      if (directUp.error) return sendErr(res, 'DB_ERROR', directUp.error.message, undefined, 400);
+      // Fallback to Supabase Admin if PostgreSQL fails (maintain admin privileges)
+      const directUp = await supabaseAdmin.from('organizations').update(patch).eq('id', orgId).select().single();
+      if (directUp.error) {
+        if (directUp.error.code === 'PGRST116') {
+          return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
+        }
+        return sendErr(res, 'DB_ERROR', directUp.error.message, undefined, 400);
+      }
       return sendOk(res, directUp.data);
     }
   } catch (error: any) {
