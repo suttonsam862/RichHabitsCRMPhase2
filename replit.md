@@ -1,44 +1,78 @@
-# Rich Habits Custom Clothing - Business Management System
+# Overview
 
-## Overview
-A React-TypeScript business management system for Rich Habits Custom Clothing, designed to streamline organizational workflows with robust data management and sports organization tracking. This system aims to provide a comprehensive solution for managing sales, orders, manufacturing, and product catalogs, with a strong emphasis on data integrity, role-based access, and a modular architecture. The vision is to enhance operational efficiency and provide advanced tools for business management in the custom clothing industry.
+This is a full-stack CRM application for managing organizations, orders, and users with role-based access control. The system is built as a modern web application with a React frontend and Express.js backend, using PostgreSQL for data persistence and Supabase for authentication and database hosting. The application follows a schema-first approach with strict validation gates and database integrity checks.
 
-## User Preferences
-*To be updated based on user feedback and preferences*
+# User Preferences
 
-## System Architecture
-The system is built with a React-TypeScript frontend, an Express.js with TypeScript backend, and a PostgreSQL database.
+Preferred communication style: Simple, everyday language.
 
-**Frontend:**
-- **Technology**: React with TypeScript, Tailwind CSS for styling, and shadcn/ui components for pre-built UI elements.
-- **UI/UX**: Features specialized layouts (AdminLayout, SalesLayout, ManufacturingLayout, DesignerLayout, CustomerLayout) for role-based access. Includes smooth transitions with AnimatePresence and graceful handling of reduced data shapes.
-- **State Management**: TanStack Query is used for server state management, ensuring efficient data fetching and caching.
-- **Routing**: Migrated to React Router v6 for type-safe navigation, with centralized route management, error boundaries, enhanced 404 pages, and lazy loading for performance. Print layout system included for clean print/export routes.
-- **Codebase**: A single frontend tree in `client/src/` with legacy code archived and unified Vite/TypeScript path aliases.
+# System Architecture
 
-**Backend:**
-- **Technology**: Express.js with TypeScript.
-- **Database Interaction**: PostgreSQL with Drizzle ORM. Server-side writes bypass Row Level Security using a Supabase admin client for critical operations (Zero-DB-Error Enforcement Framework).
-- **API**: RESTful endpoints with Zod validation for data integrity. Features a comprehensive API architecture with validation middleware and a shared DTO system for type-safe communication.
-- **Security**: Implements role-based authentication with 5 role types and route-specific access controls. Includes path traversal protection and environment validation for secure API endpoints.
-- **Modularity**: Utilizes a feature-based directory structure for clear separation of domains (sales, orders, manufacturing, catalog).
-- **Architectural Integrity**: Tools like `scripts/find-circulars.ts` for circular dependency detection and `server/tools/route-inventory.ts` for API documentation ensure maintainability.
-- **Data Integrity**: Automated schema introspection and validation (`scripts/db/`) prevent database drift. A schema auto-pull system (`scripts/schema-sync.js`) ensures frontend/backend schema synchronization.
-- **Key Features Implemented**:
-    - **Sales Pipeline**: Complete lead management with Kanban board, lead details, and analytics.
-    - **Order Management**: Full order lifecycle tracking with status management.
-    - **Manufacturing**: Production board with purchase orders and milestone tracking.
-    - **Product Catalog**: Comprehensive product management with variants and specifications.
-    - **Organizations Management**: Robust CRUD operations for organizations, including a hardened logo serving endpoint with multiple fallback layers and caching.
-    - **Logo Upload**: Standardized two-step process for secure and reliable logo uploads.
-    - **User Management**: Basic user list/get endpoints.
+## Frontend Architecture
+- **Framework**: React 18 with TypeScript for type safety
+- **Styling**: Tailwind CSS with shadcn/ui component library for consistent design
+- **Routing**: React Router v6 with lazy loading boundaries for performance
+- **State Management**: TanStack Query for server state and caching
+- **Build Tool**: Vite for fast development and optimized builds
+- **Layout System**: Role-based layouts (Admin, Sales, Manufacturing, Designer, Customer) with print/export routes
 
-## External Dependencies
-- **Supabase**: Used for backend integration, including PostgreSQL database, storage (for logos), and authentication.
-- **PostgreSQL**: The primary database for comprehensive data management.
-- **Drizzle ORM**: Used for interacting with the PostgreSQL database from the backend.
-- **TanStack Query**: For client-side server state management.
-- **Tailwind CSS**: For utility-first CSS styling.
-- **shadcn/ui**: A collection of re-usable UI components.
-- **React Router v6**: For client-side routing.
-- **Zod**: For API request validation.
+## Backend Architecture
+- **Framework**: Express.js with TypeScript running on Node.js
+- **Database ORM**: Drizzle ORM for type-safe database operations
+- **API Design**: RESTful APIs with structured error handling and validation
+- **Authentication**: Supabase Auth with JWT tokens and middleware
+- **Validation**: Zod schemas for request/response validation
+- **Logging**: Structured logging with request IDs for traceability
+
+## Database Design
+- **Primary Database**: PostgreSQL hosted on Supabase
+- **Schema Management**: Drizzle Kit for migrations with idempotent SQL
+- **Security**: Row Level Security (RLS) policies for data access control
+- **Core Entities**: Organizations, Users, Sports, Orders with proper foreign key relationships
+- **Schema Validation**: Automated schema checking and validation gates
+
+## Development Workflow
+- **Gate System**: 10-step validation process (PLAN → ENV → SCHEMA → AUTH/RLS → TYPES → LINT/FORMAT → TESTS → DOCS → READY_TO_EDIT → FINAL_VALIDATE)
+- **Schema-First**: All changes must validate against current database schema
+- **Change Requests**: Structured YAML-based change request system for all features
+- **Type Safety**: Shared TypeScript types between frontend and backend
+
+## Security Architecture
+- **Authentication**: Supabase Auth with service role and anon keys
+- **Authorization**: Role-based access control with RLS policies
+- **API Security**: JWT validation middleware on protected routes
+- **Data Validation**: Input sanitization and validation at API boundaries
+
+# External Dependencies
+
+## Core Services
+- **Supabase**: Database hosting, authentication, and real-time features
+- **Neon Database**: PostgreSQL database provider (alternative to Supabase DB)
+
+## Development Tools
+- **Drizzle Kit**: Database schema management and migrations
+- **ESLint**: Code linting with TypeScript support
+- **Vitest**: Testing framework with coverage reporting
+- **PostCSS**: CSS processing with Tailwind CSS
+
+## UI/UX Libraries
+- **Radix UI**: Accessible component primitives
+- **shadcn/ui**: Pre-built component library
+- **Framer Motion**: Animation and transitions
+- **React Helmet Async**: Dynamic head management
+
+## Utility Libraries
+- **TanStack Query**: Server state management and caching
+- **React Hook Form**: Form handling with validation
+- **Zod**: Schema validation for TypeScript
+- **date-fns**: Date manipulation utilities
+
+## Build and Deployment
+- **Vite**: Frontend build tool and dev server
+- **esbuild**: Fast JavaScript bundler for backend
+- **tsx**: TypeScript execution for development
+- **dotenvx**: Environment variable management
+
+## Email and External APIs
+- **SendGrid**: Email delivery service
+- **OpenAI API**: AI integration capabilities
