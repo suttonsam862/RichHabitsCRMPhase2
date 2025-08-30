@@ -14,18 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { type CreateOrgFormData, type SportContact } from "./types";
 
-// Temporary sports data - using UUIDs that match the database
-const AVAILABLE_SPORTS = [
-  { id: "550e8400-e29b-41d4-a716-446655440001", name: "Football" },
-  { id: "550e8400-e29b-41d4-a716-446655440002", name: "Basketball" },
-  { id: "550e8400-e29b-41d4-a716-446655440003", name: "Soccer" },
-  { id: "550e8400-e29b-41d4-a716-446655440004", name: "Baseball" },
-  { id: "550e8400-e29b-41d4-a716-446655440005", name: "Track & Field" },
-  { id: "550e8400-e29b-41d4-a716-446655440006", name: "Swimming" },
-  { id: "550e8400-e29b-41d4-a716-446655440007", name: "Volleyball" },
-  { id: "550e8400-e29b-41d4-a716-446655440008", name: "Tennis" },
-  { id: "550e8400-e29b-41d4-a716-446655440009", name: "Wrestling" },
-];
+// Fetch sports data from API instead of hardcoded list
 
 const contactSchema = z.object({
   contact_name: z.string().min(1, "Contact name is required"),
@@ -47,6 +36,15 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
   const [contactType, setContactType] = useState<"new" | "existing">("new");
   const [userSearch, setUserSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  // Fetch available sports from API
+  const { data: sportsData, isLoading: sportsLoading, error: sportsError } = useQuery({
+    queryKey: ["/api/v1/sports"],
+    queryFn: () => apiRequest("/api/v1/sports", { method: "GET" }),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const availableSports = sportsData?.data || [];
 
   const form = useForm({
     resolver: zodResolver(contactSchema),
@@ -133,7 +131,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
   });
 
   const addSportContact = () => {
-    const sportName = AVAILABLE_SPORTS.find(s => s.id === selectedSportId)?.name;
+    const sportName = availableSports.find((s: any) => s.id === selectedSportId)?.name;
     
     if (!selectedSportId || !sportName) {
       toast({
@@ -246,13 +244,19 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
               <SelectValue placeholder="Select sport" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-white/20">
-              {AVAILABLE_SPORTS
-                .filter(sport => !(formData.sports || []).some(s => s.sportId === sport.id))
-                .map((sport) => (
-                <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
-                  {sport.name}
-                </SelectItem>
-              ))}
+              {sportsLoading ? (
+                <div className="p-2 text-white/60 text-center">Loading sports...</div>
+              ) : sportsError ? (
+                <div className="p-2 text-red-400 text-center">Error loading sports</div>
+              ) : (
+                availableSports
+                  .filter((sport: any) => !(formData.sports || []).some(s => s.sportId === sport.id))
+                  .map((sport: any) => (
+                    <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
+                      {sport.name}
+                    </SelectItem>
+                  ))
+              )}
             </SelectContent>
           </Select>
         </div>
