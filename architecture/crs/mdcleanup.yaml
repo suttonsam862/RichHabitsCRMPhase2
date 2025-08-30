@@ -1,0 +1,41 @@
+cr_id: CR-Doc-Cleanup
+title: Remove Legacy/Conflicting Markdown Files
+owner: Sam Sutton
+goal: >
+  Ensure the repo has a single authoritative Markdown doc set.
+  Preserve only the five official docs; move all others to /archive/old_docs/.
+  Always enforce GPT-5 usage.
+
+model_enforcement:
+  - Always use OpenAI GPT-5 for all reasoning and coding.
+  - Fallback only to GPT-4.1 if GPT-5 unavailable.
+  - Never use Claude or Ghostwriter models unless explicitly told.
+
+tasks:
+  - description: Create archive folder
+    steps:
+      - run: mkdir -p archive/old_docs
+
+  - description: Remove duplicate Replit docs
+    steps:
+      - run: mv replit.md archive/old_docs/ 2>/dev/null || true
+      - run: mv Replit.MD archive/old_docs/ 2>/dev/null || true
+
+  - description: Move outdated docs to archive
+    steps:
+      - run: mv agent.md archive/old_docs/ 2>/dev/null || true
+      - run: mv CANONICALIZATION_SUMMARY.md archive/old_docs/ 2>/dev/null || true
+      - run: mv CHANGE_PROTOCOL.md archive/old_docs/ 2>/dev/null || true
+
+  - description: Guard against future duplicates
+    steps:
+      - run: |
+          if find . -maxdepth 1 -type f -iname "*.md" ! -name "Replit.md" ! -path "./docs/*" | grep .; then
+            echo "❌ Found stray .md files in root. Move them to /docs/ or /archive/."
+            exit 1
+          fi
+
+  - description: Verify only canonical docs exist
+    steps:
+      - run: ls -R docs/
+      - run: ls -R archive/old_docs/
