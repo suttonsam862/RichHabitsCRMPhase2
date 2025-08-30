@@ -1,0 +1,375 @@
+cr_id: CR-999
+title: Ultimate Superdoc — Principle-Driven Agent Guardrails + Authoritative Docs
+owner: Sam Sutton
+intent: >
+  Establish a single, comprehensive doctrine that eliminates agent mistakes by enforcing
+  principle-first workflows and layered verification gates. Produce authoritative, efficient
+  Markdown docs and wire the agent to ALWAYS pass schema/data/auth/tests/types/lint gates
+  before changing code. Provide a safe, rigorous path for debugging between CR runs.
+
+###############################################################################
+# I. CORE DOCTRINE (IDEOLOGY-FIRST, NOT BUG-FIRST)
+###############################################################################
+doctrine:
+  golden_rules:
+    - name: Schema-First
+      mandate: >
+        Never write or change code against an unknown or stale schema. Introspect schema,
+        verify existence, types, constraints, indexes, RLS policies, and generated types
+        BEFORE coding. If drift or ambiguity is detected, HALT and fix schema (idempotent
+        migrations) before edits.
+    - name: Data-First
+      mandate: >
+        Trust the database of record; verify key flags and invariants (e.g., onboarding,
+        status transitions, referential integrity) at start and end of each task. If API
+        presents different truth than SQL, refresh cache and fix projection layers (views)
+        instead of masking the data.
+    - name: Auth/RLS-First
+      mandate: >
+        Assume RLS/permissions cause “works locally, fails in prod” bugs. Assert intended
+        roles/policies before queries. Backend uses service-role for admin ops; client uses
+        anon with JWT and must pass RLS predicates. If permission mismatch, HALT and adjust
+        policy/modeled roles, not application workarounds.
+    - name: Type-Safe-First
+      mandate: >
+        Regenerate DB types after schema updates; block edits if TypeScript types and SQL
+        schema disagree. Prefer Zod/DTO contracts at boundaries; all handlers validate inputs/outputs.
+    - name: Test-First (and Continuous)
+      mandate: >
+        Write small tests as part of the change, and run unit/integration/E2E gates at each
+        meaningful step. Do not defer tests. A green suite is a non-negotiable gate.
+    - name: Deterministic Tooling
+      mandate: >
+        Use pinned tool versions and repeatable commands for lint/format/build/tests/db ops.
+        No snowflake commands. One way to do each thing.
+    - name: Idempotent Migrations
+      mandate: >
+        All DDL is written to be re-runnable (IF EXISTS/IF NOT EXISTS/ON CONFLICT DO NOTHING).
+        Apply, validate, refresh cache, retry once, then proceed.
+    - name: Security-First
+      mandate: >
+        Guard secrets, validate inputs, sanitize file paths, enforce least-privilege GRANTs,
+        and never broaden PUBLIC/anon access without explicit CR approval.
+    - name: Observability-First
+      mandate: >
+        Add concise, structured logs around risky edges (schema/cache/rls). Prefer
+        determinism over verbosity. Include request correlation IDs where possible.
+    - name: Reversible-First
+      mandate: >
+        Always provide rollback notes and ensure destructive actions are gated by human
+        approval and/or backups. No orphaned migrations.
+
+  agent_behavior_contract:
+    planning:
+      - Summarize the task in 3–6 bullet points.
+      - Enumerate assumptions and how they will be verified (never accept unverified assumptions).
+      - List all gates that will be executed and their order.
+    verification_rules:
+      - No coding begins until all PREP gates pass (env/schema/auth/types).
+      - After each risky step, re-run the minimal necessary gates.
+      - If any gate fails, HALT and propose precise, minimal, reversible fixes.
+    refusal_rules:
+      - Refuse to proceed on stale/unknown schema, missing env vars, failing RLS, failing tests,
+        or type mismatches. Request human approval for destructive ops.
+    tool_use:
+      - Prefer official CLIs/SDKs. Log commands and short results. Never invent APIs.
+      - Limit retries to 1 unless the CR explicitly expands it.
+    output:
+      - Always output PLAN → ACTIONS → RESULTS, listing commands actually run and pass/fail.
+
+###############################################################################
+# II. LAYERED GATES (BLOCKERS VS WARNINGS)
+###############################################################################
+gates:
+  order:
+    - PLAN
+    - ENV
+    - SCHEMA
+    - AUTH_RLS
+    - TYPES
+    - LINT_FORMAT
+    - UNIT
+    - INTEGRATION
+    - E2E_SMOKE
+    - DOCS
+    - READY_TO_EDIT
+    - FINAL_VALIDATE
+  definitions:
+    PLAN:
+      description: Clarify intent, assumptions, and gate sequence.
+      block_on_fail: true
+      actions:
+        - echo "PLAN: Summarize task, assumptions, gates"
+    ENV:
+      description: Environment sanity (secrets, connectivity).
+      block_on_fail: true
+      actions:
+        - npm run db:preflight
+    SCHEMA:
+      description: Schema & data shape validation; cache refresh if needed.
+      block_on_fail: true
+      actions:
+        - npm run db:validate
+        - if_fail_then:
+            - npm run db:migrate:apply
+            - npm run db:refresh
+            - npm run db:validate
+    AUTH_RLS:
+      description: Permission sanity; confirm role-key usage and baseline policies.
+      block_on_fail: true
+      actions:
+        - npm run db:validate # includes policy sanity checks
+    TYPES:
+      description: Typescript DB types & API DTO parity.
+      block_on_fail: true
+      actions:
+        - npm run db:types || true # generate if configured
+        - npm run build || true
+    LINT_FORMAT:
+      description: Deterministic code quality pass.
+      block_on_fail: true
+      actions:
+        - npm run lint
+        - npm run format:check || true
+    UNIT:
+      description: Unit tests.
+      block_on_fail: true
+      actions:
+        - npm run test:unit || npm run test
+    INTEGRATION:
+      description: Integration tests (DB/API happy path).
+      block_on_fail: true
+      actions:
+        - npm run test:integration || true
+    E2E_SMOKE:
+      description: Minimal E2E smoke to catch wiring regressions.
+      block_on_fail: false
+      actions:
+        - npm run test:e2e:smoke || true
+    DOCS:
+      description: Ensure docs updated for user-facing or API changes.
+      block_on_fail: true
+      actions:
+        - echo "DOCS: If API/schema changed, update docs before READY_TO_EDIT"
+    READY_TO_EDIT:
+      description: Only after all blockers pass may code edits begin.
+      block_on_fail: true
+      actions:
+        - echo "All prep gates passed. Proceed to implement."
+    FINAL_VALIDATE:
+      description: Re-run critical gates after implementation.
+      block_on_fail: true
+      actions:
+        - npm run db:validate
+        - npm run test || true
+        - echo "Checklist update + snapshot if schema changed"
+
+###############################################################################
+# III. FILES TO CREATE (EFFICIENT, NON-OVERLAPPING, AUTHORITATIVE)
+###############################################################################
+files:
+  - path: Replit.md
+    purpose: Single top-level authority the agent reads first (rules → then overview).
+    content: |
+      # 🚨 Agent Enforcement Protocol (CR-999)
+
+      You are the Replit build agent for Sam Sutton. Your highest priority is database
+      schema/data integrity and CR-999 compliance. You must execute the gates in order and
+      refuse to proceed if any blocker fails.
+
+      ## Hard Gates (must pass in this order)
+      1) PLAN → state assumptions & verify plan
+      2) ENV → `npm run db:preflight`
+      3) SCHEMA → `npm run db:validate` (if fail → migrate/apply → refresh → validate)
+      4) AUTH/RLS → validate policy/role model
+      5) TYPES → DB types/DTO parity
+      6) LINT/FORMAT → code quality
+      7) UNIT / INTEGRATION / E2E (smoke is advisory)
+      8) DOCS → update if API/schema changed
+      9) READY_TO_EDIT → perform edits
+      10) FINAL_VALIDATE → `npm run db:validate` + tests; update checklist/snapshot
+
+      ## Strict Rules
+      - SCHEMA-FIRST: never code against unknown/stale schema.
+      - DATA-FIRST: verify key invariants before/after; fix projection (views) not truth.
+      - AUTH/RLS-FIRST: solve permissions correctly; don’t sidestep policies.
+      - TYPE-SAFE-FIRST: regenerate types; block on mismatches.
+      - TEST-FIRST: green tests required.
+      - DETERMINISTIC TOOLING: one command per purpose; pinned versions.
+      - IDEMPOTENT MIGRATIONS: re-runnable SQL; refresh cache; retry once.
+      - SECURITY-FIRST: least privilege; validate/sanitize.
+      - OBSERVABILITY-FIRST: minimal structured logs at edges.
+      - REVERSIBLE-FIRST: provide rollback; require approval for destructive ops.
+
+      ## Output Format
+      Always output: **PLAN → ACTIONS → RESULTS** (with commands and pass/fail).
+
+      ---
+
+      # 📊 System Architecture (compressed authoritative overview)
+
+      ## Frontend
+      - React + TypeScript, Tailwind, shadcn/ui
+      - React Router v6 (lazy boundaries), TanStack Query for server state
+      - Role-based layouts (Admin, Sales, Manufacturing, Designer, Customer)
+      - Print/export routes; smooth transitions with reduced-motion safety
+
+      ## Backend
+      - Express + TypeScript; Drizzle ORM to Supabase Postgres
+      - REST endpoints, Zod DTO validation; feature-based folder structure
+      - RBAC with five roles; server-side admin ops via service-role key
+
+      ## Database
+      - Supabase Postgres; RLS policies enforced
+      - Schema validated via CR-999; types generated post-migration
+      - Idempotent migrations; PostgREST schema cache refreshed after DDL
+
+      ## Integrations
+      - Supabase Storage for branding assets
+      - OpenAI for creative generation (guardrails: sanitize paths, size limits)
+      - CI: run gates before deploy
+
+  - path: docs/ARCHITECTURE.md
+    purpose: Compressed but accurate architecture snapshot (no agent rules here).
+    content: |
+      # 📊 System Architecture
+
+      ## Frontend
+      - React + TS, Tailwind, shadcn/ui
+      - Router v6 (lazy, error boundaries), TanStack Query
+      - Layouts per role; print/export routes
+
+      ## Backend
+      - Express + TS, Drizzle ORM
+      - REST + Zod; DTOs at boundaries
+      - RBAC: Admin, Sales, Design, Manufacturing, Accounting
+
+      ## Database
+      - Supabase Postgres (public schema, RLS on domain tables)
+      - Migrations are idempotent; types regenerated after schema change
+      - PostgREST schema cache refresh after DDL
+
+      ## Storage & Media
+      - Supabase Storage with path validation and signed URLs
+
+      ## Testing & Quality
+      - Unit + integration tests, lint/format CI gates
+      - Circular dependency guard and route inventory scripts (optional)
+
+  - path: docs/CONTRIBUTING.md
+    purpose: Developer hygiene (no rules duplication).
+    content: |
+      # 🗂️ Contribution Guidelines
+
+      ## Branching
+      - main = production-ready
+      - feature/* and fix/* for work
+
+      ## Commits
+      - Conventional commits (feat, fix, chore, docs, refactor)
+      - Reference issue/CR when relevant
+
+      ## Quality Gates
+      - `npm run lint` and `npm run build` pass
+      - `npm run test` (or `test:unit`) pass
+      - `npm run db:validate` passes
+
+      ## PRs
+      - Include rationale, screenshots (if UI), and note if schema/API changed
+      - Update docs when user-facing/API behavior changes
+
+  - path: docs/DEBUG.md
+    purpose: “Between CR runs” safe debugging playbook.
+    content: |
+      # 🛠️ Debugging & Development Notes
+
+      ## Fast Checks
+      - Env: `npm run db:preflight`
+      - Schema: `npm run db:validate`
+      - If schema fails: `npm run db:migrate:apply` → `npm run db:refresh` → `npm run db:validate`
+
+      ## Data Truth vs API Shape
+      - Query SQL for truth; if API differs, refresh schema or fix the view/projection
+      - Do not suppress or “force” flags; solve the mapping
+
+      ## Permissions (RLS)
+      - Reproduce with anon vs service-role keys
+      - Fix policies (least privilege), don’t widen PUBLIC/anon
+
+      ## Types & Tests
+      - Regenerate types; fix compile errors first
+      - Write the smallest failing test; make it pass; re-run suite
+
+      ## Rollback
+      - Keep fixes minimal and reversible; if destructive needed, request approval
+
+  - path: docs/CR-USAGE.md
+    purpose: How CR YAMLs are used vs ad-hoc debugging.
+    content: |
+      # 🔗 CR File Usage
+
+      ## When to Use CRs
+      - Major edits (schema/API/architecture). Place as `/cr/*.yaml`.
+      - CR defines tasks, files, and gate order; the agent must obey.
+
+      ## Between CR Runs
+      - Use `DEBUG.md` playbook and `npm run db:*` scripts
+      - Keep fixes small; if scope grows, draft a new CR
+
+      ## Flow
+      1) PLAN → ENV → SCHEMA → AUTH/RLS → TYPES → LINT → UNIT/INTEG/E2E → DOCS
+      2) Implement
+      3) FINAL_VALIDATE and update checklist/snapshot
+
+###############################################################################
+# IV. IMPLEMENTATION TASKS (WHAT THE AGENT MUST DO)
+###############################################################################
+tasks:
+  - description: Create or update all docs exactly as specified above
+    steps:
+      - create_files_from_section: files
+  - description: Execute PREP gates to ensure baseline is good
+    steps:
+      - run: echo "PLAN: Establish docs and baseline"
+      - run: npm run db:preflight
+      - run: npm run db:validate || (npm run db:migrate:apply && npm run db:refresh && npm run db:validate)
+      - run: npm run db:types || true
+      - run: npm run lint
+      - run: npm run test || true
+  - description: Finalize
+    steps:
+      - run: echo "All docs created. Baseline validated."
+      - run: echo "Update cr/.CHECKLIST.md if part of a broader CR chain." || true
+
+###############################################################################
+# V. FAILURE / ESCALATION / ROLLBACK
+###############################################################################
+failure_policy:
+  on_blocker_failure:
+    - halt: true
+    - output: Provide precise cause, minimal fix, and reversible plan
+    - if_destructive: request_human_approval: true
+  retries:
+    - after_migration_and_cache_refresh: 1
+  rollback:
+    - maintain idempotent migrations; never leave partial state
+    - document changes and reversal steps in PR body or CR notes
+
+###############################################################################
+# VI. SAFE DEFAULTS & ASSUMPTIONS
+###############################################################################
+defaults:
+  deterministic_commands:
+    - db:preflight
+    - db:validate
+    - db:migrate:apply
+    - db:refresh
+    - db:assert:business
+    - db:types
+    - lint
+    - test
+  assumptions_must_be_verified:
+    - schema state
+    - rls/policy expectations
+    - type parity
+    - tool versions
