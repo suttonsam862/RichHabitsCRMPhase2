@@ -43,7 +43,7 @@ r.post('/schema/reload', async (req: any, res) => {
   } catch (error: any) {
     logger.error({ rid: res.locals?.rid, error: error.message }, 'Schema reload failed');
     const mappedError = mapPgError(error);
-    return sendErr(res, 500, mappedError.message, mappedError);
+    return sendErr(res, 'DB_ERROR', mappedError.message, mappedError, 500);
   }
 });
 
@@ -55,7 +55,7 @@ r.post('/selftest/org', requireAuth, async (req: any, res) => {
   try {
     const token = req.headers.authorization?.slice(7);
     if (!token) {
-      return sendErr(res, 401, 'No authorization token provided');
+      return sendErr(res, 'AUTH_ERROR', 'No authorization token provided', undefined, 401);
     }
     
     const sb = supabaseForUser(token);
@@ -64,7 +64,7 @@ r.post('/selftest/org', requireAuth, async (req: any, res) => {
     if (error) {
       logger.warn({ rid: res.locals?.rid, error: error.message }, 'Org selftest failed');
       const mappedError = mapPgError(error);
-      return sendErr(res, 400, mappedError.message, mappedError);
+      return sendErr(res, 'VALIDATION_ERROR', mappedError.message, mappedError, 400);
     }
     
     logger.info({ rid: res.locals?.rid, canInsert: data }, 'Org selftest completed');
@@ -77,7 +77,7 @@ r.post('/selftest/org', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     logger.error({ rid: res.locals?.rid, error: error.message }, 'Org selftest error');
     const mappedError = mapPgError(error);
-    return sendErr(res, 500, mappedError.message, mappedError);
+    return sendErr(res, 'DB_ERROR', mappedError.message, mappedError, 500);
   }
 });
 
@@ -90,12 +90,12 @@ r.post('/selftest/org-sports', requireAuth, async (req: any, res) => {
     const parse = orgSportsSelftestSchema.safeParse(req.body);
     if (!parse.success) {
       const errors = mapValidationError(parse.error);
-      return sendErr(res, 400, errors.message, errors.details);
+      return sendErr(res, 'VALIDATION_ERROR', errors.message, errors.details, 400);
     }
     
     const token = req.headers.authorization?.slice(7);
     if (!token) {
-      return sendErr(res, 401, 'No authorization token provided');
+      return sendErr(res, 'AUTH_ERROR', 'No authorization token provided', undefined, 401);
     }
     
     const sb = supabaseForUser(token);
@@ -110,7 +110,7 @@ r.post('/selftest/org-sports', requireAuth, async (req: any, res) => {
         error: error.message 
       }, 'Org-sports selftest failed');
       const mappedError = mapPgError(error);
-      return sendErr(res, 400, mappedError.message, mappedError);
+      return sendErr(res, 'VALIDATION_ERROR', mappedError.message, mappedError, 400);
     }
     
     logger.info({ 
@@ -129,7 +129,7 @@ r.post('/selftest/org-sports', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     logger.error({ rid: res.locals?.rid, error: error.message }, 'Org-sports selftest error');
     const mappedError = mapPgError(error);
-    return sendErr(res, 500, mappedError.message, mappedError);
+    return sendErr(res, 'DB_ERROR', mappedError.message, mappedError, 500);
   }
 });
 
@@ -147,14 +147,14 @@ r.get('/policies/organizations', async (req: any, res) => {
     
     if (error) {
       const mappedError = mapPgError(error);
-      return sendErr(res, 400, mappedError.message, mappedError);
+      return sendErr(res, 'VALIDATION_ERROR', mappedError.message, mappedError, 400);
     }
     
     return sendOk(res, data || []);
     
   } catch (error: any) {
     const mappedError = mapPgError(error);
-    return sendErr(res, 500, mappedError.message, mappedError);
+    return sendErr(res, 'DB_ERROR', mappedError.message, mappedError, 500);
   }
 });
 
@@ -171,14 +171,14 @@ r.get('/policies/org-sports', async (req: any, res) => {
     
     if (error) {
       const mappedError = mapPgError(error);
-      return sendErr(res, 400, mappedError.message, mappedError);
+      return sendErr(res, 'VALIDATION_ERROR', mappedError.message, mappedError, 400);
     }
     
     return sendOk(res, data || []);
     
   } catch (error: any) {
     const mappedError = mapPgError(error);
-    return sendErr(res, 500, mappedError.message, mappedError);
+    return sendErr(res, 'DB_ERROR', mappedError.message, mappedError, 500);
   }
 });
 

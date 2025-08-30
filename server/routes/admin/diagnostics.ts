@@ -10,14 +10,14 @@ r.use(requireAuth); // TODO: add admin guard
 
 r.post('/schema/reload', async (_req,res)=>{
   const { error } = await supabaseAdmin.rpc('pgrst_reload');
-  if (error) return sendErr(res, 500, error.message);
+  if (error) return sendErr(res, 'DB_ERROR', error.message, undefined, 500);
   return sendOk(res, { reloaded:true });
 });
 
 r.post('/rls/selftest', async (req:any,res)=>{
   const sb = supabaseForUser(req.headers.authorization?.slice(7));
   const { data, error } = await sb.rpc('org_can_insert');
-  if (error) return sendErr(res, 500, error.message);
+  if (error) return sendErr(res, 'DB_ERROR', error.message, undefined, 500);
   return sendOk(res, { canInsert: !!data });
 });
 

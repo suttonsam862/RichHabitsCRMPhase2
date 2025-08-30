@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-08-26T21:01:46.646Z",
+  "generatedAt": "2025-08-30T22:17:12.640Z",
   "columns": [
     {
       "table_schema": "public",
@@ -1459,6 +1459,22 @@
     },
     {
       "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "is_primary_contact",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
       "table_name": "organization_favorites",
       "column_name": "user_id",
       "data_type": "character varying",
@@ -1470,6 +1486,102 @@
       "table_name": "organization_favorites",
       "column_name": "org_id",
       "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "organization_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "total_revenue",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "total_orders",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "active_sports",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "years_with_company",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "average_order_value",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "repeat_customer_rate",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "growth_rate",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "satisfaction_score",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "last_updated",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
       "is_nullable": "NO",
       "character_maximum_length": null
     },
@@ -1675,6 +1787,38 @@
     },
     {
       "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "tertiary_color",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "city",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "website",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
+      "column_name": "created_by",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
       "table_name": "permissions",
       "column_name": "id",
       "data_type": "uuid",
@@ -1694,6 +1838,38 @@
       "table_name": "permissions",
       "column_name": "description",
       "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "column_name": "category",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "column_name": "action",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "column_name": "resource",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
       "is_nullable": "YES",
       "character_maximum_length": null
     },
@@ -1998,6 +2174,222 @@
       "table_name": "user_roles",
       "column_name": "created_at",
       "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "organization_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "assigned_by",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "assigned_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "column_name": "expires_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "password_hash",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "full_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "role",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "avatar_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "is_active",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "organization_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "address_line1",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "address_line2",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "city",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "state",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "postal_code",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "country",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "last_login",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "password_reset_token",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "password_reset_expires",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "email_verified",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "created_by",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
       "is_nullable": "NO",
       "character_maximum_length": null
     }
@@ -2426,6 +2818,18 @@
     {
       "table_schema": "public",
       "table_name": "org_sports",
+      "constraint_name": "2200_90123_15_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "2200_90123_16_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
       "constraint_name": "2200_90123_1_not_null",
       "constraint_type": "CHECK"
     },
@@ -2491,6 +2895,42 @@
     },
     {
       "table_schema": "public",
+      "table_name": "organization_metrics",
+      "constraint_name": "2200_311312_11_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "constraint_name": "2200_311312_12_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "constraint_name": "2200_311312_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "constraint_name": "2200_311312_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "constraint_name": "organization_metrics_organization_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "constraint_name": "organization_metrics_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
       "table_name": "organizations",
       "constraint_name": "2200_24589_10_not_null",
       "constraint_type": "CHECK"
@@ -2546,6 +2986,12 @@
     {
       "table_schema": "public",
       "table_name": "organizations",
+      "constraint_name": "organizations_created_by_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organizations",
       "constraint_name": "organizations_pkey",
       "constraint_type": "PRIMARY KEY"
     },
@@ -2559,6 +3005,18 @@
       "table_schema": "public",
       "table_name": "permissions",
       "constraint_name": "2200_139470_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "constraint_name": "2200_139470_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
+      "constraint_name": "2200_139470_5_not_null",
       "constraint_type": "CHECK"
     },
     {
@@ -2690,6 +3148,12 @@
     {
       "table_schema": "public",
       "table_name": "sports",
+      "constraint_name": "sports_name_unique",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sports",
       "constraint_name": "sports_pkey",
       "constraint_type": "PRIMARY KEY"
     },
@@ -2816,7 +3280,19 @@
     {
       "table_schema": "public",
       "table_name": "user_roles",
+      "constraint_name": "user_roles_assigned_by_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
       "constraint_name": "user_roles_org_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_roles",
+      "constraint_name": "user_roles_organization_id_fkey",
       "constraint_type": "FOREIGN KEY"
     },
     {
@@ -2830,6 +3306,78 @@
       "table_name": "user_roles",
       "constraint_name": "user_roles_role_id_fkey",
       "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "2200_319504_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "2200_319504_22_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "2200_319504_23_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "2200_319504_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "2200_319504_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "2200_319504_6_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "2200_319504_8_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "users_created_by_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "users_email_key",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "users_email_unique",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "users_organization_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "constraint_name": "users_pkey",
+      "constraint_type": "PRIMARY KEY"
     }
   ],
   "rls": [
@@ -2850,12 +3398,12 @@
     },
     {
       "table_schema": "public",
-      "table_name": "user_roles",
+      "table_name": "orders",
       "rls_enabled": false
     },
     {
       "table_schema": "public",
-      "table_name": "orders",
+      "table_name": "user_roles",
       "rls_enabled": false
     },
     {
@@ -2921,11 +3469,6 @@
     {
       "table_schema": "public",
       "table_name": "order_items",
-      "rls_enabled": false
-    },
-    {
-      "table_schema": "public",
-      "table_name": "permissions",
       "rls_enabled": false
     },
     {
@@ -2996,6 +3539,21 @@
     {
       "table_schema": "public",
       "table_name": "roles",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "organization_metrics",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permissions",
       "rls_enabled": false
     }
   ]

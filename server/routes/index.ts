@@ -18,7 +18,7 @@ router.use('/users/admin', adminUsersRouter);
 router.use('/users/enhanced', enhancedUsersRouter);
 router.use('/users', usersRouter);
 router.use('/organizations', hardenedOrganizationsRoutes);
-router.use('/organizations', brandingRouter); // Mount branding routes under /organizations
+router.use('/files', brandingRouter); // Mount branding routes under /files
 router.use('/sports', sportsRoutes);
 router.use('/upload', uploadRoutes);
 

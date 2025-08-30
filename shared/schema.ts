@@ -15,7 +15,7 @@ export const users = pgTable('users', {
   is_active: boolean('is_active').default(true).notNull(), // true = active, false = inactive
   
   // Organization relationship
-  organization_id: varchar('organization_id').references(() => organizations.id),
+  organization_id: varchar('organization_id'),
   
   // Enhanced profile fields
   job_title: text('job_title'),
@@ -42,7 +42,7 @@ export const users = pgTable('users', {
   
   // Metadata
   notes: text('notes'),
-  created_by: varchar('created_by').references(() => users.id),
+  created_by: varchar('created_by'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull()
 });
@@ -84,7 +84,7 @@ export const organizations = pgTable('organizations', {
   notes: text('notes'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
-  created_by: varchar('created_by').references(() => users.id),
+  created_by: varchar('created_by'),
 });
 export const sports = pgTable('sports', { id: varchar('id').primaryKey().default(sql`gen_random_uuid()`), name: text('name').notNull().unique() });
 export const orgSports = pgTable('org_sports', {
@@ -160,7 +160,7 @@ export const userRoles = pgTable('user_roles', {
   id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
   user_id: varchar('user_id').references(() => users.id).notNull(),
   role_id: varchar('role_id').references(() => roles.id).notNull(),
-  organization_id: varchar('organization_id').references(() => organizations.id), // null for global roles
+  organization_id: varchar('organization_id'), // null for global roles
   assigned_by: varchar('assigned_by').references(() => users.id),
   assigned_at: timestamp('assigned_at').defaultNow().notNull(),
   expires_at: timestamp('expires_at') // for temporary role assignments
