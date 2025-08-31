@@ -56,7 +56,12 @@ router.post('/:id/setup', async (req:any,res)=>{
     patch.setup_completed_at = new Date().toISOString();
   }
   const up = await sb.from('organizations').update(patch).eq('id', orgId).select().single();
-  if (up.error) return sendErr(res, 'DB_ERROR', up.error.message, undefined, 400);
+  if (up.error) {
+    if (up.error.code === 'PGRST116') {
+      return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
+    }
+    return sendErr(res, 'DB_ERROR', up.error.message, undefined, 400);
+  }
   return sendOk(res, up.data);
 });
 
