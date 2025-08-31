@@ -266,10 +266,15 @@ export default function SetupWizard() {
     
     setSaving(true);
     try {
-      // Save branding and basic setup
+      // Save branding and comprehensive setup data
       const setupPayload = {
         brand_primary: brandPrimary,
         brand_secondary: brandSecondary,
+        finance_email: financeInfo.financeEmail || undefined,
+        address: contactInfo.address || undefined,
+        city: contactInfo.city || undefined,
+        state: contactInfo.state || undefined,
+        zip: contactInfo.zipCode || undefined,
         complete: true
       };
       
@@ -283,20 +288,15 @@ export default function SetupWizard() {
       const updatePayload = {
         phone: contactInfo.mainPhone || undefined,
         email: contactInfo.mainEmail || undefined,
-        address: contactInfo.address || undefined,
+        website: orgDetails.website || undefined,
         notes: [
-          orgDetails.website && `Website: ${orgDetails.website}`,
           orgDetails.description && `Description: ${orgDetails.description}`,
           orgDetails.foundedYear && `Founded: ${orgDetails.foundedYear}`,
           orgDetails.employeeCount && `Employees: ${orgDetails.employeeCount}`,
           orgDetails.industry && `Industry: ${orgDetails.industry}`,
           orgDetails.timezone && `Timezone: ${orgDetails.timezone}`,
           contactInfo.supportEmail && `Support Email: ${contactInfo.supportEmail}`,
-          contactInfo.city && `City: ${contactInfo.city}`,
-          contactInfo.state && `State: ${contactInfo.state}`,
-          contactInfo.zipCode && `Zip: ${contactInfo.zipCode}`,
           contactInfo.country && `Country: ${contactInfo.country}`,
-          financeInfo.financeEmail && `Finance Email: ${financeInfo.financeEmail}`,
           financeInfo.accountingEmail && `Accounting Email: ${financeInfo.accountingEmail}`,
           financeInfo.taxId && `Tax ID: ${financeInfo.taxId}`,
           financeInfo.businessLicense && `Business License: ${financeInfo.businessLicense}`,

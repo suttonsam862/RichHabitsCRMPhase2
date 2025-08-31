@@ -31,6 +31,7 @@ type UpdateOrganizationData = {
   address?: string;
   phone?: string;
   email?: string;
+  website?: string;
   notes?: string;
   brandPrimary?: string;
   brandSecondary?: string;
@@ -53,6 +54,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       address: organization.address || "",
       phone: organization.phone || "",
       email: organization.email || "",
+      website: (organization as any).website || "",
       notes: organization.notes || "",
       brandPrimary: organization.brand_primary || "#6EE7F9",
       brandSecondary: organization.brand_secondary || "#A78BFA", 
@@ -107,6 +109,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       address: data.address || undefined,
       phone: data.phone || undefined,
       email: data.email || undefined,
+      website: data.website || undefined,
       notes: data.notes || undefined,
       brandPrimary: data.brandPrimary || undefined,
       brandSecondary: data.brandSecondary || undefined,
@@ -157,24 +160,45 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="logoUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Logo URL</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="https://example.com/logo.png"
-                  className="glass"
-                  data-testid="input-edit-org-logo-url"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="logoUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Logo URL</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="https://example.com/logo.png"
+                    className="glass"
+                    data-testid="input-edit-org-logo-url"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="website"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Website</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="https://example.com"
+                    className="glass"
+                    data-testid="input-edit-org-website"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}

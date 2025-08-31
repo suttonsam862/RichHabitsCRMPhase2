@@ -188,7 +188,7 @@ export default function OrganizationViewPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center">
                 <Users className="h-8 w-8 text-cyan-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">5</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">{organization.sports?.length || 0}</h3>
               <p className="text-white/60 text-sm">Active Sports</p>
             </GlowCard>
           </motion.div>
@@ -202,8 +202,8 @@ export default function OrganizationViewPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 flex items-center justify-center">
                 <TrendingUp className="h-8 w-8 text-green-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">$24,500</h3>
-              <p className="text-white/60 text-sm">Total Revenue</p>
+              <h3 className="text-2xl font-bold text-white mb-2">Contact Sales</h3>
+              <p className="text-white/60 text-sm">Revenue Dashboard</p>
             </GlowCard>
           </motion.div>
 
@@ -216,8 +216,8 @@ export default function OrganizationViewPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex items-center justify-center">
                 <Calendar className="h-8 w-8 text-yellow-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">3</h3>
-              <p className="text-white/60 text-sm">Years with Rich Habits</p>
+              <h3 className="text-2xl font-bold text-white mb-2">{organization.createdAt ? Math.floor((Date.now() - new Date(organization.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 365)) : 0}</h3>
+              <p className="text-white/60 text-sm">Years Active</p>
             </GlowCard>
           </motion.div>
         </div>
