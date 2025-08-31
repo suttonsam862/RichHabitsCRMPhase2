@@ -534,6 +534,17 @@ router.post('/:id/setup', async (req: any, res) => {
     // Always add updated timestamp
     patch.updated_at = new Date().toISOString();
     
+    // CRITICAL FIX: Preserve existing logo_url during setup save
+    const currentOrg = await sb.from('organizations')
+      .select('logo_url')
+      .eq('id', orgId)
+      .single();
+    
+    if (currentOrg.data?.logo_url) {
+      patch.logo_url = currentOrg.data.logo_url;
+      logger.info({ orgId, logoUrl: currentOrg.data.logo_url }, 'Preserving existing logo_url during setup save');
+    }
+    
     // Mark setup as complete when complete flag is true
     if (parse.data.complete) {
       patch.setup_complete = true; // Use snake_case to match database field
@@ -1058,38 +1069,53 @@ router.get('/:id/sports', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get sports associated with this organization
-    const { data: orgSports } = await supabaseAdmin
+    // FIXED: Get sports associated with this organization using direct queries
+    const { data: orgSportsSimple, error: fallbackError } = await supabaseAdmin
       .from('org_sports')
-      .select(`
-        sport_id,
-        contact_name,
-        contact_email,
-        contact_phone,
-        sports (
-          id,
-          name
-        )
-      `)
+      .select('sport_id, contact_name, contact_email, contact_phone')
       .eq('organization_id', id);
-
-    const sports = (orgSports || []).map((os: any) => ({
-      id: os.sports?.id || os.sport_id,
-      name: os.sports?.name || 'Unknown Sport',
+    
+    if (fallbackError) {
+      logger.error({ orgId: id, error: fallbackError }, 'Sports query failed');
+      return res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch sports', 
+        details: fallbackError.message 
+      });
+    }
+    
+    // Get sport names separately
+    const sportIds = orgSportsSimple?.map(os => os.sport_id) || [];
+    const { data: sportsData } = await supabaseAdmin
+      .from('sports')
+      .select('id, name')
+      .in('id', sportIds);
+    
+    const sportsMap = new Map(sportsData?.map(s => [s.id, s.name]) || []);
+    
+    const sports = (orgSportsSimple || []).map((os: any) => ({
+      id: os.sport_id,
+      name: sportsMap.get(os.sport_id) || 'Unknown Sport',
       contact_name: os.contact_name,
       contact_email: os.contact_email,
       contact_phone: os.contact_phone,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
+    
+    logger.info({ orgId: id, count: sports.length }, 'Successfully fetched sports');
 
     res.json({
       success: true,
       data: sports
     });
   } catch (error) {
-    console.error('Error fetching sports:', error);
-    res.status(500).json({ error: 'Failed to fetch sports' });
+    logger.error({ orgId: req.params.id, error }, 'Unexpected error in sports endpoint');
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch sports',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
