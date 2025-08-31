@@ -17,7 +17,8 @@ import { logSbError } from '../lib/dbLog.js';
 // Hardened column definitions - DO NOT CHANGE
 const CORE_COLUMNS = [
   'id', 'name', 'is_business', 'brand_primary', 'brand_secondary', 
-  'tags', 'status', 'is_archived', 'created_at', 'updated_at', 'logo_url'
+  'tags', 'status', 'is_archived', 'created_at', 'updated_at', 'logo_url',
+  'address', 'city', 'zip', 'phone', 'email'
 ];
 
 // Setup columns re-enabled after cache fix
@@ -37,6 +38,11 @@ export interface OrganizationData {
   createdAt: string;
   updatedAt: string;
   logoUrl: string | null;
+  address?: string | null;
+  city?: string | null;
+  zip?: string | null;
+  phone?: string | null;
+  email?: string | null;
   // Setup fields
   setupComplete: boolean | null;
   financeEmail: string | null;
@@ -138,6 +144,11 @@ export class OrganizationsService {
       createdAt: dbRow.created_at,
       updatedAt: dbRow.updated_at,
       logoUrl: dbRow.logo_url || null,
+      address: dbRow.address || null,
+      city: dbRow.city || null,
+      zip: dbRow.zip || null,
+      phone: dbRow.phone || null,
+      email: dbRow.email || null,
       
       // Setup fields (now reading from database)
       setupComplete: dbRow.setup_complete || false,

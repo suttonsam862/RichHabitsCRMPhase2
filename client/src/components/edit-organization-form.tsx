@@ -11,7 +11,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { insertOrganizationSchema } from "../../../shared/supabase-schema";
 import type { InsertOrganization, Organization } from "../../../shared/supabase-schema";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { ObjectUploader } from "./ObjectUploader";
 
 import { useState } from "react";
 
@@ -29,6 +31,8 @@ type UpdateOrganizationData = {
   state?: string;
   logoUrl?: string;
   address?: string;
+  city?: string;
+  zip?: string;
   phone?: string;
   email?: string;
   website?: string;
@@ -52,6 +56,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       state: organization.state || "",
       logoUrl: organization.logo_url || "",
       address: organization.address || "",
+      city: (organization as any).city || "",
+      zip: (organization as any).zip || "",
       phone: organization.phone || "",
       email: organization.email || "",
       website: (organization as any).website || "",
@@ -107,6 +113,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       ...data,
       logoUrl: data.logoUrl || undefined,
       address: data.address || undefined,
+      city: data.city || undefined,
+      zip: data.zip || undefined,
       phone: data.phone || undefined,
       email: data.email || undefined,
       website: data.website || undefined,
@@ -120,45 +128,24 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Organization Name *</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Enter organization name"
-                    className="glass"
-                    data-testid="input-edit-org-name"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="state"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>State *</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Enter state"
-                    className="glass"
-                    data-testid="input-edit-org-state"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Organization Name *</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Enter organization name"
+                  className="glass"
+                  data-testid="input-edit-org-name"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
@@ -166,14 +153,23 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
             name="logoUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Logo URL</FormLabel>
+                <FormLabel>Logo</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="https://example.com/logo.png"
-                    className="glass"
-                    data-testid="input-edit-org-logo-url"
-                    {...field}
-                  />
+                  <div className="space-y-2">
+                    <ObjectUploader
+                      currentImageUrl={field.value}
+                      onUploadComplete={(url) => field.onChange(url)}
+                      data-testid="uploader-edit-org-logo"
+                    >
+                      Upload Logo
+                    </ObjectUploader>
+                    <Input
+                      placeholder="Or enter logo URL"
+                      className="glass"
+                      data-testid="input-edit-org-logo-url"
+                      {...field}
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -200,24 +196,137 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Address</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter full address"
-                  className="glass"
-                  data-testid="input-edit-org-address"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Address Fields */}
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Street Address</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="123 Main Street"
+                    className="glass"
+                    data-testid="input-edit-org-address"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="City"
+                      className="glass"
+                      data-testid="input-edit-org-city"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="glass" data-testid="select-edit-org-state">
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="AL">Alabama</SelectItem>
+                      <SelectItem value="AK">Alaska</SelectItem>
+                      <SelectItem value="AZ">Arizona</SelectItem>
+                      <SelectItem value="AR">Arkansas</SelectItem>
+                      <SelectItem value="CA">California</SelectItem>
+                      <SelectItem value="CO">Colorado</SelectItem>
+                      <SelectItem value="CT">Connecticut</SelectItem>
+                      <SelectItem value="DE">Delaware</SelectItem>
+                      <SelectItem value="FL">Florida</SelectItem>
+                      <SelectItem value="GA">Georgia</SelectItem>
+                      <SelectItem value="HI">Hawaii</SelectItem>
+                      <SelectItem value="ID">Idaho</SelectItem>
+                      <SelectItem value="IL">Illinois</SelectItem>
+                      <SelectItem value="IN">Indiana</SelectItem>
+                      <SelectItem value="IA">Iowa</SelectItem>
+                      <SelectItem value="KS">Kansas</SelectItem>
+                      <SelectItem value="KY">Kentucky</SelectItem>
+                      <SelectItem value="LA">Louisiana</SelectItem>
+                      <SelectItem value="ME">Maine</SelectItem>
+                      <SelectItem value="MD">Maryland</SelectItem>
+                      <SelectItem value="MA">Massachusetts</SelectItem>
+                      <SelectItem value="MI">Michigan</SelectItem>
+                      <SelectItem value="MN">Minnesota</SelectItem>
+                      <SelectItem value="MS">Mississippi</SelectItem>
+                      <SelectItem value="MO">Missouri</SelectItem>
+                      <SelectItem value="MT">Montana</SelectItem>
+                      <SelectItem value="NE">Nebraska</SelectItem>
+                      <SelectItem value="NV">Nevada</SelectItem>
+                      <SelectItem value="NH">New Hampshire</SelectItem>
+                      <SelectItem value="NJ">New Jersey</SelectItem>
+                      <SelectItem value="NM">New Mexico</SelectItem>
+                      <SelectItem value="NY">New York</SelectItem>
+                      <SelectItem value="NC">North Carolina</SelectItem>
+                      <SelectItem value="ND">North Dakota</SelectItem>
+                      <SelectItem value="OH">Ohio</SelectItem>
+                      <SelectItem value="OK">Oklahoma</SelectItem>
+                      <SelectItem value="OR">Oregon</SelectItem>
+                      <SelectItem value="PA">Pennsylvania</SelectItem>
+                      <SelectItem value="RI">Rhode Island</SelectItem>
+                      <SelectItem value="SC">South Carolina</SelectItem>
+                      <SelectItem value="SD">South Dakota</SelectItem>
+                      <SelectItem value="TN">Tennessee</SelectItem>
+                      <SelectItem value="TX">Texas</SelectItem>
+                      <SelectItem value="UT">Utah</SelectItem>
+                      <SelectItem value="VT">Vermont</SelectItem>
+                      <SelectItem value="VA">Virginia</SelectItem>
+                      <SelectItem value="WA">Washington</SelectItem>
+                      <SelectItem value="WV">West Virginia</SelectItem>
+                      <SelectItem value="WI">Wisconsin</SelectItem>
+                      <SelectItem value="WY">Wyoming</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="zip"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ZIP Code</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="12345"
+                      className="glass"
+                      data-testid="input-edit-org-zip"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField

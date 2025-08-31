@@ -727,6 +727,8 @@ router.post('/:id/tax/apply', async (req: any, res) => {
 const UpdateOrganizationSchema = z.object({
   name: z.string().min(1).optional(),
   address: z.string().optional(),
+  city: z.string().optional(),
+  zip: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional(),
   notes: z.string().optional(),
@@ -765,6 +767,8 @@ router.patch('/:id', async (req: any, res) => {
     
     if (data.name !== undefined) patch.name = data.name;
     if (data.address !== undefined) patch.address = data.address;
+    if (data.city !== undefined) patch.city = data.city;
+    if (data.zip !== undefined) patch.zip = data.zip;
     if (data.phone !== undefined) patch.phone = data.phone;
     if (data.email !== undefined) patch.email = data.email;
     if (data.notes !== undefined) patch.notes = data.notes;
@@ -1327,6 +1331,42 @@ router.get('/:id/metrics', async (req, res) => {
 
   } catch (error: any) {
     logSbError(req, 'orgs.metrics.route', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// Object storage routes for general uploads
+router.post('/objects/upload', async (req: any, res) => {
+  try {
+    // Generate a unique object key for upload
+    const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    
+    // Create signed upload URL
+    const { data, error } = await supabaseAdmin.storage
+      .from('app')
+      .createSignedUploadUrl(objectKey, {
+        upsert: true
+      });
+    
+    if (error || !data?.signedUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Failed to create upload URL',
+        details: error?.message
+      });
+    }
+    
+    return res.json({
+      success: true,
+      uploadURL: data.signedUrl,
+      objectKey
+    });
+  } catch (error: any) {
+    logSbError(req, 'objects.upload', error);
     return res.status(500).json({
       success: false,
       error: 'Internal server error',
