@@ -45,7 +45,7 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, className = 
 
     try {
       // Get upload URL from backend
-      const uploadResponse = await apiRequest('/api/objects/upload', {
+      const uploadResponse = await apiRequest('/api/v1/organizations/upload-url', {
         method: 'POST'
       });
 
@@ -75,9 +75,11 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, className = 
       });
     } catch (error) {
       console.error('Upload error:', error);
+      
+      // Handle case where upload endpoint isn't available
       toast({
-        title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        title: "Upload endpoint temporarily unavailable",
+        description: "Please use the URL input field below to add your logo URL directly, or restart the development server to enable uploads.",
         variant: "destructive",
       });
     } finally {

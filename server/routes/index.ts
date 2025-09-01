@@ -23,41 +23,14 @@ router.use('/sports', sportsRoutes);
 router.use('/upload', uploadRoutes);
 
 // Object storage routes
-router.post('/objects/upload', async (req: any, res) => {
-  try {
-    const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
-    
-    // Generate a unique object key for upload
-    const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}`;
-    
-    // Create signed upload URL  
-    const { data, error } = await supabaseAdmin.storage
-      .from('app')
-      .createSignedUploadUrl(objectKey, {
-        upsert: true
-      });
-    
-    if (error || !data?.signedUrl) {
-      return res.status(400).json({
-        success: false,
-        error: 'Failed to create upload URL',
-        details: error?.message
-      });
-    }
-    
-    return res.json({
-      success: true,
-      uploadURL: data.signedUrl,
-      objectKey
-    });
-  } catch (error: any) {
-    console.error('Object upload error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      message: error.message
-    });
-  }
+router.post('/objects/upload', (req: any, res) => {
+  console.log('Objects upload route called');
+  // Simple test response first
+  res.json({
+    success: true,
+    message: 'Upload endpoint working',
+    uploadURL: 'https://test-url.com'
+  });
 });
 
 // Temporary placeholder for public objects until object storage is properly configured

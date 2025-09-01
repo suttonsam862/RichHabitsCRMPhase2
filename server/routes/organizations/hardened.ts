@@ -1375,4 +1375,44 @@ router.post('/objects/upload', async (req: any, res) => {
   }
 });
 
+// Object storage upload route for organization assets
+router.post('/upload-url', async (req: any, res) => {
+  try {
+    console.log('Upload URL route called');
+    
+    // Generate a unique object key for upload
+    const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    
+    // Create signed upload URL  
+    const { data, error } = await supabaseAdmin.storage
+      .from('app')
+      .createSignedUploadUrl(objectKey, {
+        upsert: true
+      });
+    
+    if (error || !data?.signedUrl) {
+      console.error('Supabase storage error:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Failed to create upload URL',
+        details: error?.message
+      });
+    }
+    
+    console.log('Upload URL created successfully:', data.signedUrl);
+    return res.json({
+      success: true,
+      uploadURL: data.signedUrl,
+      objectKey
+    });
+  } catch (error: any) {
+    console.error('Object upload error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 export default router;
