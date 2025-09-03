@@ -25,6 +25,7 @@ const CreateOrganizationSchema = z.object({
   address: z.string().optional(),
   notes: z.string().optional(),
   universalDiscounts: z.record(z.unknown()).default({}),
+  logoUrl: z.string().optional(),
   sports: z.array(z.object({
     sportId: z.string().uuid(),
     contactName: z.string(),
@@ -51,6 +52,7 @@ function mapFieldsToDbColumns(data: CreateOrganizationRequest) {
     address: data.address || null,
     notes: data.notes || null,
     universal_discounts: data.universalDiscounts || {},
+    logo_url: data.logoUrl || null,
     status: 'active',
     is_archived: false
   };
@@ -731,6 +733,7 @@ const UpdateOrganizationSchema = z.object({
   zip: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional(),
+  website: z.string().optional(),
   notes: z.string().optional(),
   brandPrimary: z.string().optional(),
   brandSecondary: z.string().optional(),
@@ -771,6 +774,7 @@ router.patch('/:id', async (req: any, res) => {
     if (data.zip !== undefined) patch.zip = data.zip;
     if (data.phone !== undefined) patch.phone = data.phone;
     if (data.email !== undefined) patch.email = data.email;
+    if (data.website !== undefined) patch.website = data.website;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.brandPrimary !== undefined) patch.brand_primary = data.brandPrimary;
     if (data.brandSecondary !== undefined) patch.brand_secondary = data.brandSecondary;
@@ -1073,39 +1077,18 @@ router.get('/:id/sports', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // SOLUTION: Return known sports data for the specific organization
-    // This is a working solution based on confirmed database data
+    logger.info({ orgId: id }, 'Fetching sports for organization');
     
-    if (id === '6ade0bcd-b367-4a0a-b12d-e98b7c35bca1') {
-      // Return the actual Wrestling sport data that exists in the database
-      const knownSports = [
-        {
-          id: '1ffcad10-6450-44f4-9876-f7c60fab03ac',
-          name: 'Wrestling',
-          contact_name: 'Heather Ormiston',
-          contact_email: 'spantherswrestling@gmail.com',
-          contact_phone: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      
-      logger.info({ orgId: id, count: knownSports.length }, 'Successfully returned known sports data');
-      
-      return res.json({
-        success: true,
-        data: knownSports
-      });
-    }
-    
-    // For other organizations, try the normal query
+    // Query sports for this organization
     const { data: orgSports, error } = await supabaseAdmin
       .from('org_sports')
       .select(`
         sport_id,
         contact_name,
         contact_email,
-        contact_phone
+        contact_phone,
+        created_at,
+        updated_at
       `)
       .eq('organization_id', id);
       
@@ -1118,23 +1101,37 @@ router.get('/:id/sports', async (req, res) => {
       });
     }
     
-    // Get sport names
-    const sportIds = orgSports?.map(os => os.sport_id) || [];
-    const { data: sportsData } = await supabaseAdmin
+    // If no sports found, return empty array
+    if (!orgSports || orgSports.length === 0) {
+      logger.info({ orgId: id, count: 0 }, 'No sports found for organization');
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+    
+    // Get sport names from sports table
+    const sportIds = orgSports.map(os => os.sport_id);
+    const { data: sportsData, error: sportsError } = await supabaseAdmin
       .from('sports')
       .select('id, name')
       .in('id', sportIds);
     
+    if (sportsError) {
+      logger.warn({ orgId: id, error: sportsError }, 'Failed to fetch sport names, using IDs');
+    }
+    
     const sportsMap = new Map(sportsData?.map((s: any) => [s.id, s.name]) || []);
     
-    const sports = (orgSports || []).map((os: any) => ({
+    // Transform the data
+    const sports = orgSports.map((os: any) => ({
       id: os.sport_id,
-      name: sportsMap.get(os.sport_id) || 'Unknown Sport',
+      name: sportsMap.get(os.sport_id) || `Sport ${os.sport_id}`,
       contact_name: os.contact_name,
       contact_email: os.contact_email,
-      contact_phone: os.contact_phone,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      contact_phone: os.contact_phone || '',
+      created_at: os.created_at || new Date().toISOString(),
+      updated_at: os.updated_at || new Date().toISOString()
     }));
     
     logger.info({ orgId: id, count: sports.length }, 'Successfully fetched sports');
@@ -1153,7 +1150,7 @@ router.get('/:id/sports', async (req, res) => {
   }
 });
 
-// POST endpoint to save sports and auto-create users from contacts
+// POST endpoint to save sports - simplified version
 const SportsSchema = z.object({
   sports: z.array(z.object({
     sport_id: z.string(),
@@ -1169,92 +1166,62 @@ router.post('/:id/sports', async (req, res) => {
     const parseResult = SportsSchema.safeParse(req.body);
     
     if (!parseResult.success) {
-      return sendErr(res, 'VALIDATION_ERROR', 'Invalid sports data', parseResult.error.flatten(), 400);
+      logger.error({ organizationId, error: parseResult.error }, 'Sports validation failed');
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: parseResult.error.flatten()
+      });
     }
     
     const { sports } = parseResult.data;
-    const orgSportsData = [];
+    logger.info({ organizationId, count: sports.length }, 'Processing sports creation');
     
-    // Process each sport and auto-create users
-    for (const sport of sports) {
-      // Auto-create user from contact
-      const userResult = await createUserFromContact(
-        sport.contact_email,
-        sport.contact_name,
-        organizationId
-      );
-      
-      if (!userResult.success) {
-        logger.warn(`Failed to create user for contact ${sport.contact_email}:`, userResult.error);
-        // Continue processing other sports even if one user creation fails
-      }
-      
-      // Prepare org_sports record
-      const orgSportRecord = {
-        organization_id: organizationId,
-        sport_id: sport.sport_id,
-        contact_name: sport.contact_name,
-        contact_email: sport.contact_email,
-        contact_phone: sport.contact_phone || null,
-        contact_user_id: userResult.success && userResult.data ? userResult.data.id : null,
-        is_primary_contact: 0, // Default to not primary
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      orgSportsData.push(orgSportRecord);
-    }
+    // Prepare org_sports records - simplified without user creation
+    const orgSportsData = sports.map(sport => ({
+      organization_id: organizationId,
+      sport_id: sport.sport_id,
+      contact_name: sport.contact_name,
+      contact_email: sport.contact_email,
+      contact_phone: sport.contact_phone || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
     
-    // Insert sports data using direct PostgreSQL to bypass schema cache/constraint issues
-    let insertedSports;
-    try {
-      const { Pool } = await import('pg');
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      
-      const insertPromises = orgSportsData.map(async (record) => {
-        const query = `
-          INSERT INTO org_sports (
-            organization_id, sport_id, contact_name, contact_email, contact_phone,
-            contact_user_id, is_primary_contact, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-          RETURNING *
-        `;
-        const values = [
-          record.organization_id, record.sport_id, record.contact_name, 
-          record.contact_email, record.contact_phone, record.contact_user_id,
-          record.is_primary_contact, record.created_at, record.updated_at
-        ];
-        return pool.query(query, values);
+    // Insert sports data using Supabase
+    const { data: insertedSports, error: insertError } = await supabaseAdmin
+      .from('org_sports')
+      .insert(orgSportsData)
+      .select();
+    
+    if (insertError) {
+      logger.error({ organizationId, error: insertError }, 'Failed to insert sports');
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to save sports data',
+        details: insertError.message
       });
-      
-      const results = await Promise.all(insertPromises);
-      insertedSports = results.map(r => r.rows[0]);
-      await pool.end();
-      
-    } catch (pgError: any) {
-      // Fallback to Supabase if PostgreSQL fails
-      const { data: fallbackSports, error: sportsError } = await supabaseAdmin
-        .from('org_sports')
-        .insert(orgSportsData)
-        .select('*');
-      
-      if (sportsError) {
-        logSbError(req, 'orgs.sports.create', sportsError);
-        return sendErr(res, 'DB_ERROR', sportsError.message, undefined, 400);
-      }
-      insertedSports = fallbackSports;
     }
     
-    logger.info(`Created ${insertedSports.length} sport records for organization ${organizationId}`);
+    logger.info({ 
+      organizationId, 
+      count: insertedSports?.length || 0,
+      sports: sports.map(s => s.sport_id)
+    }, 'Successfully saved sports');
     
-    return sendOk(res, {
-      message: `Successfully saved ${insertedSports.length} sports and auto-created users from contacts`,
-      sports: insertedSports
+    return res.json({
+      success: true,
+      message: `Successfully added ${sports.length} sport${sports.length > 1 ? 's' : ''}`,
+      data: insertedSports
     });
     
   } catch (error: any) {
-    logSbError(req, 'orgs.sports.create.route', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Failed to save sports data', error.message, 500);
+    logger.error({ organizationId: req.params.id, error }, 'Unexpected error in sports creation');
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
   }
 });
 
