@@ -838,9 +838,12 @@ router.patch('/:id', async (req: any, res) => {
     }
 
     // Force fresh data retrieval after update - invalidate any cache
-    await supabaseAdmin.rpc('refresh_schema_cache').catch(() => {
+    try {
+      await supabaseAdmin.rpc('refresh_schema_cache');
+    } catch (error) {
       // Ignore cache refresh errors - not critical
-    });
+      logger.warn({ orgId: id }, 'Cache refresh failed, continuing');
+    }
     
     // Transform response to camelCase using the same service
     const { OrganizationsService } = await import('../../services/OrganizationsService.js');
