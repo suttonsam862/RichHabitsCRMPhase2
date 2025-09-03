@@ -8,6 +8,7 @@ import { sendOk, sendErr } from '../../lib/http.js';
 import path from 'path';
 import fs from 'fs';
 import { supabaseForUser } from '../../lib/supabase.js';
+import { randomUUID } from 'crypto';
 
 const router = Router();
 
@@ -1225,7 +1226,73 @@ router.post('/:id/sports', async (req, res) => {
   }
 });
 
+// Organization logo upload URL endpoint
+router.post('/upload-url', async (req, res) => {
+  try {
+    logger.info('Generating upload URL for organization logo');
 
+    // Generate unique filename for the logo
+    const objectId = randomUUID();
+    const privateObjectDir = process.env.PRIVATE_OBJECT_DIR;
+    
+    if (!privateObjectDir) {
+      logger.error('PRIVATE_OBJECT_DIR not configured');
+      return res.status(500).json({
+        success: false,
+        error: 'Object storage not configured'
+      });
+    }
+
+    // Create the object path in the private directory
+    const objectPath = `${privateObjectDir}/uploads/${objectId}`;
+    
+    // Parse bucket name and object name from path
+    const pathParts = objectPath.split('/');
+    const bucketName = pathParts[1]; // Remove leading slash and get bucket
+    const objectName = pathParts.slice(2).join('/'); // Get the rest as object name
+
+    // Generate presigned URL using the sidecar endpoint
+    const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+    const signRequest = {
+      bucket_name: bucketName,
+      object_name: objectName,
+      method: 'PUT',
+      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
+    };
+
+    const response = await fetch(`${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(signRequest)
+    });
+
+    if (!response.ok) {
+      logger.error(`Failed to generate signed URL: ${response.status}`);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to generate upload URL'
+      });
+    }
+
+    const { signed_url: uploadURL } = await response.json();
+
+    logger.info({ objectId, uploadURL: uploadURL.substring(0, 50) + '...' }, 'Generated upload URL');
+
+    res.json({
+      success: true,
+      uploadURL,
+      objectPath: `/objects/uploads/${objectId}`
+    });
+
+  } catch (error: any) {
+    logger.error({ error }, 'Failed to generate upload URL');
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
 
 // GET organization metrics/KPIs endpoint
 router.get('/:id/metrics', async (req, res) => {
