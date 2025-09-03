@@ -45,22 +45,22 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
     setIsUploading(true);
 
     try {
-      if (!organizationId) {
-        throw new Error('Organization ID is required for logo upload');
-      }
-
-      // Step 1: Get signed upload URL from organization
-      const signResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/sign`, {
+      // Simplified approach: Use the working objects/upload endpoint for now
+      // Step 1: Get upload URL
+      const uploadUrlResponse = await apiRequest('/api/v1/objects/upload', {
         method: 'POST',
-        data: { fileName: file.name }
+        data: {
+          fileName: file.name,
+          organizationId: organizationId || 'default'
+        }
       });
 
-      if (!signResponse.uploadUrl || !signResponse.key) {
+      if (!uploadUrlResponse.uploadURL) {
         throw new Error('Failed to get upload URL');
       }
 
-      // Step 2: Upload file directly to Supabase using signed URL
-      const uploadResponse = await fetch(signResponse.uploadUrl, {
+      // Step 2: Upload file using the URL
+      const uploadResponse = await fetch(uploadUrlResponse.uploadURL, {
         method: 'PUT',
         body: file,
         headers: {
@@ -69,22 +69,22 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file to storage');
+        throw new Error('Failed to upload file');
       }
 
-      // Step 3: Apply the logo to the organization
-      await apiRequest(`/api/v1/organizations/${organizationId}/logo/apply`, {
-        method: 'POST',
-        data: { key: signResponse.key }
-      });
-
-      // Step 4: Set preview and notify completion
-      const logoUrl = `/api/v1/organizations/${organizationId}/logo`;
-      setPreviewUrl(logoUrl);
-      onUploadComplete?.(signResponse.key);
+      // Step 3: Get the object key for the uploaded file
+      const objectKey = uploadUrlResponse.objectKey;
+      
+      // Step 4: Set preview to show the logo via the organization endpoint
+      const previewUrl = organizationId ? 
+        `/api/v1/organizations/${organizationId}/logo?v=${Date.now()}` : 
+        objectKey;
+      
+      setPreviewUrl(previewUrl);
+      onUploadComplete?.(objectKey);
 
       toast({
-        title: "Upload successful",
+        title: "Upload successful", 
         description: "Your logo has been uploaded successfully.",
       });
     } catch (error) {

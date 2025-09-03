@@ -11,7 +11,7 @@ import { brandingRouter } from './files/branding.js';
 
 const router = Router();
 
-router.get('/healthcheck', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
+router.get('/healthcheck', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString(), version: 'v1.1' }));
 router.use('/auth', authRoutes);
 router.use('/users/comprehensive', comprehensiveUsersRouter);
 router.use('/users/admin', adminUsersRouter);
@@ -23,14 +23,55 @@ router.use('/sports', sportsRoutes);
 router.use('/upload', uploadRoutes);
 
 // Object storage routes
-router.post('/objects/upload', (req: any, res) => {
-  console.log('Objects upload route called');
-  // Simple test response first
-  res.json({
-    success: true,
-    message: 'Upload endpoint working',
-    uploadURL: 'https://test-url.com'
-  });
+router.post('/objects/upload', async (req: any, res) => {
+  try {
+    const { fileName, organizationId } = req.body || {};
+    
+    if (!fileName) {
+      return res.status(400).json({ error: 'fileName is required' });
+    }
+
+    // Import supabaseAdmin for storage operations
+    const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
+    
+    // Generate a unique key for the object
+    const { randomUUID } = await import('crypto');
+    const fileExt = fileName.split('.').pop() || 'png';
+    const uniqueFileName = `${randomUUID()}.${fileExt}`;
+    const objectKey = organizationId ? 
+      `org/${organizationId}/branding/${uniqueFileName}` : 
+      `uploads/${uniqueFileName}`;
+    
+    // Create signed upload URL
+    const { data, error } = await supabaseAdmin.storage
+      .from('app')
+      .createSignedUploadUrl(objectKey, {
+        upsert: true
+      });
+    
+    if (error || !data?.signedUrl) {
+      console.error('Supabase storage error:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Failed to create upload URL',
+        details: error?.message
+      });
+    }
+    
+    console.log('Upload URL created successfully:', data.signedUrl);
+    return res.json({
+      success: true,
+      uploadURL: data.signedUrl,
+      objectKey
+    });
+  } catch (error: any) {
+    console.error('Object upload error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
 });
 
 // Temporary placeholder for public objects until object storage is properly configured
