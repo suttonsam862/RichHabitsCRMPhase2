@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save } from 'lucide-react';
-import { api } from '@/lib/api';
+import { apiRequest } from '@/lib/queryClient';
 import GlowCard from '@/components/ui/GlowCard';
 import { EditOrganizationForm } from '@/components/edit-organization-form';
 
@@ -12,7 +12,7 @@ export default function OrganizationEditPage() {
   
   const { data: org, isLoading, error } = useQuery({
     queryKey: ['organization', id],
-    queryFn: () => api.get(`/api/v1/organizations/${id}`),
+    queryFn: () => apiRequest(`/v1/organizations/${id}`),
     enabled: !!id
   });
 

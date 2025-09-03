@@ -54,7 +54,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     defaultValues: {
       name: organization.name,
       state: organization.state || "",
-      logoUrl: organization.logo_url || "",
+      logoUrl: (organization as any).logoUrl || "",
       address: organization.address || "",
       city: (organization as any).city || "",
       zip: (organization as any).zip || "",
@@ -64,21 +64,21 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       notes: organization.notes || "",
       brandPrimary: (organization as any).brandPrimary || "#6EE7F9",
       brandSecondary: (organization as any).brandSecondary || "#A78BFA", 
-      isBusiness: organization.is_business || false,
+      isBusiness: (organization as any).isBusiness || false,
       tags: (organization as any).tags || [],
-      isArchived: (organization as any).is_archived || false,
+      isArchived: (organization as any).isArchived || false,
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateOrganizationData) =>
-      apiRequest(`/api/v1/organizations/${organization.id}`, {
+      apiRequest(`/v1/organizations/${organization.id}`, {
         method: "PATCH",
         data: data,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/organizations"] });
-      queryClient.invalidateQueries({ queryKey: ['org', organization.id] });
+      queryClient.invalidateQueries({ queryKey: ["/v1/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ['organization', organization.id] });
       toast({
         title: "Organization updated",
         description: "The organization has been successfully updated.",
