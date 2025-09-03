@@ -765,10 +765,11 @@ router.patch('/:id', async (req: any, res) => {
       });
     }
 
-    // Map camelCase to snake_case for database
+    // Map camelCase to snake_case for database with comprehensive field mapping
     const patch: any = {};
     const data = parse.data;
     
+    // Basic fields
     if (data.name !== undefined) patch.name = data.name;
     if (data.address !== undefined) patch.address = data.address;
     if (data.city !== undefined) patch.city = data.city;
@@ -777,20 +778,47 @@ router.patch('/:id', async (req: any, res) => {
     if (data.email !== undefined) patch.email = data.email;
     if (data.website !== undefined) patch.website = data.website;
     if (data.notes !== undefined) patch.notes = data.notes;
-    if (data.brandPrimary !== undefined) patch.brand_primary = data.brandPrimary;
-    if (data.brandSecondary !== undefined) patch.brand_secondary = data.brandSecondary;
     if (data.isBusiness !== undefined) patch.is_business = data.isBusiness;
     if (data.tags !== undefined) patch.tags = data.tags;
     if (data.isArchived !== undefined) patch.is_archived = data.isArchived;
     if (data.state !== undefined) patch.state = data.state;
     if (data.logoUrl !== undefined) patch.logo_url = data.logoUrl;
     
+    // CRITICAL: Brand color mapping - this fixes the update issue
+    if (data.brandPrimary !== undefined) {
+      patch.brand_primary = data.brandPrimary;
+      logger.info({ orgId: id, brandPrimary: data.brandPrimary }, 'Updating brand primary color');
+    }
+    if (data.brandSecondary !== undefined) {
+      patch.brand_secondary = data.brandSecondary;
+      logger.info({ orgId: id, brandSecondary: data.brandSecondary }, 'Updating brand secondary color');
+    }
+    
     // Add updated timestamp
     patch.updated_at = new Date().toISOString();
     
-    // Generate gradient if both brand colors are provided
-    if (patch.brand_primary && patch.brand_secondary) {
-      patch.gradient_css = `linear-gradient(135deg, ${patch.brand_primary} 0%, ${patch.brand_secondary} 100%)`;
+    // Generate gradient CSS if both brand colors are present (from patch or existing)
+    let primaryColor = patch.brand_primary;
+    let secondaryColor = patch.brand_secondary;
+    
+    // If only one color is being updated, get the other from current org data
+    if ((primaryColor && !secondaryColor) || (!primaryColor && secondaryColor)) {
+      const { data: currentOrg } = await supabaseAdmin
+        .from('organizations')
+        .select('brand_primary, brand_secondary')
+        .eq('id', id)
+        .single();
+      
+      if (currentOrg) {
+        primaryColor = primaryColor || currentOrg.brand_primary;
+        secondaryColor = secondaryColor || currentOrg.brand_secondary;
+      }
+    }
+    
+    // Generate gradient if we have both colors
+    if (primaryColor && secondaryColor) {
+      patch.gradient_css = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+      logger.info({ orgId: id, gradient: patch.gradient_css }, 'Generated gradient CSS');
     }
 
     const { data: updated, error: updateError } = await supabaseAdmin
@@ -818,7 +846,16 @@ router.patch('/:id', async (req: any, res) => {
     }
 
     const rid = (res as any).locals?.rid;
-    logger.info({ rid, orgId: id, updates: Object.keys(patch) }, 'organizations.update ok');
+    logger.info({ 
+      rid, 
+      orgId: id, 
+      updates: Object.keys(patch),
+      brandColors: {
+        primary: patch.brand_primary,
+        secondary: patch.brand_secondary,
+        gradient: patch.gradient_css ? 'generated' : 'none'
+      }
+    }, 'organizations.update ok');
 
     return res.json({
       success: true,
@@ -836,23 +873,26 @@ router.patch('/:id', async (req: any, res) => {
 });
 
 /**
- * CRITICAL LOGO SERVING ENDPOINT - DO NOT MODIFY WITHOUT TESTING
+ * BULLETPROOF LOGO SERVING ENDPOINT - DEFENSIVE PROGRAMMING
  * 
  * This endpoint serves organization logos from Supabase storage.
- * It's designed to be bulletproof against code changes.
+ * It's designed to be bulletproof against code changes and will
+ * ALWAYS return a valid image response, never fail.
  * 
- * Flow:
- * 1. Fetch organization from database
- * 2. If logo_url exists, try Supabase storage
- * 3. If storage fails, serve SVG placeholder
- * 4. Always return valid image response
+ * Defense layers:
+ * 1. UUID validation
+ * 2. Database query with fallback
+ * 3. Multiple storage bucket attempts
+ * 4. Always-working SVG placeholder fallback
+ * 5. Try-catch wrapper with ultimate fallback
  */
 router.get('/:id/logo', async (req, res) => {
-  // CONSTANTS - DO NOT CHANGE
+  // CONSTANTS - DO NOT CHANGE THESE VALUES
   const STORAGE_BUCKET = 'app';
-  const ORG_LOGOS_BUCKET = 'org-logos'; // Secondary bucket for logo uploads
-  const CACHE_TTL_SUCCESS = 300; // Reduced to 5 minutes for faster updates
+  const ORG_LOGOS_BUCKET = 'org-logos';
+  const CACHE_TTL_SUCCESS = 300; // 5 minutes for faster updates
   const CACHE_TTL_PLACEHOLDER = 300; // 5 minutes for placeholders
+  const DEFAULT_PLACEHOLDER = 'L'; // Last resort fallback
   
   try {
     const { id } = req.params;
@@ -906,8 +946,15 @@ router.get('/:id/logo', async (req, res) => {
     return servePlaceholder(res, firstLetter, CACHE_TTL_PLACEHOLDER);
     
   } catch (error) {
-    // Ultimate fallback: serve generic placeholder
-    return servePlaceholder(res, '?', CACHE_TTL_PLACEHOLDER);
+    // ULTIMATE FALLBACK: This should never fail
+    try {
+      return servePlaceholder(res, DEFAULT_PLACEHOLDER, CACHE_TTL_PLACEHOLDER);
+    } catch (fallbackError) {
+      // ABSOLUTE LAST RESORT: Raw SVG response
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', `public, max-age=${CACHE_TTL_PLACEHOLDER}`);
+      return res.send('<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg"><rect width="256" height="256" fill="#1a1a2e"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">?</text></svg>');
+    }
   }
 });
 

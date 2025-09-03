@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,91 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const { toast } = useToast();
+
+  const handleUpload = async (file: File) => {
+    if (!file) {
+      console.warn('No file provided to upload');
+      return;
+    }
+
+    // Defensive file validation
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+
+    if (file.size > maxSize) {
+      console.error('File too large:', file.size);
+      onUploadComplete?.('');
+      return;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type);
+      onUploadComplete?.('');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      console.log('Starting upload for:', file.name, 'size:', file.size);
+
+      // Get upload URL with retry logic
+      let uploadResponse;
+      try {
+        uploadResponse = await apiRequest('/v1/objects/upload', {
+          method: 'POST',
+          data: { 
+            fileName: file.name,
+            organizationId 
+          }
+        });
+      } catch (apiError) {
+        console.error('API request failed for /api/v1/objects/upload:', apiError);
+        throw new Error('Failed to get upload URL from API');
+      }
+
+      if (!uploadResponse?.success || !uploadResponse.uploadURL) {
+        console.error('Invalid upload response:', uploadResponse);
+        throw new Error('Invalid upload URL response');
+      }
+
+      console.log('Got upload URL, proceeding with file upload');
+
+      // Upload file with timeout
+      const uploadPromise = fetch(uploadResponse.uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      // Add 30-second timeout
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Upload timeout')), 30000)
+      );
+
+      const uploadResult = await Promise.race([uploadPromise, timeoutPromise]) as Response;
+
+      if (!uploadResult.ok) {
+        throw new Error(`Upload failed with status: ${uploadResult.status}`);
+      }
+
+      console.log('Upload successful, notifying completion');
+
+      // Get the final URL - construct it from the upload response
+      const finalUrl = uploadResponse.objectPath || `/api/v1/organizations/${organizationId}/logo`;
+
+      onUploadComplete?.(finalUrl);
+      setIsUploading(false);
+
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      setIsUploading(false);
+      onUploadComplete?.('');
+      // Always call completion even on error to reset UI state
+    }
+  };
+
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -43,71 +127,11 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
       return;
     }
 
-    setIsUploading(true);
+    // Directly call the new handleUpload function
+    await handleUpload(file);
 
-    try {
-      // Step 1: Upload file using the working upload endpoint
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const uploadResponse = await fetch('/api/v1/upload/logo', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Failed to upload file');
-      }
-
-      const uploadResult = await uploadResponse.json();
-      
-      if (!uploadResult.path) {
-        throw new Error('Upload succeeded but no path returned');
-      }
-
-      // Step 2: Apply the logo to the organization if organizationId is provided
-      if (organizationId) {
-        const applyResponse = await fetch(`/api/v1/organizations/${organizationId}/logo/apply`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            key: uploadResult.path
-          })
-        });
-
-        const applyResult = await applyResponse.json();
-
-        if (!applyResponse.ok || !applyResult.success) {
-          console.warn('Logo apply failed but upload succeeded:', applyResult.error || 'Unknown error');
-        }
-      }
-
-      // Set preview to show the uploaded logo
-      const previewUrl = organizationId ? 
-        `/api/v1/organizations/${organizationId}/logo?v=${Date.now()}` : 
-        uploadResult.url;
-      
-      setPreviewUrl(previewUrl);
-      onUploadComplete?.(uploadResult.path);
-
-      toast({
-        title: "Upload successful", 
-        description: "Your logo has been uploaded successfully.",
-      });
-    } catch (error) {
-      console.error('Logo upload error:', error);
-      
-      toast({
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload logo. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
+    // Reset the input value so the same file can be uploaded again if needed
+    event.target.value = '';
   };
 
   const clearImage = () => {

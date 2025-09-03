@@ -122,6 +122,15 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       brandPrimary: data.brandPrimary || undefined,
       brandSecondary: data.brandSecondary || undefined,
     };
+    
+    // Debug logging for brand colors
+    if (data.brandPrimary || data.brandSecondary) {
+      console.log('Updating brand colors:', {
+        primary: data.brandPrimary,
+        secondary: data.brandSecondary
+      });
+    }
+    
     updateMutation.mutate(cleanedData);
   };
 
