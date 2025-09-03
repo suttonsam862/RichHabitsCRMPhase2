@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -45,43 +46,47 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
     setIsUploading(true);
 
     try {
-      // Simplified approach: Use the working objects/upload endpoint for now
-      // Step 1: Get upload URL
-      const uploadUrlResponse = await apiRequest('/api/v1/objects/upload', {
+      // Step 1: Upload file using the working upload endpoint
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const uploadResponse = await fetch('/api/v1/upload/logo', {
         method: 'POST',
-        data: {
-          fileName: file.name,
-          organizationId: organizationId || 'default'
-        }
-      });
-
-      if (!uploadUrlResponse.uploadURL) {
-        throw new Error('Failed to get upload URL');
-      }
-
-      // Step 2: Upload file using the URL
-      const uploadResponse = await fetch(uploadUrlResponse.uploadURL, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
+        body: formData,
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file');
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload file');
       }
 
-      // Step 3: Get the object key for the uploaded file
-      const objectKey = uploadUrlResponse.objectKey;
+      const uploadResult = await uploadResponse.json();
       
-      // Step 4: Set preview to show the logo via the organization endpoint
+      if (!uploadResult.path) {
+        throw new Error('Upload succeeded but no path returned');
+      }
+
+      // Step 2: Apply the logo to the organization if organizationId is provided
+      if (organizationId) {
+        const applyResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/apply`, {
+          method: 'POST',
+          data: {
+            key: uploadResult.path
+          }
+        });
+
+        if (!applyResponse.success && applyResponse.error) {
+          console.warn('Logo apply failed but upload succeeded:', applyResponse.error);
+        }
+      }
+
+      // Set preview to show the uploaded logo
       const previewUrl = organizationId ? 
         `/api/v1/organizations/${organizationId}/logo?v=${Date.now()}` : 
-        objectKey;
+        uploadResult.url;
       
       setPreviewUrl(previewUrl);
-      onUploadComplete?.(objectKey);
+      onUploadComplete?.(uploadResult.path);
 
       toast({
         title: "Upload successful", 

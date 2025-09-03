@@ -39,7 +39,7 @@ const upload = multer({
   },
 });
 
-const BUCKET_NAME = 'logos';
+const BUCKET_NAME = 'org-logos';
 
 // Test endpoint to verify route is working
 router.get('/test', (req, res) => {
@@ -140,6 +140,7 @@ router.post('/logo', upload.single('file'), async (req, res) => {
 
     // Return success response with consistent JSON format
     res.status(200).json({
+      success: true,
       path: filePath,
       url: publicUrl,
       contentType
@@ -157,6 +158,8 @@ router.post('/logo', upload.single('file'), async (req, res) => {
     // Handle specific multer errors with fieldErrors format
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ 
+        success: false,
+        error: 'File too large. Maximum size is 4MB.',
         fieldErrors: { 
           file: 'File too large. Maximum size is 4MB.' 
         }
@@ -165,6 +168,8 @@ router.post('/logo', upload.single('file'), async (req, res) => {
     
     if (error.message && error.message.includes('Only PNG')) {
       return res.status(400).json({ 
+        success: false,
+        error: 'Invalid file type. Only PNG, JPEG, WebP, and SVG files are allowed.',
         fieldErrors: { 
           file: 'Invalid file type. Only PNG, JPEG, WebP, and SVG files are allowed.' 
         }
@@ -173,6 +178,7 @@ router.post('/logo', upload.single('file'), async (req, res) => {
 
     // Generic error response
     res.status(500).json({ 
+      success: false,
       error: 'Failed to upload logo', 
       message: error.message,
       details: error.message 
