@@ -68,15 +68,20 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
 
       // Step 2: Apply the logo to the organization if organizationId is provided
       if (organizationId) {
-        const applyResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/apply`, {
+        const applyResponse = await fetch(`/api/v1/organizations/${organizationId}/logo/apply`, {
           method: 'POST',
-          data: {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             key: uploadResult.path
-          }
+          })
         });
 
-        if (!applyResponse.success && applyResponse.error) {
-          console.warn('Logo apply failed but upload succeeded:', applyResponse.error);
+        const applyResult = await applyResponse.json();
+
+        if (!applyResponse.ok || !applyResult.success) {
+          console.warn('Logo apply failed but upload succeeded:', applyResult.error || 'Unknown error');
         }
       }
 
