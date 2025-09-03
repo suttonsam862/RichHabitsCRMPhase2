@@ -243,7 +243,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               {organization.logoUrl ? (
                 <Avatar className="w-16 h-16 ring-2 ring-primary/20">
                   <AvatarImage
-                    src={organization.logoUrl}
+                    src={`/api/v1/organizations/${organization.id}/logo`}
                     alt={`${organization.name} logo`}
                     data-testid="img-org-logo"
                   />
