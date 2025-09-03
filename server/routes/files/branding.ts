@@ -262,14 +262,14 @@ router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (
     // Update organization logo_url
     await db.update(organizations)
       .set({ 
-        logoUrl: signedUrl,
-        updatedAt: new Date().toISOString()
+        logo_url: signedUrl,
+        updated_at: new Date()
       })
       .where(eq(organizations.id, orgId));
     
     logger.info({ filename }, 'Updated organization logo');
     
-    sendOk(res, { logoUrl: signedUrl });
+    sendOk(res, { logo_url: signedUrl });
   } catch (error) {
     logger.error({ error }, 'Failed to set organization logo');
     return HttpErrors.internalError(res, 'Failed to update organization logo');
@@ -301,14 +301,14 @@ router.post('/:id/title-card', requireOrgMember, requireOrgAdmin, asyncHandler(a
     // Update organization title_card_url
     await db.update(organizations)
       .set({ 
-        titleCardUrl: signedUrl,
-        updatedAt: new Date().toISOString()
+        title_card_url: signedUrl,
+        updated_at: new Date()
       })
       .where(eq(organizations.id, orgId));
     
     logger.info({ filename }, 'Updated organization title card');
     
-    sendOk(res, { titleCardUrl: signedUrl });
+    sendOk(res, { title_card_url: signedUrl });
   } catch (error) {
     logger.error({ error }, 'Failed to set organization title card');
     return HttpErrors.internalError(res, 'Failed to update organization title card');

@@ -4,7 +4,7 @@ import { CreateOrderDTO, UpdateOrderDTO, OrderDTO } from '@shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../../db';
-import { orders, orderItems, statusOrders, statusOrderItems, customers, organizations } from '@shared/schema';
+import { organizations } from '@shared/schema';
 import { sql, eq, and, ilike, desc, inArray } from 'drizzle-orm';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';

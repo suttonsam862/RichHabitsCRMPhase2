@@ -1226,62 +1226,44 @@ router.post('/:id/sports', async (req, res) => {
   }
 });
 
-// Organization logo upload URL endpoint
+// UNIFIED: Organization logo upload URL endpoint  
 router.post('/upload-url', async (req, res) => {
   try {
-    logger.info('Generating upload URL for organization logo');
+    logger.info('Generating unified upload URL for organization logo');
 
-    // Generate unique filename for the logo
-    const objectId = randomUUID();
-    const privateObjectDir = process.env.PRIVATE_OBJECT_DIR;
+    // Use Supabase Storage approach for consistency with existing branding system
+    const fileName = req.body?.fileName || `logo-${randomUUID()}.png`;
+    const orgId = req.body?.organizationId || 'default';
     
-    if (!privateObjectDir) {
-      logger.error('PRIVATE_OBJECT_DIR not configured');
-      return res.status(500).json({
-        success: false,
-        error: 'Object storage not configured'
-      });
-    }
-
-    // Create the object path in the private directory
-    const objectPath = `${privateObjectDir}/uploads/${objectId}`;
+    // Sanitize filename
+    const safeName = (name: string) => 
+      name.includes('..') || name.startsWith('/') || name.includes('\\') 
+        ? 'upload.png' 
+        : name.replace(/[^a-zA-Z0-9._-]/g, '_');
     
-    // Parse bucket name and object name from path
-    const pathParts = objectPath.split('/');
-    const bucketName = pathParts[1]; // Remove leading slash and get bucket
-    const objectName = pathParts.slice(2).join('/'); // Get the rest as object name
-
-    // Generate presigned URL using the sidecar endpoint
-    const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
-    const signRequest = {
-      bucket_name: bucketName,
-      object_name: objectName,
-      method: 'PUT',
-      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
-    };
-
-    const response = await fetch(`${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(signRequest)
-    });
-
-    if (!response.ok) {
-      logger.error(`Failed to generate signed URL: ${response.status}`);
+    const key = `org/${orgId}/branding/${safeName(fileName)}`;
+    
+    // Generate signed upload URL using Supabase
+    const { data: signData, error: signError } = await supabaseAdmin.storage
+      .from('app')
+      .createSignedUploadUrl(key, { upsert: true });
+    
+    if (signError || !signData?.signedUrl) {
+      logger.error({ error: signError }, 'Failed to generate signed URL');
       return res.status(500).json({
         success: false,
         error: 'Failed to generate upload URL'
       });
     }
 
-    const { signed_url: uploadURL } = await response.json();
+    logger.info({ fileName, key, signedUrl: signData.signedUrl.substring(0, 50) + '...' }, 'Generated unified upload URL');
 
-    logger.info({ objectId, uploadURL: uploadURL.substring(0, 50) + '...' }, 'Generated upload URL');
-
+    // Return consistent format for ObjectUploader component
     res.json({
       success: true,
-      uploadURL,
-      objectPath: `/objects/uploads/${objectId}`
+      uploadURL: signData.signedUrl,
+      key,
+      objectPath: `/api/v1/files/${orgId}/branding/${safeName(fileName)}`
     });
 
   } catch (error: any) {

@@ -77,11 +77,11 @@ export const CreateOrganizationSchema = z.object({
   phone: z.string().optional().or(z.literal("").transform(() => undefined)),
   email: z.string().email("Invalid email").optional().or(z.literal("").transform(() => undefined)),
   notes: z.string().optional().or(z.literal("").transform(() => undefined)),
-  logoUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)), // client camelCase
-  isBusiness: z.coerce.boolean().optional().default(false),
-  universalDiscounts: z.any().default({}).transform(val => val === null || val === undefined ? {} : val), // we store as JSONB; accept object/array/null but transform to {}
-  brandPrimary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
-  brandSecondary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
+  logo_url: z.string().url().optional().or(z.literal("").transform(() => undefined)), // unified snake_case
+  is_business: z.coerce.boolean().optional().default(false),
+  universal_discounts: z.any().default({}).transform(val => val === null || val === undefined ? {} : val), // we store as JSONB; accept object/array/null but transform to {}
+  brand_primary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
+  brand_secondary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
 });
 
 // Keep legacy schema for backward compatibility

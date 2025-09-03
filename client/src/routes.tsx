@@ -25,7 +25,7 @@ const SimplifiedSetup = lazy(() => import('@/pages/organizations/SimplifiedSetup
 const OrganizationViewPage = lazy(() => import('@/pages/organizations/ViewPage').then(m => ({ default: m.default })));
 const OrganizationEditPage = lazy(() => import('@/pages/organizations/EditPage').then(m => ({ default: m.default })));
 const OrganizationSportsPage = lazy(() => import('@/pages/organizations/SportsPage').then(m => ({ default: m.default })));
-// AddSportsPage component doesn't exist, removing for now
+const AddSportsPage = lazy(() => import('@/pages/organizations/AddSportsPage').then(m => ({ default: m.default })));
 const OrganizationKPIPage = lazy(() => import('@/pages/organizations/KPIPage').then(m => ({ default: m.default })));
 // Comprehensive users management with full CRUD, roles, and permissions
 const UsersManagement = lazy(() => import('@/pages/users/UsersManagement').then(m => ({ default: m.default })));
@@ -71,7 +71,7 @@ export function AppRoutes() {
                 <Route path=":id/edit" element={<OrganizationEditPage />} />
                 <Route path=":id/setup" element={<SimplifiedSetup />} />
                 <Route path=":id/sports" element={<OrganizationSportsPage />} />
-                {/* AddSportsPage route removed - component doesn't exist */}
+                <Route path=":id/sports/new" element={<AddSportsPage />} />
                 <Route path=":id/kpis" element={<OrganizationKPIPage />} />
               </Route>
               

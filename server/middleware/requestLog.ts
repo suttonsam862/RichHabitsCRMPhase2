@@ -50,7 +50,7 @@ export function requestLog(req: Request, res: Response, next: NextFunction) {
 // helper for deep debug inside handlers
 export function reqDebug(req: Request, data: any, title = 'debug') {
   if ((req as any)._debug) {
-    const rid = (res as any)?.locals?.rid ?? 'no-rid';
+    const rid = ((res as any)?.locals?.rid as string) ?? 'no-rid';
     logger.debug({ rid, ...data }, title);
   }
 }
