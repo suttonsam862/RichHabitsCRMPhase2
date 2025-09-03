@@ -837,6 +837,11 @@ router.patch('/:id', async (req: any, res) => {
       });
     }
 
+    // Force fresh data retrieval after update - invalidate any cache
+    await supabaseAdmin.rpc('refresh_schema_cache').catch(() => {
+      // Ignore cache refresh errors - not critical
+    });
+    
     // Transform response to camelCase using the same service
     const { OrganizationsService } = await import('../../services/OrganizationsService.js');
     const result = await OrganizationsService.getOrganizationById(id, req);
@@ -854,6 +859,15 @@ router.patch('/:id', async (req: any, res) => {
         primary: patch.brand_primary,
         secondary: patch.brand_secondary,
         gradient: patch.gradient_css ? 'generated' : 'none'
+      },
+      dbResult: {
+        brand_primary: updated.brand_primary,
+        brand_secondary: updated.brand_secondary,
+        gradient_css: updated.gradient_css
+      },
+      transformedResult: {
+        brandPrimary: result.data?.brandPrimary,
+        brandSecondary: result.data?.brandSecondary
       }
     }, 'organizations.update ok');
 

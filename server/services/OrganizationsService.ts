@@ -51,7 +51,7 @@ export interface OrganizationData {
 }
 
 export class OrganizationsService {
-  
+
   /**
    * HARDENED METHOD: List organizations with all required fields
    * This method is designed to be resilient to database schema changes
@@ -66,37 +66,37 @@ export class OrganizationsService {
     limit?: number;
     offset?: number;
   }, req?: any): Promise<{ success: boolean; data?: OrganizationData[]; count?: number; error?: string; details?: any }> {
-    
+
     try {
       // Build query with hardened column selection
       const columnsList = ALL_COLUMNS.join(', ');
-      
+
       let query = supabaseAdmin
         .from('organizations')
         .select(columnsList);
-      
+
       // Apply filters
       if (params.q && typeof params.q === 'string') {
         query = query.ilike('name', `%${params.q}%`);
       }
-      
+
       if (params.includeArchived !== 'true') {
         query = query.eq('is_archived', false);
       }
-      
+
       // Apply sorting
       const sortColumn = params.sort === 'updated' ? 'updated_at' : 'name';
       const ascending = params.dir === 'asc';
       query = query.order(sortColumn, { ascending });
-      
+
       // Apply pagination
       const limit = params.limit || 24;
       const offset = params.offset || 0;
       query = query.range(offset, offset + limit - 1);
-      
+
       // Execute query
       const { data: organizations, error, count } = await query;
-      
+
       if (error) {
         logSbError(req, 'orgs.service.list', error);
         return {
@@ -105,16 +105,16 @@ export class OrganizationsService {
           details: error
         };
       }
-      
+
       // Transform data using hardened mapping
       const transformedData = organizations?.map(org => this.transformOrganization(org)) || [];
-      
+
       return {
         success: true,
         data: transformedData,
         count: transformedData.length
       };
-      
+
     } catch (error: any) {
       logSbError(req, 'orgs.service.list.catch', error);
       return {
@@ -124,37 +124,38 @@ export class OrganizationsService {
       };
     }
   }
-  
+
   /**
    * HARDENED METHOD: Transform database row to frontend format
    * Handles missing fields gracefully with sensible defaults
    */
-  private static transformOrganization(dbRow: any): OrganizationData {
-    
+  // Transform snake_case to camelCase for frontend consumption
+  static transformOrganization(org: any): any {
+    if (!org) return null;
+
     return {
-      // Core fields (required)
-      id: dbRow.id,
-      name: dbRow.name,
-      isBusiness: dbRow.is_business || false,
-      brandPrimary: dbRow.brand_primary || '#6EE7F9',
-      brandSecondary: dbRow.brand_secondary || '#A78BFA', 
-      tags: dbRow.tags || [],
-      status: dbRow.status || 'active',
-      isArchived: dbRow.is_archived || false,
-      createdAt: dbRow.created_at,
-      updatedAt: dbRow.updated_at,
-      logoUrl: dbRow.logo_url || null,
-      address: dbRow.address || null,
-      city: dbRow.city || null,
-      zip: dbRow.zip || null,
-      phone: dbRow.phone || null,
-      email: dbRow.email || null,
-      
-      // Setup fields (now reading from database)
-      setupComplete: dbRow.setup_complete || false,
-      financeEmail: dbRow.finance_email || null,
-      setupCompletedAt: dbRow.setup_completed_at || null,
-      taxExemptDocKey: dbRow.tax_exempt_doc_key || null
+      id: org.id,
+      name: org.name,
+      state: org.state,
+      phone: org.phone,
+      email: org.email,
+      address: org.address,
+      city: org.city,
+      zip: org.zip,
+      website: org.website,
+      notes: org.notes,
+      logoUrl: org.logo_url,
+      brandPrimary: org.brand_primary,
+      brandSecondary: org.brand_secondary,
+      colorPalette: Array.isArray(org.color_palette) ? org.color_palette : [],
+      gradientCss: org.gradient_css,
+      isBusiness: org.is_business || false,
+      isArchived: org.is_archived || false,
+      tags: Array.isArray(org.tags) ? org.tags : [],
+      setupComplete: org.setup_complete || false,
+      setupCompletedAt: org.setup_completed_at,
+      createdAt: org.created_at,
+      updatedAt: org.updated_at
     };
   }
 
@@ -173,7 +174,7 @@ export class OrganizationsService {
           // Organization not found
           return { success: false, error: 'Organization not found' };
         }
-        
+
         logSbError(req, 'orgs.service.getById', error);
         return { 
           success: false, 
@@ -191,9 +192,9 @@ export class OrganizationsService {
 
       // Map database result to DTO using the existing transform method
       const mappedData = this.transformOrganization(data);
-      
+
       return { success: true, data: mappedData };
-      
+
     } catch (error: any) {
       logSbError(req, 'orgs.service.getById.catch', error);
       return { 

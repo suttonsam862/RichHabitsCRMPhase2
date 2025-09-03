@@ -76,7 +76,18 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
         method: "PATCH",
         data: data,
       }),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // Update form with fresh data from server
+      if (response?.data) {
+        const freshData = response.data;
+        form.setValue('brandPrimary', freshData.brandPrimary);
+        form.setValue('brandSecondary', freshData.brandSecondary);
+        console.log('Updated form with fresh brand colors:', {
+          primary: freshData.brandPrimary,
+          secondary: freshData.brandSecondary
+        });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["/v1/organizations"] });
       queryClient.invalidateQueries({ queryKey: ['organization', organization.id] });
       toast({
