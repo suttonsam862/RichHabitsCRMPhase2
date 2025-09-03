@@ -850,7 +850,8 @@ router.patch('/:id', async (req: any, res) => {
 router.get('/:id/logo', async (req, res) => {
   // CONSTANTS - DO NOT CHANGE
   const STORAGE_BUCKET = 'app';
-  const CACHE_TTL_SUCCESS = 3600; // 1 hour for successful images
+  const ORG_LOGOS_BUCKET = 'org-logos'; // Secondary bucket for logo uploads
+  const CACHE_TTL_SUCCESS = 300; // Reduced to 5 minutes for faster updates
   const CACHE_TTL_PLACEHOLDER = 300; // 5 minutes for placeholders
   
   try {
@@ -862,7 +863,7 @@ router.get('/:id/logo', async (req, res) => {
       return servePlaceholder(res, '?', CACHE_TTL_PLACEHOLDER);
     }
     
-    // Fetch organization data
+    // Fetch organization data with explicit fresh query
     const { data: org, error } = await supabaseAdmin
       .from('organizations')
       .select('logo_url, name')
@@ -885,9 +886,14 @@ router.get('/:id/logo', async (req, res) => {
       return res.redirect(org.logo_url);
     }
 
-    // For relative paths, try Supabase storage
-    // This is the CRITICAL PATH for uploaded logos
-    const signedUrl = await getSupabaseSignedUrl(org.logo_url, STORAGE_BUCKET);
+    // For relative paths, try both storage buckets
+    // First try the 'app' bucket for new uploads
+    let signedUrl = await getSupabaseSignedUrl(org.logo_url, STORAGE_BUCKET);
+    
+    // If not found in 'app' bucket, try 'org-logos' bucket
+    if (!signedUrl) {
+      signedUrl = await getSupabaseSignedUrl(org.logo_url, ORG_LOGOS_BUCKET);
+    }
     
     if (signedUrl) {
       // SUCCESS: Redirect to the actual uploaded logo
