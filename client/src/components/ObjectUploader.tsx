@@ -8,11 +8,12 @@ import { apiRequest } from "@/lib/queryClient";
 interface ObjectUploaderProps {
   onUploadComplete?: (url: string) => void;
   currentImageUrl?: string;
+  organizationId?: string;
   className?: string;
   children?: ReactNode;
 }
 
-export function ObjectUploader({ onUploadComplete, currentImageUrl, className = "", children }: ObjectUploaderProps) {
+export function ObjectUploader({ onUploadComplete, currentImageUrl, organizationId, className = "", children }: ObjectUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const { toast } = useToast();
@@ -44,19 +45,22 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, className = 
     setIsUploading(true);
 
     try {
-      // Get upload URL from backend
-      const uploadResponse = await apiRequest('/v1/organizations/upload-url', {
+      if (!organizationId) {
+        throw new Error('Organization ID is required for logo upload');
+      }
+
+      // Step 1: Get signed upload URL from organization
+      const signResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/sign`, {
         method: 'POST',
-        data: {
-          fileName: file.name,
-          organizationId: 'default'
-        }
+        data: { fileName: file.name }
       });
 
-      const uploadUrl = uploadResponse.uploadURL;
+      if (!signResponse.uploadUrl || !signResponse.key) {
+        throw new Error('Failed to get upload URL');
+      }
 
-      // Upload file directly to object storage
-      const uploadResult = await fetch(uploadUrl, {
+      // Step 2: Upload file directly to Supabase using signed URL
+      const uploadResponse = await fetch(signResponse.uploadUrl, {
         method: 'PUT',
         body: file,
         headers: {
@@ -64,26 +68,31 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, className = 
         },
       });
 
-      if (!uploadResult.ok) {
-        throw new Error('Upload failed');
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file to storage');
       }
 
-      // The uploaded file URL
-      const fileUrl = uploadUrl.split('?')[0]; // Remove query parameters
-      setPreviewUrl(fileUrl);
-      onUploadComplete?.(fileUrl);
+      // Step 3: Apply the logo to the organization
+      await apiRequest(`/api/v1/organizations/${organizationId}/logo/apply`, {
+        method: 'POST',
+        data: { key: signResponse.key }
+      });
+
+      // Step 4: Set preview and notify completion
+      const logoUrl = `/api/v1/organizations/${organizationId}/logo`;
+      setPreviewUrl(logoUrl);
+      onUploadComplete?.(signResponse.key);
 
       toast({
         title: "Upload successful",
-        description: "Your image has been uploaded successfully.",
+        description: "Your logo has been uploaded successfully.",
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Logo upload error:', error);
       
-      // Handle case where upload endpoint isn't available
       toast({
-        title: "Upload endpoint temporarily unavailable",
-        description: "Please use the URL input field below to add your logo URL directly, or restart the development server to enable uploads.",
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload logo. Please try again.",
         variant: "destructive",
       });
     } finally {
