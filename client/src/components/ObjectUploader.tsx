@@ -45,8 +45,12 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, className = 
 
     try {
       // Get upload URL from backend
-      const uploadResponse = await apiRequest('/api/v1/organizations/upload-url', {
-        method: 'POST'
+      const uploadResponse = await apiRequest('/v1/organizations/upload-url', {
+        method: 'POST',
+        data: {
+          fileName: file.name,
+          organizationId: 'default'
+        }
       });
 
       const uploadUrl = uploadResponse.uploadURL;
