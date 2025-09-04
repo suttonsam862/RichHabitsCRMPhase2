@@ -5,7 +5,6 @@ import { Upload, X, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { STORAGE_ROUTES } from "@shared/routes";
-import { getLogoDisplayUrl } from "@/lib/logoUtils";
 
 interface ObjectUploaderProps {
   onUploadComplete?: (url: string) => void;
@@ -82,22 +81,21 @@ export function ObjectUploader({
       // Get upload URL with retry logic
       let uploadResponse;
       try {
-        uploadResponse = await apiRequest("/v1/upload/upload-url", {
+        uploadResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/sign`, {
           method: "POST",
           data: {
             fileName: file.name,
-            organizationId,
           },
         });
       } catch (apiError) {
         console.error(
-          "API request failed for /api/v1/objects/upload:",
+          "API request failed for logo sign endpoint:",
           apiError,
         );
         throw new Error("Failed to get upload URL from API");
       }
 
-      if (!uploadResponse?.success || !uploadResponse.uploadURL) {
+      if (!uploadResponse?.success || !uploadResponse.data?.uploadUrl) {
         console.error("Invalid upload response:", uploadResponse);
         throw new Error("Invalid upload URL response");
       }
@@ -105,7 +103,7 @@ export function ObjectUploader({
       console.log("Got upload URL, proceeding with file upload");
 
       // Upload file with timeout
-      const uploadPromise = fetch(uploadResponse.uploadURL, {
+      const uploadPromise = fetch(uploadResponse.data.uploadUrl, {
         method: "PUT",
         body: file,
         headers: {
@@ -127,20 +125,24 @@ export function ObjectUploader({
         throw new Error(`Upload failed with status: ${uploadResult.status}`);
       }
 
-      console.log("Upload successful, notifying completion");
+      console.log("Upload successful, now applying to organization");
 
-      // Debug the upload response
-      console.log("Upload response data:", {
-        objectKey: uploadResponse.objectKey,
-        uploadURL: uploadResponse.uploadURL,
-        success: uploadResponse.success,
-        fullResponse: uploadResponse,
+      // Apply the logo to the organization in the database
+      const applyResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/apply`, {
+        method: "POST",
+        data: {
+          key: uploadResponse.data.key,
+        },
       });
 
-      // Use the objectKey from the API response - this is the correct storage path
-      const finalUrl = uploadResponse.objectKey || "";
+      if (!applyResponse?.success) {
+        console.warn("Failed to apply logo to organization, but upload succeeded");
+      }
 
-      console.log("Using objectKey as final URL:", finalUrl);
+      // Use the key from the API response - this is the correct storage path
+      const finalUrl = uploadResponse.data.key || "";
+
+      console.log("Using storage key as final URL:", finalUrl);
 
       // Update preview immediately with the uploaded file
       const displayUrl = getDisplayUrl(finalUrl);

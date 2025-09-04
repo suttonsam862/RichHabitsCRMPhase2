@@ -198,6 +198,9 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                         field.onChange(url);
                         // Force a revalidation of the organization data
                         queryClient.invalidateQueries({ queryKey: ['organization', organization.id] });
+                        queryClient.invalidateQueries({ queryKey: ['organizations'] });
+                        // Force immediate refetch
+                        queryClient.refetchQueries({ queryKey: ['organization', organization.id] });
                       }}
                       data-testid="uploader-edit-org-logo"
                     >
