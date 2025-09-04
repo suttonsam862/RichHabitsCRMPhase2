@@ -414,12 +414,14 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                       type="color"
                       className="w-16 h-10 rounded border-0 p-1"
                       data-testid="input-edit-org-brand-primary"
-                      {...field}
+                      value={field.value || "#6EE7F9"}
+                      onChange={field.onChange}
                     />
                     <Input
                       placeholder="#6EE7F9"
                       className="glass flex-1"
-                      {...field}
+                      value={field.value || ""}
+                      onChange={field.onChange}
                     />
                   </div>
                 </FormControl>
@@ -440,12 +442,14 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                       type="color"
                       className="w-16 h-10 rounded border-0 p-1"
                       data-testid="input-edit-org-brand-secondary"
-                      {...field}
+                      value={field.value || "#A78BFA"}
+                      onChange={field.onChange}
                     />
                     <Input
                       placeholder="#A78BFA"
                       className="glass flex-1"
-                      {...field}
+                      value={field.value || ""}
+                      onChange={field.onChange}
                     />
                   </div>
                 </FormControl>
