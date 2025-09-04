@@ -139,14 +139,17 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       brandSecondary: data.brand_secondary,
     };
 
-    // Debug logging for brand colors
+    // Debug logging for brand colors and logo
     console.log('Form submission data:', {
       originalPrimary: organization.brandPrimary,
       originalSecondary: organization.brandSecondary,
       newPrimary: data.brand_primary,
       newSecondary: data.brand_secondary,
       hasColorChanges: data.brand_primary !== organization.brandPrimary || data.brand_secondary !== organization.brandSecondary,
-      allFormData: data
+      logoUrl: data.logoUrl,
+      logoUrlExists: !!data.logoUrl,
+      allFormData: data,
+      cleanedData: cleanedData
     });
 
     updateMutation.mutate(cleanedData);

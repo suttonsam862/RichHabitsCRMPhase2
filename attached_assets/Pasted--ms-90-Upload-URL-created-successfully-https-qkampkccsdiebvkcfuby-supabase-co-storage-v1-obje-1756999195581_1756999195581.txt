@@ -1,0 +1,88 @@
+    ms: 90
+Upload URL created successfully: https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/upload/sign/app/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/ef07f107-8892-410e-8d4e-e8d00c05659a.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83ZmNjODNhMC00MmM1LTQwYjEtOTk5Ni05MGEwZTU4NzBmZTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAvb3JnLzE4NWYzZGI2LTZkZTYtNGFjMy05NDgyLTM0OGZhOGM3NDM2ZS9icmFuZGluZy9lZjA3ZjEwNy04ODkyLTQxMGUtOGQ0ZS1lOGQwMGMwNTY1OWEucG5nIiwidXBzZXJ0Ijp0cnVlLCJpYXQiOjE3NTY5OTkxMzksImV4cCI6MTc1NzAwNjMzOX0.8ZCEUuofx2-RB_ildb2o1wgYnkSnrK_zfKj4163CP4o
+[15:18:59.703] INFO (4534): POST 200 414ms /api/v1/objects/upload
+    rid: "9qr7tua9"
+    method: "POST"
+    path: "/api/v1/objects/upload"
+    status: 200
+    ms: 414
+[15:19:00.806] INFO (4534): GET 304 214ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "sbfv60w8"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 304
+    ms: 214
+[15:19:02.763] INFO (4534): Updating brand primary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandPrimary: "#94d1ff"
+[15:19:02.763] INFO (4534): Updating brand secondary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandSecondary: "#ffffff"
+[15:19:02.763] INFO (4534): Generated gradient CSS
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    gradient: "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+[15:19:03.166] INFO (4534): organizations.update ok
+    rid: "jtagkjsx"
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    updates: [
+      "name",
+      "address",
+      "city",
+      "zip",
+      "tags",
+      "state",
+      "brand_primary",
+      "brand_secondary",
+      "updated_at",
+      "gradient_css"
+    ]
+    brandColors: {
+      "primary": "#94d1ff",
+      "secondary": "#ffffff",
+      "gradient": "generated"
+    }
+    dbResult: {
+      "brand_primary": "#94d1ff",
+      "brand_secondary": "#ffffff",
+      "gradient_css": "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+    }
+    transformedResult: {
+      "brandPrimary": "#94d1ff",
+      "brandSecondary": "#ffffff"
+    }
+[15:19:03.167] INFO (4534): PATCH 200 405ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "jtagkjsx"
+    method: "PATCH"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 405
+[15:19:03.363] INFO (4534): GET 304 54ms /src/pages/organizations/ViewPage.tsx
+    rid: "csvhjc49"
+    method: "GET"
+    path: "/src/pages/organizations/ViewPage.tsx"
+    status: 304
+    ms: 54
+[15:19:03.506] INFO (4534): GET 200 228ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "82kbunqv"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 228
+[15:19:05.794] INFO (4534): organizations.list ok
+    rid: "ic9l6cp1"
+    count: 10
+[15:19:05.795] INFO (4534): GET 200 100ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "ic9l6cp1"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 100
+[15:19:06.098] INFO (4534): organizations.list ok
+    rid: "4fxq0w8y"
+    count: 10
+[15:19:06.098] INFO (4534): GET 304 92ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "4fxq0w8y"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 92
