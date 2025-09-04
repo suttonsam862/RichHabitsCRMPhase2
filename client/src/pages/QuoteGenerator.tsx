@@ -47,6 +47,7 @@ function generateEstimateNumber(): string {
 }
 
 export default function QuoteGenerator() {
+  // Updated with clean PDF styling and contact info
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [currentQuoteId, setCurrentQuoteId] = useState<string | null>(null);
