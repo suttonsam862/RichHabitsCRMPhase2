@@ -58,12 +58,12 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
   // Fetch users for selection
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["/api/v1/users", userSearch],
+    queryKey: ["/v1/users", userSearch],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (userSearch) params.append("search", userSearch);
       params.append("limit", "10");
-      return apiRequest(`/api/v1/users?${params.toString()}`, { method: "GET" });
+      return apiRequest(`/v1/users?${params.toString()}`, { method: "GET" });
     },
     enabled: contactType === "existing",
   });
@@ -85,7 +85,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       };
 
       console.log("🔍 Sending organization payload:", payload);
-      const orgResponse = await apiRequest("/api/v1/organizations", {
+      const orgResponse = await apiRequest("/v1/organizations", {
         method: "POST",
         data: payload,
       });
@@ -94,7 +94,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       if (data.sports && data.sports.length > 0) {
         await Promise.all(
           data.sports.map(sport =>
-            apiRequest("/api/org-sports", {
+            apiRequest("/org-sports", {
               method: "POST",
               data: {
                 orgId: orgResponse.id,
@@ -113,7 +113,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
     },
     onSuccess: (data) => {
       console.log("Organization created successfully:", data);
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/v1/organizations"] });
       toast({
         title: "Organization created!",
         description: "Your organization has been created successfully.",

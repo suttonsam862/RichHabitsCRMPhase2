@@ -97,7 +97,9 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
       });
 
       // Get the final URL - construct it from the upload response
-      const finalUrl = uploadResponse.objectPath || `/api/v1/organizations/${organizationId}/logo`;
+      // Backend returns objectKey, which we need to convert to a proper URL
+      const objectPath = uploadResponse.objectPath || uploadResponse.objectKey;
+      const finalUrl = objectPath ? `/public-objects/${objectPath}` : `/v1/organizations/${organizationId}/logo`;
       
       console.log('Constructed final URL:', finalUrl);
 

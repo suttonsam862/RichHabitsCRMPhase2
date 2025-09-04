@@ -61,14 +61,14 @@ export default function AddSportsPage() {
   // Fetch organization details
   const { data: organization, isLoading: orgLoading } = useQuery({
     queryKey: ['organizations', id],
-    queryFn: () => apiRequest(`/api/v1/organizations/${id}`),
+    queryFn: () => apiRequest(`/v1/organizations/${id}`),
     enabled: !!id,
   });
 
   // Fetch existing sports to filter out duplicates
   const { data: existingSports = [] } = useQuery({
     queryKey: ['organizations', id, 'sports'],
-    queryFn: () => apiRequest(`/api/v1/organizations/${id}/sports`),
+    queryFn: () => apiRequest(`/v1/organizations/${id}/sports`),
     enabled: !!id,
   });
 
@@ -83,7 +83,7 @@ export default function AddSportsPage() {
         })),
       };
 
-      return apiRequest(`/api/v1/organizations/${id}/sports`, {
+      return apiRequest(`/v1/organizations/${id}/sports`, {
         method: "POST",
         data: payload,
       });
