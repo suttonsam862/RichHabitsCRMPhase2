@@ -3,7 +3,7 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { paths } from "@/lib/paths";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Home, Users, FileText } from "lucide-react";
-import richHabitsLogo from "@assets/rich-habits-logo.png";
+import richHabitsLogo from "@assets/BlackPNG_New_Rich_Habits_Logo_caa84ddc-c1dc-49fa-a3cf-063db73499d3_1757019113547.png";
 
 interface AppLayoutProps {
   children: React.ReactNode;

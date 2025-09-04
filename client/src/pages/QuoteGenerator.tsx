@@ -10,7 +10,7 @@ import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
 import { Building2, FileText, Download, Upload, Calculator, Mail, Phone, MapPin, Plus, Trash2, Save, Copy, History } from 'lucide-react';
-import richHabitsLogo from '@assets/rich-habits-logo.png';
+import richHabitsLogo from '@assets/BlackPNG_New_Rich_Habits_Logo_caa84ddc-c1dc-49fa-a3cf-063db73499d3_1757019113547.png';
 import { 
   upsertQuote, 
   getQuote, 
