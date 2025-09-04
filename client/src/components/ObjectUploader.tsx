@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { STORAGE_ROUTES } from "@shared/routes";
 
 interface ObjectUploaderProps {
   onUploadComplete?: (url: string) => void;
@@ -47,7 +48,7 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
       // Get upload URL with retry logic
       let uploadResponse;
       try {
-        uploadResponse = await apiRequest('/objects/upload', {
+        uploadResponse = await apiRequest('/v1/objects/upload', {
           method: 'POST',
           data: { 
             fileName: file.name,
@@ -99,7 +100,7 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
       // Get the final URL - construct it from the upload response
       // Backend returns objectKey, which we need to convert to a proper URL
       const objectPath = uploadResponse.objectKey;
-      const finalUrl = objectPath ? `/api/public-objects/${objectPath}` : `/v1/organizations/${organizationId}/logo`;
+      const finalUrl = objectPath ? `/api/v1/public-objects/${objectPath}` : `/api/v1/organizations/${organizationId}/logo`;
       
       console.log('Constructed final URL:', finalUrl);
 
