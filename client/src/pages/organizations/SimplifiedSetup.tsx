@@ -375,12 +375,10 @@ export default function SimplifiedSetup() {
                       </button>
                     </div>
                   ) : (
-                    <div className="w-full h-32 border-2 border-dashed border-white/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-cyan-500/50 transition-colors bg-white/5">
-                      <div className="flex flex-col items-center">
-                        <ImageIcon className="w-8 h-8 text-white/50 mb-2" />
-                        <p className="text-white/70 text-sm">Click to upload logo</p>
-                        <p className="text-white/50 text-xs mt-1">PNG, JPG, SVG up to 5MB</p>
-                      </div>
+                    <div className="w-full h-32 border-2 border-dashed border-white/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-cyan-500/50 transition-colors bg-white/5 p-4">
+                      <ImageIcon className="w-8 h-8 text-white/50 mb-2" />
+                      <p className="text-white/70 text-sm">Click to upload logo</p>
+                      <p className="text-white/50 text-xs mt-1">PNG, JPG, SVG up to 5MB</p>
                     </div>
                   )}
                 </ObjectUploader>
