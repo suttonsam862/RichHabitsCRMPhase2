@@ -37,8 +37,8 @@ type UpdateOrganizationData = {
   email?: string;
   website?: string;
   notes?: string;
-  brandPrimary?: string;
-  brandSecondary?: string;
+  brand_primary?: string;
+  brand_secondary?: string;
   isBusiness?: boolean;
   tags?: string[];
   isArchived?: boolean;
@@ -62,8 +62,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       email: organization.email || "",
       website: organization.website || "",
       notes: organization.notes || "",
-      brandPrimary: organization.brandPrimary || "#6EE7F9",
-      brandSecondary: organization.brandSecondary || "#A78BFA",
+      brand_primary: organization.brandPrimary || "#6EE7F9",
+      brand_secondary: organization.brandSecondary || "#A78BFA",
       isBusiness: organization.isBusiness ?? false,
       tags: organization.tags || [],
       isArchived: organization.isArchived ?? false,
@@ -80,8 +80,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       // Update form with fresh data from server
       if (response?.data) {
         const freshData = response.data;
-        form.setValue('brandPrimary', freshData.brandPrimary);
-        form.setValue('brandSecondary', freshData.brandSecondary);
+        form.setValue('brand_primary', freshData.brandPrimary);
+        form.setValue('brand_secondary', freshData.brandSecondary);
         if (freshData.logoUrl) {
           form.setValue('logoUrl', freshData.logoUrl);
         }
@@ -135,17 +135,17 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       website: data.website || undefined,
       notes: data.notes || undefined,
       // CRITICAL: Always send brand colors as-is (don't convert to undefined)
-      brandPrimary: data.brandPrimary,
-      brandSecondary: data.brandSecondary,
+      brandPrimary: data.brand_primary,
+      brandSecondary: data.brand_secondary,
     };
 
     // Debug logging for brand colors
     console.log('Form submission data:', {
       originalPrimary: organization.brandPrimary,
       originalSecondary: organization.brandSecondary,
-      newPrimary: data.brandPrimary,
-      newSecondary: data.brandSecondary,
-      hasColorChanges: data.brandPrimary !== organization.brandPrimary || data.brandSecondary !== organization.brandSecondary,
+      newPrimary: data.brand_primary,
+      newSecondary: data.brand_secondary,
+      hasColorChanges: data.brand_primary !== organization.brandPrimary || data.brand_secondary !== organization.brandSecondary,
       allFormData: data
     });
 
@@ -405,7 +405,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="brandPrimary"
+            name="brand_primary"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Primary Brand Color</FormLabel>
@@ -433,7 +433,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
 
           <FormField
             control={form.control}
-            name="brandSecondary"
+            name="brand_secondary"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Secondary Brand Color</FormLabel>
