@@ -1,0 +1,126 @@
+[22:12:39.889] INFO (9758): GET 200 5ms /src/components/ObjectUploader.tsx
+    rid: "pimtxkss"
+    method: "GET"
+    path: "/src/components/ObjectUploader.tsx"
+    status: 200
+    ms: 5
+[22:12:40.101] INFO (9758): GET 304 111ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "0nssglk4"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 111
+[22:12:41.234] INFO (9758): GET 304 234ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "l5v70x7r"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 234
+[22:12:41.601] INFO (9758): GET 304 224ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "o553rj4d"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 224
+10:12:43 PM [vite] Skipping frontend handler for API route: /api/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/logo/sign
+[22:12:43.374] WARN (9758): POST 404 2ms /api/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/logo/sign
+    rid: "c8ralmpv"
+    method: "POST"
+    path: "/api/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/logo/sign"
+    status: 404
+    ms: 2
+[22:12:43.673] INFO (9758): GET 304 246ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "601g658l"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 246
+[22:12:43.839] INFO (9758): GET 304 100ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "z2rqbupx"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 100
+[22:12:46.729] INFO (9758): Updating brand primary color
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    brandPrimary: "#6cbcf9"
+[22:12:46.729] INFO (9758): Updating brand secondary color
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    brandSecondary: "#ffffff"
+[22:12:46.729] INFO (9758): Generated gradient CSS
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    gradient: "linear-gradient(135deg, #6cbcf9 0%, #ffffff 100%)"
+[22:12:47.184] INFO (9758): organizations.update ok
+    rid: "b66cf5nd"
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    updates: [
+      "name",
+      "address",
+      "city",
+      "zip",
+      "email",
+      "is_business",
+      "tags",
+      "is_archived",
+      "state",
+      "brand_primary",
+      "brand_secondary",
+      "updated_at",
+      "gradient_css"
+    ]
+    brandColors: {
+      "primary": "#6cbcf9",
+      "secondary": "#ffffff",
+      "gradient": "generated"
+    }
+    dbResult: {
+      "brand_primary": "#6cbcf9",
+      "brand_secondary": "#ffffff",
+      "gradient_css": "linear-gradient(135deg, #6cbcf9 0%, #ffffff 100%)"
+    }
+    transformedResult: {
+      "brandPrimary": "#6cbcf9",
+      "brandSecondary": "#ffffff"
+    }
+[22:12:47.185] INFO (9758): PATCH 200 457ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "b66cf5nd"
+    method: "PATCH"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 200
+    ms: 457
+[22:12:47.357] INFO (9758): GET 200 115ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "ums3ppc4"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 200
+    ms: 115
+[22:12:47.367] INFO (9758): GET 200 97ms /src/pages/organizations/ViewPage.tsx
+    rid: "g48cin21"
+    method: "GET"
+    path: "/src/pages/organizations/ViewPage.tsx"
+    status: 200
+    ms: 97
+[22:12:47.471] INFO (9758): GET 200 2ms /src/lib/logoUtils.ts
+    rid: "6azqsfo6"
+    method: "GET"
+    path: "/src/lib/logoUtils.ts"
+    status: 200
+    ms: 2
+[22:12:50.166] INFO (9758): organizations.list ok
+    rid: "fe5lt3p8"
+    count: 9
+[22:12:50.167] INFO (9758): GET 200 118ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "fe5lt3p8"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 118
+[22:12:50.478] INFO (9758): organizations.list ok
+    rid: "7jit0rq8"
+    count: 9
+[22:12:50.478] INFO (9758): GET 304 128ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "7jit0rq8"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 128
