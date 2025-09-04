@@ -81,6 +81,7 @@ export function AppRoutes() {
               
               <Route path="/quotes" element={<ProtectedRoute />}>
                 <Route index element={<QuotesPage />} />
+                <Route path="history" element={<QuoteHistory />} />
               </Route>
               
               <Route path="/quote" element={<ProtectedRoute />}>

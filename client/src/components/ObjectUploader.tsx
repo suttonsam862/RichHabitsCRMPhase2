@@ -43,7 +43,7 @@ export function ObjectUploader({
   };
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    getLogoDisplayUrl(currentImageUrl),
+    getDisplayUrl(currentImageUrl),
   );
   const { toast } = useToast();
 
