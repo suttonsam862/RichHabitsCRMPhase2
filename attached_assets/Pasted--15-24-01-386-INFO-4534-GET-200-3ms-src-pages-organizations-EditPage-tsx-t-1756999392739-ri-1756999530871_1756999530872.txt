@@ -1,0 +1,151 @@
+[15:24:01.386] INFO (4534): GET 200 3ms /src/pages/organizations/EditPage.tsx?t=1756999392739
+    rid: "djaqa5fg"
+    method: "GET"
+    path: "/src/pages/organizations/EditPage.tsx?t=1756999392739"
+    status: 200
+    ms: 3
+[15:24:01.505] INFO (4534): GET 304 1ms /src/components/edit-organization-form.tsx?t=1756999392739
+    rid: "ppux8ed8"
+    method: "GET"
+    path: "/src/components/edit-organization-form.tsx?t=1756999392739"
+    status: 304
+    ms: 1
+[15:24:01.620] INFO (4534): GET 304 0ms /src/components/ui/checkbox.tsx
+    rid: "lxbkxkb4"
+    method: "GET"
+    path: "/src/components/ui/checkbox.tsx"
+    status: 304
+    ms: 0
+[15:24:01.620] INFO (4534): GET 304 0ms /src/components/ui/form.tsx
+    rid: "3owjng3u"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 304
+    ms: 0
+[15:24:01.630] INFO (4534): GET 304 6ms /src/components/ui/select.tsx
+    rid: "wvh5o690"
+    method: "GET"
+    path: "/src/components/ui/select.tsx"
+    status: 304
+    ms: 6
+[15:24:01.631] INFO (4534): GET 304 0ms /src/components/ObjectUploader.tsx
+    rid: "pfbvau4y"
+    method: "GET"
+    path: "/src/components/ObjectUploader.tsx"
+    status: 304
+    ms: 0
+[15:24:01.632] INFO (4534): GET 304 0ms /src/components/ui/badge.tsx
+    rid: "ba6zwev1"
+    method: "GET"
+    path: "/src/components/ui/badge.tsx"
+    status: 304
+    ms: 0
+[15:24:01.632] INFO (4534): GET 304 1ms /src/components/ui/textarea.tsx
+    rid: "w3lty3x4"
+    method: "GET"
+    path: "/src/components/ui/textarea.tsx"
+    status: 304
+    ms: 1
+[15:24:01.853] INFO (4534): GET 304 98ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "uey5r2bo"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 304
+    ms: 98
+Upload URL created successfully: https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/upload/sign/app/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/8f765960-2aed-4d0f-be84-4aadd7c96ee4.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83ZmNjODNhMC00MmM1LTQwYjEtOTk5Ni05MGEwZTU4NzBmZTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAvb3JnLzE4NWYzZGI2LTZkZTYtNGFjMy05NDgyLTM0OGZhOGM3NDM2ZS9icmFuZGluZy84Zjc2NTk2MC0yYWVkLTRkMGYtYmU4NC00YWFkZDdjOTZlZTQucG5nIiwidXBzZXJ0Ijp0cnVlLCJpYXQiOjE3NTY5OTk0NDUsImV4cCI6MTc1NzAwNjY0NX0.QAYhPUQTb2z5wJe6nIrCcWhJwL-S7ztdQ_3kL2y7LrE
+[15:24:05.670] INFO (4534): POST 200 1022ms /api/v1/objects/upload
+    rid: "ion2p72a"
+    method: "POST"
+    path: "/api/v1/objects/upload"
+    status: 200
+    ms: 1022
+[15:24:06.292] INFO (4534): GET 304 94ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "h7luvlr6"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 304
+    ms: 94
+[15:24:41.117] INFO (4534): Updating brand primary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandPrimary: "#94d1ff"
+[15:24:41.118] INFO (4534): Updating brand secondary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandSecondary: "#ffffff"
+[15:24:41.118] INFO (4534): Generated gradient CSS
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    gradient: "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+[15:24:41.497] INFO (4534): organizations.update ok
+    rid: "56ee1yol"
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    updates: [
+      "name",
+      "address",
+      "city",
+      "zip",
+      "email",
+      "is_business",
+      "tags",
+      "is_archived",
+      "state",
+      "logo_url",
+      "brand_primary",
+      "brand_secondary",
+      "updated_at",
+      "gradient_css"
+    ]
+    brandColors: {
+      "primary": "#94d1ff",
+      "secondary": "#ffffff",
+      "gradient": "generated"
+    }
+    dbResult: {
+      "brand_primary": "#94d1ff",
+      "brand_secondary": "#ffffff",
+      "gradient_css": "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+    }
+    transformedResult: {
+      "brandPrimary": "#94d1ff",
+      "brandSecondary": "#ffffff"
+    }
+[15:24:41.497] INFO (4534): PATCH 200 381ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "56ee1yol"
+    method: "PATCH"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 381
+[15:24:41.644] INFO (4534): GET 304 0ms /src/pages/organizations/ViewPage.tsx
+    rid: "k1lxnk8x"
+    method: "GET"
+    path: "/src/pages/organizations/ViewPage.tsx"
+    status: 304
+    ms: 0
+[15:24:41.874] INFO (4534): GET 200 254ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "etmc8cej"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 254
+[15:24:42.226] INFO (4534): GET 200 234ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e/logo
+    rid: "a0hvi1i9"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e/logo"
+    status: 200
+    ms: 234
+[15:24:46.412] INFO (4534): organizations.list ok
+    rid: "s890t4aq"
+    count: 10
+[15:24:46.414] INFO (4534): GET 200 158ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "s890t4aq"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 158
+[15:24:46.682] INFO (4534): organizations.list ok
+    rid: "9mk96h9i"
+    count: 10
+[15:24:46.683] INFO (4534): GET 304 124ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "9mk96h9i"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 124
