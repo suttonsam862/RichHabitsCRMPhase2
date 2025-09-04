@@ -72,11 +72,27 @@ export function QuotesPage() {
           </div>
 
           <TabsContent value="create" className="space-y-6">
-            {/* QuoteGenerator moved to /quote route - see routes.tsx */}
-            <div className="p-4 text-center text-white/70">
-              <p>Quote generation is available at the <a href="/quote" className="text-blue-400 hover:underline">/quote</a> route</p>
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-6">
+                <div className="text-center">
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Create New Estimate</h3>
+                    <p className="text-gray-600">Generate professional estimates for your clients</p>
+                  </div>
+                  <div className="space-y-4">
+                    <Link to="/quote">
+                      <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+                        <Plus className="w-5 h-5 mr-2" />
+                        Start New Estimate
+                      </Button>
+                    </Link>
+                    <p className="text-sm text-gray-500">
+                      You'll be taken to our full estimate generator with all the tools you need
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            {/* Quote generation is handled at the /quote route */}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">
