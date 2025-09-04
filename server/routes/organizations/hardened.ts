@@ -512,6 +512,12 @@ const SetupSchema = z.object({
 
 router.post('/:id/setup', async (req: any, res) => {
   try {
+    // Debug: Log the received payload
+    console.log('Setup endpoint received payload:', {
+      body: req.body,
+      logo_url_received: req.body?.logo_url
+    });
+    
     const parse = SetupSchema.safeParse(req.body);
     if (!parse.success) return sendErr(res, 'VALIDATION_ERROR', 'Invalid payload', parse.error.flatten(), 400);
     

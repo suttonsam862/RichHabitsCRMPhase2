@@ -264,6 +264,12 @@ export default function SimplifiedSetup() {
         complete: true
       };
       
+      // Debug: Log the payload to see if logo_url is included
+      console.log('Setup payload being sent:', {
+        ...updatePayload,
+        logoPreview_state: logoPreview
+      });
+      
       const updateResult = await api.post(`/api/v1/organizations/${id}/setup`, updatePayload);
       
       if (!updateResult.success) {
