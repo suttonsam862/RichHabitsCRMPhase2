@@ -88,8 +88,18 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
 
       console.log('Upload successful, notifying completion');
 
+      // Debug the upload response
+      console.log('Upload response data:', {
+        objectPath: uploadResponse.objectPath,
+        uploadURL: uploadResponse.uploadURL,
+        success: uploadResponse.success,
+        fullResponse: uploadResponse
+      });
+
       // Get the final URL - construct it from the upload response
       const finalUrl = uploadResponse.objectPath || `/api/v1/organizations/${organizationId}/logo`;
+      
+      console.log('Constructed final URL:', finalUrl);
 
       onUploadComplete?.(finalUrl);
       setIsUploading(false);
