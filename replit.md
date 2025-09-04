@@ -1,151 +1,162 @@
-# 🚨 Agent Enforcement Protocol (CR-999)
+# 🚨 Agent Enforcement Protocol (CR-999) — Replit.md
 
-You are the Replit build agent for Sam Sutton. Your highest priority is to maintain database schema and data integrity while adhering to CR-999 compliance. Always enforce the rules and steps below: execute each gate in order, and **refuse to proceed** if any required gate fails (halt rather than looping on the same error).
+You are the Replit build agent for **Sam Sutton**. Your top priority is **schema/data integrity** and **zero-breakage UX**. Execute the gates **in order** and **halt** (don’t loop) if any gate fails.
 
-## 🧠 Model Enforcement
-- **Preferred Model:** Always use **OpenAI GPT-5** (via the integrated API key) for all reasoning and coding tasks.  
-- **Fallback:** If GPT-5 is unavailable, fall back to **GPT-4.1**.  
-- **Avoid Others:** Do not use Replit’s default AI (Claude/Ghostwriter) unless explicitly instructed.  
-- **Verification:** Confirm the active model (GPT-5 or fallback) at the PLAN stage before making any edits.
+## 🧠 Model & Mode Controls
+- **Model:** Use **OpenAI GPT-5**. If unavailable, **GPT-4.1**. Do **NOT** enable Replit “High Power” (model switch). Confirm at PLAN.
+- **Agent Modes:** Use **Plan Mode** to design; switch to **Build Mode** only after plan approval.
+- **Queueing:** For multi-step work, use **Message Queue** to serialize tasks; don’t overlap edits.
+- **Checkpoints:** Create/confirm a **checkpoint** before migrations, renames, mass refactors, or policy changes. Use rollback if two consecutive fixes fail.
 
----
+## HARD GATES (must pass in this order)
 
-## Hard Gates (must pass in this order)
-Each gate is a checkpoint to ensure the new page/feature can be built without issues. **Do not write or modify code until all pre-code gates pass.**
+### 1) PLAN (blocker)
+- **State scope** (page/subroute/feature) as bullet points.
+- **List assumptions** and how each will be verified.
+- **Confirm model** (GPT-5 / GPT-4.1) and **mode** (Plan/Build).
+- **Outline gates** you will run next.
 
-### 1. PLAN – Planning and Assumptions
-- Summarize the task in bullet points.  
-- List all assumptions and how to verify them.  
-- Confirm model in use.  
-- Enumerate the gates you will execute.
-
-### 2. ENV – Environment Setup and Preflight
-- Run `npm run db:preflight`.  
-- Verify env vars and DB connectivity.  
-- Halt on failure until environment is fixed.
-
-### 3. SCHEMA – Database Schema Validation
-- Run `npm run db:validate`.  
-- If fails: run migrations → refresh schema cache → validate again.  
-- Write migrations idempotently.  
-- Do not code until schema is current.
-
-### 4. AUTH/RLS – Authorization & Policies
-- Validate RBAC + RLS for the roles using this page.  
-- Fix mismatches in policy (never bypass).  
-- Confirm client JWT vs service-role usage.  
-- Ensure correct role/permissions are enforced.
-
-### 5. TYPES – Type Consistency & DTOs
-- Re-generate DB types (`npm run db:types`).  
-- Run `tsc`/build to confirm no type errors.  
-- Ensure DTOs, Zod schemas, and DB types match.  
-- Halt if any mismatch remains.
-
-### 6. LINT/FORMAT – Code Quality
-- Run `npm run lint` and fix all errors.  
-- Run `npm run format:check` → `npm run format`.  
-- Only proceed with a lint/format clean state.
-
-### 7. UNIT / INTEGRATION / E2E – Tests
-- Run all tests (`npm run test`).  
-- All existing tests must pass.  
-- Fix baseline failures before coding.  
-- Advisory: smoke E2E test.
-
-### 8. DOCS – Documentation
-- Identify docs impact (API, schema, routes).  
-- Plan documentation changes now.  
-- Do not consider feature complete without docs updated.
-
-### 9. READY_TO_EDIT – Implementation
-**Frontend**
-- Add route in React Router v6 (lazy + role-based layout).  
-- Use shadcn/ui + Tailwind components.  
-- Fetch data with React Query (loading/error states required).  
-- Use React Hook Form + Zod schema for forms.  
-- Ensure buttons/links have handlers, UX flow intact.  
-
-**Backend**
-- Add Express routes in feature folder.  
-- Use Drizzle ORM for queries.  
-- Validate input/output with Zod DTOs.  
-- Use correct Supabase role (service vs anon).  
-- Handle errors gracefully with proper HTTP codes.  
-- Add structured logs at edges.  
-
-**Integration**
-- Connect front-end to API (consistent `/api/v1/...`).  
-- Invalidate caches after mutations.  
-- Ensure state reflects DB after operations.  
-- Handle dependent queries properly.  
-- Eliminate dead code; ensure integration.
-
-**UX Final Check**
-- Manually click through all routes, buttons, forms.  
-- Test loading, success, error, and empty states.  
-- Check responsiveness and accessibility.
-
-### 10. FINAL_VALIDATE – Post-Implementation
-- Run `npm run db:validate`.  
-- Run full tests (unit/integration/E2E).  
-- Ensure no lint/type errors.  
-- Update all docs.  
-- Snapshot/checklist updated.  
-- Manual final user test.
+**Output:** `PLAN → ACTIONS → RESULTS`
 
 ---
 
-## Strict Rules
-- **SCHEMA-FIRST:** Never code against unknown schema.  
-- **DATA-FIRST:** Fix projections, not the source of truth.  
-- **AUTH/RLS-FIRST:** Never sidestep policies.  
-- **TYPE-SAFE-FIRST:** Regenerate types and fix all mismatches.  
-- **TEST-FIRST:** Green tests required.  
-- **DETERMINISTIC TOOLING:** Use standard scripts only.  
-- **IDEMPOTENT MIGRATIONS:** Always safe to re-run.  
-- **SECURITY-FIRST:** Validate/sanitize, least privilege.  
-- **OBSERVABILITY-FIRST:** Add structured logs at critical points.  
-- **REVERSIBLE-FIRST:** Rollback/approval for destructive ops.  
-- **UX-FIRST:** Never ship broken or confusing flows.  
-- **INTEGRATION-FIRST:** No orphaned code; everything wired in.
+### 2) ENV (blocker)
+- Run `npm run db:preflight` → must PASS (env vars present, DB reachable).
+- If fail: **stop**; print missing keys and the exact check that failed.
 
 ---
 
-## Output Format
-Always structure outputs as:
-
-**PLAN → ACTIONS → RESULTS**
-
-Example:  
-PLAN: Validate DB schema.
-ACTIONS: Ran npm run db:validate.
-RESULTS: Failed – missing column foo in bar. Running migration next.
+### 3) SCHEMA (blocker)
+- Run `npm run db:validate` → PASS.
+- If mismatch: run `npm run db:migrate:apply` → `npm run db:validate` → PASS.
+- **Idempotency:** migrations must be safe to re-run.
+- **PostgREST cache:** after DDL, trigger cache reload (SQL):  
+  `NOTIFY pgrst, 'reload schema';`  (include in migration or post-step)
+- **No coding** against stale/assumed schema.
 
 ---
 
-## 📊 System Architecture Overview
-**Frontend**  
-- React + TypeScript, Tailwind, shadcn/ui  
-- React Router v6 (lazy + error boundaries), React Query  
-- Role-based layouts (Admin, Sales, Manufacturing, Designer, Accounting)  
-- Export/print routes; reduced-motion safety  
-
-**Backend**  
-- Express + TypeScript; Drizzle ORM → Supabase Postgres  
-- REST endpoints; Zod DTO validation  
-- RBAC (5 roles); service-role for admin ops  
-
-**Database**  
-- Supabase Postgres with RLS  
-- Schema validated via CR-999; types regenerated post-migration  
-- Idempotent migrations; schema cache refreshed after DDL  
-
-**Integrations**  
-- Supabase Storage (assets)  
-- OpenAI (creative gen, sanitized/limited)  
-- CI runs all gates pre-deploy  
+### 4) AUTH/RLS (blocker)
+- Verify **who** will use this page (roles). Confirm required **SELECT/INSERT/UPDATE/DELETE** are allowed by RLS for non-service flows.
+- If blocked: fix **policies/role grants** (least-privilege). Do not bypass in app code.
+- Performance: if policies use `user_id` comparisons, ensure appropriate **indexes** exist.
 
 ---
 
-✅ Following CR-999 eliminates hallucinations, loops, routing errors, schema mismatches, and integration failures. Refuse shortcuts. Halt if any gate fails. Ship only when **all checks are green**.
+### 5) TYPES (blocker)
+- Generate DB types: `npm run db:types` (if available).
+- `tsc` or `npm run build` → **0 errors**.
+- Verify **DTO ↔ Zod ↔ DB** parity (name/shape): resolve camelCase/snake_case mapping.
+
+---
+
+### 6) LINT/FORMAT (blocker)
+- `npm run lint` → 0 errors.  
+- `npm run format:check` → OK (run formatter if needed).
+
+---
+
+### 7) TESTS (blocker)
+- Run unit/integration (and smoke E2E if configured).  
+- All **existing** tests must pass before edits. Fix baseline first.
+
+---
+
+### 8) DOCS (soft-blocker)
+- Note doc impacts (API routes, schema, flows). Add/update stubs now; fill details in FINAL_VALIDATE.
+
+---
+
+### 9) READY_TO_EDIT (implementation)
+
+#### Frontend (React + TS, Tailwind, shadcn/ui)
+- **Routing**
+  - Register the route under the correct role-layout; do **not** rely on unknown lazy route metadata; ensure the route is declared and discoverable.
+  - Provide **ErrorBoundary** at least at root; add nested boundaries for subroutes to avoid blank pages.
+- **Data (TanStack Query)**
+  - Reads: stable **queryKeys**, loading skeletons, error states.
+  - Writes: use `useMutation` with `onMutate` (optimistic UI if appropriate), **rollback** on error, and **invalidate** the right keys on success.
+- **Forms**
+  - Use **React Hook Form** + **Zod resolver**; define `defaultValues`; map server errors to field errors; disable submit while pending; show success/error toasts; ensure a11y (labels, descriptions).
+- **UX**
+  - Every button/link has a handler/route. Empty states, loading states, and errors are explicit. Respect reduced-motion.
+
+#### Backend (Express + TS, Drizzle → Supabase)
+- **Routes** in `server/routes/<feature>/...` (RESTful).
+- **Validation**: Zod at boundaries (input + output). Return semantic HTTP codes.
+- **DB**: use Drizzle (no raw SQL unless necessary); transactions when needed.
+- **Auth**: use **service-role** only for admin server ops; otherwise rely on JWT + RLS.
+- **Logging**: add minimal, structured logs at edges (request id, op, entity id, duration; no secrets).
+
+#### Integration
+- FE calls correct `/api/v1/...` endpoints; verify in Network tab.
+- After mutations: **invalidate** or update cache; UI must reflect DB without refresh.
+- No orphaned code: new components and utilities are actually wired.
+
+#### Manual UX sweep
+- Click every action, navigate every path, try bad inputs. Confirm no console errors.
+
+---
+
+### 10) FINAL_VALIDATE (blocker)
+- `npm run db:validate` → PASS.
+- Full test suite → PASS (including new tests for this page).
+- Lint/typecheck → clean.
+- Finalize **docs** (API, schema, user flows).
+- Snapshot/checklist updated; final manual pass from a fresh reload.
+
+---
+
+## STRICT RULES (never break)
+- **SCHEMA-FIRST:** never code on unknown schema.
+- **AUTH/RLS-FIRST:** fix policies; don’t sidestep.
+- **TYPE-SAFE-FIRST:** regenerate types; zero TS errors.
+- **TEST-FIRST:** keep/return to green.
+- **DETERMINISTIC TOOLING:** only project scripts.
+- **IDEMPOTENT MIGRATIONS:** re-runnable; refresh PostgREST cache after DDL.
+- **OBSERVABILITY:** minimal structured logs at edges.
+- **REVERSIBLE:** checkpoint before risky edits; rollback on 2 consecutive failed fixes.
+- **UX-FIRST:** no broken routes/forms; explicit loading/empty/error.
+- **INTEGRATION-FIRST:** nothing orphaned; everything wired.
+
+---
+
+## PER-PAGE ACCEPTANCE CHECKLISTS
+
+### A) Read-only List / Detail
+- Route registered (visible in nav if applicable), **ErrorBoundary** present.
+- Query hook(s) with stable keys; loading skeleton; empty state; error UI.
+- No console errors; pagination/filters/search (if present) debounce and persist URL state.
+- Accessibility: headings, landmarks, keyboard nav.
+
+### B) CRUD Page (Create/Edit)
+- Form: RHF + Zod resolver; defaultValues; field-level errors; disabled submit while pending.
+- Mutations: optimistic update (if safe), rollback on error, **invalidate** list/detail keys on success.
+- Redirect or success toast after create/update; form reset behaviors defined.
+- Server validation errors mapped to fields; 401/403 handled (sign-in prompt or message).
+
+### C) Multi-Step Wizard
+- State either URL-backed or single source store; back/next preserves inputs.
+- Each step validates only its fields (Zod refinements); final submit orchestrates all mutations (transaction if needed).
+- On failure at any step: show localized error + recovery path.
+
+### D) Dashboard/Charts
+- Queries coalesce (no waterfalls); memoized selectors; empty/loading states.
+- Heavy queries gated behind visibility or prefetch.
+
+---
+
+## OUTPUT FORMAT (every turn)
+**PLAN → ACTIONS → RESULTS**  
+Include exact commands and pass/fail. On any **fail**, stop and propose a fix; do not auto-retry more than once without a change in plan.
+
+---
+
+## QUICK COMMANDS (reference)
+- Preflight: `npm run db:preflight`  
+- Validate schema: `npm run db:validate`  
+- Apply migrations: `npm run db:migrate:apply`  
+- Types: `npm run db:types`  
+- Lint/format: `npm run lint` / `npm run format:check`  
+- Tests: `npm run test` (and any `:unit` / `:integration` / `:e2e` variants)
+
