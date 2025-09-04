@@ -373,7 +373,13 @@ export default function OrganizationsList(){
                     {org.logoUrl && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
                         <img 
-                          src={org.logoUrl.startsWith('http') ? org.logoUrl : `/api/v1/organizations/${org.id}/logo`}
+                          src={(() => {
+                            if (org.logoUrl.startsWith('http')) return org.logoUrl;
+                            if (org.logoUrl.startsWith('org/') || org.logoUrl.startsWith('app/')) {
+                              return `/api/v1/public-objects/${org.logoUrl}`;
+                            }
+                            return `/api/v1/organizations/${org.id}/logo`;
+                          })()}
                           alt=""
                           className="w-full h-auto object-cover opacity-10"
                           aria-hidden="true"
@@ -399,7 +405,13 @@ export default function OrganizationsList(){
                     <div className="h-12 w-12 rounded-xl bg-white/10 overflow-hidden flex items-center justify-center border border-white/10 relative">
                       {org.logoUrl ? (
                         <img 
-                          src={org.logoUrl.startsWith('http') ? org.logoUrl : `/api/v1/organizations/${org.id}/logo`} 
+                          src={(() => {
+                            if (org.logoUrl.startsWith('http')) return org.logoUrl;
+                            if (org.logoUrl.startsWith('org/') || org.logoUrl.startsWith('app/')) {
+                              return `/api/v1/public-objects/${org.logoUrl}`;
+                            }
+                            return `/api/v1/organizations/${org.id}/logo`;
+                          })()} 
                           alt={`${org.name} logo`} 
                           className="h-full w-full object-cover"
                           onError={(e) => {

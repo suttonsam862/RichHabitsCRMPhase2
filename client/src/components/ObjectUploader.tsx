@@ -16,7 +16,18 @@ interface ObjectUploaderProps {
 
 export function ObjectUploader({ onUploadComplete, currentImageUrl, organizationId, className = "", children }: ObjectUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  
+  // Convert storage path to displayable URL
+  const getDisplayUrl = (url: string | undefined | null) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('org/') || url.startsWith('app/')) {
+      return `/api/v1/public-objects/${url}`;
+    }
+    return url;
+  };
+  
+  const [previewUrl, setPreviewUrl] = useState<string | null>(getDisplayUrl(currentImageUrl));
   const { toast } = useToast();
 
   const handleUpload = async (file: File) => {
@@ -101,6 +112,10 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
       const finalUrl = uploadResponse.objectKey || '';
       
       console.log('Using objectKey as final URL:', finalUrl);
+
+      // Update preview immediately with the uploaded file
+      const displayUrl = getDisplayUrl(finalUrl);
+      setPreviewUrl(displayUrl);
 
       onUploadComplete?.(finalUrl);
       setIsUploading(false);

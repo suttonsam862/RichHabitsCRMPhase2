@@ -191,7 +191,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                 <FormControl>
                   <div className="space-y-2">
                     <ObjectUploader
-                      currentImageUrl={field.value ? (field.value.startsWith('http') ? field.value : `/api/v1/organizations/${organization.id}/logo`) : ''}
+                      currentImageUrl={field.value || ''}
                       organizationId={organization.id}
                       onUploadComplete={(url) => {
                         console.log('Logo upload completed, updating form field:', url);

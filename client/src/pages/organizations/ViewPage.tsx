@@ -106,7 +106,15 @@ export default function OrganizationViewPage() {
                 <div className="relative w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-cyan-500/30 shadow-lg">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                   <img 
-                    src={(organization.logoUrl || organization.logo_url)?.startsWith('http') ? (organization.logoUrl || organization.logo_url) : `/api/v1/organizations/${organization.id}/logo`}
+                    src={(() => {
+                      const logoUrl = organization.logoUrl || organization.logo_url;
+                      if (!logoUrl) return '';
+                      if (logoUrl.startsWith('http')) return logoUrl;
+                      if (logoUrl.startsWith('org/') || logoUrl.startsWith('app/')) {
+                        return `/api/v1/public-objects/${logoUrl}`;
+                      }
+                      return `/api/v1/organizations/${organization.id}/logo`;
+                    })()}
                     alt={`${organization.name} logo`}
                     className="relative z-10 w-full h-full object-cover"
                     onError={(e) => {
