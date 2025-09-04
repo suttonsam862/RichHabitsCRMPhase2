@@ -278,6 +278,7 @@ export default function QuoteGenerator() {
                   <h2 className="text-3xl font-bold text-gray-900">ESTIMATE</h2>
                   <p className="text-gray-600">Developing Habits, LLC d/b/a Rich Habits</p>
                   <p className="text-sm text-gray-500">3101 Whitehall Rd, Birmingham, AL 35209</p>
+                  <p className="text-sm text-gray-500">Phone: (205) 586-9574 | Email: samsutton@rich-habits.com</p>
                 </div>
               </div>
               
@@ -556,23 +557,104 @@ export default function QuoteGenerator() {
 
       <style>{`
         @media print {
-          * { print-color-adjust: exact !important; }
-          body { background: white !important; margin: 0 !important; }
+          * { 
+            print-color-adjust: exact !important; 
+            color: black !important;
+          }
+          body { 
+            background: white !important; 
+            margin: 0 !important; 
+            color: black !important;
+          }
           .print\\:hidden { display: none !important; }
           .container { max-width: none !important; padding: 0 !important; }
-          .bg-blue-600 { background-color: #2563eb !important; }
+          
+          /* Remove all input styling and show as plain text */
+          input, textarea, select {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            color: black !important;
+            font-family: inherit !important;
+            font-size: inherit !important;
+            outline: none !important;
+          }
+          
+          /* Clean table styling */
+          .bg-blue-600 { 
+            background-color: #000000 !important; 
+            color: white !important;
+          }
           .text-white { color: white !important; }
-          .border { border-width: 1px !important; }
+          
+          /* Clean borders and spacing */
+          .border { border: 1px solid #cccccc !important; }
+          .border-gray-300 { border-color: #cccccc !important; }
           .rounded-lg { border-radius: 0 !important; }
           .shadow-lg { box-shadow: none !important; }
-          .p-8, .p-6, .p-4 { padding: 1rem !important; }
-          .mb-8, .mb-6, .mb-4 { margin-bottom: 1rem !important; }
-          .mt-8, .mt-6, .mt-4 { margin-top: 1rem !important; }
+          
+          /* Optimized spacing for 2-page layout */
+          .p-8 { padding: 0.75rem !important; }
+          .p-6 { padding: 0.5rem !important; }
+          .p-4 { padding: 0.25rem !important; }
+          .p-3 { padding: 0.25rem !important; }
+          .mb-8 { margin-bottom: 0.75rem !important; }
+          .mb-6 { margin-bottom: 0.5rem !important; }
+          .mb-4 { margin-bottom: 0.25rem !important; }
+          .mt-8 { margin-top: 0.75rem !important; }
+          .mt-6 { margin-top: 0.5rem !important; }
+          .mt-4 { margin-top: 0.25rem !important; }
+          
+          /* Ensure clean page breaks */
           table { page-break-inside: avoid; }
-          h1, h2, h3 { page-break-after: avoid; }
+          .border.border-gray-300.rounded-lg { page-break-inside: avoid; }
+          h1, h2, h3 { 
+            page-break-after: avoid; 
+            color: black !important;
+          }
+          
+          /* Grid layout for print */
           .grid { display: block !important; }
-          .md\\:grid-cols-2 > * { width: 48% !important; display: inline-block !important; vertical-align: top !important; }
-          @page { size: A4; margin: 18mm; }
+          .md\\:grid-cols-2 > * { 
+            width: 48% !important; 
+            display: inline-block !important; 
+            vertical-align: top !important; 
+            margin-right: 2% !important;
+          }
+          .md\\:grid-cols-2 > *:last-child { 
+            margin-right: 0 !important; 
+          }
+          
+          /* Text colors */
+          .text-gray-900, .text-gray-700, .text-gray-600, .text-gray-500 {
+            color: black !important;
+          }
+          
+          /* Page settings for optimal 2-page layout */
+          @page { 
+            size: A4; 
+            margin: 15mm;
+          }
+          
+          /* Logo sizing for print */
+          img {
+            max-height: 60px !important;
+            max-width: 60px !important;
+          }
+          
+          /* Table header styling */
+          thead tr {
+            background-color: black !important;
+            color: white !important;
+          }
+          
+          /* Clean table cell styling */
+          td, th {
+            border-bottom: 1px solid #cccccc !important;
+            padding: 0.25rem !important;
+          }
         }
       `}</style>
     </div>
