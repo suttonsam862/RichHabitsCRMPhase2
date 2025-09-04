@@ -23,6 +23,43 @@ router.use('/sports', sportsRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
 
 // Object storage routes
+// Route to serve public objects from Supabase storage
+router.get('/public-objects/:filePath(*)', async (req, res) => {
+  try {
+    const filePath = req.params.filePath;
+    const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
+    
+    // Get the public URL for the file
+    const { data } = await supabaseAdmin.storage
+      .from('app')
+      .getPublicUrl(filePath);
+    
+    if (!data?.publicUrl) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    // Fetch the file and pipe it to the response
+    const fetch = (await import('node-fetch')).default;
+    const fileResponse = await fetch(data.publicUrl);
+    
+    if (!fileResponse.ok) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    // Set appropriate headers
+    res.set({
+      'Content-Type': fileResponse.headers.get('content-type') || 'application/octet-stream',
+      'Cache-Control': 'public, max-age=3600',
+    });
+    
+    // Stream the file
+    fileResponse.body?.pipe(res);
+  } catch (error) {
+    console.error('Error serving public object:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.post('/objects/upload', async (req: any, res) => {
   try {
     const { fileName, organizationId } = req.body || {};
