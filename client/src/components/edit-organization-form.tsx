@@ -63,7 +63,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       website: (organization as any).website || "",
       notes: organization.notes || "",
       brandPrimary: (organization as any).brandPrimary || "#6EE7F9",
-      brandSecondary: (organization as any).brandSecondary || "#A78BFA", 
+      brandSecondary: (organization as any).brandSecondary || "#A78BFA",
       isBusiness: (organization as any).isBusiness || false,
       tags: (organization as any).tags || [],
       isArchived: (organization as any).isArchived || false,
@@ -87,7 +87,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
           secondary: freshData.brandSecondary
         });
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["/v1/organizations"] });
       queryClient.invalidateQueries({ queryKey: ['organization', organization.id] });
       toast({
@@ -130,17 +130,24 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       email: data.email || undefined,
       website: data.website || undefined,
       notes: data.notes || undefined,
-      brandPrimary: data.brandPrimary || undefined,
-      brandSecondary: data.brandSecondary || undefined,
-    };
-    
-    // Debug logging for brand colors - ensure we capture all changes
-    console.log('Form submission data:', {
+      // CRITICAL: Always send brand colors as-is (don't convert to undefined)
       brandPrimary: data.brandPrimary,
       brandSecondary: data.brandSecondary,
-      hasColorChanges: !!(data.brandPrimary || data.brandSecondary)
+    };
+
+    // Debug logging for brand colors
+    console.log('Form submission data:', {
+      originalPrimary: organization.brandPrimary,
+      originalSecondary: organization.brandSecondary,
+      newPrimary: data.brandPrimary,
+      newSecondary: data.brandSecondary,
+      actualChanges: {
+        primaryChanged: data.brandPrimary !== organization.brandPrimary,
+        secondaryChanged: data.brandSecondary !== organization.brandSecondary
+      },
+      submittingData: cleanedData
     });
-    
+
     updateMutation.mutate(cleanedData);
   };
 
@@ -236,7 +243,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
@@ -256,7 +263,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="state"
@@ -326,7 +333,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="zip"
@@ -518,8 +525,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                     {field.value?.map((tag, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-1">
                         {tag}
-                        <X 
-                          className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                        <X
+                          className="h-3 w-3 cursor-pointer hover:text-red-500"
                           onClick={() => removeTag(tag)}
                         />
                       </Badge>
