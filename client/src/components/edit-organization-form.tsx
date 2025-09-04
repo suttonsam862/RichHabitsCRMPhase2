@@ -72,7 +72,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateOrganizationData) =>
-      apiRequest(`/api/v1/organizations/${organization.id}`, {
+      apiRequest(`/v1/organizations/${organization.id}`, {
         method: "PATCH",
         data: data,
       }),

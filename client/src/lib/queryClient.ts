@@ -39,10 +39,9 @@ export async function apiRequest(endpoint: string, options: { method?: string; d
     }
 
     const result = await response.json();
-    console.log(`✅ API Success for ${endpoint}:`, { status: response.status, result });
     return result;
   } catch (error) {
-    console.error(`❌ API request failed for ${endpoint}:`, error);
+    console.error(`API request failed for ${endpoint}:`, error);
     throw error;
   }
 }
