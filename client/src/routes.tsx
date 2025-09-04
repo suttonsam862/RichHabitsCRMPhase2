@@ -35,6 +35,7 @@ const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m =
 const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ default: m.default })));
+const QuoteHistory = lazy(() => import('@/pages/QuoteHistory').then(m => ({ default: m.default })));
 
 // Loading component for lazy loaded pages
 function PageLoader() {

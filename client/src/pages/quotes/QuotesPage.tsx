@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, FileText, History, Search } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, History, Search, Eye, Calendar, DollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 // QuoteGenerator component moved to dedicated page route
 import { useToast } from '@/hooks/use-toast';
+import { loadHistory, QuoteRecord } from '@/lib/quoteStore';
 
 export function QuotesPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('create');
   const [searchTerm, setSearchTerm] = useState('');
+  const [quotes, setQuotes] = useState<QuoteRecord[]>([]);
+
+  useEffect(() => {
+    setQuotes(loadHistory());
+  }, [activeTab]); // Reload when switching to history tab
 
   const handleQuoteGenerated = (quoteData: any) => {
     // Handle quote generation - download PDF, show in history, etc.
@@ -98,19 +106,85 @@ export function QuotesPage() {
           <TabsContent value="history" className="space-y-6">
             <div className="bg-white rounded-lg shadow">
               <div className="p-6">
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Quotes Yet</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Your quote history will appear here once you start creating quotes.
-                    </p>
-                    <Button onClick={() => setActiveTab('create')}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Your First Quote
-                    </Button>
+                {quotes.length === 0 ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Estimates Yet</h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Your estimate history will appear here once you start creating estimates.
+                      </p>
+                      <Button onClick={() => setActiveTab('create')}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Your First Estimate
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900">Recent Estimates ({quotes.length})</h3>
+                      <Link to="/quotes/history">
+                        <Button variant="outline" size="sm">
+                          <History className="w-4 h-4 mr-2" />
+                          View All History
+                        </Button>
+                      </Link>
+                    </div>
+
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Organization</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {quotes.slice(0, 5).map((quote) => (
+                            <TableRow key={quote.id}>
+                              <TableCell className="font-medium">{quote.title}</TableCell>
+                              <TableCell>{quote.org.toName || 'No organization'}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  {new Date(quote.meta.date).toLocaleDateString()}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center font-medium">
+                                  <DollarSign className="h-4 w-4 mr-1" />
+                                  ${quote.totals.total.toLocaleString()}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Link to={`/quote?id=${quote.id}`}>
+                                  <Button variant="outline" size="sm">
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    View
+                                  </Button>
+                                </Link>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {quotes.length > 5 && (
+                      <div className="text-center">
+                        <Link to="/quotes/history">
+                          <Button variant="ghost">
+                            View {quotes.length - 5} more estimates...
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </TabsContent>
