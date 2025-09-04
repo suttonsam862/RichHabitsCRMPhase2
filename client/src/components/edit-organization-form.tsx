@@ -53,7 +53,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     defaultValues: {
       name: organization.name,
       state: organization.state || "",
-      logoUrl: organization.logoUrl || organization.logo_url || "",
+      logoUrl: organization.logo_url || "",
       address: organization.address || "",
       city: organization.city || "",
       zip: organization.zip || "",
@@ -61,11 +61,11 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       email: organization.email || "",
       website: organization.website || "",
       notes: organization.notes || "",
-      brandPrimary: organization.brandPrimary || organization.brand_primary || "#6EE7F9",
-      brandSecondary: organization.brandSecondary || organization.brand_secondary || "#A78BFA",
-      isBusiness: organization.isBusiness ?? organization.is_business ?? false,
+      brandPrimary: organization.brand_primary || "#6EE7F9",
+      brandSecondary: organization.brand_secondary || "#A78BFA",
+      isBusiness: organization.is_business ?? false,
       tags: organization.tags || [],
-      isArchived: organization.isArchived ?? organization.is_archived ?? false,
+      isArchived: organization.is_archived ?? false,
     },
   });
 
@@ -79,14 +79,14 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       // Update form with fresh data from server
       if (response?.data) {
         const freshData = response.data;
-        form.setValue('brandPrimary', freshData.brandPrimary);
-        form.setValue('brandSecondary', freshData.brandSecondary);
-        if (freshData.logoUrl) {
-          form.setValue('logoUrl', freshData.logoUrl);
+        form.setValue('brandPrimary', freshData.brand_primary);
+        form.setValue('brandSecondary', freshData.brand_secondary);
+        if (freshData.logo_url) {
+          form.setValue('logoUrl', freshData.logo_url);
         }
         console.log('Updated form with fresh brand colors:', {
-          primary: freshData.brandPrimary,
-          secondary: freshData.brandSecondary
+          primary: freshData.brand_primary,
+          secondary: freshData.brand_secondary
         });
       }
 
