@@ -8,8 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOrganizationSchema } from "../../../shared/supabase-schema";
-import type { InsertOrganization, Organization } from "../../../shared/supabase-schema";
+import { insertOrganizationSchema, type Organization } from "../../../shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
@@ -54,25 +53,25 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     defaultValues: {
       name: organization.name,
       state: organization.state || "",
-      logoUrl: (organization as any).logoUrl || "",
+      logoUrl: organization.logo_url || "",
       address: organization.address || "",
-      city: (organization as any).city || "",
-      zip: (organization as any).zip || "",
+      city: organization.city || "",
+      zip: organization.zip || "",
       phone: organization.phone || "",
       email: organization.email || "",
-      website: (organization as any).website || "",
+      website: organization.website || "",
       notes: organization.notes || "",
-      brandPrimary: (organization as any).brandPrimary || "#6EE7F9",
-      brandSecondary: (organization as any).brandSecondary || "#A78BFA",
-      isBusiness: (organization as any).isBusiness || false,
-      tags: (organization as any).tags || [],
-      isArchived: (organization as any).isArchived || false,
+      brandPrimary: organization.brand_primary || "#6EE7F9",
+      brandSecondary: organization.brand_secondary || "#A78BFA",
+      isBusiness: organization.is_business || false,
+      tags: organization.tags || [],
+      isArchived: organization.is_archived || false,
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateOrganizationData) =>
-      apiRequest(`/v1/organizations/${organization.id}`, {
+      apiRequest(`/api/v1/organizations/${organization.id}`, {
         method: "PATCH",
         data: data,
       }),
@@ -80,15 +79,14 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       // Update form with fresh data from server
       if (response?.data) {
         const freshData = response.data;
-        form.setValue('brandPrimary', freshData.brandPrimary);
-        form.setValue('brandSecondary', freshData.brandSecondary);
-        if (freshData.logoUrl) {
-          form.setValue('logoUrl', freshData.logoUrl);
+        form.setValue('brandPrimary', freshData.brand_primary);
+        form.setValue('brandSecondary', freshData.brand_secondary);
+        if (freshData.logo_url) {
+          form.setValue('logoUrl', freshData.logo_url);
         }
-        console.log('Updated form with fresh data:', {
-          primary: freshData.brandPrimary,
-          secondary: freshData.brandSecondary,
-          logoUrl: freshData.logoUrl
+        console.log('Updated form with fresh brand colors:', {
+          primary: freshData.brand_primary,
+          secondary: freshData.brand_secondary
         });
       }
 
@@ -142,15 +140,11 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
 
     // Debug logging for brand colors
     console.log('Form submission data:', {
-      originalPrimary: organization.brandPrimary,
-      originalSecondary: organization.brandSecondary,
+      originalPrimary: organization.brand_primary,
+      originalSecondary: organization.brand_secondary,
       newPrimary: data.brandPrimary,
       newSecondary: data.brandSecondary,
-      actualChanges: {
-        primaryChanged: data.brandPrimary !== organization.brandPrimary,
-        secondaryChanged: data.brandSecondary !== organization.brandSecondary
-      },
-      submittingData: cleanedData
+      hasColorChanges: data.brandPrimary !== organization.brand_primary || data.brandSecondary !== organization.brand_secondary
     });
 
     updateMutation.mutate(cleanedData);

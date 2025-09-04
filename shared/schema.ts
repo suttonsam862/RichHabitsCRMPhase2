@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
+import { z } from 'zod';
 
 // Comprehensive users table that supports both staff and customers
 export const users = pgTable('users', {
@@ -109,6 +110,10 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
   orgSports: many(orgSports),
   users: many(users)
 }));
+
+// Insert and select types for TypeScript
+export type SelectOrganization = typeof organizations.$inferSelect;
+export type InsertOrganization = typeof organizations.$inferInsert;
 export const sportsRelations = relations(sports, ({ many }) => ({ orgSports: many(orgSports) }));
 export const orgSportsRelations = relations(orgSports, ({ one }) => ({
     organization: one(organizations, { fields: [orgSports.organization_id], references: [organizations.id] }),
@@ -186,8 +191,20 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// Create insert and select schemas with validation
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+
+export const insertOrganizationSchema = createInsertSchema(organizations, {
+  name: z.string().min(1, "Organization name is required").max(255),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional(),
+  brand_primary: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Brand primary must be a valid hex color").optional(),
+  brand_secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Brand secondary must be a valid hex color").optional(),
+});
+
+export const selectOrganizationSchema = createSelectSchema(organizations);
+
 export type Organization = typeof organizations.$inferSelect;
-export type InsertOrganization = typeof organizations.$inferInsert;
 
 export type Sport = typeof sports.$inferSelect;
 export type InsertSport = typeof sports.$inferInsert;

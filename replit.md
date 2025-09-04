@@ -61,3 +61,14 @@ Always output: **PLAN → ACTIONS → RESULTS** (with commands and pass/fail).
 - Supabase Storage for branding assets
 - OpenAI for creative generation (guardrails: sanitize paths, size limits)
 - CI: run gates before deploy
+
+## Recent Changes: Latest modifications with dates
+
+### September 4, 2025 - Emergency System Cleanup (CR-999)
+- **Schema Consolidation**: Fixed field mismatches between shared/schema.ts and shared/supabase-schema.ts, ensuring single source of truth
+- **Route Unification**: Consolidated scattered organization routes into server/routes/organizations/hardened.ts canonical implementation  
+- **DTO Field Alignment**: Resolved camelCase/snake_case mapping issues between frontend forms and database fields
+- **Logo Upload System**: Unified multiple upload endpoints into /api/v1/objects/upload with signed URL approach
+- **Dead Code Removal**: Removed deprecated files (create.ts, diagnostics.ts, upload.ts) and cleaned up import statements
+- **Type Safety**: All TypeScript errors resolved, no LSP diagnostics remaining
+- **System Status**: Logo uploads working, form updates persisting correctly, clean maintainable codebase achieved
