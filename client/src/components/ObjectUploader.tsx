@@ -21,13 +21,8 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
   const getDisplayUrl = (url: string | undefined | null) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    if (url.startsWith('org/')) {
-      // Add 'app/' prefix since files are stored in the 'app' bucket with this structure
-      const displayUrl = `/api/v1/public-objects/app/${url}`;
-      console.log('Converting storage path to display URL:', url, '->', displayUrl);
-      return displayUrl;
-    }
-    if (url.startsWith('app/')) {
+    if (url.startsWith('org/') || url.startsWith('app/')) {
+      // Server route already selects 'app' bucket, so just use the path
       const displayUrl = `/api/v1/public-objects/${url}`;
       console.log('Converting storage path to display URL:', url, '->', displayUrl);
       return displayUrl;

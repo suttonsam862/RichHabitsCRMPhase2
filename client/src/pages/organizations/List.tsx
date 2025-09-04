@@ -375,10 +375,7 @@ export default function OrganizationsList(){
                         <img 
                           src={(() => {
                             if (org.logoUrl.startsWith('http')) return org.logoUrl;
-                            if (org.logoUrl.startsWith('org/')) {
-                              return `/api/v1/public-objects/app/${org.logoUrl}`;
-                            }
-                            if (org.logoUrl.startsWith('app/')) {
+                            if (org.logoUrl.startsWith('org/') || org.logoUrl.startsWith('app/')) {
                               return `/api/v1/public-objects/${org.logoUrl}`;
                             }
                             return `/api/v1/organizations/${org.id}/logo`;
@@ -410,10 +407,7 @@ export default function OrganizationsList(){
                         <img 
                           src={(() => {
                             if (org.logoUrl.startsWith('http')) return org.logoUrl;
-                            if (org.logoUrl.startsWith('org/')) {
-                              return `/api/v1/public-objects/app/${org.logoUrl}`;
-                            }
-                            if (org.logoUrl.startsWith('app/')) {
+                            if (org.logoUrl.startsWith('org/') || org.logoUrl.startsWith('app/')) {
                               return `/api/v1/public-objects/${org.logoUrl}`;
                             }
                             return `/api/v1/organizations/${org.id}/logo`;
