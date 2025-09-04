@@ -97,9 +97,22 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
         fullResponse: uploadResponse
       });
 
-      // Get the final URL - use the organization logo route that works
-      // The system serves logos via /api/v1/organizations/{id}/logo, not via public-objects
-      const finalUrl = `/api/v1/organizations/${organizationId}/logo`;
+      // Extract the actual file path from the upload URL for database storage
+      // The uploadURL contains the actual path like: .../org/185f3db6.../branding/filename.png
+      // We need to extract just the relative path portion for storage
+      let filePath = '';
+      try {
+        const url = new URL(uploadResponse.uploadURL);
+        const pathMatch = url.pathname.match(/\/storage\/v1\/object\/.*?\/(.*?)(?:\?|$)/);
+        if (pathMatch && pathMatch[1]) {
+          filePath = pathMatch[1]; // This gives us: app/org/id/branding/filename.png
+        }
+      } catch (e) {
+        console.warn('Could not extract file path from upload URL:', e);
+      }
+      
+      // Store the actual file path in the database, not the server route
+      const finalUrl = filePath || `/api/v1/organizations/${organizationId}/logo`;
       
       console.log('Constructed final URL:', finalUrl);
 

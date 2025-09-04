@@ -792,10 +792,7 @@ router.patch('/:id', async (req: any, res) => {
     if (data.tags !== undefined) patch.tags = data.tags;
     if (data.isArchived !== undefined) patch.is_archived = data.isArchived;
     if (data.state !== undefined) patch.state = data.state;
-    if (data.logoUrl !== undefined) {
-      patch.logo_url = data.logoUrl;
-      console.log('Setting logo_url in database:', { logoUrl: data.logoUrl, isEmpty: !data.logoUrl });
-    }
+    if (data.logoUrl !== undefined) patch.logo_url = data.logoUrl;
     
     // CRITICAL: Brand color mapping - this fixes the update issue
     if (data.brandPrimary !== undefined) {
