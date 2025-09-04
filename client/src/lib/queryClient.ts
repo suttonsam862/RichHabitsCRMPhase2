@@ -40,8 +40,14 @@ export async function apiRequest(endpoint: string, options: { method?: string; d
 
     const result = await response.json();
     return result;
-  } catch (error) {
-    console.error(`API request failed for ${endpoint}:`, error);
+  } catch (error: any) {
+    console.error(`API request failed for ${endpoint}:`, {
+      error,
+      message: error?.message,
+      stack: error?.stack,
+      toString: error?.toString?.(),
+      name: error?.name
+    });
     throw error;
   }
 }

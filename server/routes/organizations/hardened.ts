@@ -1074,7 +1074,7 @@ router.get('/:id/summary', async (req, res) => {
       .eq('organization_id', id);
 
     // Get sport names from sports table
-    let sports = [];
+    let sports: any[] = [];
     if (orgSportsData && orgSportsData.length > 0) {
       const sportIds = orgSportsData.map(os => os.sport_id);
       const { data: sportsNames } = await supabaseAdmin
@@ -1111,7 +1111,7 @@ router.get('/:id/summary', async (req, res) => {
           sportsCount: sportsCount || 0,
           usersCount: usersCount || 0,
         },
-        sports: sports,
+        sports: sports as any[],
         users: users || [],
         brandingFiles: [] // Placeholder for branding files
       }
