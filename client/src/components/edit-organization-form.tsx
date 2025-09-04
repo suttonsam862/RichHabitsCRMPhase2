@@ -82,9 +82,13 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
         const freshData = response.data;
         form.setValue('brandPrimary', freshData.brandPrimary);
         form.setValue('brandSecondary', freshData.brandSecondary);
-        console.log('Updated form with fresh brand colors:', {
+        if (freshData.logoUrl) {
+          form.setValue('logoUrl', freshData.logoUrl);
+        }
+        console.log('Updated form with fresh data:', {
           primary: freshData.brandPrimary,
-          secondary: freshData.brandSecondary
+          secondary: freshData.brandSecondary,
+          logoUrl: freshData.logoUrl
         });
       }
 
@@ -96,10 +100,11 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       });
       onSuccess();
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Update error:', error);
       toast({
         title: "Error",
-        description: "Failed to update organization. Please try again.",
+        description: error?.message || "Failed to update organization. Please try again.",
         variant: "destructive",
       });
     },
@@ -185,7 +190,12 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                     <ObjectUploader
                       currentImageUrl={field.value ? (field.value.startsWith('http') ? field.value : `/api/v1/organizations/${organization.id}/logo`) : ''}
                       organizationId={organization.id}
-                      onUploadComplete={(url) => field.onChange(url)}
+                      onUploadComplete={(url) => {
+                        console.log('Logo upload completed, updating form field:', url);
+                        field.onChange(url);
+                        // Force a revalidation of the organization data
+                        queryClient.invalidateQueries({ queryKey: ['organization', organization.id] });
+                      }}
                       data-testid="uploader-edit-org-logo"
                     >
                       Upload Logo
