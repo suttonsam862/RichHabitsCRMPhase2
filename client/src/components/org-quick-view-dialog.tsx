@@ -542,21 +542,21 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                               <div className="text-2xl">{sport.sportEmoji || '🏃'}</div>
                               <div>
                                 <p className="font-medium" data-testid={`sport-name-${sport.id}`}>
-                                  {sport.sportName}
+                                  {sport.name}
                                 </p>
-                                {sport.contactName && (
+                                {sport.contact_name && (
                                   <p className="text-sm text-muted-foreground">
-                                    Contact: {sport.contactName}
+                                    Contact: {sport.contact_name}
                                   </p>
                                 )}
                               </div>
                             </div>
                             <div className="text-right text-sm text-muted-foreground">
-                              {sport.contactEmail && (
-                                <p data-testid={`sport-email-${sport.id}`}>{sport.contactEmail}</p>
+                              {sport.contact_email && (
+                                <p data-testid={`sport-email-${sport.id}`}>{sport.contact_email}</p>
                               )}
-                              {sport.contactPhone && (
-                                <p data-testid={`sport-phone-${sport.id}`}>{sport.contactPhone}</p>
+                              {sport.contact_phone && (
+                                <p data-testid={`sport-phone-${sport.id}`}>{sport.contact_phone}</p>
                               )}
                             </div>
                           </div>

@@ -1057,11 +1057,41 @@ router.get('/:id/summary', async (req, res) => {
       });
     }
 
-    // Get sports count
-    const { data: sports, count: sportsCount } = await supabaseAdmin
+    // Get sports with full details
+    const { data: orgSportsData, count: sportsCount, error: sportsError } = await supabaseAdmin
       .from('org_sports')
-      .select('id', { count: 'exact' })
+      .select(`
+        sport_id,
+        contact_name,
+        contact_email,
+        contact_phone,
+        created_at,
+        updated_at
+      `, { count: 'exact' })
       .eq('organization_id', id);
+
+    // Get sport names from sports table
+    let sports = [];
+    if (orgSportsData && orgSportsData.length > 0) {
+      const sportIds = orgSportsData.map(os => os.sport_id);
+      const { data: sportsNames } = await supabaseAdmin
+        .from('sports')
+        .select('id, name')
+        .in('id', sportIds);
+        
+      const sportsMap = new Map(sportsNames?.map((s: any) => [s.id, s.name]) || []);
+      
+      // Transform the data
+      sports = orgSportsData.map((os: any) => ({
+        id: os.sport_id,
+        name: sportsMap.get(os.sport_id) || `Sport ${os.sport_id}`,
+        contact_name: os.contact_name,
+        contact_email: os.contact_email,
+        contact_phone: os.contact_phone || '',
+        created_at: os.created_at || new Date().toISOString(),
+        updated_at: os.updated_at || new Date().toISOString()
+      }));
+    }
 
     // Get users count
     const { data: users, count: usersCount } = await supabaseAdmin
@@ -1078,7 +1108,7 @@ router.get('/:id/summary', async (req, res) => {
           sportsCount: sportsCount || 0,
           usersCount: usersCount || 0,
         },
-        sports: sports || [],
+        sports: sports,
         users: users || [],
         brandingFiles: [] // Placeholder for branding files
       }
@@ -1288,6 +1318,122 @@ router.post('/:id/sports', async (req, res) => {
     
   } catch (error: any) {
     logger.error({ organizationId: req.params.id, error }, 'Unexpected error in sports creation');
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// PATCH endpoint to update a specific organization sport
+const UpdateOrgSportSchema = z.object({
+  contact_name: z.string().min(1).optional(),
+  contact_email: z.string().email().optional(),
+  contact_phone: z.string().optional()
+});
+
+router.patch('/:id/sports/:sportId', async (req, res) => {
+  try {
+    const { id: organizationId, sportId } = req.params;
+    const parseResult = UpdateOrgSportSchema.safeParse(req.body);
+    
+    if (!parseResult.success) {
+      logger.error({ organizationId, sportId, error: parseResult.error }, 'Sport update validation failed');
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: parseResult.error.flatten()
+      });
+    }
+    
+    const updateData = { 
+      ...parseResult.data,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Update the specific sport in org_sports table
+    const { data: updatedSport, error: updateError } = await supabaseAdmin
+      .from('org_sports')
+      .update(updateData)
+      .eq('organization_id', organizationId)
+      .eq('sport_id', sportId)
+      .select()
+      .single();
+    
+    if (updateError) {
+      logger.error({ organizationId, sportId, error: updateError }, 'Failed to update sport');
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to update sport data',
+        details: updateError.message
+      });
+    }
+    
+    if (!updatedSport) {
+      return res.status(404).json({
+        success: false,
+        error: 'Sport not found for this organization'
+      });
+    }
+    
+    logger.info({ organizationId, sportId }, 'Successfully updated organization sport');
+    
+    return res.json({
+      success: true,
+      message: 'Sport updated successfully',
+      data: updatedSport
+    });
+    
+  } catch (error: any) {
+    logger.error({ organizationId: req.params.id, sportId: req.params.sportId, error }, 'Unexpected error in sport update');
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// DELETE endpoint to remove a specific organization sport
+router.delete('/:id/sports/:sportId', async (req, res) => {
+  try {
+    const { id: organizationId, sportId } = req.params;
+    
+    // Delete the specific sport from org_sports table
+    const { data: deletedSport, error: deleteError } = await supabaseAdmin
+      .from('org_sports')
+      .delete()
+      .eq('organization_id', organizationId)
+      .eq('sport_id', sportId)
+      .select()
+      .single();
+    
+    if (deleteError) {
+      logger.error({ organizationId, sportId, error: deleteError }, 'Failed to delete sport');
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to delete sport data',
+        details: deleteError.message
+      });
+    }
+    
+    if (!deletedSport) {
+      return res.status(404).json({
+        success: false,
+        error: 'Sport not found for this organization'
+      });
+    }
+    
+    logger.info({ organizationId, sportId }, 'Successfully deleted organization sport');
+    
+    return res.json({
+      success: true,
+      message: 'Sport removed successfully'
+    });
+    
+  } catch (error: any) {
+    logger.error({ organizationId: req.params.id, sportId: req.params.sportId, error }, 'Unexpected error in sport deletion');
     return res.status(500).json({
       success: false,
       error: 'Internal server error',
