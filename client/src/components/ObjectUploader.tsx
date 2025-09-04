@@ -22,7 +22,9 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
     if (!url) return null;
     if (url.startsWith('http')) return url;
     if (url.startsWith('org/') || url.startsWith('app/')) {
-      return `/api/v1/public-objects/${url}`;
+      const displayUrl = `/api/v1/public-objects/${url}`;
+      console.log('Converting storage path to display URL:', url, '->', displayUrl);
+      return displayUrl;
     }
     return url;
   };
@@ -115,6 +117,7 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
 
       // Update preview immediately with the uploaded file
       const displayUrl = getDisplayUrl(finalUrl);
+      console.log('Setting preview URL:', displayUrl);
       setPreviewUrl(displayUrl);
 
       onUploadComplete?.(finalUrl);
