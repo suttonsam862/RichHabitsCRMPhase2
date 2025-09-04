@@ -91,30 +91,16 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
 
       // Debug the upload response
       console.log('Upload response data:', {
-        objectPath: uploadResponse.objectPath,
+        objectKey: uploadResponse.objectKey,
         uploadURL: uploadResponse.uploadURL,
         success: uploadResponse.success,
         fullResponse: uploadResponse
       });
 
-      // Extract the actual file path from the upload URL for database storage
-      // The uploadURL contains the actual path like: .../org/185f3db6.../branding/filename.png
-      // We need to extract just the relative path portion for storage
-      let filePath = '';
-      try {
-        const url = new URL(uploadResponse.uploadURL);
-        const pathMatch = url.pathname.match(/\/storage\/v1\/object\/.*?\/(.*?)(?:\?|$)/);
-        if (pathMatch && pathMatch[1]) {
-          filePath = pathMatch[1]; // This gives us: app/org/id/branding/filename.png
-        }
-      } catch (e) {
-        console.warn('Could not extract file path from upload URL:', e);
-      }
+      // Use the objectKey from the API response - this is the correct storage path
+      const finalUrl = uploadResponse.objectKey || '';
       
-      // Store the actual file path in the database, not the server route
-      const finalUrl = filePath || `/api/v1/organizations/${organizationId}/logo`;
-      
-      console.log('Constructed final URL:', finalUrl);
+      console.log('Using objectKey as final URL:', finalUrl);
 
       onUploadComplete?.(finalUrl);
       setIsUploading(false);
