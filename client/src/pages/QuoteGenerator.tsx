@@ -37,6 +37,15 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// Generate auto estimate number
+function generateEstimateNumber(): string {
+  const now = new Date();
+  const year = now.getFullYear().toString().slice(-2);
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const timestamp = now.getTime().toString().slice(-6); // Last 6 digits for uniqueness
+  return `EST${year}${month}-${timestamp}`;
+}
+
 export default function QuoteGenerator() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -51,7 +60,7 @@ export default function QuoteGenerator() {
   const [toAddress, setToAddress] = useState('');
 
   // Quote meta
-  const [quoteNo, setQuoteNo] = useState('');
+  const [quoteNo, setQuoteNo] = useState(() => generateEstimateNumber());
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [taxPct, setTaxPct] = useState(0);
   const [discount, setDiscount] = useState(0);
@@ -183,8 +192,15 @@ export default function QuoteGenerator() {
 
   const handleSaveAsNew = useCallback(() => {
     const newId = generateId();
+    const newEstimateNumber = generateEstimateNumber();
+    
+    // Update the estimate number for the new quote
+    setQuoteNo(newEstimateNumber);
+    
+    // Create quote record with new estimate number
     const quoteData = createQuoteRecord(newId);
     quoteData.title = `${quoteData.title} (Copy)`;
+    quoteData.meta.quoteNo = newEstimateNumber;
 
     upsertQuote(quoteData);
     setCurrentQuoteId(newId);
@@ -192,7 +208,7 @@ export default function QuoteGenerator() {
 
     toast({
       title: "Quote duplicated",
-      description: "A new copy of your quote has been saved.",
+      description: "A new copy of your quote has been saved with a fresh estimate number.",
     });
   }, [createQuoteRecord, toast]);
 
@@ -517,9 +533,10 @@ export default function QuoteGenerator() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Terms and Conditions</h3>
               <div className="space-y-2 text-sm text-gray-700">
                 <p>1. The prices listed above are estimates and may change based on actual site conditions.</p>
-                <p>2. Payment will be made in 3 stages: 30% upfront, 40% mid-project, 30% upon completion.</p>
-                <p>3. This estimate is valid for 30 days from the date issued.</p>
-                <p>4. Work will commence upon receipt of signed approval and initial payment.</p>
+                <p>2. Payment will be made in 2 stages: 50% prior to order placement, 50% post delivery. Online payment is preferred.</p>
+                <p>3. Orders take approximately 35 days or less from the date of design completion.</p>
+                <p>4. This estimate is valid for 30 days from the date issued.</p>
+                <p>5. Work will commence upon receipt of signed approval and initial payment.</p>
               </div>
               
               <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
