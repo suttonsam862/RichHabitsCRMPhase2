@@ -279,7 +279,7 @@ export default function QuoteGenerator() {
                   <h2 className="text-3xl font-bold text-gray-900">ESTIMATE</h2>
                   <p className="text-gray-600">Developing Habits, LLC d/b/a Rich Habits</p>
                   <p className="text-sm text-gray-500">3101 Whitehall Rd, Birmingham, AL 35209</p>
-                  <p className="text-sm text-gray-500">Phone: (205) 586-9574 | Email: samsutton@rich-habits.com</p>
+                  <p className="text-sm text-gray-500">Phone: 2055869574 | Email: samsutton@rich-habits.com</p>
                 </div>
               </div>
               
@@ -560,102 +560,118 @@ export default function QuoteGenerator() {
         @media print {
           * { 
             print-color-adjust: exact !important; 
-            color: black !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
           }
+          
           body { 
             background: white !important; 
             margin: 0 !important; 
-            color: black !important;
+            color: #000000 !important;
+            font-family: Arial, sans-serif !important;
           }
-          .print\\:hidden { display: none !important; }
-          .container { max-width: none !important; padding: 0 !important; }
           
-          /* Remove all input styling and show as plain text */
-          input, textarea, select {
+          .print\\:hidden { display: none !important; }
+          .container { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+          
+          /* CRITICAL: Remove ALL input/textarea styling completely */
+          input[type="text"], input[type="email"], input[type="tel"], input[type="date"], textarea, select {
             border: none !important;
-            background: transparent !important;
+            background: none !important;
+            background-color: transparent !important;
             box-shadow: none !important;
             padding: 0 !important;
             margin: 0 !important;
-            color: black !important;
-            font-family: inherit !important;
+            color: #000000 !important;
+            font-family: Arial, sans-serif !important;
             font-size: inherit !important;
             outline: none !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            border-radius: 0 !important;
+            box-sizing: border-box !important;
           }
+          
+          /* Remove card styling */
+          .border, .border-gray-300 { 
+            border: none !important; 
+          }
+          .rounded-lg { border-radius: 0 !important; }
+          .shadow-lg { box-shadow: none !important; }
+          .bg-white { background: white !important; }
           
           /* Clean table styling */
           .bg-blue-600 { 
             background-color: #000000 !important; 
-            color: white !important;
+            color: #ffffff !important;
           }
-          .text-white { color: white !important; }
+          .text-white { color: #ffffff !important; }
           
-          /* Clean borders and spacing */
-          .border { border: 1px solid #cccccc !important; }
-          .border-gray-300 { border-color: #cccccc !important; }
-          .rounded-lg { border-radius: 0 !important; }
-          .shadow-lg { box-shadow: none !important; }
+          /* Compact spacing for 2-page layout */
+          .p-8, .p-6, .p-4, .p-3 { padding: 8px !important; }
+          .mb-8, .mb-6, .mb-4 { margin-bottom: 8px !important; }
+          .mt-8, .mt-6, .mt-4 { margin-top: 8px !important; }
           
-          /* Optimized spacing for 2-page layout */
-          .p-8 { padding: 0.75rem !important; }
-          .p-6 { padding: 0.5rem !important; }
-          .p-4 { padding: 0.25rem !important; }
-          .p-3 { padding: 0.25rem !important; }
-          .mb-8 { margin-bottom: 0.75rem !important; }
-          .mb-6 { margin-bottom: 0.5rem !important; }
-          .mb-4 { margin-bottom: 0.25rem !important; }
-          .mt-8 { margin-top: 0.75rem !important; }
-          .mt-6 { margin-top: 0.5rem !important; }
-          .mt-4 { margin-top: 0.25rem !important; }
+          /* Text colors - force black */
+          .text-gray-900, .text-gray-700, .text-gray-600, .text-gray-500, 
+          h1, h2, h3, h4, h5, h6, p, div, span, label {
+            color: #000000 !important;
+          }
           
-          /* Ensure clean page breaks */
-          table { page-break-inside: avoid; }
-          .border.border-gray-300.rounded-lg { page-break-inside: avoid; }
-          h1, h2, h3 { 
-            page-break-after: avoid; 
-            color: black !important;
+          /* Page layout */
+          @page { 
+            size: A4; 
+            margin: 12mm;
           }
           
           /* Grid layout for print */
           .grid { display: block !important; }
-          .md\\:grid-cols-2 > * { 
+          .md\\:grid-cols-2 > div { 
             width: 48% !important; 
             display: inline-block !important; 
             vertical-align: top !important; 
             margin-right: 2% !important;
+            border: 1px solid #cccccc !important;
+            padding: 8px !important;
+            margin-bottom: 8px !important;
           }
-          .md\\:grid-cols-2 > *:last-child { 
+          .md\\:grid-cols-2 > div:last-child { 
             margin-right: 0 !important; 
           }
           
-          /* Text colors */
-          .text-gray-900, .text-gray-700, .text-gray-600, .text-gray-500 {
-            color: black !important;
-          }
-          
-          /* Page settings for optimal 2-page layout */
-          @page { 
-            size: A4; 
-            margin: 15mm;
-          }
-          
-          /* Logo sizing for print */
+          /* Logo sizing */
           img {
-            max-height: 60px !important;
-            max-width: 60px !important;
+            max-height: 50px !important;
+            max-width: 50px !important;
           }
           
-          /* Table header styling */
+          /* Table styling */
+          table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            margin: 8px 0 !important;
+          }
+          
           thead tr {
-            background-color: black !important;
-            color: white !important;
+            background-color: #000000 !important;
+            color: #ffffff !important;
           }
           
-          /* Clean table cell styling */
           td, th {
-            border-bottom: 1px solid #cccccc !important;
-            padding: 0.25rem !important;
+            border: 1px solid #000000 !important;
+            padding: 6px !important;
+            color: #000000 !important;
           }
+          
+          thead td, thead th {
+            color: #ffffff !important;
+          }
+          
+          /* Ensure page breaks */
+          table { page-break-inside: avoid; }
+          .md\\:grid-cols-2 > div { page-break-inside: avoid; }
+          h1, h2, h3 { page-break-after: avoid; }
         }
       `}</style>
     </div>
