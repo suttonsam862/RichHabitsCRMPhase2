@@ -351,37 +351,32 @@ export default function SimplifiedSetup() {
               <div className="space-y-4">
                 <Label className="text-white font-medium">Organization Logo</Label>
                 
-                <ObjectUploader
-                  onUploadComplete={handleLogoUpload}
-                  organizationId={id}
-                  currentImageUrl={logoPreview || undefined}
-                  className="w-full"
-                >
-                  {logoPreview ? (
-                    <div className="relative w-32 h-32 mx-auto">
-                      <img
-                        src={logoPreview}
-                        alt="Logo preview"
-                        className="w-full h-full object-contain rounded-xl border border-white/20 bg-white/5"
-                        data-testid="img-logo-preview"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeLogo}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                        data-testid="button-remove-logo"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-full h-32 border-2 border-dashed border-white/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-cyan-500/50 transition-colors bg-white/5 p-4">
-                      <ImageIcon className="w-8 h-8 text-white/50 mb-2" />
-                      <p className="text-white/70 text-sm">Click to upload logo</p>
-                      <p className="text-white/50 text-xs mt-1">PNG, JPG, SVG up to 5MB</p>
-                    </div>
-                  )}
-                </ObjectUploader>
+                {logoPreview ? (
+                  <div className="relative w-32 h-32 mx-auto">
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="w-full h-full object-contain rounded-xl border border-white/20 bg-white/5"
+                      data-testid="img-logo-preview"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeLogo}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      data-testid="button-remove-logo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex justify-center">
+                    <ObjectUploader
+                      onUploadComplete={handleLogoUpload}
+                      organizationId={id}
+                      className="w-full max-w-xs"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Brand Colors */}
