@@ -145,7 +145,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       originalSecondary: organization.brandSecondary,
       newPrimary: data.brandPrimary,
       newSecondary: data.brandSecondary,
-      hasColorChanges: data.brandPrimary !== organization.brandPrimary || data.brandSecondary !== organization.brandSecondary
+      hasColorChanges: data.brandPrimary !== organization.brandPrimary || data.brandSecondary !== organization.brandSecondary,
+      allFormData: data
     });
 
     updateMutation.mutate(cleanedData);
