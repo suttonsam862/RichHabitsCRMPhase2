@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getLogoDisplayUrl } from "@/lib/logoUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -243,7 +244,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               {organization.logoUrl ? (
                 <Avatar className="w-16 h-16 ring-2 ring-primary/20">
                   <AvatarImage
-                    src={`/api/v1/organizations/${organization.id}/logo`}
+                    src={getLogoDisplayUrl(organization.logoUrl) || `/api/v1/organizations/${organization.id}/logo`}
                     alt={`${organization.name} logo`}
                     data-testid="img-org-logo"
                   />

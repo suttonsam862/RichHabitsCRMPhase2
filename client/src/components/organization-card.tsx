@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { Building2, Users, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getLogoDisplayUrl } from "@/lib/logoUtils";
 import type { OrganizationWithSports } from "../../../shared/supabase-schema";
 
 interface OrganizationCardProps {
@@ -55,7 +56,7 @@ export function OrganizationCard({
         {logo_url && !organization.title_card_url && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
             <img 
-              src={logo_url.startsWith('http') ? logo_url : `/api/v1/organizations/${organization.id}/logo`}
+              src={getLogoDisplayUrl(logo_url) || `/api/v1/organizations/${organization.id}/logo`}
               alt=""
               className="w-full h-auto object-cover opacity-10"
               aria-hidden="true"
@@ -88,7 +89,7 @@ export function OrganizationCard({
                     {/* Semitransparent logo overlay against gradient */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                     <img 
-                      src={logo_url.startsWith('http') ? logo_url : `/api/v1/organizations/${organization.id}/logo`} 
+                      src={getLogoDisplayUrl(logo_url) || `/api/v1/organizations/${organization.id}/logo`} 
                       alt={`${name} logo`}
                       className="relative z-10 w-full h-full object-cover"
                       data-testid={`img-organization-logo-${organization.id}`}

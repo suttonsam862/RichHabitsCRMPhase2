@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, ArrowRight, Upload, X, Image as ImageIcon } from "lucide-react";
+import { getLogoDisplayUrl } from "@/lib/logoUtils";
 import { type CreateOrgFormData } from "./types";
 
 const brandingSchema = z.object({
@@ -21,21 +22,7 @@ interface BrandingStepProps {
 }
 
 export function BrandingStep({ formData, updateFormData, onNext, onPrev }: BrandingStepProps) {
-  // Convert storage path to displayable URL using Supabase direct URLs
-  const getDisplayUrl = (url: string | undefined | null) => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('org/') || url.startsWith('app/')) {
-      // Use Supabase public URL directly - much simpler and more reliable
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const displayUrl = `${supabaseUrl}/storage/v1/object/public/app/${url}`;
-      console.log('Converting storage path to Supabase public URL:', url, '->', displayUrl);
-      return displayUrl;
-    }
-    return url;
-  };
-
-  const [logoPreview, setLogoPreview] = useState<string | null>(getDisplayUrl(formData.logo_url));
+  const [logoPreview, setLogoPreview] = useState<string | null>(getLogoDisplayUrl(formData.logo_url));
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +37,7 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
   const handleLogoUpload = (logoUrl: string) => {
     if (logoUrl) {
       // Convert storage path to displayable URL for preview
-      const displayUrl = getDisplayUrl(logoUrl);
+      const displayUrl = getLogoDisplayUrl(logoUrl);
       setLogoPreview(displayUrl);
       updateFormData({ 
         logo_url: logoUrl  // Store the raw path for the form data
