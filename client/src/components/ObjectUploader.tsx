@@ -47,7 +47,7 @@ export function ObjectUploader({ onUploadComplete, currentImageUrl, organization
       // Get upload URL with retry logic
       let uploadResponse;
       try {
-        uploadResponse = await apiRequest('/v1/objects/upload', {
+        uploadResponse = await apiRequest('/objects/upload', {
           method: 'POST',
           data: { 
             fileName: file.name,
