@@ -29,6 +29,7 @@ const CreateOrganizationSchema = z.object({
   logoUrl: z.string().optional(),
   sports: z.array(z.object({
     sportId: z.string().uuid(),
+    teamName: z.string().min(1, "Team name is required").default("Main Team"), // NEW: Support for multiple teams per sport
     contactName: z.string(),
     contactEmail: z.string().email(),
     contactPhone: z.string().optional(),
@@ -319,6 +320,7 @@ router.post('/', async (req, res) => {
           sportsWithUsers.push({
             organization_id: orgData.id,
             sport_id: sport.sportId,
+            team_name: sport.teamName || "Main Team", // NEW: Include team name with fallback
             contact_name: sport.contactName,
             contact_email: sport.contactEmail,
             contact_phone: sport.contactPhone || null,
@@ -333,6 +335,7 @@ router.post('/', async (req, res) => {
           sportsWithUsers.push({
             organization_id: orgData.id,
             sport_id: sport.sportId,
+            team_name: sport.teamName || "Main Team", // NEW: Include team name with fallback
             contact_name: sport.contactName,
             contact_email: sport.contactEmail,
             contact_phone: sport.contactPhone || null,

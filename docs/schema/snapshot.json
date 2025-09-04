@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-08-31T01:26:10.715Z",
+  "generatedAt": "2025-09-04T02:25:59.467Z",
   "columns": [
     {
       "table_schema": "public",
@@ -1475,6 +1475,14 @@
     },
     {
       "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "team_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
       "table_name": "organization_favorites",
       "column_name": "user_id",
       "data_type": "character varying",
@@ -2830,6 +2838,12 @@
     {
       "table_schema": "public",
       "table_name": "org_sports",
+      "constraint_name": "2200_90123_17_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
       "constraint_name": "2200_90123_1_not_null",
       "constraint_type": "CHECK"
     },
@@ -2856,12 +2870,6 @@
       "table_name": "org_sports",
       "constraint_name": "2200_90123_5_not_null",
       "constraint_type": "CHECK"
-    },
-    {
-      "table_schema": "public",
-      "table_name": "org_sports",
-      "constraint_name": "org_sports_organization_id_sport_id_key",
-      "constraint_type": "UNIQUE"
     },
     {
       "table_schema": "public",
@@ -3388,11 +3396,6 @@
     },
     {
       "table_schema": "public",
-      "table_name": "org_sports",
-      "rls_enabled": true
-    },
-    {
-      "table_schema": "public",
       "table_name": "sports",
       "rls_enabled": false
     },
@@ -3405,6 +3408,11 @@
       "table_schema": "public",
       "table_name": "user_roles",
       "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "rls_enabled": true
     },
     {
       "table_schema": "public",

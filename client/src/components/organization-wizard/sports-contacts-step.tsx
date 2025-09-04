@@ -33,6 +33,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedSportId, setSelectedSportId] = useState<string | undefined>(undefined);
+  const [teamName, setTeamName] = useState(""); // NEW: Team name state
   const [contactType, setContactType] = useState<"new" | "existing">("new");
   const [userSearch, setUserSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -141,6 +142,30 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       });
       return;
     }
+    
+    // NEW: Validate team name is provided
+    if (!teamName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter a team name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // NEW: Check for duplicate sport + team name combination
+    const existingTeam = (formData.sports || []).find(
+      s => s.sportId === selectedSportId && s.teamName.toLowerCase() === teamName.toLowerCase().trim()
+    );
+    
+    if (existingTeam) {
+      toast({
+        title: "Team Already Exists",
+        description: `${sportName} - ${teamName} has already been added.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     let newContact: SportContact;
 
@@ -159,6 +184,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
         id: Date.now().toString(),
         sportId: selectedSportId,
         sportName,
+        teamName: teamName.trim(), // NEW: Include team name
         contact_name: formValues.contact_name,
         contact_email: formValues.contact_email,
         contact_phone: formValues.contact_phone,
@@ -178,6 +204,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
         id: Date.now().toString(),
         sportId: selectedSportId,
         sportName,
+        teamName: teamName.trim(), // NEW: Include team name for existing users too
         contact_name: selectedUser.fullName || selectedUser.email,
         contact_email: selectedUser.email,
         contact_phone: selectedUser.phone || "",
@@ -191,6 +218,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
     // Reset form and selection
     form.reset();
     setSelectedSportId("");
+    setTeamName(""); // NEW: Reset team name
     setSelectedUser(null);
     setUserSearch("");
     setContactType("new");
@@ -249,16 +277,29 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
               ) : sportsError ? (
                 <div className="p-2 text-red-400 text-center">Error loading sports</div>
               ) : (
-                availableSports
-                  .filter((sport: any) => !(formData.sports || []).some(s => s.sportId === sport.id))
-                  .map((sport: any) => (
-                    <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
-                      {sport.name}
-                    </SelectItem>
-                  ))
+                availableSports.map((sport: any) => (
+                  <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
+                    {sport.name}
+                  </SelectItem>
+                ))
               )}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* NEW: Team Name Input */}
+        <div className="space-y-2">
+          <label className="text-white text-sm font-medium">Team Name</label>
+          <Input
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            placeholder="e.g. Varsity, JV, Middle School, High School"
+            className="glass text-white border-white/20 focus:border-blue-400 placeholder:text-white/50"
+            data-testid="input-team-name"
+          />
+          <p className="text-white/60 text-xs">
+            Enter a name to distinguish this team (e.g., Varsity, JV, Middle School, High School)
+          </p>
         </div>
 
         {/* Contact Type Toggle */}
@@ -418,7 +459,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
         <Button
           type="button"
           onClick={addSportContact}
-          disabled={!selectedSportId || (contactType === "new" ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUser)}
+          disabled={!selectedSportId || !teamName.trim() || (contactType === "new" ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUser)}
           className="neon-button w-full"
           data-testid="button-add-sport"
         >
@@ -440,7 +481,9 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
               data-testid={`sport-contact-${sport.id}`}
             >
               <div>
-                <div className="text-white font-medium">{sport.sportName}</div>
+                <div className="text-white font-medium">
+                  {sport.sportName} - {sport.teamName}
+                </div>
                 <div className="text-white/70 text-sm">
                   {sport.contact_name} • {sport.contact_email}
                   {sport.contact_phone && ` • ${sport.contact_phone}`}

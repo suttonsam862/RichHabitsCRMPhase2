@@ -91,6 +91,7 @@ export const sports = pgTable('sports', { id: varchar('id').primaryKey().default
 export const orgSports = pgTable('org_sports', {
     organization_id: varchar('organization_id').references(() => organizations.id).notNull(),
     sport_id: varchar('sport_id').references(() => sports.id).notNull(),
+    team_name: text('team_name').notNull().default('Main Team'), // NEW: Distinguishes multiple teams per sport (Middle School, High School, JV, Varsity, etc.)
     contact_user_id: varchar('contact_user_id').references(() => users.id), // Links to auto-created user
     contact_name: text('contact_name').notNull(),
     contact_email: text('contact_email').notNull(),
@@ -98,7 +99,7 @@ export const orgSports = pgTable('org_sports', {
     is_primary_contact: boolean('is_primary_contact').default(false).notNull(), // false = no, true = yes
     created_at: timestamp('created_at').defaultNow().notNull(),
     updated_at: timestamp('updated_at').defaultNow().notNull(),
-}, (t) => ({ pk: primaryKey({ columns: [t.organization_id, t.sport_id] }) }));
+}, (t) => ({ pk: primaryKey({ columns: [t.organization_id, t.sport_id, t.team_name] }) })); // Updated primary key to include team_name
 export const usersRelations = relations(users, ({ one, many }) => ({ 
   organization: one(organizations, { fields: [users.organization_id], references: [organizations.id] }),
   createdBy: one(users, { fields: [users.created_by], references: [users.id] }),

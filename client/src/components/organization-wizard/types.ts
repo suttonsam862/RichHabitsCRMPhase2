@@ -4,6 +4,7 @@ export interface SportContact {
   id: string;
   sportId: string;
   sportName: string;
+  teamName: string; // NEW: Team name for multiple teams per sport
   contact_name: string;
   contact_email: string;
   contact_phone?: string;
