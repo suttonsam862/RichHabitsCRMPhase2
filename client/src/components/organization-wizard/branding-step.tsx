@@ -21,7 +21,21 @@ interface BrandingStepProps {
 }
 
 export function BrandingStep({ formData, updateFormData, onNext, onPrev }: BrandingStepProps) {
-  const [logoPreview, setLogoPreview] = useState<string | null>(formData.logo_url || null);
+  // Convert storage path to displayable URL using Supabase direct URLs
+  const getDisplayUrl = (url: string | undefined | null) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('org/') || url.startsWith('app/')) {
+      // Use Supabase public URL directly - much simpler and more reliable
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const displayUrl = `${supabaseUrl}/storage/v1/object/public/app/${url}`;
+      console.log('Converting storage path to Supabase public URL:', url, '->', displayUrl);
+      return displayUrl;
+    }
+    return url;
+  };
+
+  const [logoPreview, setLogoPreview] = useState<string | null>(getDisplayUrl(formData.logo_url));
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,9 +49,11 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
 
   const handleLogoUpload = (logoUrl: string) => {
     if (logoUrl) {
-      setLogoPreview(logoUrl);
+      // Convert storage path to displayable URL for preview
+      const displayUrl = getDisplayUrl(logoUrl);
+      setLogoPreview(displayUrl);
       updateFormData({ 
-        logo_url: logoUrl
+        logo_url: logoUrl  // Store the raw path for the form data
       });
     } else {
       // Fallback to local preview on error
