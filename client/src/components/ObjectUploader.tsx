@@ -5,6 +5,7 @@ import { Upload, X, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { STORAGE_ROUTES } from "@shared/routes";
+import { getLogoDisplayUrl } from "@/lib/logoUtils";
 
 interface ObjectUploaderProps {
   onUploadComplete?: (url: string) => void;
@@ -81,7 +82,7 @@ export function ObjectUploader({
       // Get upload URL with retry logic
       let uploadResponse;
       try {
-        uploadResponse = await apiRequest("/v1/objects/upload", {
+        uploadResponse = await apiRequest("/v1/upload/upload-url", {
           method: "POST",
           data: {
             fileName: file.name,
@@ -142,7 +143,7 @@ export function ObjectUploader({
       console.log("Using objectKey as final URL:", finalUrl);
 
       // Update preview immediately with the uploaded file
-      const displayUrl = getLogoDisplayUrl(finalUrl);
+      const displayUrl = getDisplayUrl(finalUrl);
       console.log("Setting preview URL:", displayUrl);
       setPreviewUrl(displayUrl);
 
