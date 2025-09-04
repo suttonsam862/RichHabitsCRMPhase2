@@ -1,0 +1,79 @@
+[15:43:48.556] INFO (7744): GET 304 117ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "th5ebfvc"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 117
+File fetch failed: 400 org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png
+[15:43:48.797] WARN (7744): GET 404 391ms /api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png
+    rid: "q29fcm16"
+    method: "GET"
+    path: "/api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png"
+    status: 404
+    ms: 391
+File fetch failed: 400 org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png
+[15:43:51.678] WARN (7744): GET 404 164ms /api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png
+    rid: "7zexebc7"
+    method: "GET"
+    path: "/api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png"
+    status: 404
+    ms: 164
+File fetch failed: 400 org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png
+[15:43:51.962] WARN (7744): GET 404 145ms /api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png
+    rid: "xs84748y"
+    method: "GET"
+    path: "/api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/0415b0c0-6eb2-402d-8718-103949ef1841.png"
+    status: 404
+    ms: 145
+3:44:44 PM [vite] hmr update /src/components/ObjectUploader.tsx, /src/index.css?v=SYqtPFM9oVwSFGbnG9VH_
+[15:44:44.692] INFO (7744): GET 200 284ms /src/index.css?t=1757000684241&v=SYqtPFM9oVwSFGbnG9VH_
+    rid: "8s0htdih"
+    method: "GET"
+    path: "/src/index.css?t=1757000684241&v=SYqtPFM9oVwSFGbnG9VH_"
+    status: 200
+    ms: 284
+[15:44:44.693] INFO (7744): GET 200 286ms /src/components/ObjectUploader.tsx?t=1757000684241
+    rid: "zl202ld7"
+    method: "GET"
+    path: "/src/components/ObjectUploader.tsx?t=1757000684241"
+    status: 200
+    ms: 286
+3:44:47 PM [vite] hmr update /src/components/ObjectUploader.tsx, /src/index.css?v=SYqtPFM9oVwSFGbnG9VH_ (x2)
+[15:44:48.375] INFO (7744): GET 200 434ms /src/index.css?t=1757000687756&v=SYqtPFM9oVwSFGbnG9VH_
+    rid: "vsm2xr2p"
+    method: "GET"
+    path: "/src/index.css?t=1757000687756&v=SYqtPFM9oVwSFGbnG9VH_"
+    status: 200
+    ms: 434
+[15:44:48.378] INFO (7744): GET 200 436ms /src/components/ObjectUploader.tsx?t=1757000687756
+    rid: "x0rk3uzg"
+    method: "GET"
+    path: "/src/components/ObjectUploader.tsx?t=1757000687756"
+    status: 200
+    ms: 436
+[15:45:09.558] INFO (7744): GET 304 263ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "f2xn6rai"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 263
+Upload URL created successfully: https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/upload/sign/app/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/755eb471-8e92-4b61-9574-e89573e85dd2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83ZmNjODNhMC00MmM1LTQwYjEtOTk5Ni05MGEwZTU4NzBmZTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAvb3JnL2ZkM2ExODRkLWJmM2UtNDFiMS1iMGE1LWFiMTExOGRkNGI4OS9icmFuZGluZy83NTVlYjQ3MS04ZTkyLTRiNjEtOTU3NC1lODk1NzNlODVkZDIucG5nIiwidXBzZXJ0Ijp0cnVlLCJpYXQiOjE3NTcwMDA3MTMsImV4cCI6MTc1NzAwNzkxM30.VVuMNYOtTMaMWCFgofMYNL6lJ5Vxo_1r2HSTznVlXVE
+[15:45:13.323] INFO (7744): POST 200 276ms /api/v1/objects/upload
+    rid: "7mrpvw6n"
+    method: "POST"
+    path: "/api/v1/objects/upload"
+    status: 200
+    ms: 276
+[15:45:14.539] INFO (7744): GET 304 286ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "hewg3885"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 286
+File fetch failed: 400 org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/755eb471-8e92-4b61-9574-e89573e85dd2.png
+[15:45:14.647] WARN (7744): GET 404 390ms /api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/755eb471-8e92-4b61-9574-e89573e85dd2.png
+    rid: "bggknxu5"
+    method: "GET"
+    path: "/api/v1/public-objects/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/755eb471-8e92-4b61-9574-e89573e85dd2.png"
+    status: 404
+    ms: 390

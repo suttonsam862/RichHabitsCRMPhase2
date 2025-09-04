@@ -110,7 +110,10 @@ export default function OrganizationViewPage() {
                       const logoUrl = organization.logoUrl || organization.logo_url;
                       if (!logoUrl) return '';
                       if (logoUrl.startsWith('http')) return logoUrl;
-                      if (logoUrl.startsWith('org/') || logoUrl.startsWith('app/')) {
+                      if (logoUrl.startsWith('org/')) {
+                        return `/api/v1/public-objects/app/${logoUrl}`;
+                      }
+                      if (logoUrl.startsWith('app/')) {
                         return `/api/v1/public-objects/${logoUrl}`;
                       }
                       return `/api/v1/organizations/${organization.id}/logo`;
