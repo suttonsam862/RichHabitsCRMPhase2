@@ -1,0 +1,162 @@
+[14:28:25.011] INFO (187): GET 304 425ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "w5hqr21j"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 425
+[14:28:25.375] INFO (187): organizations.list ok
+    rid: "d2sdjndg"
+    count: 9
+[14:28:25.376] INFO (187): GET 304 249ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "d2sdjndg"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 249
+[14:28:27.344] INFO (187): GET 304 0ms /src/pages/organizations/EditPage.tsx
+    rid: "htwbx8pw"
+    method: "GET"
+    path: "/src/pages/organizations/EditPage.tsx"
+    status: 304
+    ms: 0
+[14:28:27.460] INFO (187): GET 304 0ms /src/components/edit-organization-form.tsx
+    rid: "nrhmfi2k"
+    method: "GET"
+    path: "/src/components/edit-organization-form.tsx"
+    status: 304
+    ms: 0
+[14:28:27.576] INFO (187): GET 304 0ms /src/components/ui/form.tsx
+    rid: "ga3dv6z0"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 304
+    ms: 0
+[14:28:27.577] INFO (187): GET 304 0ms /@fs/home/runner/workspace/shared/schema.ts
+    rid: "0c0wtpj3"
+    method: "GET"
+    path: "/@fs/home/runner/workspace/shared/schema.ts"
+    status: 304
+    ms: 0
+[14:28:27.577] INFO (187): GET 304 0ms /src/components/ui/select.tsx
+    rid: "9ohhq9cf"
+    method: "GET"
+    path: "/src/components/ui/select.tsx"
+    status: 304
+    ms: 0
+[14:28:27.578] INFO (187): GET 304 0ms /src/components/ui/checkbox.tsx
+    rid: "b0rp50ya"
+    method: "GET"
+    path: "/src/components/ui/checkbox.tsx"
+    status: 304
+    ms: 0
+[14:28:27.579] INFO (187): GET 304 0ms /src/components/ui/textarea.tsx
+    rid: "xftp413m"
+    method: "GET"
+    path: "/src/components/ui/textarea.tsx"
+    status: 304
+    ms: 0
+[14:28:27.579] INFO (187): GET 304 0ms /src/components/ui/badge.tsx
+    rid: "5x3f9d0m"
+    method: "GET"
+    path: "/src/components/ui/badge.tsx"
+    status: 304
+    ms: 0
+[14:28:27.691] INFO (187): GET 304 0ms /src/components/ObjectUploader.tsx
+    rid: "h2xi0llt"
+    method: "GET"
+    path: "/src/components/ObjectUploader.tsx"
+    status: 304
+    ms: 0
+[14:28:27.926] INFO (187): GET 304 109ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "opczd79p"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 304
+    ms: 109
+Upload URL created successfully: https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/upload/sign/app/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/f494d0f5-a9ba-46ba-a4ef-7c926e35a49d.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83ZmNjODNhMC00MmM1LTQwYjEtOTk5Ni05MGEwZTU4NzBmZTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAvb3JnLzE4NWYzZGI2LTZkZTYtNGFjMy05NDgyLTM0OGZhOGM3NDM2ZS9icmFuZGluZy9mNDk0ZDBmNS1hOWJhLTQ2YmEtYTRlZi03YzkyNmUzNWE0OWQucG5nIiwidXBzZXJ0Ijp0cnVlLCJpYXQiOjE3NTY5OTYxMTEsImV4cCI6MTc1NzAwMzMxMX0.fWVzZPqQUj2COWz668nernj2pskuveC5kEzrz7hKQQk
+[14:28:31.879] INFO (187): POST 200 316ms /api/v1/objects/upload
+    rid: "sb1nstr3"
+    method: "POST"
+    path: "/api/v1/objects/upload"
+    status: 200
+    ms: 316
+[14:28:32.574] INFO (187): GET 304 129ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "k6te9ezg"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 304
+    ms: 129
+[14:28:34.145] INFO (187): Updating brand primary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandPrimary: "#94d1ff"
+[14:28:34.145] INFO (187): Updating brand secondary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandSecondary: "#ffffff"
+[14:28:34.145] INFO (187): Generated gradient CSS
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    gradient: "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+[14:28:34.616] INFO (187): organizations.update ok
+    rid: "3m3ouqr7"
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    updates: [
+      "name",
+      "address",
+      "city",
+      "zip",
+      "tags",
+      "state",
+      "brand_primary",
+      "brand_secondary",
+      "updated_at",
+      "gradient_css"
+    ]
+    brandColors: {
+      "primary": "#94d1ff",
+      "secondary": "#ffffff",
+      "gradient": "generated"
+    }
+    dbResult: {
+      "brand_primary": "#94d1ff",
+      "brand_secondary": "#ffffff",
+      "gradient_css": "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+    }
+    transformedResult: {
+      "brandPrimary": "#94d1ff",
+      "brandSecondary": "#ffffff"
+    }
+[14:28:34.617] INFO (187): PATCH 200 473ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "3m3ouqr7"
+    method: "PATCH"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 473
+[14:28:34.772] INFO (187): GET 304 0ms /src/pages/organizations/ViewPage.tsx
+    rid: "uwhq43yo"
+    method: "GET"
+    path: "/src/pages/organizations/ViewPage.tsx"
+    status: 304
+    ms: 0
+[14:28:34.852] INFO (187): GET 200 118ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "t9dk6p9g"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 118
+[14:28:38.103] INFO (187): organizations.list ok
+    rid: "to6oj54x"
+    count: 9
+[14:28:38.104] INFO (187): GET 200 248ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "to6oj54x"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 248
+[14:28:38.329] INFO (187): organizations.list ok
+    rid: "wwnx8ec1"
+    count: 9
+[14:28:38.329] INFO (187): GET 304 116ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "wwnx8ec1"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 116

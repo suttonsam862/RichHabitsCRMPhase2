@@ -22,43 +22,7 @@ router.use('/files', brandingRouter); // Mount branding routes under /files
 router.use('/sports', sportsRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
 
-// Object storage routes
-// Route to serve public objects from Supabase storage
-router.get('/public-objects/:filePath(*)', async (req, res) => {
-  try {
-    const filePath = req.params.filePath;
-    const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
-    
-    // Get the public URL for the file
-    const { data } = await supabaseAdmin.storage
-      .from('app')
-      .getPublicUrl(filePath);
-    
-    if (!data?.publicUrl) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-    
-    // Fetch the file and pipe it to the response
-    const fetch = (await import('node-fetch')).default;
-    const fileResponse = await fetch(data.publicUrl);
-    
-    if (!fileResponse.ok) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-    
-    // Set appropriate headers
-    res.set({
-      'Content-Type': fileResponse.headers.get('content-type') || 'application/octet-stream',
-      'Cache-Control': 'public, max-age=3600',
-    });
-    
-    // Stream the file
-    fileResponse.body?.pipe(res);
-  } catch (error) {
-    console.error('Error serving public object:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// Object storage routes - using ObjectStorageService implementation below
 
 router.post('/objects/upload', async (req: any, res) => {
   try {
@@ -111,19 +75,43 @@ router.post('/objects/upload', async (req: any, res) => {
   }
 });
 
-// Public objects serving using ObjectStorageService
+// Public objects serving from Supabase storage
 router.get('/public-objects/:filePath(*)', async (req, res) => {
-  const filePath = req.params.filePath;
-  const objectStorageService = new (await import('../objectStorage')).ObjectStorageService();
   try {
-    const file = await objectStorageService.searchPublicObject(filePath);
-    if (!file) {
-      return res.status(404).json({ error: "File not found" });
+    const filePath = req.params.filePath;
+    const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
+    
+    // Get the public URL for the file from Supabase 'app' bucket
+    const { data } = await supabaseAdmin.storage
+      .from('app')
+      .getPublicUrl(filePath);
+    
+    if (!data?.publicUrl) {
+      console.error('No public URL returned for:', filePath);
+      return res.status(404).json({ error: 'File not found' });
     }
-    objectStorageService.downloadObject(file, res);
+    
+    // Fetch the file from Supabase and stream it to the client
+    const fetch = (await import('node-fetch')).default;
+    const fileResponse = await fetch(data.publicUrl);
+    
+    if (!fileResponse.ok) {
+      console.error('File fetch failed:', fileResponse.status, filePath);
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    // Set appropriate headers for image serving
+    res.set({
+      'Content-Type': fileResponse.headers.get('content-type') || 'image/png',
+      'Cache-Control': 'public, max-age=86400',
+      'Access-Control-Allow-Origin': '*',
+    });
+    
+    // Stream the file to the response
+    fileResponse.body?.pipe(res);
   } catch (error) {
-    console.error("Error searching for public object:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error('Error serving public object:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
