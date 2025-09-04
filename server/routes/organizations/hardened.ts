@@ -766,16 +766,8 @@ router.patch('/:id', async (req: any, res) => {
       });
     }
 
-    // Debug: Check what's in the request body
-    console.log('PATCH received:', {
-      body: req.body,
-      logoUrl: req.body.logoUrl,
-      hasLogoUrl: !!req.body.logoUrl
-    });
-    
     const parse = UpdateOrganizationSchema.safeParse(req.body);
     if (!parse.success) {
-      console.log('Validation failed:', parse.error);
       return res.status(400).json({
         success: false,
         error: 'Validation failed',

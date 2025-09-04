@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOrganizationSchema } from "../../../shared/schema";
+import { z } from "zod";
 import { type OrganizationDTO } from "../../../shared/dtos/OrganizationDTO";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,8 +23,24 @@ interface EditOrganizationFormProps {
   onCancel: () => void;
 }
 
-// Create a partial schema for updates
-const updateOrganizationSchema = insertOrganizationSchema.partial();
+// Create a custom update schema with camelCase field names for frontend
+const updateOrganizationSchema = z.object({
+  name: z.string().min(1).optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  zip: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  website: z.string().optional(),
+  notes: z.string().optional(),
+  logoUrl: z.string().optional(), // camelCase for frontend form
+  brand_primary: z.string().optional(),
+  brand_secondary: z.string().optional(),
+  isBusiness: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
+  isArchived: z.boolean().optional(),
+  state: z.string().optional(),
+});
 
 type UpdateOrganizationData = {
   name?: string;
@@ -139,18 +155,6 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       brandSecondary: data.brand_secondary,
     };
 
-    // Debug logging for brand colors and logo
-    console.log('Form submission data:', {
-      originalPrimary: organization.brandPrimary,
-      originalSecondary: organization.brandSecondary,
-      newPrimary: data.brand_primary,
-      newSecondary: data.brand_secondary,
-      hasColorChanges: data.brand_primary !== organization.brandPrimary || data.brand_secondary !== organization.brandSecondary,
-      logoUrl: data.logoUrl,
-      logoUrlExists: !!data.logoUrl,
-      allFormData: data,
-      cleanedData: cleanedData
-    });
 
     updateMutation.mutate(cleanedData);
   };
