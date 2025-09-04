@@ -13,18 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
 
-// Available sports data - using UUIDs that match the database
-const AVAILABLE_SPORTS = [
-  { id: "550e8400-e29b-41d4-a716-446655440001", name: "Football" },
-  { id: "550e8400-e29b-41d4-a716-446655440002", name: "Basketball" },
-  { id: "550e8400-e29b-41d4-a716-446655440003", name: "Soccer" },
-  { id: "550e8400-e29b-41d4-a716-446655440004", name: "Baseball" },
-  { id: "550e8400-e29b-41d4-a716-446655440005", name: "Track & Field" },
-  { id: "550e8400-e29b-41d4-a716-446655440006", name: "Swimming" },
-  { id: "550e8400-e29b-41d4-a716-446655440007", name: "Volleyball" },
-  { id: "550e8400-e29b-41d4-a716-446655440008", name: "Tennis" },
-  { id: "550e8400-e29b-41d4-a716-446655440009", name: "Wrestling" },
-];
+// Sports data will be fetched dynamically from API
 
 const contactSchema = z.object({
   contact_name: z.string().min(1, "Contact name is required"),
@@ -72,6 +61,12 @@ export default function AddSportsPage() {
     enabled: !!id,
   });
 
+  // Fetch available sports from API
+  const { data: availableSports = [], isLoading: sportsLoading } = useQuery({
+    queryKey: ['sports'],
+    queryFn: () => apiRequest('/v1/sports'),
+  });
+
   const addSportsMutation = useMutation({
     mutationFn: async (sports: SportContact[]) => {
       const payload = {
@@ -112,7 +107,7 @@ export default function AddSportsPage() {
 
   const addSportContact = () => {
     const formValues = form.getValues();
-    const sportName = AVAILABLE_SPORTS.find(s => s.id === selectedSportId)?.name;
+    const sportName = availableSports.find((s: any) => s.id === selectedSportId)?.name;
 
     if (!selectedSportId || !sportName || !formValues.contact_name || !formValues.contact_email) {
       toast({
@@ -166,10 +161,10 @@ export default function AddSportsPage() {
     addSportsMutation.mutate(sportsToAdd);
   };
 
-  // Get available sports (filter out existing ones and already added ones)
+  // Get filtered sports (filter out existing ones and already added ones)
   const existingSportIds = existingSports?.data?.map((s: any) => s.id) || [];
   const addedSportIds = sportsToAdd.map(s => s.sport_id);
-  const availableSports = AVAILABLE_SPORTS.filter(sport => 
+  const filteredSports = (availableSports || []).filter((sport: any) => 
     !existingSportIds.includes(sport.id) && !addedSportIds.includes(sport.id)
   );
 
@@ -264,10 +259,10 @@ export default function AddSportsPage() {
                   <SelectValue placeholder="Select sport" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-white/20">
-                  {availableSports.length === 0 ? (
+                  {filteredSports.length === 0 ? (
                     <div className="p-2 text-white/60 text-sm">No additional sports available</div>
                   ) : (
-                    availableSports.map((sport) => (
+                    filteredSports.map((sport: any) => (
                       <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
                         {sport.name}
                       </SelectItem>
@@ -347,7 +342,7 @@ export default function AddSportsPage() {
 
           <Button
             onClick={addSportContact}
-            disabled={!canAddSport || availableSports.length === 0}
+            disabled={!canAddSport || filteredSports.length === 0}
             className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
             data-testid="button-add-sport"
           >

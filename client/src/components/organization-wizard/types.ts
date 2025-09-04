@@ -2,7 +2,7 @@ import type { USState } from "@/constants/us-states";
 
 export interface SportContact {
   id: string;
-  sportId: string;
+  sport_id: string;
   sportName: string;
   teamName: string; // NEW: Team name for multiple teams per sport
   contact_name: string;

@@ -74,21 +74,20 @@ router.post('/objects/upload', async (req: any, res) => {
   }
 });
 
-// Temporary placeholder for public objects until object storage is properly configured
-router.get('/public-objects/*', (req, res) => {
-  // Extract path info for debugging
-  const path = (req.params as any)[0] || '';
-  console.log('Public objects request for path:', path);
-
-  // For now, return a generic placeholder
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.setHeader('Cache-Control', 'public, max-age=300');
-  res.send(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
-    <rect width="256" height="256" fill="#1a1a2e"/>
-    <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="64" fill="#6EE7F9">
-      📎
-    </text>
-  </svg>`);
+// Public objects serving using ObjectStorageService
+router.get('/public-objects/:filePath(*)', async (req, res) => {
+  const filePath = req.params.filePath;
+  const objectStorageService = new (await import('../objectStorage')).ObjectStorageService();
+  try {
+    const file = await objectStorageService.searchPublicObject(filePath);
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    objectStorageService.downloadObject(file, res);
+  } catch (error) {
+    console.error("Error searching for public object:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

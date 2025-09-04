@@ -21,18 +21,11 @@ import {
   Search,
   User
 } from 'lucide-react';
-// Sports available for organizations - using real database IDs
-const AVAILABLE_SPORTS = [
-  { id: "1e5fa927-1fa6-41d9-b8cc-ca46bb1d4f14", name: "Baseball" },
-  { id: "98372dc5-c700-4271-ba5c-abc05256a759", name: "Basketball" },
-  { id: "3644a4a6-301e-4d89-9360-7893b0f73448", name: "Football" },
-  { id: "6b19f4ab-0005-4753-9ac0-a96e773d3c6e", name: "Soccer" },
-  { id: "1ffcad10-6450-44f4-9876-f7c60fab03ac", name: "Wrestling" },
-];
+// Sports data will be fetched dynamically from API
 
 interface SportContact {
   id: string;
-  sportId: string;
+  sport_id: string;
   sportName: string;
   contact_name: string;
   contact_email: string;
@@ -84,6 +77,12 @@ export default function SimplifiedSetup() {
       return response;
     },
     enabled: contactType === "existing",
+  });
+
+  // Fetch available sports from API
+  const { data: availableSports = [] } = useQuery({
+    queryKey: ['sports'],
+    queryFn: () => api.get('/api/v1/sports').then(r => r.success ? r.data : []),
   });
 
   // Load organization data
@@ -199,7 +198,7 @@ export default function SimplifiedSetup() {
 
   // Sports contact management
   const addSportContact = () => {
-    const sportName = AVAILABLE_SPORTS.find(s => s.id === selectedSportId)?.name;
+    const sportName = availableSports.find((s: any) => s.id === selectedSportId)?.name;
     
     if (!selectedSportId || !sportName) {
       toast({
@@ -224,7 +223,7 @@ export default function SimplifiedSetup() {
 
       newContact = {
         id: Date.now().toString(),
-        sportId: selectedSportId,
+        sport_id: selectedSportId,
         sportName,
         contact_name: contactName,
         contact_email: contactEmail,
@@ -243,7 +242,7 @@ export default function SimplifiedSetup() {
 
       newContact = {
         id: Date.now().toString(),
-        sportId: selectedSportId,
+        sport_id: selectedSportId,
         sportName,
         contact_name: selectedUser.fullName || selectedUser.email,
         contact_email: selectedUser.email,
@@ -315,7 +314,7 @@ export default function SimplifiedSetup() {
       if (sports.length > 0) {
         const sportsResult = await api.post(`/api/v1/organizations/${id}/sports`, {
           sports: sports.map(s => ({
-            sport_id: s.sportId,
+            sport_id: s.sport_id,
             contact_name: s.contact_name,
             contact_email: s.contact_email,
             contact_phone: s.contact_phone
@@ -569,7 +568,7 @@ export default function SimplifiedSetup() {
                   data-testid="select-sport"
                 >
                   <option value="">Select a sport...</option>
-                  {AVAILABLE_SPORTS.filter((sport: any) => !sports.some((s: SportContact) => s.sportId === sport.id)).map((sport: any) => (
+                  {availableSports.filter((sport: any) => !sports.some((s: SportContact) => s.sport_id === sport.id)).map((sport: any) => (
                     <option key={sport.id} value={sport.id} className="bg-gray-800">
                       {sport.name}
                     </option>

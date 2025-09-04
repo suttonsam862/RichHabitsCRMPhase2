@@ -98,7 +98,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
               method: "POST",
               data: {
                 orgId: orgResponse.id,
-                sportId: sport.sportId,
+                sport_id: sport.sport_id,
                 contactName: sport.contact_name,
                 contactEmail: sport.contact_email,
                 contactPhone: sport.contact_phone,
@@ -155,7 +155,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
     
     // NEW: Check for duplicate sport + team name combination
     const existingTeam = (formData.sports || []).find(
-      s => s.sportId === selectedSportId && s.teamName.toLowerCase() === teamName.toLowerCase().trim()
+      s => s.sport_id === selectedSportId && s.teamName.toLowerCase() === teamName.toLowerCase().trim()
     );
     
     if (existingTeam) {
@@ -182,7 +182,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
       newContact = {
         id: Date.now().toString(),
-        sportId: selectedSportId,
+        sport_id: selectedSportId,
         sportName,
         teamName: teamName.trim(), // NEW: Include team name
         contact_name: formValues.contact_name,
@@ -202,7 +202,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
       newContact = {
         id: Date.now().toString(),
-        sportId: selectedSportId,
+        sport_id: selectedSportId,
         sportName,
         teamName: teamName.trim(), // NEW: Include team name for existing users too
         contact_name: selectedUser.fullName || selectedUser.email,
