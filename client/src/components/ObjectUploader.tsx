@@ -81,7 +81,7 @@ export function ObjectUploader({
       // Get upload URL with retry logic
       let uploadResponse;
       try {
-        uploadResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/sign`, {
+        uploadResponse = await apiRequest(`/v1/organizations/${organizationId}/logo/sign`, {
           method: "POST",
           data: {
             fileName: file.name,
@@ -128,7 +128,7 @@ export function ObjectUploader({
       console.log("Upload successful, now applying to organization");
 
       // Apply the logo to the organization in the database
-      const applyResponse = await apiRequest(`/api/v1/organizations/${organizationId}/logo/apply`, {
+      const applyResponse = await apiRequest(`/v1/organizations/${organizationId}/logo/apply`, {
         method: "POST",
         data: {
           key: uploadResponse.data.key,
