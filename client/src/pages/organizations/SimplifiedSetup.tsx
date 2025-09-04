@@ -260,6 +260,7 @@ export default function SimplifiedSetup() {
         zip,
         brand_primary: brandPrimary,
         brand_secondary: brandSecondary,
+        logo_url: logoPreview, // Save the uploaded logo URL
         complete: true
       };
       

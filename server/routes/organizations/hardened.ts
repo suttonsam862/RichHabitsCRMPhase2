@@ -506,6 +506,7 @@ const SetupSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   zip: z.string().optional(),
+  logo_url: z.string().optional(),
   complete: z.boolean().optional()
 });
 
@@ -532,6 +533,23 @@ router.post('/:id/setup', async (req: any, res) => {
     if (parse.data.state) patch.state = parse.data.state;
     if (parse.data.zip) patch.zip = parse.data.zip;
     
+    // Logo URL - accept new logo or preserve existing one
+    if (parse.data.logo_url) {
+      patch.logo_url = parse.data.logo_url;
+      logger.info({ orgId, logoUrl: parse.data.logo_url }, 'Updating organization logo_url');
+    } else {
+      // CRITICAL FIX: Preserve existing logo_url during setup save if no new one provided
+      const currentOrg = await sb.from('organizations')
+        .select('logo_url')
+        .eq('id', orgId)
+        .single();
+      
+      if (currentOrg.data?.logo_url) {
+        patch.logo_url = currentOrg.data.logo_url;
+        logger.info({ orgId, logoUrl: currentOrg.data.logo_url }, 'Preserving existing logo_url during setup save');
+      }
+    }
+    
     // Generate gradient CSS if both brand colors are present
     if (patch.brand_primary && patch.brand_secondary) {
       patch.gradient_css = `linear-gradient(135deg, ${patch.brand_primary} 0%, ${patch.brand_secondary} 100%)`;
@@ -539,17 +557,6 @@ router.post('/:id/setup', async (req: any, res) => {
     
     // Always add updated timestamp
     patch.updated_at = new Date().toISOString();
-    
-    // CRITICAL FIX: Preserve existing logo_url during setup save
-    const currentOrg = await sb.from('organizations')
-      .select('logo_url')
-      .eq('id', orgId)
-      .single();
-    
-    if (currentOrg.data?.logo_url) {
-      patch.logo_url = currentOrg.data.logo_url;
-      logger.info({ orgId, logoUrl: currentOrg.data.logo_url }, 'Preserving existing logo_url during setup save');
-    }
     
     // Mark setup as complete when complete flag is true
     if (parse.data.complete) {
