@@ -21,6 +21,7 @@ import {
   Search,
   User
 } from 'lucide-react';
+import { ObjectUploader } from "@/components/ObjectUploader";
 // Sports data will be fetched dynamically from API
 
 interface SportContact {
@@ -132,60 +133,21 @@ export default function SimplifiedSetup() {
     })();
   }, [id, toast]);
 
-  // Logo upload handlers
-  const handleLogoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !id) return;
-
-    // Preview the image immediately
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setLogoPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload to storage
-    setUploadingLogo(true);
-    try {
-      // Step 1: Upload file to general upload endpoint
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/v1/upload/logo', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const uploadResult = await response.json();
-
-      if (!response.ok || uploadResult.error) {
-        throw new Error(uploadResult.error || 'Logo upload failed');
-      }
-
-      // Step 2: Apply the logo using the uploaded file's path
-      const logoPath = uploadResult.path; // Use the path returned from upload
-      const applyResult = await api.post(`/api/v1/organizations/${id}/logo/apply`, {
-        key: logoPath
-      });
-
-      if (!applyResult.success) {
-        throw new Error(applyResult.error?.message || 'Failed to apply organization logo');
-      }
-
+  // Logo upload handler
+  const handleLogoUpload = (logoUrl: string) => {
+    if (logoUrl) {
+      setLogoPreview(logoUrl);
       toast({
         title: "Logo uploaded",
         description: "Your organization logo has been uploaded successfully."
       });
-
-    } catch (error: any) {
+    } else {
       toast({
         title: "Upload failed",
-        description: error.message || 'Failed to upload logo',
+        description: 'Failed to upload logo',
         variant: "destructive"
       });
       setLogoPreview(null);
-    } finally {
-      setUploadingLogo(false);
     }
   };
 
@@ -430,14 +392,14 @@ export default function SimplifiedSetup() {
                   </div>
                 )}
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,.svg"
-                  onChange={handleLogoFileChange}
-                  className="hidden"
-                  data-testid="input-logo-file"
-                />
+                {/* Use ObjectUploader for logo upload */}
+                <div className="hidden">
+                  <ObjectUploader
+                    onUploadComplete={handleLogoUpload}
+                    organizationId={id}
+                    currentImageUrl={logoPreview || undefined}
+                  />
+                </div>
               </div>
 
               {/* Brand Colors */}

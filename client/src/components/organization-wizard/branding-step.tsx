@@ -33,62 +33,24 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
     },
   });
 
-  const handleLogoUpload = async (file: File) => {
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/v1/upload/logo', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const json = await response.json().catch((parseError) => {
-        console.error('❌ Failed to parse response JSON:', parseError);
-        return null;
-      });
-      
-      console.log('🔍 Upload response:', { status: response.status, json });
-      
-      if (!response.ok || !json || json.error) {
-        const errorMsg = json?.error || json?.details || `Upload failed (${response.status})`;
-        console.error('❌ Upload failed:', errorMsg);
-        throw new Error(errorMsg);
-      }
-
-      setLogoPreview(json.url);
+  const handleLogoUpload = (logoUrl: string) => {
+    if (logoUrl) {
+      setLogoPreview(logoUrl);
       updateFormData({ 
-        logo_url: json.url, 
-        logo_file: file 
+        logo_url: logoUrl
       });
-    } catch (error: any) {
-      console.error('❌ Logo upload failed:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
-      });
-      
-      // Show error to user but allow fallback to local preview
+    } else {
+      // Fallback to local preview on error
       console.log('📁 Falling back to local preview');
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string);
-        updateFormData({ logo_file: file });
-      };
-      reader.readAsDataURL(file);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleLogoUpload(file);
+      const fileInput = fileInputRef.current;
+      if (fileInput?.files?.[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setLogoPreview(e.target?.result as string);
+        updateFormData({ logo_url: e.target?.result as string });
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
     }
   };
 
@@ -156,11 +118,11 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
               </div>
             )}
 
+            {/* Hidden file input for fallback */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*,.svg"
-              onChange={handleFileChange}
               className="hidden"
               data-testid="input-logo-file"
             />
