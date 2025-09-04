@@ -1,0 +1,159 @@
+[14:28:34.772] INFO (187): GET 304 0ms /src/pages/organizations/ViewPage.tsx
+    rid: "uwhq43yo"
+    method: "GET"
+    path: "/src/pages/organizations/ViewPage.tsx"
+    status: 304
+    ms: 0
+[14:28:34.852] INFO (187): GET 200 118ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "t9dk6p9g"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 118
+[14:28:38.103] INFO (187): organizations.list ok
+    rid: "to6oj54x"
+    count: 9
+[14:28:38.104] INFO (187): GET 200 248ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "to6oj54x"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 248
+[14:28:38.329] INFO (187): organizations.list ok
+    rid: "wwnx8ec1"
+    count: 9
+[14:28:38.329] INFO (187): GET 304 116ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "wwnx8ec1"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 116
+[14:30:31.338] WARN (187): HEAD 404 544ms /api/v1/public-objects/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/f494d0f5-a9ba-46ba-a4ef-7c926e35a49d.png
+    rid: "3b370bzs"
+    method: "HEAD"
+    path: "/api/v1/public-objects/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/f494d0f5-a9ba-46ba-a4ef-7c926e35a49d.png"
+    status: 404
+    ms: 544
+[14:31:43.182] WARN (187): HEAD 404 364ms /api/v1/public-objects/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/f494d0f5-a9ba-46ba-a4ef-7c926e35a49d.png
+    rid: "wjrwjxhy"
+    method: "HEAD"
+    path: "/api/v1/public-objects/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/f494d0f5-a9ba-46ba-a4ef-7c926e35a49d.png"
+    status: 404
+    ms: 364
+[14:31:54.317] WARN (187): GET 404 303ms /api/v1/public-objects/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/f494d0f5-a9ba-46ba-a4ef-7c926e35a49d.png
+    rid: "5vqluzsn"
+    method: "GET"
+    path: "/api/v1/public-objects/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/f494d0f5-a9ba-46ba-a4ef-7c926e35a49d.png"
+    status: 404
+    ms: 303
+[14:34:00.181] INFO (187): GET 304 311ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "zwwsqqso"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 304
+    ms: 311
+Upload URL created successfully: https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/upload/sign/app/org/185f3db6-6de6-4ac3-9482-348fa8c7436e/branding/1bc35701-8dbb-4cb8-9891-872dae220efb.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83ZmNjODNhMC00MmM1LTQwYjEtOTk5Ni05MGEwZTU4NzBmZTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAvb3JnLzE4NWYzZGI2LTZkZTYtNGFjMy05NDgyLTM0OGZhOGM3NDM2ZS9icmFuZGluZy8xYmMzNTcwMS04ZGJiLTRjYjgtOTg5MS04NzJkYWUyMjBlZmIucG5nIiwidXBzZXJ0Ijp0cnVlLCJpYXQiOjE3NTY5OTY0NDQsImV4cCI6MTc1NzAwMzY0NH0.nppeJGJ-q6ukQa0zDB01aX_3YOjAcG8fMOwAQ1-cYt8
+[14:34:04.085] INFO (187): POST 200 290ms /api/v1/objects/upload
+    rid: "bhzd9tug"
+    method: "POST"
+    path: "/api/v1/objects/upload"
+    status: 200
+    ms: 290
+[14:34:04.961] INFO (187): GET 304 210ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "mtfqfxd9"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 304
+    ms: 210
+[14:34:06.727] INFO (187): Updating brand primary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandPrimary: "#94d1ff"
+[14:34:06.727] INFO (187): Updating brand secondary color
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    brandSecondary: "#ffffff"
+[14:34:06.727] INFO (187): Generated gradient CSS
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    gradient: "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+[14:34:07.166] INFO (187): organizations.update ok
+    rid: "ewnh0xrl"
+    orgId: "185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    updates: [
+      "name",
+      "address",
+      "city",
+      "zip",
+      "tags",
+      "state",
+      "brand_primary",
+      "brand_secondary",
+      "updated_at",
+      "gradient_css"
+    ]
+    brandColors: {
+      "primary": "#94d1ff",
+      "secondary": "#ffffff",
+      "gradient": "generated"
+    }
+    dbResult: {
+      "brand_primary": "#94d1ff",
+      "brand_secondary": "#ffffff",
+      "gradient_css": "linear-gradient(135deg, #94d1ff 0%, #ffffff 100%)"
+    }
+    transformedResult: {
+      "brandPrimary": "#94d1ff",
+      "brandSecondary": "#ffffff"
+    }
+[14:34:07.167] INFO (187): PATCH 200 440ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "ewnh0xrl"
+    method: "PATCH"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 440
+[14:34:07.531] INFO (187): GET 200 242ms /api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e
+    rid: "ebitp82k"
+    method: "GET"
+    path: "/api/v1/organizations/185f3db6-6de6-4ac3-9482-348fa8c7436e"
+    status: 200
+    ms: 242
+[14:34:12.570] INFO (187): organizations.list ok
+    rid: "qqfev0gz"
+    count: 9
+[14:34:12.572] INFO (187): GET 200 313ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "qqfev0gz"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 313
+[14:34:12.935] INFO (187): organizations.list ok
+    rid: "hsd6o6c7"
+    count: 9
+[14:34:12.936] INFO (187): GET 304 244ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "hsd6o6c7"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 244
+[14:34:13.726] INFO (187): GET 304 656ms /api/v1/organizations/954cc7c8-b8c7-4f7b-ad1e-c0e45e0b3eb3/logo
+    rid: "o534w6oz"
+    method: "GET"
+    path: "/api/v1/organizations/954cc7c8-b8c7-4f7b-ad1e-c0e45e0b3eb3/logo"
+    status: 304
+    ms: 656
+[14:34:14.084] INFO (187): GET 302 679ms /api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo
+    rid: "h6tciqlz"
+    method: "GET"
+    path: "/api/v1/organizations/6801b53e-4742-4866-b53e-0b0cbae500e8/logo"
+    status: 302
+    ms: 679
+[14:34:14.179] INFO (187): GET 304 702ms /api/v1/organizations/faa29dc4-4f14-463c-ac05-70fb452c2528/logo
+    rid: "vc0ge4ys"
+    method: "GET"
+    path: "/api/v1/organizations/faa29dc4-4f14-463c-ac05-70fb452c2528/logo"
+    status: 304
+    ms: 702
+[14:34:14.422] INFO (187): GET 304 739ms /api/v1/organizations/6ade0bcd-b367-4a0a-b12d-e98b7c35bca1/logo
+    rid: "x9ny9lz6"
+    method: "GET"
+    path: "/api/v1/organizations/6ade0bcd-b367-4a0a-b12d-e98b7c35bca1/logo"
+    status: 304
+    ms: 739
