@@ -1,0 +1,152 @@
+[21:53:46.879] INFO (3331): GET 304 0ms /src/components/ui/form.tsx
+    rid: "7prntql6"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 304
+    ms: 0
+[21:53:46.880] INFO (3331): GET 304 0ms /src/components/ObjectUploader.tsx
+    rid: "qgjyrdwz"
+    method: "GET"
+    path: "/src/components/ObjectUploader.tsx"
+    status: 304
+    ms: 0
+[21:53:47.058] INFO (3331): GET 304 116ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "in0k5dd0"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 116
+[21:53:48.068] INFO (3331): GET 304 102ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "sa3xhed4"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 102
+Upload URL created successfully: https://qkampkccsdiebvkcfuby.supabase.co/storage/v1/object/upload/sign/app/org/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89/branding/4eb475c2-ce45-436d-b401-e9ed45fe18a6.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83ZmNjODNhMC00MmM1LTQwYjEtOTk5Ni05MGEwZTU4NzBmZTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAvb3JnL2ZkM2ExODRkLWJmM2UtNDFiMS1iMGE1LWFiMTExOGRkNGI4OS9icmFuZGluZy80ZWI0NzVjMi1jZTQ1LTQzNmQtYjQwMS1lOWVkNDVmZTE4YTYucG5nIiwidXBzZXJ0Ijp0cnVlLCJpYXQiOjE3NTcwMjI4MzAsImV4cCI6MTc1NzAzMDAzMH0.ifFjPb6ZvjTxCVw7bPLamOfisRF2G0m4LG6G2ItnAto
+[21:53:50.796] INFO (3331): POST 200 139ms /api/v1/objects/upload
+    rid: "068xqu6c"
+    method: "POST"
+    path: "/api/v1/objects/upload"
+    status: 200
+    ms: 139
+[21:53:51.443] INFO (3331): GET 304 105ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "8yr0cbkc"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 304
+    ms: 105
+[21:53:53.595] INFO (3331): Updating brand primary color
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    brandPrimary: "#6cbcf9"
+[21:53:53.595] INFO (3331): Updating brand secondary color
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    brandSecondary: "#ffffff"
+[21:53:53.595] INFO (3331): Generated gradient CSS
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    gradient: "linear-gradient(135deg, #6cbcf9 0%, #ffffff 100%)"
+[21:53:54.036] INFO (3331): organizations.update ok
+    rid: "4u3azcyu"
+    orgId: "fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    updates: [
+      "name",
+      "address",
+      "city",
+      "zip",
+      "email",
+      "is_business",
+      "tags",
+      "is_archived",
+      "state",
+      "logo_url",
+      "brand_primary",
+      "brand_secondary",
+      "updated_at",
+      "gradient_css"
+    ]
+    brandColors: {
+      "primary": "#6cbcf9",
+      "secondary": "#ffffff",
+      "gradient": "generated"
+    }
+    dbResult: {
+      "brand_primary": "#6cbcf9",
+      "brand_secondary": "#ffffff",
+      "gradient_css": "linear-gradient(135deg, #6cbcf9 0%, #ffffff 100%)"
+    }
+    transformedResult: {
+      "brandPrimary": "#6cbcf9",
+      "brandSecondary": "#ffffff"
+    }
+[21:53:54.036] INFO (3331): PATCH 200 443ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "4u3azcyu"
+    method: "PATCH"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 200
+    ms: 443
+[21:53:54.106] INFO (3331): GET 304 0ms /src/pages/organizations/ViewPage.tsx
+    rid: "0xo0unan"
+    method: "GET"
+    path: "/src/pages/organizations/ViewPage.tsx"
+    status: 304
+    ms: 0
+[21:53:54.209] INFO (3331): GET 200 122ms /api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89
+    rid: "o9pol2go"
+    method: "GET"
+    path: "/api/v1/organizations/fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+    status: 200
+    ms: 122
+[21:53:57.037] INFO (3331): organizations.list ok
+    rid: "mji3u1na"
+    count: 9
+[21:53:57.039] INFO (3331): GET 200 123ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "mji3u1na"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 200
+    ms: 123
+[21:53:57.329] INFO (3331): organizations.list ok
+    rid: "cgjzkphp"
+    count: 9
+[21:53:57.330] INFO (3331): GET 304 108ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "cgjzkphp"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 108
+9:54:07 PM [vite] hmr update /src/pages/QuoteGenerator.tsx, /src/index.css?v=aIeKOZQuezmXmCprEYodo (x3)
+[21:54:07.456] INFO (3331): GET 200 106ms /src/index.css?t=1757022847276&v=aIeKOZQuezmXmCprEYodo
+    rid: "slzt3jr3"
+    method: "GET"
+    path: "/src/index.css?t=1757022847276&v=aIeKOZQuezmXmCprEYodo"
+    status: 200
+    ms: 106
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

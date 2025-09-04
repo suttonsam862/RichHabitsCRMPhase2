@@ -238,38 +238,32 @@ router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHan
 }));
 
 /**
- * POST /:id/logo - Upload or set logo URL
+ * POST /:id/logo - Set logo storage path (NOT creating signed URLs)
  * Requires: Organization admin access  
+ * This endpoint stores the permanent storage path, not temporary signed URLs
  */
 router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
   try {
-    const { filename } = req.body;
+    const { storagePath } = req.body;
     
-    if (!filename) {
-      return HttpErrors.badRequest(res, 'Filename is required');
+    if (!storagePath) {
+      return HttpErrors.badRequest(res, 'Storage path is required');
     }
     
-    // Generate signed URL for the logo file
-    const logoPath = `org/${orgId}/branding/${filename}`;
-    const { data: urlData } = await supabaseAdmin.storage
-      .from('app')
-      .createSignedUrl(logoPath, 3600);
-    const signedUrl = urlData?.signedUrl;
-    
-    // Update organization logo_url
+    // Store the permanent storage path, not a temporary signed URL
     await db.update(organizations)
       .set({ 
-        logo_url: signedUrl,
+        logo_url: storagePath,
         updated_at: new Date()
       })
       .where(eq(organizations.id, orgId));
     
-    logger.info({ filename }, 'Updated organization logo');
+    logger.info({ storagePath }, 'Updated organization logo with storage path');
     
-    sendOk(res, { logo_url: signedUrl });
+    sendOk(res, { logo_url: storagePath });
   } catch (error) {
     logger.error({ error }, 'Failed to set organization logo');
     return HttpErrors.internalError(res, 'Failed to update organization logo');
@@ -277,38 +271,32 @@ router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (
 }));
 
 /**
- * POST /:id/title-card - Upload or set title card URL  
+ * POST /:id/title-card - Set title card storage path (NOT creating signed URLs)
  * Requires: Organization admin access
+ * This endpoint stores the permanent storage path, not temporary signed URLs
  */
 router.post('/:id/title-card', requireOrgMember, requireOrgAdmin, asyncHandler(async (req, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
   try {
-    const { filename } = req.body;
+    const { storagePath } = req.body;
     
-    if (!filename) {
-      return HttpErrors.badRequest(res, 'Filename is required');
+    if (!storagePath) {
+      return HttpErrors.badRequest(res, 'Storage path is required');
     }
     
-    // Generate signed URL for the title card file
-    const cardPath = `org/${orgId}/branding/${filename}`;
-    const { data: urlData } = await supabaseAdmin.storage
-      .from('app')
-      .createSignedUrl(cardPath, 3600);
-    const signedUrl = urlData?.signedUrl;
-    
-    // Update organization title_card_url
+    // Store the permanent storage path, not a temporary signed URL
     await db.update(organizations)
       .set({ 
-        title_card_url: signedUrl,
+        title_card_url: storagePath,
         updated_at: new Date()
       })
       .where(eq(organizations.id, orgId));
     
-    logger.info({ filename }, 'Updated organization title card');
+    logger.info({ storagePath }, 'Updated organization title card with storage path');
     
-    sendOk(res, { title_card_url: signedUrl });
+    sendOk(res, { title_card_url: storagePath });
   } catch (error) {
     logger.error({ error }, 'Failed to set organization title card');
     return HttpErrors.internalError(res, 'Failed to update organization title card');
