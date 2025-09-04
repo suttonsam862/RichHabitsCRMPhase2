@@ -76,10 +76,7 @@ export function QuotesPage() {
             <div className="p-4 text-center text-white/70">
               <p>Quote generation is available at the <a href="/quote" className="text-blue-400 hover:underline">/quote</a> route</p>
             </div>
-            <div 
-              onQuoteGenerated={handleQuoteGenerated}
-              onQuoteSaved={handleQuoteSaved}
-            />
+            {/* Quote generation is handled at the /quote route */}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">

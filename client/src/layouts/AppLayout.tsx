@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { paths } from "@/lib/paths";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Home, Users, FileText } from "lucide-react";
+import richHabitsLogo from "@assets/rich-habits-logo.png";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -32,11 +33,13 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
             <Link to={paths.home}>
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center space-x-2 cursor-pointer"
+                className="flex items-center space-x-3 cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-glow-1 to-glow-2 flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">RH</span>
-                </div>
+                <img 
+                  src={richHabitsLogo} 
+                  alt="Rich Habits Logo" 
+                  className="w-10 h-10 object-contain filter invert brightness-0"
+                />
                 <span className="text-xl font-bold bg-gradient-to-r from-glow-1 to-glow-3 bg-clip-text text-transparent">
                   Rich Habits
                 </span>

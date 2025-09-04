@@ -10,6 +10,7 @@ import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
 import { Building2, FileText, Download, Upload, Calculator, Mail, Phone, MapPin, Plus, Trash2, Save, Copy, History } from 'lucide-react';
+import richHabitsLogo from '@assets/rich-habits-logo.png';
 import { 
   upsertQuote, 
   getQuote, 
@@ -207,38 +208,38 @@ export default function QuoteGenerator() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white print:bg-white print:text-black">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto p-6 print:p-0">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 print:hidden">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
               <FileText className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Quote Generator
+              <h1 className="text-3xl font-bold text-gray-900">
+                Estimate Generator
               </h1>
-              <p className="text-slate-400">Create professional quotes with ease</p>
+              <p className="text-gray-600">Create professional estimates with ease</p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             <Link to="/quotes/history">
-              <Button variant="outline" className="border-slate-600 bg-slate-800 hover:bg-slate-700">
+              <Button variant="outline">
                 <History className="w-4 h-4 mr-2" />
-                Quote History
+                Estimate History
               </Button>
             </Link>
             
             <Button onClick={handleSaveQuote} className="bg-green-600 hover:bg-green-700">
               <Save className="w-4 h-4 mr-2" />
-              Save Quote
+              Save Estimate
               {hasUnsavedChanges && <span className="ml-1 text-yellow-400">*</span>}
             </Button>
 
             {currentQuoteId && (
-              <Button onClick={handleSaveAsNew} variant="outline" className="border-slate-600 bg-slate-800 hover:bg-slate-700">
+              <Button onClick={handleSaveAsNew} variant="outline">
                 <Copy className="w-4 h-4 mr-2" />
                 Save As New
               </Button>
@@ -252,168 +253,147 @@ export default function QuoteGenerator() {
         </div>
 
         {/* Quote Content */}
-        <Card ref={printRef} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm print:bg-white print:border-gray-300 print:shadow-none">
-          <CardHeader className="border-b border-slate-700 print:border-gray-300">
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex items-center gap-4">
-                {logoDataUrl ? 
-                  <img src={logoDataUrl} alt="Logo" className="h-16 w-16 object-contain rounded-lg" /> :
-                  <div className="h-16 w-16 bg-slate-700 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center text-slate-400 text-xs print:bg-gray-200 print:border-gray-400">
-                    LOGO
-                  </div>
-                }
+        <Card ref={printRef} className="bg-white border-gray-300 shadow-lg print:shadow-none">
+          <CardHeader className="border-b border-gray-300 bg-white p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <img src={logoDataUrl || richHabitsLogo} alt="Rich Habits Logo" className="h-20 w-20 object-contain" />
                 <div>
-                  <h2 className="text-2xl font-bold text-white print:text-black">Rich Habits</h2>
-                  <p className="text-slate-400 print:text-gray-600">Professional Quote</p>
+                  <h2 className="text-3xl font-bold text-gray-900">ESTIMATE</h2>
+                  <p className="text-gray-600">Developing Habits, LLC d/b/a Rich Habits</p>
+                  <p className="text-sm text-gray-500">3101 Whitehall Rd, Birmingham, AL 35209</p>
                 </div>
               </div>
               
-              <div className="text-right space-y-2">
-                <div className="flex items-center gap-3">
-                  <Label className="text-slate-300 print:text-gray-600">Quote #</Label>
+              <div className="text-right">
+                <div className="mb-4">
+                  <Label className="text-gray-600 block mb-1">Estimate Number:</Label>
                   <Input 
                     value={quoteNo} 
                     onChange={(e) => setQuoteNo(e.target.value)}
-                    className="w-40 bg-slate-700 border-slate-600 text-white print:bg-white print:border-gray-300 print:text-black"
+                    placeholder="EST###-####"
+                    className="w-40 text-right font-mono"
                   />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Label className="text-slate-300 print:text-gray-600">Date</Label>
+                <div>
+                  <Label className="text-gray-600 block mb-1">Date:</Label>
                   <Input 
                     type="date" 
                     value={date} 
                     onChange={(e) => setDate(e.target.value)} 
-                    className="bg-slate-700 border-slate-600 text-white print:bg-white print:border-gray-300 print:text-black"
+                    className="w-40"
                   />
                 </div>
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="p-8">
+          <CardContent className="p-8 bg-white">
             {/* Logo Upload */}
             <div className="mb-6 print:hidden">
-              <Label className="text-slate-300 mb-2 block">Company Logo</Label>
+              <Label className="text-gray-700 mb-2 block">Custom Logo (Optional)</Label>
               <div className="relative">
                 <Input 
                   type="file" 
                   accept="image/*,.svg" 
                   onChange={handleLogoUpload} 
-                  className="bg-slate-700 border-slate-600 text-white file:bg-slate-600 file:text-white file:border-0 file:mr-3"
+                  className="file:bg-blue-500 file:text-white file:border-0 file:mr-3 file:px-4 file:py-2 file:rounded"
                 />
-                <Upload className="w-4 h-4 absolute right-3 top-3 text-slate-400" />
+                <Upload className="w-4 h-4 absolute right-3 top-3 text-gray-400" />
               </div>
             </div>
 
-            {/* Organization Details */}
+            {/* Client and Project Information */}
             <div className="grid md:grid-cols-2 gap-8 mb-8">
-              <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
-                <CardHeader>
-                  <CardTitle className="text-white print:text-black flex items-center gap-2">
-                    <Building2 className="w-5 h-5" />
-                    Bill To / Organization
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div className="border border-gray-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Client Information</h3>
+                <div className="space-y-3">
                   <div>
-                    <Label className="text-slate-300 print:text-gray-600">Organization Name</Label>
+                    <Label className="text-gray-700 font-medium">Name</Label>
                     <Input 
                       value={toName} 
                       onChange={(e) => setToName(e.target.value)} 
-                      placeholder="Enter organization name"
-                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                      placeholder="Client name"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label className="text-slate-300 print:text-gray-600">Contact Person</Label>
-                    <Input 
-                      value={toContact} 
-                      onChange={(e) => setToContact(e.target.value)} 
-                      placeholder="Enter contact person"
-                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                    <Label className="text-gray-700 font-medium">Address</Label>
+                    <Textarea 
+                      value={toAddress} 
+                      onChange={(e) => setToAddress(e.target.value)} 
+                      placeholder="Full address"
+                      className="mt-1 resize-none"
+                      rows={3}
                     />
                   </div>
                   <div>
-                    <Label className="text-slate-300 print:text-gray-600">Email</Label>
-                    <Input 
-                      type="email"
-                      value={toEmail} 
-                      onChange={(e) => setToEmail(e.target.value)} 
-                      placeholder="Enter email address"
-                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-slate-300 print:text-gray-600">Phone</Label>
+                    <Label className="text-gray-700 font-medium">Phone</Label>
                     <Input 
                       type="tel"
                       value={toPhone} 
                       onChange={(e) => setToPhone(e.target.value)} 
-                      placeholder="Enter phone number"
-                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                      placeholder="Phone number"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label className="text-slate-300 print:text-gray-600">Address</Label>
-                    <Textarea 
-                      value={toAddress} 
-                      onChange={(e) => setToAddress(e.target.value)} 
-                      placeholder="Enter full address"
-                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black resize-none"
-                      rows={3}
+                    <Label className="text-gray-700 font-medium">Email</Label>
+                    <Input 
+                      type="email"
+                      value={toEmail} 
+                      onChange={(e) => setToEmail(e.target.value)} 
+                      placeholder="Email address"
+                      className="mt-1"
                     />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              {/* Quote Settings */}
-              <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
-                <CardHeader>
-                  <CardTitle className="text-white print:text-black">Quote Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+              <div className="border border-gray-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Project Information</h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-gray-700 font-medium">Project Name</Label>
+                    <Input 
+                      value={toContact} 
+                      onChange={(e) => setToContact(e.target.value)} 
+                      placeholder="Project title"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-slate-300 print:text-gray-600">Tax (%)</Label>
+                      <Label className="text-gray-700 font-medium">Tax Rate (%)</Label>
                       <Input 
                         type="number" 
                         min={0} 
                         step="0.01" 
                         value={taxPct} 
                         onChange={(e) => setTaxPct(Number(e.target.value))} 
-                        className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                        className="mt-1"
                       />
                     </div>
                     <div>
-                      <Label className="text-slate-300 print:text-gray-600">Discount (%)</Label>
+                      <Label className="text-gray-700 font-medium">Discount (%)</Label>
                       <Input 
                         type="number" 
                         min={0} 
                         step="0.01" 
                         value={discount} 
                         onChange={(e) => setDiscount(Number(e.target.value))}
-                        className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
+                        className="mt-1"
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label className="text-slate-300 print:text-gray-600">Notes / Terms</Label>
-                    <Textarea 
-                      value={notes} 
-                      onChange={(e) => setNotes(e.target.value)} 
-                      className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black resize-none"
-                      placeholder="Add any additional notes or terms"
-                      rows={6}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
 
-            {/* Line Items */}
-            <Card className="bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300 mb-8">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white print:text-black">Line Items</CardTitle>
+            {/* Line Items Table */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Project Details</h3>
                 <Button 
                   onClick={handleAddItem} 
                   size="sm"
@@ -422,97 +402,136 @@ export default function QuoteGenerator() {
                   <Plus className="w-4 h-4 mr-2" />
                   Add Item
                 </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-slate-600 print:border-gray-300">
-                        <th className="text-left p-3 text-slate-300 print:text-gray-600">Item</th>
-                        <th className="text-right p-3 text-slate-300 print:text-gray-600">Price</th>
-                        <th className="text-center p-3 text-slate-300 print:text-gray-600">Qty</th>
-                        <th className="text-right p-3 text-slate-300 print:text-gray-600">Total</th>
-                        <th className="p-3 print:hidden"></th>
+              </div>
+              <div className="border border-gray-300 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-blue-600 text-white">
+                      <th className="text-left p-3 font-semibold">Description</th>
+                      <th className="text-center p-3 font-semibold">Quantity</th>
+                      <th className="text-right p-3 font-semibold">Unit Price</th>
+                      <th className="text-right p-3 font-semibold">Amount</th>
+                      <th className="p-3 print:hidden"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => (
+                      <tr key={index} className="border-b border-gray-200 last:border-b-0">
+                        <td className="p-3">
+                          <Input 
+                            value={item.name} 
+                            onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                            placeholder="Service description"
+                            className="border-0 shadow-none focus:ring-0 p-0"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <Input 
+                            type="text" 
+                            value={item.qty} 
+                            onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 0)}
+                            className="border-0 shadow-none focus:ring-0 p-0 text-center"
+                            placeholder="1"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <Input 
+                            type="number" 
+                            value={item.price} 
+                            onChange={(e) => handleItemChange(index, 'price', parseFloat(e.target.value) || 0)}
+                            className="border-0 shadow-none focus:ring-0 p-0 text-right"
+                            placeholder="$0.00"
+                          />
+                        </td>
+                        <td className="p-3 text-right font-semibold text-gray-900">
+                          ${(item.price * item.qty).toFixed(2)}
+                        </td>
+                        <td className="p-3 print:hidden">
+                          <Button 
+                            onClick={() => handleRemoveItem(index)} 
+                            size="sm" 
+                            variant="ghost"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item, index) => (
-                        <tr key={index} className="border-b border-slate-600/50 print:border-gray-200">
-                          <td className="p-3">
-                            <Input 
-                              value={item.name} 
-                              onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                              placeholder="Item description"
-                              className="bg-slate-600 border-slate-500 text-white print:bg-white print:border-gray-300 print:text-black"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Input 
-                              type="number" 
-                              value={item.price} 
-                              onChange={(e) => handleItemChange(index, 'price', parseFloat(e.target.value) || 0)}
-                              className="bg-slate-600 border-slate-500 text-white text-right print:bg-white print:border-gray-300 print:text-black"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Input 
-                              type="number" 
-                              value={item.qty} 
-                              onChange={(e) => handleItemChange(index, 'qty', parseInt(e.target.value) || 0)}
-                              className="bg-slate-600 border-slate-500 text-white text-center print:bg-white print:border-gray-300 print:text-black"
-                              min="0"
-                            />
-                          </td>
-                          <td className="p-3 text-right text-white print:text-black">
-                            ${(item.price * item.qty).toFixed(2)}
-                          </td>
-                          <td className="p-3 print:hidden">
-                            <Button 
-                              onClick={() => handleRemoveItem(index)} 
-                              size="sm" 
-                              variant="ghost"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Totals */}
-            <div className="flex justify-end">
-              <Card className="w-80 bg-slate-700/50 border-slate-600 print:bg-transparent print:border-gray-300">
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-slate-300 print:text-gray-600">
-                      <span>Subtotal:</span>
-                      <span>${subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-300 print:text-gray-600">
-                      <span>Discount ({discount}%):</span>
-                      <span>-${discountAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-300 print:text-gray-600">
-                      <span>Tax ({taxPct}%):</span>
-                      <span>${taxAmount.toFixed(2)}</span>
-                    </div>
-                    <Separator className="bg-slate-600 print:bg-gray-300" />
-                    <div className="flex justify-between text-xl font-bold text-white print:text-black">
-                      <span>Total:</span>
-                      <span>${total.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="text-xs text-slate-500 mt-8 print:text-gray-500">
-              This quote is an estimate based on the information provided and is subject to change.
+            {/* Totals and Notes Section */}
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Additional Notes */}
+              <div className="border border-gray-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Additional Notes</h3>
+                <Textarea 
+                  value={notes} 
+                  onChange={(e) => setNotes(e.target.value)} 
+                  className="resize-none h-32"
+                  placeholder="Please ensure all areas to be worked on are cleared of any obstructions prior to our team's arrival."
+                />
+              </div>
+
+              {/* Total Cost */}
+              <div>
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 p-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-gray-700">
+                        <span>Subtotal</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-gray-700">
+                          <span>Discount ({discount}%)</span>
+                          <span>-${discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-gray-700">
+                        <span>Tax ({taxPct}%)</span>
+                        <span>${taxAmount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-blue-600 text-white p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold">Grand Total</span>
+                      <span className="text-2xl font-bold">${total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-2">Total Cost</h4>
+                  <div className="text-3xl font-bold text-blue-600">${total.toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="mt-8 border border-gray-300 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Terms and Conditions</h3>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p>1. The prices listed above are estimates and may change based on actual site conditions.</p>
+                <p>2. Payment will be made in 3 stages: 30% upfront, 40% mid-project, 30% upon completion.</p>
+                <p>3. This estimate is valid for 30 days from the date issued.</p>
+                <p>4. Work will commence upon receipt of signed approval and initial payment.</p>
+              </div>
+              
+              <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  <span>(205) 555-0123</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  <span>info@richhabits.com</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -520,18 +539,22 @@ export default function QuoteGenerator() {
 
       <style>{`
         @media print {
-          body { background: white !important; }
+          * { print-color-adjust: exact !important; }
+          body { background: white !important; margin: 0 !important; }
           .print\\:hidden { display: none !important; }
-          .print\\:bg-white { background: white !important; }
-          .print\\:text-black { color: black !important; }
-          .print\\:text-gray-600 { color: #6b7280 !important; }
-          .print\\:text-gray-800 { color: #1f2937 !important; }
-          .print\\:text-gray-500 { color: #9ca3af !important; }
-          .print\\:bg-gray-100 { background: #f3f4f6 !important; }
-          .print\\:bg-gray-200 { background: #e5e7eb !important; }
-          .print\\:border-gray-300 { border-color: #d1d5db !important; }
-          .print\\:bg-transparent { background: transparent !important; }
-          .print\\:shadow-none { box-shadow: none !important; }
+          .container { max-width: none !important; padding: 0 !important; }
+          .bg-blue-600 { background-color: #2563eb !important; }
+          .text-white { color: white !important; }
+          .border { border-width: 1px !important; }
+          .rounded-lg { border-radius: 0 !important; }
+          .shadow-lg { box-shadow: none !important; }
+          .p-8, .p-6, .p-4 { padding: 1rem !important; }
+          .mb-8, .mb-6, .mb-4 { margin-bottom: 1rem !important; }
+          .mt-8, .mt-6, .mt-4 { margin-top: 1rem !important; }
+          table { page-break-inside: avoid; }
+          h1, h2, h3 { page-break-after: avoid; }
+          .grid { display: block !important; }
+          .md\\:grid-cols-2 > * { width: 48% !important; display: inline-block !important; vertical-align: top !important; }
           @page { size: A4; margin: 18mm; }
         }
       `}</style>
