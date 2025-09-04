@@ -8,7 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOrganizationSchema, type Organization } from "../../../shared/schema";
+import { insertOrganizationSchema } from "../../../shared/schema";
+import { type OrganizationDTO } from "../../../shared/dtos/OrganizationDTO";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
@@ -17,7 +18,7 @@ import { ObjectUploader } from "./ObjectUploader";
 import { useState } from "react";
 
 interface EditOrganizationFormProps {
-  organization: Organization;
+  organization: OrganizationDTO;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -53,7 +54,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
     defaultValues: {
       name: organization.name,
       state: organization.state || "",
-      logoUrl: organization.logo_url || "",
+      logoUrl: organization.logoUrl || "",
       address: organization.address || "",
       city: organization.city || "",
       zip: organization.zip || "",
@@ -61,11 +62,11 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       email: organization.email || "",
       website: organization.website || "",
       notes: organization.notes || "",
-      brandPrimary: organization.brand_primary || "#6EE7F9",
-      brandSecondary: organization.brand_secondary || "#A78BFA",
-      isBusiness: organization.is_business ?? false,
+      brandPrimary: organization.brandPrimary || "#6EE7F9",
+      brandSecondary: organization.brandSecondary || "#A78BFA",
+      isBusiness: organization.isBusiness ?? false,
       tags: organization.tags || [],
-      isArchived: organization.is_archived ?? false,
+      isArchived: organization.isArchived ?? false,
     },
   });
 
@@ -79,14 +80,14 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       // Update form with fresh data from server
       if (response?.data) {
         const freshData = response.data;
-        form.setValue('brandPrimary', freshData.brand_primary);
-        form.setValue('brandSecondary', freshData.brand_secondary);
-        if (freshData.logo_url) {
-          form.setValue('logoUrl', freshData.logo_url);
+        form.setValue('brandPrimary', freshData.brandPrimary);
+        form.setValue('brandSecondary', freshData.brandSecondary);
+        if (freshData.logoUrl) {
+          form.setValue('logoUrl', freshData.logoUrl);
         }
         console.log('Updated form with fresh brand colors:', {
-          primary: freshData.brand_primary,
-          secondary: freshData.brand_secondary
+          primary: freshData.brandPrimary,
+          secondary: freshData.brandSecondary
         });
       }
 
@@ -140,11 +141,11 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
 
     // Debug logging for brand colors
     console.log('Form submission data:', {
-      originalPrimary: organization.brand_primary,
-      originalSecondary: organization.brand_secondary,
+      originalPrimary: organization.brandPrimary,
+      originalSecondary: organization.brandSecondary,
       newPrimary: data.brandPrimary,
       newSecondary: data.brandSecondary,
-      hasColorChanges: data.brandPrimary !== organization.brand_primary || data.brandSecondary !== organization.brand_secondary
+      hasColorChanges: data.brandPrimary !== organization.brandPrimary || data.brandSecondary !== organization.brandSecondary
     });
 
     updateMutation.mutate(cleanedData);

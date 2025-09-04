@@ -39,6 +39,9 @@ export const OrganizationDTO = z.object({
   address: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   titleCardUrl: z.string().nullable().optional(),
+  zip: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional().default([]),
+  isArchived: z.boolean().optional().default(false),
 });
 
 export const CreateOrganizationDTO = OrganizationDTO.omit({
