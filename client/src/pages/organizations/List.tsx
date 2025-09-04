@@ -376,7 +376,8 @@ export default function OrganizationsList(){
                           src={(() => {
                             if (org.logoUrl.startsWith('http')) return org.logoUrl;
                             if (org.logoUrl.startsWith('org/') || org.logoUrl.startsWith('app/')) {
-                              return `/api/v1/public-objects/${org.logoUrl}`;
+                              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                              return `${supabaseUrl}/storage/v1/object/public/app/${org.logoUrl}`;
                             }
                             return `/api/v1/organizations/${org.id}/logo`;
                           })()}
@@ -408,7 +409,8 @@ export default function OrganizationsList(){
                           src={(() => {
                             if (org.logoUrl.startsWith('http')) return org.logoUrl;
                             if (org.logoUrl.startsWith('org/') || org.logoUrl.startsWith('app/')) {
-                              return `/api/v1/public-objects/${org.logoUrl}`;
+                              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                              return `${supabaseUrl}/storage/v1/object/public/app/${org.logoUrl}`;
                             }
                             return `/api/v1/organizations/${org.id}/logo`;
                           })()} 

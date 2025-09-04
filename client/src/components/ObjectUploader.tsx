@@ -17,14 +17,15 @@ interface ObjectUploaderProps {
 export function ObjectUploader({ onUploadComplete, currentImageUrl, organizationId, className = "", children }: ObjectUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   
-  // Convert storage path to displayable URL
+  // Convert storage path to displayable URL using Supabase direct URLs
   const getDisplayUrl = (url: string | undefined | null) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
     if (url.startsWith('org/') || url.startsWith('app/')) {
-      // Server route already selects 'app' bucket, so just use the path
-      const displayUrl = `/api/v1/public-objects/${url}`;
-      console.log('Converting storage path to display URL:', url, '->', displayUrl);
+      // Use Supabase public URL directly - much simpler and more reliable
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const displayUrl = `${supabaseUrl}/storage/v1/object/public/app/${url}`;
+      console.log('Converting storage path to Supabase public URL:', url, '->', displayUrl);
       return displayUrl;
     }
     return url;

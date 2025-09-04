@@ -111,7 +111,8 @@ export default function OrganizationViewPage() {
                       if (!logoUrl) return '';
                       if (logoUrl.startsWith('http')) return logoUrl;
                       if (logoUrl.startsWith('org/') || logoUrl.startsWith('app/')) {
-                        return `/api/v1/public-objects/${logoUrl}`;
+                        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                        return `${supabaseUrl}/storage/v1/object/public/app/${logoUrl}`;
                       }
                       return `/api/v1/organizations/${organization.id}/logo`;
                     })()}

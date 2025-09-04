@@ -75,28 +75,53 @@ router.post('/objects/upload', async (req: any, res) => {
   }
 });
 
+// Debug route to list files in storage
+router.get('/debug/storage-files', async (req, res) => {
+  try {
+    const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
+    const { data, error } = await supabaseAdmin.storage
+      .from('app')
+      .list('org', { limit: 100 });
+    
+    console.log('DEBUG: Storage list result:', data, 'error:', error);
+    res.json({ files: data, error: error?.message });
+  } catch (error) {
+    console.error('Error listing storage files:', error);
+    res.status(500).json({ error: error });
+  }
+});
+
 // Public objects serving from Supabase storage
 router.get('/public-objects/:filePath(*)', async (req, res) => {
   try {
     const filePath = req.params.filePath;
+    console.log('DEBUG: Requested file path:', filePath);
+    
     const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
+    console.log('DEBUG: Supabase admin client loaded');
     
-    // Get the public URL for the file from Supabase 'app' bucket
-    const { data } = await supabaseAdmin.storage
+    // Try to create a signed URL instead of public URL for better access control
+    const { data, error } = await supabaseAdmin.storage
       .from('app')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
     
-    if (!data?.publicUrl) {
-      console.error('No public URL returned for:', filePath);
-      return res.status(404).json({ error: 'File not found' });
+    console.log('DEBUG: Signed URL data:', data, 'error:', error);
+    
+    if (error || !data?.signedUrl) {
+      console.error('Failed to create signed URL for:', filePath, 'Error:', error);
+      return res.status(404).json({ error: 'File not found', details: error?.message });
     }
+    
+    console.log('DEBUG: Fetching from signed URL:', data.signedUrl);
     
     // Fetch the file from Supabase and stream it to the client
     const fetch = (await import('node-fetch')).default;
-    const fileResponse = await fetch(data.publicUrl);
+    const fileResponse = await fetch(data.signedUrl);
+    
+    console.log('DEBUG: Fetch response status:', fileResponse.status, 'for path:', filePath);
     
     if (!fileResponse.ok) {
-      console.error('File fetch failed:', fileResponse.status, filePath);
+      console.error('File fetch failed:', fileResponse.status, filePath, 'URL:', data.signedUrl);
       return res.status(404).json({ error: 'File not found' });
     }
     
@@ -106,6 +131,8 @@ router.get('/public-objects/:filePath(*)', async (req, res) => {
       'Cache-Control': 'public, max-age=86400',
       'Access-Control-Allow-Origin': '*',
     });
+    
+    console.log('DEBUG: Streaming file to response');
     
     // Stream the file to the response
     fileResponse.body?.pipe(res);
