@@ -62,10 +62,13 @@ export default function AddSportsPage() {
   });
 
   // Fetch available sports from API
-  const { data: availableSports = [], isLoading: sportsLoading } = useQuery({
+  const { data: availableSportsData = {}, isLoading: sportsLoading } = useQuery({
     queryKey: ['sports'],
     queryFn: () => apiRequest('/v1/sports'),
   });
+
+  // Handle API response structure
+  const availableSports = availableSportsData?.data || [];
 
   const addSportsMutation = useMutation({
     mutationFn: async (sports: SportContact[]) => {
@@ -107,7 +110,7 @@ export default function AddSportsPage() {
 
   const addSportContact = () => {
     const formValues = form.getValues();
-    const sportName = availableSports.find((s: any) => s.id === selectedSportId)?.name;
+    const sportName = Array.isArray(availableSports) ? availableSports.find((s: any) => s.id === selectedSportId)?.name : undefined;
 
     if (!selectedSportId || !sportName || !formValues.contact_name || !formValues.contact_email) {
       toast({
@@ -164,9 +167,11 @@ export default function AddSportsPage() {
   // Get filtered sports (filter out existing ones and already added ones)
   const existingSportIds = existingSports?.data?.map((s: any) => s.id) || [];
   const addedSportIds = sportsToAdd.map(s => s.sport_id);
-  const filteredSports = (availableSports || []).filter((sport: any) => 
-    !existingSportIds.includes(sport.id) && !addedSportIds.includes(sport.id)
-  );
+  const filteredSports = Array.isArray(availableSports) 
+    ? availableSports.filter((sport: any) => 
+        !existingSportIds.includes(sport.id) && !addedSportIds.includes(sport.id)
+      )
+    : [];
 
   const canAddSport = selectedSportId && form.watch("contact_name") && form.watch("contact_email");
 
