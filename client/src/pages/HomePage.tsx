@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Users, FileText, ShoppingCart, Package, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Building2, Users, FileText, ShoppingCart, Package, BarChart3, Settings, LogOut, TrendingUp } from 'lucide-react';
 
 export function HomePage() {
   const { user, signOut } = useAuth();
@@ -27,6 +27,14 @@ export function HomePage() {
       href: '/users',
       color: 'bg-blue-500',
       glowColor: 'shadow-blue-500/25'
+    },
+    {
+      title: 'Sales',
+      description: 'Sales management and performance tracking',
+      icon: TrendingUp,
+      href: '/sales',
+      color: 'bg-orange-500',
+      glowColor: 'shadow-orange-500/25'
     },
     {
       title: 'Quotes',
