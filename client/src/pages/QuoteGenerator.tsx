@@ -305,9 +305,11 @@ export default function QuoteGenerator() {
                     // Convert storage path to display URL for preview
                     const displayUrl = url.startsWith('http') ? url : 
                       `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/app/${url}`;
+                    console.log("Setting logoDataUrl to:", displayUrl);
                     setLogoDataUrl(displayUrl);
                     saveDefaultLogo(displayUrl);
                   } else {
+                    console.log("No URL provided, resetting to default");
                     setLogoDataUrl(getDefaultLogo());
                   }
                 }}

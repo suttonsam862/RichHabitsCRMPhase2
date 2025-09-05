@@ -191,11 +191,18 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
                 <FormControl>
                   <div className="space-y-2">
                     <ObjectUploader
-                      currentImageUrl={field.value || ''}
+                      currentImageUrl={field.value || undefined}
                       organizationId={organization.id}
                       onUploadComplete={(url) => {
                         console.log('Logo upload completed, updating form field:', url);
-                        field.onChange(url);
+                        if (url) {
+                          // Convert storage path to display URL for form storage
+                          const displayUrl = url.startsWith('http') ? url : 
+                            `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/app/${url}`;
+                          field.onChange(displayUrl);
+                        } else {
+                          field.onChange('');
+                        }
                         // Force a revalidation of the organization data
                         queryClient.invalidateQueries({ queryKey: ['organization', organization.id] });
                         queryClient.invalidateQueries({ queryKey: ['organizations'] });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Image } from "lucide-react";
@@ -45,6 +45,12 @@ export function ObjectUploader({
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     getDisplayUrl(currentImageUrl),
   );
+
+  // Update preview URL when currentImageUrl prop changes
+  useEffect(() => {
+    const newDisplayUrl = getDisplayUrl(currentImageUrl);
+    setPreviewUrl(newDisplayUrl);
+  }, [currentImageUrl]);
   const { toast } = useToast();
 
   const handleUpload = async (file: File) => {
