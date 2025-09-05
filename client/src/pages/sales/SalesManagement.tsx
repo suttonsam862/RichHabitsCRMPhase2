@@ -174,7 +174,7 @@ export default function SalesManagement() {
     queryKey: ['/api/v1/sales/dashboard', selectedPeriod],
     queryFn: async () => {
       const response = await api.get(`/api/v1/sales/dashboard?period=${selectedPeriod}`);
-      return response.data;
+      return response; // Server returns direct data, not wrapped in .data
     }
   });
 
@@ -182,7 +182,7 @@ export default function SalesManagement() {
     queryKey: ['/api/v1/sales/salespeople'],
     queryFn: async () => {
       const response = await api.get('/api/v1/sales/salespeople');
-      return response.data;
+      return response; // Server returns direct array, not wrapped in .data
     }
   });
 
@@ -190,7 +190,7 @@ export default function SalesManagement() {
     queryKey: ['/api/v1/sales/salespeople', selectedSalesperson],
     queryFn: async () => {
       const response = await api.get(`/api/v1/sales/salespeople/${selectedSalesperson}`);
-      return response.data;
+      return response; // Server returns direct data, not wrapped in .data
     },
     enabled: !!selectedSalesperson
   });
@@ -286,24 +286,36 @@ export default function SalesManagement() {
     setShowAssignmentModal(true);
   };
 
+  // Show loading state while data is fetching
+  if (dashboardLoading || salespeopleLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Loading sales management...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Users className="h-6 w-6" />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
+                <TrendingUp className="h-8 w-8 text-blue-600" />
                 Sales Management
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
+              <p className="text-gray-600 dark:text-gray-300 mt-2">
                 Manage your sales team, assignments, and performance metrics
               </p>
             </div>
             <div className="flex items-center gap-4">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-40 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -313,6 +325,13 @@ export default function SalesManagement() {
                   <SelectItem value="365">Last year</SelectItem>
                 </SelectContent>
               </Select>
+              <Button 
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                data-testid="button-add-salesperson"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Salesperson
+              </Button>
             </div>
           </div>
         </div>

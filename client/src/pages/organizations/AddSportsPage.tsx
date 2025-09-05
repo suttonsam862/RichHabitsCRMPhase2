@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Trash2, Trophy, Save, Users, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { api } from "@/lib/api";
 import { motion } from "framer-motion";
 
 // Sports data will be fetched dynamically from API
@@ -53,21 +53,21 @@ export default function AddSportsPage() {
   // Fetch organization details
   const { data: organization, isLoading: orgLoading } = useQuery({
     queryKey: ['organizations', id],
-    queryFn: () => apiRequest(`/v1/organizations/${id}`),
+    queryFn: () => api.get(`/api/v1/organizations/${id}`),
     enabled: !!id,
   });
 
   // Fetch existing sports to filter out duplicates
   const { data: existingSports = [] } = useQuery({
     queryKey: ['organizations', id, 'sports'],
-    queryFn: () => apiRequest(`/v1/organizations/${id}/sports`),
+    queryFn: () => api.get(`/api/v1/organizations/${id}/sports`),
     enabled: !!id,
   });
 
   // Fetch available sports from API
   const { data: availableSportsData = {}, isLoading: sportsLoading } = useQuery({
     queryKey: ['sports'],
-    queryFn: () => apiRequest('/v1/sports'),
+    queryFn: () => api.get('/api/v1/sports'),
   });
 
   // Handle API response structure
@@ -76,7 +76,7 @@ export default function AddSportsPage() {
   // Fetch existing users for selection
   const { data: existingUsersData = {}, isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => apiRequest('/v1/users'),
+    queryFn: () => api.get('/api/v1/users'),
   });
 
   const existingUsers = existingUsersData?.data || [];
@@ -92,10 +92,7 @@ export default function AddSportsPage() {
         })),
       };
 
-      return apiRequest(`/v1/organizations/${id}/sports`, {
-        method: "POST",
-        data: payload,
-      });
+      return api.post(`/api/v1/organizations/${id}/sports`, payload);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['organizations', id, 'sports'] });
