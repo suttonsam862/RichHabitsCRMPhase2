@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { gradientFrom } from '@/features/organizations/gradient';
@@ -29,8 +30,6 @@ type Org = {
 
 export default function OrganizationsList(){
   const currentUser = useCurrentUser();
-  const [rows, setRows] = useState<Org[]>([]);
-  const [count, setCount] = useState(0);
   const [q, setQ] = useState(''); 
   const [tag, setTag] = useState(''); 
   const [onlyFav, setOnlyFav] = useState(false); 
@@ -39,28 +38,32 @@ export default function OrganizationsList(){
   const [limit, setLimit] = useState(24); 
   const [offset, setOffset] = useState(0);
   const [includeArchived, setIncludeArchived] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [groupBy, setGroupBy] = useState<'none' | 'type' | 'state'>('type');
 
-  async function load(){ 
-    setLoading(true);
-    try {
-      const r = await api.get(`/api/v1/organizations?q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&onlyFavorites=${onlyFav}&includeArchived=${includeArchived}&sort=${sort}&dir=${dir}&limit=${limit}&offset=${offset}`); 
-      if(r.success){ 
-        setRows(r.data||[]); 
-        setCount(r.count||0); 
+  // Convert to React Query for proper cache management
+  const queryParams = useMemo(() => ({ q, tag, onlyFav, includeArchived, sort, dir, limit, offset }), [q, tag, onlyFav, includeArchived, sort, dir, limit, offset]);
+  
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ['organizations', queryParams],
+    queryFn: async () => {
+      console.log('🔄 Fetching organizations with params:', queryParams);
+      const result = await api.get(`/api/v1/organizations?q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&onlyFavorites=${onlyFav}&includeArchived=${includeArchived}&sort=${sort}&dir=${dir}&limit=${limit}&offset=${offset}`);
+      if (result.success) {
+        console.log(`✅ Fetched ${result.data?.length || 0} organizations`);
+        return { data: result.data || [], count: result.count || 0 };
       }
-    } finally {
-      setLoading(false);
-    }
-  }
+      throw new Error(result.error?.message || 'Failed to fetch organizations');
+    },
+    staleTime: 30000, // Cache for 30 seconds
+  });
 
-  useEffect(()=>{ load(); },[q,tag,onlyFav,includeArchived,sort,dir,limit,offset]);
+  const rows = data?.data || [];
+  const count = data?.count || 0;
 
   async function toggleFavorite(orgId: string) {
     const r = await api.post(`/api/v1/organizations/${orgId}/favorite`, {});
     if (r.success) {
-      load(); // Refresh list
+      // Note: This will auto-refresh due to React Query refetch
     }
   }
 
@@ -72,7 +75,7 @@ export default function OrganizationsList(){
     try {
       const r = await api.delete(`/api/v1/organizations/${orgId}`);
       if (r.success) {
-        load(); // Refresh list
+        // Note: This will auto-refresh due to React Query refetch
         // Show success message (you could add a toast here)
       } else {
         alert('Failed to delete organization: ' + (r.error || 'Unknown error'));
@@ -101,7 +104,7 @@ export default function OrganizationsList(){
 
     const grouped = new Map<string, Org[]>();
     
-    rows.forEach(org => {
+    rows.forEach((org: Org) => {
       let key = '';
       let title = '';
       
@@ -167,7 +170,7 @@ export default function OrganizationsList(){
               <span className="text-white/40 text-sm">Total: {count}</span>
               <div className="w-1 h-1 bg-white/20 rounded-full"></div>
               <span className="text-white/40 text-sm">
-                {rows.filter(r => r.isBusiness).length} Businesses, {rows.filter(r => !r.isBusiness).length} Organizations
+                {rows.filter((r: Org) => r.isBusiness).length} Businesses, {rows.filter((r: Org) => !r.isBusiness).length} Organizations
               </span>
             </div>
           </div>
@@ -351,7 +354,7 @@ export default function OrganizationsList(){
 
                 {/* Organization Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {group.organizations.map((org, index) => {
+                  {group.organizations.map((org: Org, index: number) => {
                     const g = org.gradient_css || gradientFrom(org.brandPrimary, org.brandSecondary);
                     const needsSetup = org.setupComplete === false || org.setupComplete === null || org.setupComplete === undefined;
                     return (
