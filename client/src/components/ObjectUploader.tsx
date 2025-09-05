@@ -100,15 +100,15 @@ export function ObjectUploader({
         throw new Error("Failed to get upload URL from API");
       }
 
-      if (!uploadResponse?.success || !uploadResponse.data?.uploadUrl) {
+      if (!uploadResponse?.success || !uploadResponse.uploadUrl) {
         console.error("Invalid upload response:", uploadResponse);
         throw new Error("Invalid upload URL response");
       }
 
       console.log("Got upload URL, proceeding with file upload");
 
-      // Upload file with timeout
-      const uploadPromise = fetch(uploadResponse.data.uploadUrl, {
+      // Upload file with timeout  
+      const uploadPromise = fetch(uploadResponse.uploadUrl, {
         method: "PUT",
         body: file,
         headers: {
@@ -136,7 +136,7 @@ export function ObjectUploader({
       const updateResponse = await apiRequest(`/v1/organizations/${organizationId}/logo/update`, {
         method: "POST",
         data: {
-          logoUrl: uploadResponse.data.publicUrl,
+          logoUrl: uploadResponse.publicUrl,
         },
       });
 
@@ -145,7 +145,7 @@ export function ObjectUploader({
       }
 
       // Use the full public URL from the API response
-      const finalUrl = uploadResponse.data.publicUrl || "";
+      const finalUrl = uploadResponse.publicUrl || "";
 
       console.log("Using public URL as final URL:", finalUrl);
 
