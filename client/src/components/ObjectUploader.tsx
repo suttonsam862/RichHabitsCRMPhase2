@@ -23,22 +23,21 @@ export function ObjectUploader({
 }: ObjectUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
 
-  // Convert storage path to displayable URL using Supabase direct URLs
+  // Get displayable URL - now simplified since we store full URLs
   const getDisplayUrl = (url: string | undefined | null) => {
     if (!url) return null;
+    
+    // If it's already a full URL, use it directly
     if (url.startsWith("http")) return url;
+    
+    // Legacy support: convert old storage paths to public URLs
     if (url.startsWith("org/") || url.startsWith("app/")) {
-      // Use Supabase public URL directly - much simpler and more reliable
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const displayUrl = `${supabaseUrl}/storage/v1/object/public/app/${url}`;
-      console.log(
-        "Converting storage path to Supabase public URL:",
-        url,
-        "->",
-        displayUrl,
-      );
+      console.log("Converting legacy storage path to URL:", url, "->", displayUrl);
       return displayUrl;
     }
+    
     return url;
   };
 
@@ -84,18 +83,18 @@ export function ObjectUploader({
       setIsUploading(true);
       console.log("Starting upload for:", file.name, "size:", file.size);
 
-      // Get upload URL with retry logic
+      // Get upload URL using unified assets endpoint
       let uploadResponse;
       try {
-        uploadResponse = await apiRequest(`/v1/organizations/${organizationId}/logo/sign`, {
+        uploadResponse = await apiRequest(`/v1/organizations/${organizationId}/assets/upload`, {
           method: "POST",
           data: {
-            fileName: file.name,
+            filename: file.name,
           },
         });
       } catch (apiError) {
         console.error(
-          "API request failed for logo sign endpoint:",
+          "API request failed for assets upload endpoint:",
           apiError,
         );
         throw new Error("Failed to get upload URL from API");
@@ -131,24 +130,24 @@ export function ObjectUploader({
         throw new Error(`Upload failed with status: ${uploadResult.status}`);
       }
 
-      console.log("Upload successful, now applying to organization");
+      console.log("Upload successful, now updating organization logo");
 
-      // Apply the logo to the organization in the database
-      const applyResponse = await apiRequest(`/v1/organizations/${organizationId}/logo/apply`, {
+      // Update the organization logo with the full public URL
+      const updateResponse = await apiRequest(`/v1/organizations/${organizationId}/logo/update`, {
         method: "POST",
         data: {
-          key: uploadResponse.data.key,
+          logoUrl: uploadResponse.data.publicUrl,
         },
       });
 
-      if (!applyResponse?.success) {
-        console.warn("Failed to apply logo to organization, but upload succeeded");
+      if (!updateResponse?.success) {
+        console.warn("Failed to update organization logo in database, but upload succeeded");
       }
 
-      // Use the key from the API response - this is the correct storage path
-      const finalUrl = uploadResponse.data.key || "";
+      // Use the full public URL from the API response
+      const finalUrl = uploadResponse.data.publicUrl || "";
 
-      console.log("Using storage key as final URL:", finalUrl);
+      console.log("Using public URL as final URL:", finalUrl);
 
       // Update preview immediately with the uploaded file
       const displayUrl = getDisplayUrl(finalUrl);
