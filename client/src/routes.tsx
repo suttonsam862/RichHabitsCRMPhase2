@@ -29,6 +29,7 @@ const AddSportsPage = lazy(() => import('@/pages/organizations/AddSportsPage').t
 const OrganizationKPIPage = lazy(() => import('@/pages/organizations/KPIPage').then(m => ({ default: m.default })));
 // Comprehensive users management with full CRUD, roles, and permissions
 const UsersManagement = lazy(() => import('@/pages/users/UsersManagement').then(m => ({ default: m.default })));
+const SalesManagement = lazy(() => import('@/pages/sales/SalesManagement').then(m => ({ default: m.default })));
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
@@ -78,6 +79,10 @@ export function AppRoutes() {
               
               <Route path="/users" element={<ProtectedRoute />}>
                 <Route index element={<UsersManagement />} />
+              </Route>
+              
+              <Route path="/sales" element={<ProtectedRoute />}>
+                <Route index element={<SalesManagement />} />
               </Route>
               
               <Route path="/quotes" element={<ProtectedRoute />}>

@@ -6,6 +6,7 @@ import { comprehensiveUsersRouter } from './users/comprehensive';
 import enhancedUsersRouter from './users/enhanced';
 import organizationsRoutes from './organizations/index.js';
 import sportsRoutes from './sports/index';
+import salesRoutes from './sales/index';
 // Removed uploadRoutes import - deprecated in favor of objects endpoint
 import { brandingRouter } from './files/branding.js';
 
@@ -20,6 +21,7 @@ router.use('/users', usersRouter);
 router.use('/organizations', organizationsRoutes);
 router.use('/files', brandingRouter); // Mount branding routes under /files
 router.use('/sports', sportsRoutes);
+router.use('/sales', salesRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
 
 // Object storage routes - using ObjectStorageService implementation below

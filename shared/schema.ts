@@ -96,6 +96,7 @@ export const orgSports = pgTable('org_sports', {
     contact_name: text('contact_name').notNull(),
     contact_email: text('contact_email').notNull(),
     contact_phone: text('contact_phone'),
+    assigned_salesperson_id: varchar('assigned_salesperson_id').references(() => users.id), // Links to assigned salesperson
     is_primary_contact: boolean('is_primary_contact').default(false).notNull(), // false = no, true = yes
     created_at: timestamp('created_at').defaultNow().notNull(),
     updated_at: timestamp('updated_at').defaultNow().notNull(),
@@ -104,12 +105,19 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, { fields: [users.organization_id], references: [organizations.id] }),
   createdBy: one(users, { fields: [users.created_by], references: [users.id] }),
   orgSports: many(orgSports),
-  userRoles: many(userRoles)
+  userRoles: many(userRoles),
+  salespersonAssignments: many(salespersonAssignments),
+  salespersonProfile: one(salespersonProfiles, { fields: [users.id], references: [salespersonProfiles.user_id] }),
+  salespersonMetrics: many(salespersonMetrics),
+  orders: many(orders),
+  managedSalespeople: many(salespersonProfiles, { relationName: "manager" })
 }));
 export const organizationsRelations = relations(organizations, ({ one, many }) => ({ 
   createdBy: one(users, { fields: [organizations.created_by], references: [users.id] }), 
   orgSports: many(orgSports),
-  users: many(users)
+  users: many(users),
+  salespersonAssignments: many(salespersonAssignments),
+  orders: many(orders)
 }));
 
 // Insert and select types for TypeScript
@@ -120,6 +128,7 @@ export const orgSportsRelations = relations(orgSports, ({ one }) => ({
     organization: one(organizations, { fields: [orgSports.organization_id], references: [organizations.id] }),
     sport: one(sports, { fields: [orgSports.sport_id], references: [sports.id] }),
     contactUser: one(users, { fields: [orgSports.contact_user_id], references: [users.id] }),
+    assignedSalesperson: one(users, { fields: [orgSports.assigned_salesperson_id], references: [users.id], relationName: "assignedSalesperson" }),
 }));
 
 // KPI metrics table for tracking organization performance
@@ -172,6 +181,68 @@ export const userRoles = pgTable('user_roles', {
   expires_at: timestamp('expires_at') // for temporary role assignments
 }, (t) => ({ pk: primaryKey({ columns: [t.user_id, t.role_id, t.organization_id] }) }));
 
+// Salesperson team assignments
+export const salespersonAssignments = pgTable('salesperson_assignments', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  salesperson_id: varchar('salesperson_id').references(() => users.id).notNull(),
+  organization_id: varchar('organization_id').references(() => organizations.id).notNull(),
+  sport_id: varchar('sport_id').references(() => sports.id).notNull(),
+  team_name: text('team_name').notNull(), // Links to specific team in org_sports
+  assigned_by: varchar('assigned_by').references(() => users.id),
+  assigned_at: timestamp('assigned_at').defaultNow().notNull(),
+  is_active: boolean('is_active').default(true).notNull(),
+  notes: text('notes'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Salesperson extended profile info
+export const salespersonProfiles = pgTable('salesperson_profiles', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar('user_id').references(() => users.id).notNull().unique(),
+  employee_id: text('employee_id'),
+  tax_id: text('tax_id'), // SSN or Tax ID
+  commission_rate: integer('commission_rate').default(0), // Percentage * 100
+  territory: text('territory'),
+  hire_date: timestamp('hire_date'),
+  manager_id: varchar('manager_id').references(() => users.id),
+  performance_tier: text('performance_tier').default('standard'), // bronze, silver, gold, platinum
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Salesperson KPI metrics
+export const salespersonMetrics = pgTable('salesperson_metrics', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  salesperson_id: varchar('salesperson_id').references(() => users.id).notNull(),
+  period_start: timestamp('period_start').notNull(),
+  period_end: timestamp('period_end').notNull(),
+  total_sales: integer('total_sales').default(0), // Amount in cents
+  orders_count: integer('orders_count').default(0),
+  conversion_rate: integer('conversion_rate').default(0), // Percentage * 100
+  average_deal_size: integer('average_deal_size').default(0), // Amount in cents
+  commission_earned: integer('commission_earned').default(0), // Amount in cents
+  active_assignments: integer('active_assignments').default(0),
+  created_at: timestamp('created_at').defaultNow().notNull()
+});
+
+// Orders table for salesperson-order relationships
+export const orders = pgTable('orders', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  order_number: text('order_number').notNull().unique(),
+  organization_id: varchar('organization_id').references(() => organizations.id).notNull(),
+  sport_id: varchar('sport_id').references(() => sports.id),
+  team_name: text('team_name'),
+  salesperson_id: varchar('salesperson_id').references(() => users.id), // Key integration point
+  customer_name: text('customer_name').notNull(),
+  total_amount: integer('total_amount').notNull(), // Amount in cents
+  status: text('status').default('pending').notNull(),
+  items: jsonb('items').notNull().default('[]'),
+  notes: text('notes'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull()
+});
+
 // Relations for new tables
 export const permissionsRelations = relations(permissions, ({ many }) => ({
   // permissions don't have direct relations, they're referenced by role permissions
@@ -186,6 +257,29 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
   role: one(roles, { fields: [userRoles.role_id], references: [roles.id] }),
   organization: one(organizations, { fields: [userRoles.organization_id], references: [organizations.id] }),
   assignedBy: one(users, { fields: [userRoles.assigned_by], references: [users.id] })
+}));
+
+// Salesperson table relations
+export const salespersonAssignmentsRelations = relations(salespersonAssignments, ({ one }) => ({
+  salesperson: one(users, { fields: [salespersonAssignments.salesperson_id], references: [users.id] }),
+  organization: one(organizations, { fields: [salespersonAssignments.organization_id], references: [organizations.id] }),
+  sport: one(sports, { fields: [salespersonAssignments.sport_id], references: [sports.id] }),
+  assignedBy: one(users, { fields: [salespersonAssignments.assigned_by], references: [users.id], relationName: "assignmentCreator" })
+}));
+
+export const salespersonProfilesRelations = relations(salespersonProfiles, ({ one }) => ({
+  user: one(users, { fields: [salespersonProfiles.user_id], references: [users.id] }),
+  manager: one(users, { fields: [salespersonProfiles.manager_id], references: [users.id], relationName: "manager" })
+}));
+
+export const salespersonMetricsRelations = relations(salespersonMetrics, ({ one }) => ({
+  salesperson: one(users, { fields: [salespersonMetrics.salesperson_id], references: [users.id] })
+}));
+
+export const ordersRelations = relations(orders, ({ one }) => ({
+  organization: one(organizations, { fields: [orders.organization_id], references: [organizations.id] }),
+  sport: one(sports, { fields: [orders.sport_id], references: [sports.id] }),
+  salesperson: one(users, { fields: [orders.salesperson_id], references: [users.id] })
 }));
 
 // Export types for TypeScript  
@@ -221,3 +315,15 @@ export type InsertRole = typeof roles.$inferInsert;
 
 export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = typeof userRoles.$inferInsert;
+
+export type SalespersonAssignment = typeof salespersonAssignments.$inferSelect;
+export type InsertSalespersonAssignment = typeof salespersonAssignments.$inferInsert;
+
+export type SalespersonProfile = typeof salespersonProfiles.$inferSelect;
+export type InsertSalespersonProfile = typeof salespersonProfiles.$inferInsert;
+
+export type SalespersonMetrics = typeof salespersonMetrics.$inferSelect;
+export type InsertSalespersonMetrics = typeof salespersonMetrics.$inferInsert;
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;

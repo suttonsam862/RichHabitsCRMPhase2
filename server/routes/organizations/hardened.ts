@@ -1154,7 +1154,7 @@ router.get('/:id/sports', async (req, res) => {
     
     logger.info({ orgId: id }, 'Fetching sports for organization');
     
-    // Query sports for this organization
+    // Query sports for this organization with salesperson information
     const { data: orgSports, error } = await supabaseAdmin
       .from('org_sports')
       .select(`
@@ -1162,8 +1162,15 @@ router.get('/:id/sports', async (req, res) => {
         contact_name,
         contact_email,
         contact_phone,
+        assigned_salesperson_id,
         created_at,
-        updated_at
+        updated_at,
+        assigned_salesperson:users!assigned_salesperson_id (
+          id,
+          full_name,
+          email,
+          phone
+        )
       `)
       .eq('organization_id', id);
       
@@ -1205,6 +1212,9 @@ router.get('/:id/sports', async (req, res) => {
       contact_name: os.contact_name,
       contact_email: os.contact_email,
       contact_phone: os.contact_phone || '',
+      assigned_salesperson: os.assigned_salesperson?.full_name || null,
+      assigned_salesperson_id: os.assigned_salesperson_id || null,
+      assigned_salesperson_details: os.assigned_salesperson || null,
       created_at: os.created_at || new Date().toISOString(),
       updated_at: os.updated_at || new Date().toISOString()
     }));
