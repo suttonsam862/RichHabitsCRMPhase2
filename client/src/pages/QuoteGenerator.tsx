@@ -540,11 +540,11 @@ export default function QuoteGenerator() {
               <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  <span>(205) 555-0123</span>
+                  <span>2055869574</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  <span>info@richhabits.com</span>
+                  <span>samsutton@rich-habits.com</span>
                 </div>
               </div>
             </div>
@@ -554,31 +554,44 @@ export default function QuoteGenerator() {
 
       <style>{`
         @media print {
-          * { 
+          /* HIGHEST PRIORITY - Force everything black */
+          *, *::before, *::after { 
             print-color-adjust: exact !important; 
-            color: #000000 !important;
             -webkit-print-color-adjust: exact !important;
+            color: black !important;
+            background: white !important;
+            font-family: Arial, sans-serif !important;
+          }
+          
+          /* Page setup */
+          @page { 
+            size: A4; 
+            margin: 10mm;
           }
           
           body { 
             background: white !important; 
             margin: 0 !important; 
-            color: #000000 !important;
+            padding: 0 !important;
+            color: black !important;
             font-family: Arial, sans-serif !important;
+            font-size: 12px !important;
           }
           
-          .print\\:hidden { display: none !important; }
-          .container { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+          .print\\:hidden { 
+            display: none !important; 
+          }
           
-          /* CRITICAL: Remove ALL input/textarea styling completely */
-          input[type="text"], input[type="email"], input[type="tel"], input[type="date"], textarea, select {
+          /* DESTROY ALL INPUT STYLING */
+          input, textarea, select, 
+          input[type="text"], input[type="email"], input[type="tel"], input[type="date"] {
             border: none !important;
-            background: none !important;
+            background: transparent !important;
             background-color: transparent !important;
             box-shadow: none !important;
             padding: 0 !important;
             margin: 0 !important;
-            color: #000000 !important;
+            color: black !important;
             font-family: Arial, sans-serif !important;
             font-size: inherit !important;
             outline: none !important;
@@ -586,88 +599,103 @@ export default function QuoteGenerator() {
             -webkit-appearance: none !important;
             -moz-appearance: none !important;
             border-radius: 0 !important;
-            box-sizing: border-box !important;
+            font-weight: inherit !important;
+            text-align: inherit !important;
           }
           
-          /* Remove card styling */
-          .border, .border-gray-300 { 
-            border: none !important; 
-          }
-          .rounded-lg { border-radius: 0 !important; }
-          .shadow-lg { box-shadow: none !important; }
-          .bg-white { background: white !important; }
-          
-          /* Clean table styling */
-          .bg-blue-600 { 
-            background-color: #000000 !important; 
-            color: #ffffff !important;
-          }
-          .text-white { color: #ffffff !important; }
-          
-          /* Compact spacing for 2-page layout */
-          .p-8, .p-6, .p-4, .p-3 { padding: 8px !important; }
-          .mb-8, .mb-6, .mb-4 { margin-bottom: 8px !important; }
-          .mt-8, .mt-6, .mt-4 { margin-top: 8px !important; }
-          
-          /* Text colors - force black */
-          .text-gray-900, .text-gray-700, .text-gray-600, .text-gray-500, 
-          h1, h2, h3, h4, h5, h6, p, div, span, label {
-            color: #000000 !important;
+          /* DESTROY ALL CARD/BORDER STYLING */
+          .border, .border-gray-300, .border-b, .shadow-lg, .rounded-lg {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: white !important;
           }
           
-          /* Page layout */
-          @page { 
-            size: A4; 
-            margin: 12mm;
+          /* COMPACT SPACING */
+          .p-8, .p-6, .p-4, .p-3 { 
+            padding: 4px !important; 
+          }
+          .mb-8, .mb-6, .mb-4, .mb-3 { 
+            margin-bottom: 4px !important; 
+          }
+          .mt-8, .mt-6, .mt-4, .mt-3 { 
+            margin-top: 4px !important; 
+          }
+          .gap-8, .gap-6 {
+            gap: 4px !important;
           }
           
-          /* Grid layout for print */
-          .grid { display: block !important; }
+          /* FORCE ALL TEXT BLACK */
+          h1, h2, h3, h4, h5, h6, p, div, span, label, td, th,
+          .text-gray-900, .text-gray-700, .text-gray-600, .text-gray-500,
+          .text-3xl, .text-lg, .text-sm {
+            color: black !important;
+            font-weight: normal !important;
+          }
+          
+          /* GRID TO SIMPLE LAYOUT */
+          .grid, .md\\:grid-cols-2 { 
+            display: block !important; 
+          }
           .md\\:grid-cols-2 > div { 
             width: 48% !important; 
             display: inline-block !important; 
             vertical-align: top !important; 
             margin-right: 2% !important;
-            border: 1px solid #cccccc !important;
-            padding: 8px !important;
-            margin-bottom: 8px !important;
+            border: 1px solid black !important;
+            padding: 4px !important;
+            margin-bottom: 4px !important;
           }
           .md\\:grid-cols-2 > div:last-child { 
             margin-right: 0 !important; 
           }
           
-          /* Logo sizing */
+          /* LOGO SIZING */
           img {
-            max-height: 50px !important;
-            max-width: 50px !important;
+            max-height: 40px !important;
+            max-width: 40px !important;
           }
           
-          /* Table styling */
+          /* TABLE STYLING */
           table {
             border-collapse: collapse !important;
             width: 100% !important;
-            margin: 8px 0 !important;
+            margin: 4px 0 !important;
+            border: 1px solid black !important;
           }
           
-          thead tr {
-            background-color: #000000 !important;
-            color: #ffffff !important;
+          thead tr, .bg-blue-600 {
+            background-color: black !important;
+            background: black !important;
+          }
+          
+          thead td, thead th, .text-white {
+            color: white !important;
+            background-color: black !important;
           }
           
           td, th {
-            border: 1px solid #000000 !important;
-            padding: 6px !important;
-            color: #000000 !important;
+            border: 1px solid black !important;
+            padding: 4px !important;
+            color: black !important;
+            background: white !important;
           }
           
-          thead td, thead th {
-            color: #ffffff !important;
+          /* FLEXBOX CLEANUP */
+          .flex {
+            display: block !important;
+          }
+          .items-center, .justify-between {
+            text-align: left !important;
           }
           
-          /* Ensure page breaks */
-          table { page-break-inside: avoid; }
-          .md\\:grid-cols-2 > div { page-break-inside: avoid; }
-          h1, h2, h3 { page-break-after: avoid; }
+          /* ENSURE PAGE BREAKS */
+          table, .md\\:grid-cols-2 > div { 
+            page-break-inside: avoid !important; 
+          }
+          h1, h2, h3 { 
+            page-break-after: avoid !important; 
+          }
         }
       `}</style>
     </div>
