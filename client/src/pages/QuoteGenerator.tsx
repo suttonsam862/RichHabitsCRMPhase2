@@ -213,7 +213,7 @@ export default function QuoteGenerator() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
       <div className="container mx-auto p-6 print:p-0">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 print:hidden">
@@ -222,10 +222,10 @@ export default function QuoteGenerator() {
               <FileText className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-white">
                 Estimate Generator
               </h1>
-              <p className="text-gray-600">Create professional estimates with ease</p>
+              <p className="text-gray-300">Create professional estimates with ease</p>
             </div>
           </div>
           
@@ -258,22 +258,22 @@ export default function QuoteGenerator() {
         </div>
 
         {/* Quote Content */}
-        <Card ref={printRef} className="bg-white border-gray-300 shadow-lg print:shadow-none">
-          <CardHeader className="border-b border-gray-300 bg-white p-8">
+        <Card ref={printRef} className="bg-gray-800 border-gray-700 shadow-lg print:shadow-none print:bg-white">
+          <CardHeader className="border-b border-gray-700 bg-gray-800 print:bg-white print:border-gray-300 p-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <img src={logoDataUrl || richHabitsLogo} alt="Rich Habits Logo" className="h-20 w-20 object-contain" />
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900">ESTIMATE</h2>
-                  <p className="text-gray-600">Developing Habits, LLC d/b/a Rich Habits</p>
-                  <p className="text-sm text-gray-500">3101 Whitehall Rd, Birmingham, AL 35209</p>
-                  <p className="text-sm text-gray-500">Phone: 2055869574 | Email: samsutton@rich-habits.com</p>
+                  <h2 className="text-3xl font-bold text-white print:text-gray-900">ESTIMATE</h2>
+                  <p className="text-gray-300 print:text-gray-600">Developing Habits, LLC d/b/a Rich Habits</p>
+                  <p className="text-sm text-gray-400 print:text-gray-500">3101 Whitehall Rd, Birmingham, AL 35209</p>
+                  <p className="text-sm text-gray-400 print:text-gray-500">Phone: 2055869574 | Email: samsutton@rich-habits.com</p>
                 </div>
               </div>
               
               <div className="text-right">
                 <div className="mb-4">
-                  <Label className="text-gray-600 block mb-1">Estimate Number:</Label>
+                  <Label className="text-gray-300 print:text-gray-600 block mb-1">Estimate Number:</Label>
                   <Input 
                     value={quoteNo} 
                     onChange={(e) => setQuoteNo(e.target.value)}
@@ -282,7 +282,7 @@ export default function QuoteGenerator() {
                   />
                 </div>
                 <div>
-                  <Label className="text-gray-600 block mb-1">Date:</Label>
+                  <Label className="text-gray-300 print:text-gray-600 block mb-1">Date:</Label>
                   <Input 
                     type="date" 
                     value={date} 
@@ -294,7 +294,7 @@ export default function QuoteGenerator() {
             </div>
           </CardHeader>
 
-          <CardContent className="p-8 bg-white">
+          <CardContent className="p-8 bg-gray-800 print:bg-white">
             {/* Logo Upload */}
             <div className="mb-6 print:hidden">
               <Label className="text-gray-700 mb-2 block">Custom Logo (Optional)</Label>
@@ -409,7 +409,7 @@ export default function QuoteGenerator() {
             {/* Line Items Table */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Project Details</h3>
+                <h3 className="text-lg font-semibold text-white print:text-gray-900">Project Details</h3>
                 <Button 
                   onClick={handleAddItem} 
                   size="sm"
@@ -419,7 +419,7 @@ export default function QuoteGenerator() {
                   Add Item
                 </Button>
               </div>
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <div className="border border-gray-600 print:border-gray-300 rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-blue-600 text-white">
@@ -432,7 +432,7 @@ export default function QuoteGenerator() {
                   </thead>
                   <tbody>
                     {items.map((item, index) => (
-                      <tr key={index} className="border-b border-gray-200 last:border-b-0">
+                      <tr key={index} className="border-b border-gray-600 print:border-gray-200 last:border-b-0 bg-gray-700 print:bg-white">
                         <td className="p-3">
                           <Input 
                             value={item.name} 
