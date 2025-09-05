@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Building2, Users, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getLogoDisplayUrl } from "@/lib/logoUtils";
+import { imageLoadMonitor } from "@/lib/imageLoadMonitor";
 import type { OrganizationWithSports } from "../../../shared/supabase-schema";
 
 interface OrganizationCardProps {
@@ -61,6 +62,17 @@ export function OrganizationCard({
               className="w-full h-auto object-cover opacity-10"
               aria-hidden="true"
               style={{ minHeight: '150%' }}
+              onLoad={() => {
+                console.log(`✅ Background logo loaded for ${name}`);
+              }}
+              onError={(e) => {
+                console.error(`❌ Background logo failed for ${name}:`, {
+                  logoUrl,
+                  processedUrl: getLogoDisplayUrl(logoUrl),
+                  src: e.currentTarget.src
+                });
+                e.currentTarget.style.display = 'none';
+              }}
             />
           </div>
         )}
@@ -93,7 +105,44 @@ export function OrganizationCard({
                       alt={`${name} logo`}
                       className="relative z-10 w-full h-full object-cover"
                       data-testid={`img-organization-logo-${organization.id}`}
+                      onLoad={(e) => {
+                        const loadTime = performance.now();
+                        console.log(`✅ Logo loaded successfully for ${name}:`, getLogoDisplayUrl(logoUrl));
+                        imageLoadMonitor.recordLoadSuccess(
+                          e.currentTarget.src, 
+                          loadTime, 
+                          organization.id, 
+                          name
+                        );
+                      }}
                       onError={(e) => {
+                        const imgSrc = e.currentTarget.src;
+                        const originalUrl = getLogoDisplayUrl(logoUrl);
+                        const fallbackUrl = `/api/v1/organizations/${organization.id}/logo`;
+                        
+                        console.error(`❌ Logo failed to load for ${name}:`, {
+                          originalLogoUrl: logoUrl,
+                          processedUrl: originalUrl,
+                          actualSrc: imgSrc,
+                          fallbackUrl: fallbackUrl,
+                          organizationId: organization.id
+                        });
+                        
+                        imageLoadMonitor.recordLoadError(
+                          imgSrc,
+                          `Failed to load: ${imgSrc}`,
+                          organization.id,
+                          name
+                        );
+                        
+                        // Try fallback URL if we haven't already
+                        if (imgSrc !== fallbackUrl && !imgSrc.includes('logo')) {
+                          console.log(`🔄 Trying fallback URL for ${name}:`, fallbackUrl);
+                          e.currentTarget.src = fallbackUrl;
+                          return;
+                        }
+                        
+                        // Hide broken image and show fallback
                         e.currentTarget.style.display = 'none';
                         const fallback = document.createElement('div');
                         fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-lg font-bold text-white';

@@ -107,27 +107,41 @@ export function ObjectUploader({
 
       console.log("Got upload URL, proceeding with file upload");
 
-      // Upload file with timeout  
-      const uploadPromise = fetch(uploadResponse.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
-      });
+      // Upload file with enhanced timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      try {
+        const uploadResult = await fetch(uploadResponse.uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type,
+          },
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log("Upload request completed with status:", uploadResult.status);
 
-      // Add 30-second timeout
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Upload timeout")), 30000),
-      );
-
-      const uploadResult = (await Promise.race([
-        uploadPromise,
-        timeoutPromise,
-      ])) as Response;
-
-      if (!uploadResult.ok) {
-        throw new Error(`Upload failed with status: ${uploadResult.status}`);
+        if (!uploadResult.ok) {
+          const responseText = await uploadResult.text().catch(() => 'Unknown error');
+          console.error("Upload failed:", {
+            status: uploadResult.status,
+            statusText: uploadResult.statusText,
+            response: responseText,
+            url: uploadResponse.uploadUrl
+          });
+          throw new Error(`Upload failed with status: ${uploadResult.status} - ${responseText}`);
+        }
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error?.name === 'AbortError') {
+          console.error("Upload timeout after 30 seconds");
+          throw new Error("Upload timeout - please try again with a smaller file");
+        }
+        throw error;
       }
 
       console.log("Upload successful, now updating organization logo");

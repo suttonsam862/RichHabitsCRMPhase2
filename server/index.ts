@@ -37,9 +37,13 @@ app.set('trust proxy', 1);
 
 // CORS configuration
 const allowedOrigins = env.ORIGINS.split(',').map(o => o.trim());
+console.log('Allowed CORS origins:', allowedOrigins);
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count']
 }));
 
 // Compression middleware

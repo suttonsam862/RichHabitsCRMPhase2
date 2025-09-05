@@ -11,18 +11,37 @@ async function authHeaders(): Promise<Record<string, string>>{
 }
 
 export const api = {
-  async get(url:string){
+  async get(url:string, options: { timeout?: number } = {}){
     const start = performance.now();
     const h = await authHeaders();
-    const r = await fetch(url,{ headers:{ ...h }});
-    const ms = Math.round(performance.now()-start);
-    const j = await r.json().catch(()=> ({}));
-    if(!r.ok){
-      groupLog(`API GET ${url} ❌ ${r.status} (${ms}ms)`, j, true);
-      return { success:false, error:{ code:r.status, message:j?.error?.message || r.statusText, rid:j?.error?.rid }};
+    
+    // Add timeout support
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 30000);
+    
+    try {
+      const r = await fetch(url, { 
+        headers: { ...h }, 
+        signal: controller.signal 
+      });
+      clearTimeout(timeoutId);
+      
+      const ms = Math.round(performance.now()-start);
+      const j = await r.json().catch(()=> ({}));
+      if(!r.ok){
+        groupLog(`API GET ${url} ❌ ${r.status} (${ms}ms)`, j, true);
+        return { success:false, error:{ code:r.status, message:j?.error?.message || r.statusText, rid:j?.error?.rid }};
+      }
+      groupLog(`API GET ${url} ✅ (${ms}ms)`, j);
+      return j;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error?.name === 'AbortError') {
+        console.error(`API GET ${url} ⏱️ Timeout after ${options.timeout || 30000}ms`);
+        return { success: false, error: { code: 408, message: 'Request timeout' }};
+      }
+      throw error;
     }
-    groupLog(`API GET ${url} ✅ (${ms}ms)`, j);
-    return j;
   },
   async post(url:string, body:any){
     const start = performance.now();

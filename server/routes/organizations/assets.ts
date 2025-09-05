@@ -200,6 +200,12 @@ router.get('/:id/logo', async (req, res) => {
   const orgId = req.params.id;
   const CACHE_TTL = 300; // 5 minutes
   
+  // Set consistent CORS headers for asset serving
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
   try {
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -256,15 +262,21 @@ router.get('/:id/logo', async (req, res) => {
 });
 
 /**
- * Helper function to serve SVG placeholder
+ * Helper function to serve SVG placeholder with consistent CORS headers
  */
 function servePlaceholder(res: any, letter: string, maxAge: number) {
+  // Ensure CORS headers are set for placeholder too
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Content-Type', 'image/svg+xml');
   res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
+  
   const svg = `<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
     <rect width="256" height="256" fill="#1a1a2e"/>
     <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="96" fill="#6EE7F9">${letter}</text>
   </svg>`;
+  
+  console.log(`📸 Serving placeholder SVG for letter: ${letter}`);
   return res.send(svg);
 }
 
