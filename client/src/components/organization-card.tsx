@@ -18,10 +18,10 @@ export function OrganizationCard({
   gradientVariant = 'default',
   showSetupBadge = false
 }: OrganizationCardProps) {
-  const { name, logo_url, sports, universal_discounts, state, is_business, created_at } = organization;
+  const { name, logoUrl, sports, universalDiscounts, state, isBusiness, createdAt } = organization;
   
   // Calculate discount percentage if available
-  const discountInfo = universal_discounts as any;
+  const discountInfo = universalDiscounts as any;
   const discountPercent = discountInfo?.percentage || 0;
 
   const getCardClass = () => {
@@ -46,17 +46,17 @@ export function OrganizationCard({
         className={`${getCardClass()} cursor-pointer h-48 group relative overflow-hidden`}
         onClick={onClick}
         data-testid={`card-organization-${organization.id}`}
-        style={organization.title_card_url ? {
-          backgroundImage: `url(${organization.title_card_url})`,
+        style={organization.titleCardUrl ? {
+          backgroundImage: `url(${organization.titleCardUrl})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         } : undefined}
       >
         {/* Logo overlay on gradient background */}
-        {logo_url && !organization.title_card_url && (
+        {logoUrl && !organization.titleCardUrl && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
             <img 
-              src={getLogoDisplayUrl(logo_url) || `/api/v1/organizations/${organization.id}/logo`}
+              src={getLogoDisplayUrl(logoUrl) || `/api/v1/organizations/${organization.id}/logo`}
               alt=""
               className="w-full h-auto object-cover opacity-10"
               aria-hidden="true"
@@ -66,7 +66,7 @@ export function OrganizationCard({
         )}
         
         {/* Overlay for readability when title card is present */}
-        {organization.title_card_url && (
+        {organization.titleCardUrl && (
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         )}
         
@@ -84,12 +84,12 @@ export function OrganizationCard({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {logo_url ? (
+                {logoUrl ? (
                   <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg">
                     {/* Semitransparent logo overlay against gradient */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/10" />
                     <img 
-                      src={getLogoDisplayUrl(logo_url) || `/api/v1/organizations/${organization.id}/logo`} 
+                      src={getLogoDisplayUrl(logoUrl) || `/api/v1/organizations/${organization.id}/logo`} 
                       alt={`${name} logo`}
                       className="relative z-10 w-full h-full object-cover"
                       data-testid={`img-organization-logo-${organization.id}`}
@@ -125,10 +125,10 @@ export function OrganizationCard({
               </h3>
               <div className="flex items-center gap-2">
                 <Badge 
-                  className={`${is_business ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' : 'bg-green-500/20 text-green-300 border-green-500/30'}`}
+                  className={`${isBusiness ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' : 'bg-green-500/20 text-green-300 border-green-500/30'}`}
                   data-testid={`badge-org-type-${organization.id}`}
                 >
-                  {is_business ? 'Business' : 'School'}
+                  {isBusiness ? 'Business' : 'School'}
                 </Badge>
                 <span className="text-white/60 text-sm">{state}</span>
               </div>
@@ -146,7 +146,7 @@ export function OrganizationCard({
             
             <div className="flex items-center gap-1 text-white/50 text-xs">
               <span data-testid={`text-created-date-${organization.id}`}>
-                {new Date(created_at).toLocaleDateString()}
+                {new Date(createdAt).toLocaleDateString()}
               </span>
             </div>
           </div>

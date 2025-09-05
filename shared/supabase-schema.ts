@@ -1,55 +1,55 @@
 import { z } from "zod";
 
-// Supabase Database Schema Types
+// Frontend API Schema Types (camelCase to match API service output)
 export interface Organization {
   id: string;
   name: string;
-  logo_url?: string;
-  title_card_url?: string;
+  logoUrl?: string;
+  titleCardUrl?: string;
   state: string;
   address?: string;
   phone?: string;
   email?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   notes?: string;
-  universal_discounts?: Record<string, any>;
-  is_business?: boolean;
-  brand_primary?: string;
-  brand_secondary?: string;
+  universalDiscounts?: Record<string, any>;
+  isBusiness?: boolean;
+  brandPrimary?: string;
+  brandSecondary?: string;
 }
 
 export interface Sport {
   id: string;
-  organization_id: string;
+  organizationId: string;
   name: string;
-  assigned_salesperson?: string;
-  contact_name?: string;
-  contact_email?: string;
-  contact_phone?: string;
-  created_at: string;
-  updated_at: string;
+  assignedSalesperson?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Order {
   id: string;
-  organization_id: string;
-  order_number: string;
-  customer_name: string;
+  organizationId: string;
+  orderNumber: string;
+  customerName: string;
   status: 'pending' | 'in_production' | 'completed' | 'cancelled';
-  total_amount?: number;
+  totalAmount?: number;
   items?: Record<string, any>[];
   notes?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface User {
   id: string;
   email: string;
   role: 'admin' | 'user';
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Extended types with relationships

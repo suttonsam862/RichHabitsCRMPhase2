@@ -34,8 +34,8 @@ const updateOrganizationSchema = z.object({
   website: z.string().optional(),
   notes: z.string().optional(),
   logoUrl: z.string().optional(), // camelCase for frontend form
-  brand_primary: z.string().optional(),
-  brand_secondary: z.string().optional(),
+  brandPrimary: z.string().optional(),
+  brandSecondary: z.string().optional(),
   isBusiness: z.boolean().optional(),
   tags: z.array(z.string()).optional(),
   isArchived: z.boolean().optional(),
@@ -53,8 +53,8 @@ type UpdateOrganizationData = {
   email?: string;
   website?: string;
   notes?: string;
-  brand_primary?: string;
-  brand_secondary?: string;
+  brandPrimary?: string;
+  brandSecondary?: string;
   isBusiness?: boolean;
   tags?: string[];
   isArchived?: boolean;
@@ -78,8 +78,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       email: organization.email || "",
       website: organization.website || "",
       notes: organization.notes || "",
-      brand_primary: organization.brandPrimary || "#6EE7F9",
-      brand_secondary: organization.brandSecondary || "#A78BFA",
+      brandPrimary: organization.brandPrimary || "#6EE7F9",
+      brandSecondary: organization.brandSecondary || "#A78BFA",
       isBusiness: organization.isBusiness ?? false,
       tags: organization.tags || [],
       isArchived: organization.isArchived ?? false,
@@ -96,8 +96,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       // Update form with fresh data from server
       if (response?.data) {
         const freshData = response.data;
-        form.setValue('brand_primary', freshData.brandPrimary);
-        form.setValue('brand_secondary', freshData.brandSecondary);
+        form.setValue('brandPrimary', freshData.brandPrimary);
+        form.setValue('brandSecondary', freshData.brandSecondary);
         if (freshData.logoUrl) {
           form.setValue('logoUrl', freshData.logoUrl);
         }
@@ -151,8 +151,8 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
       website: data.website || undefined,
       notes: data.notes || undefined,
       // CRITICAL: Always send brand colors as-is (don't convert to undefined)
-      brandPrimary: data.brand_primary,
-      brandSecondary: data.brand_secondary,
+      brandPrimary: data.brandPrimary,
+      brandSecondary: data.brandSecondary,
     };
 
 
@@ -422,7 +422,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="brand_primary"
+            name="brandPrimary"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Primary Brand Color</FormLabel>
@@ -450,7 +450,7 @@ export function EditOrganizationForm({ organization, onSuccess, onCancel }: Edit
 
           <FormField
             control={form.control}
-            name="brand_secondary"
+            name="brandSecondary"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Secondary Brand Color</FormLabel>
