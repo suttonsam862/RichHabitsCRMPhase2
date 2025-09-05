@@ -4,7 +4,7 @@ import { usersRouter } from './users';
 import adminUsersRouter from './users/admin';
 import { comprehensiveUsersRouter } from './users/comprehensive';
 import enhancedUsersRouter from './users/enhanced';
-import hardenedOrganizationsRoutes from './organizations/hardened';
+import organizationsRoutes from './organizations/index.js';
 import sportsRoutes from './sports/index';
 // Removed uploadRoutes import - deprecated in favor of objects endpoint
 import { brandingRouter } from './files/branding.js';
@@ -17,7 +17,7 @@ router.use('/users/comprehensive', comprehensiveUsersRouter);
 router.use('/users/admin', adminUsersRouter);
 router.use('/users/enhanced', enhancedUsersRouter);
 router.use('/users', usersRouter);
-router.use('/organizations', hardenedOrganizationsRoutes);
+router.use('/organizations', organizationsRoutes);
 router.use('/files', brandingRouter); // Mount branding routes under /files
 router.use('/sports', sportsRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
