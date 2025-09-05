@@ -19,6 +19,7 @@ import {
   getDefaultLogo,
   QuoteRecord 
 } from '../lib/quoteStore';
+import { ObjectUploader } from '../components/ObjectUploader';
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -151,19 +152,6 @@ export default function QuoteGenerator() {
     }
   }, [toName, toContact, toEmail, toPhone, toAddress, items, quoteNo, date, taxPct, discount, notes, logoDataUrl]);
 
-  const handleLogoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-          const dataUrl = e.target?.result as string;
-          setLogoDataUrl(dataUrl);
-          saveDefaultLogo(dataUrl); // Save as default for future quotes
-        };
-      reader.readAsDataURL(file);
-    }
-    event.target.value = ''; // Clear the input value to allow uploading the same file again
-  }, []);
 
   const handleAddItem = useCallback(() => {
     setItems(prev => [...prev, { name: '', price: 0, qty: 1 }]);
@@ -310,15 +298,23 @@ export default function QuoteGenerator() {
             {/* Logo Upload */}
             <div className="mb-6 print:hidden">
               <Label className="text-gray-700 mb-2 block">Custom Logo (Optional)</Label>
-              <div className="relative">
-                <Input 
-                  type="file" 
-                  accept="image/*,.svg" 
-                  onChange={handleLogoUpload} 
-                  className="file:bg-blue-500 file:text-white file:border-0 file:mr-3 file:px-4 file:py-2 file:rounded"
-                />
-                <Upload className="w-4 h-4 absolute right-3 top-3 text-gray-400" />
-              </div>
+              <ObjectUploader
+                onUploadComplete={(url: string) => {
+                  console.log("Logo upload completed, updating form field:", url);
+                  if (url) {
+                    // Convert storage path to display URL for preview
+                    const displayUrl = url.startsWith('http') ? url : 
+                      `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/app/${url}`;
+                    setLogoDataUrl(displayUrl);
+                    saveDefaultLogo(displayUrl);
+                  } else {
+                    setLogoDataUrl(getDefaultLogo());
+                  }
+                }}
+                currentImageUrl={logoDataUrl || undefined}
+                organizationId="fd3a184d-bf3e-41b1-b0a5-ab1118dd4b89"
+                className="w-full"
+              />
             </div>
 
             {/* Client and Project Information */}
