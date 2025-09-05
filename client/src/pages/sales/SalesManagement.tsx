@@ -245,12 +245,15 @@ export default function SalesManagement() {
   });
 
   // Filtered salespeople
-  const filteredSalespeople = salespeople?.filter(person => {
+  // Ensure salespeople is always an array to prevent filter errors
+  const salespeopleArray = Array.isArray(salespeople) ? salespeople : [];
+  
+  const filteredSalespeople = salespeopleArray.filter(person => {
     const matchesSearch = person.full_name.toLowerCase().includes(search.toLowerCase()) ||
                           person.email.toLowerCase().includes(search.toLowerCase());
     const matchesTier = tierFilter === 'all' || person.profile?.performance_tier === tierFilter;
     return matchesSearch && matchesTier;
-  }) || [];
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -266,7 +269,7 @@ export default function SalesManagement() {
 
   const openProfileModal = (salespersonId: string) => {
     setSelectedSalesperson(salespersonId);
-    const person = salespeople?.find(s => s.id === salespersonId);
+    const person = salespeopleArray.find(s => s.id === salespersonId);
     if (person?.profile) {
       setProfileData({
         employee_id: person.profile.employee_id || '',
