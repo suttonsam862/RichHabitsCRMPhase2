@@ -329,6 +329,7 @@ export default function SalesManagement() {
                 </SelectContent>
               </Select>
               <Button 
+                onClick={() => navigate('/sales/create')}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                 data-testid="button-add-salesperson"
               >
@@ -360,7 +361,7 @@ export default function SalesManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview.total_salespeople || 0}
+                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview?.total_salespeople || 0}
                       </div>
                     </CardContent>
                   </Card>
@@ -372,7 +373,7 @@ export default function SalesManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview.active_assignments || 0}
+                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview?.active_assignments || 0}
                       </div>
                     </CardContent>
                   </Card>
@@ -384,7 +385,7 @@ export default function SalesManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview.total_orders || 0}
+                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview?.total_orders || 0}
                       </div>
                     </CardContent>
                   </Card>
@@ -396,7 +397,7 @@ export default function SalesManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : formatCurrency(dashboardData?.overview.total_revenue || 0)}
+                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : formatCurrency(dashboardData?.overview?.total_revenue || 0)}
                       </div>
                     </CardContent>
                   </Card>
@@ -429,7 +430,7 @@ export default function SalesManagement() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {dashboardData?.top_performers.map((performer) => (
+                          {(dashboardData?.top_performers || []).map((performer) => (
                             <TableRow key={performer.salesperson_id}>
                               <TableCell className="font-medium">{performer.full_name}</TableCell>
                               <TableCell>{formatCurrency(performer.total_sales)}</TableCell>
@@ -493,7 +494,11 @@ export default function SalesManagement() {
                         </TableHeader>
                         <TableBody>
                           {filteredSalespeople.map((person) => (
-                            <TableRow key={person.id}>
+                            <TableRow 
+                              key={person.id} 
+                              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                              onClick={() => navigate(`/sales/${person.id}`)}
+                            >
                               <TableCell className="font-medium">{person.full_name}</TableCell>
                               <TableCell>{person.email}</TableCell>
                               <TableCell>
@@ -511,7 +516,10 @@ export default function SalesManagement() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => openProfileModal(person.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/sales/${person.id}/edit`);
+                                    }}
                                     data-testid={`button-edit-profile-${person.id}`}
                                   >
                                     <Edit className="h-4 w-4" />

@@ -30,6 +30,9 @@ const OrganizationKPIPage = lazy(() => import('@/pages/organizations/KPIPage').t
 // Comprehensive users management with full CRUD, roles, and permissions
 const UsersManagement = lazy(() => import('@/pages/users/UsersManagement').then(m => ({ default: m.default })));
 const SalesManagement = lazy(() => import('@/pages/sales/SalesManagement').then(m => ({ default: m.default })));
+const CreateSalesperson = lazy(() => import('@/pages/sales/CreateSalesperson').then(m => ({ default: m.default })));
+const SalespersonDetails = lazy(() => import('@/pages/sales/SalespersonDetails').then(m => ({ default: m.default })));
+const EditSalesperson = lazy(() => import('@/pages/sales/EditSalesperson').then(m => ({ default: m.default })));
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
@@ -83,6 +86,9 @@ export function AppRoutes() {
               
               <Route path="/sales" element={<ProtectedRoute />}>
                 <Route index element={<SalesManagement />} />
+                <Route path="create" element={<CreateSalesperson />} />
+                <Route path=":id" element={<SalespersonDetails />} />
+                <Route path=":id/edit" element={<EditSalesperson />} />
               </Route>
               
               <Route path="/quotes" element={<ProtectedRoute />}>
