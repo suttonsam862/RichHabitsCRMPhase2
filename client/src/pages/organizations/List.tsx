@@ -46,10 +46,8 @@ export default function OrganizationsList(){
   const { data, isLoading: loading, error } = useQuery({
     queryKey: ['organizations', queryParams],
     queryFn: async () => {
-      console.log('🔄 Fetching organizations with params:', queryParams);
       const result = await api.get(`/api/v1/organizations?q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&onlyFavorites=${onlyFav}&includeArchived=${includeArchived}&sort=${sort}&dir=${dir}&limit=${limit}&offset=${offset}`);
       if (result.success) {
-        console.log(`✅ Fetched ${result.data?.length || 0} organizations`);
         return { data: result.data || [], count: result.count || 0 };
       }
       throw new Error(result.error?.message || 'Failed to fetch organizations');

@@ -14,6 +14,36 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole, {
 
 const STORAGE_BUCKET = 'app';
 
+/**
+ * Ensure the app bucket exists and is configured for public access
+ */
+export async function ensureAppBucketExists() {
+  try {
+    const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+    const bucketExists = buckets?.some(bucket => bucket.name === STORAGE_BUCKET);
+    
+    if (!bucketExists) {
+      console.log(`Creating bucket: ${STORAGE_BUCKET}`);
+      const { error } = await supabaseAdmin.storage.createBucket(STORAGE_BUCKET, {
+        public: true,
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'],
+        fileSizeLimit: 5242880, // 5MB
+      });
+      
+      if (error) {
+        console.error(`Failed to create bucket: ${error.message}`);
+        throw new Error(`Failed to create bucket: ${error.message}`);
+      }
+      console.log(`✅ Created bucket: ${STORAGE_BUCKET}`);
+    } else {
+      console.log(`✅ Bucket exists: ${STORAGE_BUCKET}`);
+    }
+  } catch (error) {
+    console.error('Error ensuring app bucket exists:', error);
+    throw error;
+  }
+}
+
 export interface UploadUrlResponse {
   uploadUrl: string;
   publicUrl: string;
@@ -50,6 +80,9 @@ function getPublicUrl(storageKey: string): string {
  * Returns both the upload URL and the final public URL that will be accessible after upload
  */
 export async function createAssetUploadUrl(orgId: string, filename: string): Promise<UploadUrlResponse> {
+  // Ensure bucket exists before attempting upload
+  await ensureAppBucketExists();
+  
   const storageKey = generateStorageKey(orgId, filename);
   
   const { data, error } = await supabaseAdmin.storage

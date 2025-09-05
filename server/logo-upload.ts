@@ -28,7 +28,7 @@ const upload = multer({
   },
 });
 
-const BUCKET_NAME = 'org-logos';
+const BUCKET_NAME = 'app'; // Use standardized app bucket
 
 export async function ensureBucketExists() {
   const { data: buckets } = await supabaseAdmin.storage.listBuckets();
@@ -37,7 +37,7 @@ export async function ensureBucketExists() {
   if (!bucketExists) {
     const { error } = await supabaseAdmin.storage.createBucket(BUCKET_NAME, {
       public: true,
-      allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
+      allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'],
       fileSizeLimit: 5242880, // 5MB
     });
     
@@ -48,11 +48,15 @@ export async function ensureBucketExists() {
 }
 
 export async function uploadLogo(file: Express.Multer.File, orgId?: string): Promise<string> {
+  if (!orgId) {
+    throw new Error('Organization ID is required for logo upload');
+  }
+  
   await ensureBucketExists();
   
   const fileExt = file.originalname.split('.').pop();
-  const fileName = `${orgId || uuidv4()}.${fileExt}`;
-  const filePath = `logos/${fileName}`;
+  const fileName = `logo.${fileExt}`;
+  const filePath = `org/${orgId}/branding/${fileName}`;
   
   const { error } = await supabaseAdmin.storage
     .from(BUCKET_NAME)
