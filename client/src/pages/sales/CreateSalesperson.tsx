@@ -120,7 +120,7 @@ export default function CreateSalesperson() {
         </div>
 
         {/* Form */}
-        <Card className="max-w-4xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+        <Card className="max-w-4xl bg-gray-800 border-gray-700 shadow-sm">
           <CardHeader>
             <CardTitle>Salesperson Information</CardTitle>
             <CardDescription>
