@@ -131,8 +131,8 @@ export default function UsersAdminPage() {
 
   // Fetch users with roles
   const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
-    queryKey: ['/api/users'],
-    queryFn: () => apiRequest('/api/users?includeRoles=true'),
+    queryKey: ['/api/v1/users'],
+    queryFn: () => apiRequest('/api/v1/users?includeRoles=true'),
     staleTime: 30000,
   });
 
@@ -153,9 +153,9 @@ export default function UsersAdminPage() {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserData) => 
-      apiRequest('/api/users', { method: 'POST', data: userData }),
+      apiRequest('/api/v1/users', { method: 'POST', data: userData }),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users'] });
       setIsCreateDialogOpen(false);
       setCreateForm({ email: '', fullName: '', phone: '', emailConfirm: true });
       
@@ -184,9 +184,9 @@ export default function UsersAdminPage() {
   // Update user mutation
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, ...userData }: UpdateUserData & { userId: string }) =>
-      apiRequest(`/api/users/${userId}`, { method: 'PATCH', data: userData }),
+      apiRequest(`/api/v1/users/${userId}`, { method: 'PATCH', data: userData }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users'] });
       setEditingUser(null);
       setEditForm({ email: '', fullName: '', phone: '' });
       toast({
@@ -205,7 +205,7 @@ export default function UsersAdminPage() {
   // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: (userId: string) =>
-      apiRequest(`/api/users/${userId}/reset-password`, { method: 'POST' }),
+      apiRequest(`/api/v1/users/${userId}/reset-password`, { method: 'POST' }),
     onSuccess: (data) => {
       setTempPassword(data.temporaryPassword || '');
       setResetPasswordUser(null);
@@ -227,9 +227,9 @@ export default function UsersAdminPage() {
   // Toggle user active status
   const toggleUserStatusMutation = useMutation({
     mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
-      apiRequest(`/api/users/${userId}`, { method: 'PATCH', data: { isActive } }),
+      apiRequest(`/api/v1/users/${userId}`, { method: 'PATCH', data: { isActive } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users'] });
       toast({
         title: "User status updated"
       });
@@ -248,7 +248,7 @@ export default function UsersAdminPage() {
     mutationFn: (data: AssignRoleData) =>
       apiRequest('/api/user-roles', { method: 'POST', data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users'] });
       toast({
         title: "Role assigned successfully"
       });
@@ -266,7 +266,7 @@ export default function UsersAdminPage() {
     mutationFn: ({ userId, roleId, organizationId }: AssignRoleData) =>
       apiRequest(`/api/user-roles/${userId}/${roleId}${organizationId ? `/${organizationId}` : ''}`, { method: 'DELETE' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users'] });
       toast({
         title: "Role revoked successfully"
       });
