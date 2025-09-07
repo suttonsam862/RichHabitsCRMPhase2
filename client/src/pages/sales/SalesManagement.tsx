@@ -299,7 +299,7 @@ export default function SalesManagement() {
   // Show loading state while data is fetching
   if (dashboardLoading || salespeopleLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-300">Loading sales management...</p>
@@ -309,7 +309,7 @@ export default function SalesManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -348,9 +348,9 @@ export default function SalesManagement() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
           <Tabs defaultValue="dashboard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 bg-gray-800 dark:bg-gray-700">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="salespeople">Salespeople</TabsTrigger>
               <TabsTrigger value="assignments">Assignments</TabsTrigger>
