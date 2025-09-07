@@ -30,6 +30,20 @@ const PERFORMANCE_TIERS = [
   { value: 'standard', label: 'Standard', color: 'bg-blue-100 text-blue-800' },
 ];
 
+interface SalespersonMetric {
+  id: string;
+  salesperson_id: string;
+  period_start: string;
+  period_end: string;
+  total_sales: number;
+  orders_count: number;
+  conversion_rate: number;
+  average_deal_size: number;
+  commission_earned: number;
+  active_assignments: number;
+  created_at: string;
+}
+
 export default function SalespersonDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -101,6 +115,29 @@ export default function SalespersonDetails() {
 
   const person = salesperson.data;
   const profile = person.profile;
+  
+  // Calculate recent performance metrics (last 30 days)
+  const calculateRecentMetrics = () => {
+    if (!person.metrics || person.metrics.length === 0) {
+      return { totalSales: 0, ordersCount: 0, commissionEarned: 0 };
+    }
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    // Filter metrics for last 30 days and aggregate
+    const recentMetrics = person.metrics.filter((metric: SalespersonMetric) => 
+      new Date(metric.period_start) >= thirtyDaysAgo
+    );
+    
+    return recentMetrics.reduce((acc: { totalSales: number; ordersCount: number; commissionEarned: number }, metric: SalespersonMetric) => ({
+      totalSales: acc.totalSales + (metric.total_sales || 0),
+      ordersCount: acc.ordersCount + (metric.orders_count || 0),
+      commissionEarned: acc.commissionEarned + (metric.commission_earned || 0)
+    }), { totalSales: 0, ordersCount: 0, commissionEarned: 0 });
+  };
+  
+  const recentMetrics = calculateRecentMetrics();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -120,7 +157,7 @@ export default function SalespersonDetails() {
               <Avatar className="w-24 h-24">
                 <AvatarImage src={profile?.profile_photo_url || undefined} alt={person.full_name} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-2xl">
-                  {person.full_name.split(' ').map(n => n[0]).join('')}
+                  {person.full_name.split(' ').map((n: string) => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -258,11 +295,11 @@ export default function SalespersonDetails() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">0</p>
+                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(recentMetrics.totalSales)}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Total Sales</p>
                 </div>
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">0</p>
+                  <p className="text-2xl font-bold text-green-600">{recentMetrics.ordersCount}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Orders</p>
                 </div>
               </div>
@@ -270,7 +307,7 @@ export default function SalespersonDetails() {
               <Separator />
               
               <div className="text-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
-                <p className="text-2xl font-bold text-indigo-600">$0.00</p>
+                <p className="text-2xl font-bold text-indigo-600">{formatCurrency(recentMetrics.commissionEarned)}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Commission Earned</p>
               </div>
             </CardContent>
