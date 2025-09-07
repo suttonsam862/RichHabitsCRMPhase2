@@ -58,12 +58,12 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
   // Fetch users for selection
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["/api/v1/users", userSearch],
+    queryKey: ["/api/v1/users/comprehensive", userSearch],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (userSearch) params.append("q", userSearch);
-      params.append("pageSize", "10");
-      return apiRequest(`/api/v1/users?${params.toString()}`, { method: "GET" });
+      if (userSearch) params.append("search", userSearch);
+      params.append("limit", "10");
+      return apiRequest(`/api/v1/users/comprehensive?${params.toString()}`, { method: "GET" });
     },
     enabled: contactType === "existing",
   });
@@ -205,7 +205,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
         sport_id: selectedSportId,
         sportName,
         teamName: teamName.trim(), // NEW: Include team name for existing users too
-        contact_name: selectedUser.fullName || selectedUser.email,
+        contact_name: selectedUser.full_name || selectedUser.email,
         contact_email: selectedUser.email,
         contact_phone: selectedUser.phone || "",
         user_id: selectedUser.id, // Store the user ID for existing users
@@ -410,8 +410,8 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {usersLoading ? (
                   <div className="text-white/60 text-center py-4">Loading users...</div>
-                ) : usersData?.data?.length > 0 ? (
-                  usersData.data.map((user: any) => (
+                ) : usersData?.length > 0 ? (
+                  usersData.map((user: any) => (
                     <div
                       key={user.id}
                       onClick={() => setSelectedUser(user)}
@@ -426,7 +426,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
                         <User className="w-4 h-4 text-white/60" />
                         <div>
                           <div className="text-white font-medium">
-                            {user.fullName || user.email}
+                            {user.full_name || user.email}
                           </div>
                           <div className="text-white/60 text-sm">{user.email}</div>
                           {user.phone && (
