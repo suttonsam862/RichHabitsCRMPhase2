@@ -132,7 +132,11 @@ export default function UsersAdminPage() {
   // Fetch users with roles
   const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['/api/v1/users'],
-    queryFn: () => apiRequest('/api/v1/users'),
+    queryFn: async () => {
+      const result = await apiRequest('/api/v1/users');
+      console.log("🔍 Users admin page API response:", result);
+      return result;
+    },
     staleTime: 30000,
   });
 

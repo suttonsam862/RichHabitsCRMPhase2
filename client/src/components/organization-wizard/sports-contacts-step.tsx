@@ -63,7 +63,10 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       const params = new URLSearchParams();
       if (userSearch) params.append("q", userSearch);
       params.append("pageSize", "10");
-      return apiRequest(`/api/v1/users?${params.toString()}`, { method: "GET" });
+      const result = await apiRequest(`/api/v1/users?${params.toString()}`, { method: "GET" });
+      console.log("🔍 Organization wizard users API response:", result);
+      console.log("🔍 Search term:", userSearch);
+      return result;
     },
     enabled: contactType === "existing",
   });
