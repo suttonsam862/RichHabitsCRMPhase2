@@ -58,12 +58,12 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
   // Fetch users for selection
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["/v1/users", userSearch],
+    queryKey: ["/api/v1/users", userSearch],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (userSearch) params.append("search", userSearch);
-      params.append("limit", "10");
-      return apiRequest(`/v1/users?${params.toString()}`, { method: "GET" });
+      if (userSearch) params.append("q", userSearch);
+      params.append("pageSize", "10");
+      return apiRequest(`/api/v1/users?${params.toString()}`, { method: "GET" });
     },
     enabled: contactType === "existing",
   });
