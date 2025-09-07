@@ -59,6 +59,7 @@ import {
   PieChart,
   Activity
 } from 'lucide-react';
+import GlowCard from '@/components/ui/GlowCard';
 
 interface Salesperson {
   id: string;
@@ -360,7 +361,7 @@ export default function SalesManagement() {
               <div className="space-y-6">
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <Card>
+                  <GlowCard>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Salespeople</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -370,9 +371,9 @@ export default function SalesManagement() {
                         {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview?.total_salespeople || 0}
                       </div>
                     </CardContent>
-                  </Card>
+                  </GlowCard>
 
-                  <Card>
+                  <GlowCard>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
                       <Target className="h-4 w-4 text-muted-foreground" />
@@ -382,9 +383,9 @@ export default function SalesManagement() {
                         {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview?.active_assignments || 0}
                       </div>
                     </CardContent>
-                  </Card>
+                  </GlowCard>
 
-                  <Card>
+                  <GlowCard>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
                       <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -394,9 +395,9 @@ export default function SalesManagement() {
                         {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview?.total_orders || 0}
                       </div>
                     </CardContent>
-                  </Card>
+                  </GlowCard>
 
-                  <Card>
+                  <GlowCard>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -406,11 +407,11 @@ export default function SalesManagement() {
                         {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : formatCurrency(dashboardData?.overview?.total_revenue || 0)}
                       </div>
                     </CardContent>
-                  </Card>
+                  </GlowCard>
                 </div>
 
                 {/* Top Performers */}
-                <Card>
+                <GlowCard>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Award className="h-5 w-5" />
@@ -448,7 +449,7 @@ export default function SalesManagement() {
                       </Table>
                     )}
                   </CardContent>
-                </Card>
+                </GlowCard>
               </div>
             </TabsContent>
 
@@ -481,7 +482,7 @@ export default function SalesManagement() {
                 </div>
 
                 {/* Salespeople Table */}
-                <Card>
+                <GlowCard>
                   <CardContent className="p-0">
                     {salespeopleLoading ? (
                       <div className="flex justify-center py-8">
@@ -546,13 +547,13 @@ export default function SalesManagement() {
                       </Table>
                     )}
                   </CardContent>
-                </Card>
+                </GlowCard>
               </div>
             </TabsContent>
 
             {/* Assignments Tab */}
             <TabsContent value="assignments">
-              <Card>
+              <GlowCard>
                 <CardHeader>
                   <CardTitle>Team Assignments</CardTitle>
                   <CardDescription>
@@ -597,7 +598,7 @@ export default function SalesManagement() {
                     </Table>
                   )}
                 </CardContent>
-              </Card>
+              </GlowCard>
             </TabsContent>
           </Tabs>
         </div>

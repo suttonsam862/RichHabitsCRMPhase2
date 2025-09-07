@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 // QuoteGenerator component moved to dedicated page route
 import { useToast } from '@/hooks/use-toast';
 import { loadHistory, QuoteRecord } from '@/lib/quoteStore';
+import GlowCard from '@/components/ui/GlowCard';
 
 export function QuotesPage() {
   const { toast } = useToast();
@@ -32,8 +33,8 @@ export function QuotesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
+      <header className="bg-gradient-to-r from-gray-900 to-black shadow-sm border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
             <Link to="/">
@@ -43,8 +44,8 @@ export function QuotesPage() {
               </Button>
             </Link>
             <div className="ml-4">
-              <h1 className="text-xl font-bold text-gray-900">Quote Management</h1>
-              <div className="text-xs text-gray-500 mt-0.5">
+              <h1 className="text-xl font-bold text-white">Quote Management</h1>
+              <div className="text-xs text-gray-400 mt-0.5">
                 Developing Habits LLC | Rich Habits
               </div>
             </div>
@@ -80,12 +81,12 @@ export function QuotesPage() {
           </div>
 
           <TabsContent value="create" className="space-y-6">
-            <div className="bg-white rounded-lg shadow">
+            <GlowCard className="bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white border border-gray-800">
               <div className="p-6">
                 <div className="text-center">
                   <div className="mb-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Create New Estimate</h3>
-                    <p className="text-gray-600">Generate professional estimates for your clients</p>
+                    <h3 className="text-xl font-semibold text-white mb-2">Create New Estimate</h3>
+                    <p className="text-gray-300">Generate professional estimates for your clients</p>
                   </div>
                   <div className="space-y-4">
                     <Link to="/quote">
@@ -94,24 +95,24 @@ export function QuotesPage() {
                         Start New Estimate
                       </Button>
                     </Link>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-400">
                       You'll be taken to our full estimate generator with all the tools you need
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
+            </GlowCard>
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">
-            <div className="bg-white rounded-lg shadow">
+            <GlowCard className="bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white border border-gray-800">
               <div className="p-6">
                 {quotes.length === 0 ? (
                   <div className="flex items-center justify-center h-64">
                     <div className="text-center">
                       <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Estimates Yet</h3>
-                      <p className="text-sm text-gray-500 mb-4">
+                      <h3 className="text-lg font-medium text-white mb-2">No Estimates Yet</h3>
+                      <p className="text-sm text-gray-400 mb-4">
                         Your estimate history will appear here once you start creating estimates.
                       </p>
                       <Button onClick={() => setActiveTab('create')}>
@@ -123,7 +124,7 @@ export function QuotesPage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-gray-900">Recent Estimates ({quotes.length})</h3>
+                      <h3 className="text-lg font-medium text-white">Recent Estimates ({quotes.length})</h3>
                       <Link to="/quotes/history">
                         <Button variant="outline" size="sm">
                           <History className="w-4 h-4 mr-2" />
@@ -186,7 +187,7 @@ export function QuotesPage() {
                   </div>
                 )}
               </div>
-            </div>
+            </GlowCard>
           </TabsContent>
         </Tabs>
       </main>
