@@ -177,7 +177,9 @@ export default function SalesManagement() {
     queryFn: async () => {
       const response = await api.get(`/api/v1/sales/dashboard?period=${selectedPeriod}`);
       return response; // Server returns direct data, not wrapped in .data
-    }
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds for real-time KPIs
+    staleTime: 25000 // Consider data fresh for 25 seconds
   });
 
   const { data: salespeople, isLoading: salespeopleLoading } = useQuery<Salesperson[]>({
@@ -185,7 +187,9 @@ export default function SalesManagement() {
     queryFn: async () => {
       const response = await api.get('/api/v1/sales/salespeople');
       return response; // Server returns direct array, not wrapped in .data
-    }
+    },
+    refetchInterval: 60000, // Refresh every minute for sales team updates
+    staleTime: 50000 // Consider data fresh for 50 seconds
   });
 
   const { data: salespersonDetails } = useQuery<SalespersonDetails>({

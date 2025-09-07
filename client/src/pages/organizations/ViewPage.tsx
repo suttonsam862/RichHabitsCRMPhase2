@@ -18,7 +18,9 @@ export default function OrganizationViewPage() {
   const { data: org, isLoading, error } = useQuery({
     queryKey: ['organization', id],
     queryFn: () => api.get(`/api/v1/organizations/${id}`),
-    enabled: !!id
+    enabled: !!id,
+    refetchInterval: 90000, // Refresh every 1.5 minutes for organization overview
+    staleTime: 80000 // Consider data fresh for 80 seconds
   });
 
   const deleteMutation = useMutation({

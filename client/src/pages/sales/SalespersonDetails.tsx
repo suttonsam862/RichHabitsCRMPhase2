@@ -52,6 +52,8 @@ export default function SalespersonDetails() {
     queryKey: ['/api/v1/sales/salespeople', id],
     queryFn: () => api.get(`/api/v1/sales/salespeople/${id}`),
     enabled: !!id,
+    refetchInterval: 45000, // Refresh every 45 seconds for individual performance metrics
+    staleTime: 40000 // Consider data fresh for 40 seconds
   });
 
   const formatCurrency = (amount: number) => {

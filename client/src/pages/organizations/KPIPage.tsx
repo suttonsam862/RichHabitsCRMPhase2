@@ -12,14 +12,18 @@ export default function OrganizationKPIPage() {
   const { data: org, isLoading: orgLoading } = useQuery({
     queryKey: ['organization', id],
     queryFn: () => api.get(`/api/v1/organizations/${id}`),
-    enabled: !!id
+    enabled: !!id,
+    refetchInterval: 90000, // Refresh every 1.5 minutes for organization data
+    staleTime: 80000 // Consider data fresh for 80 seconds
   });
 
   // Fetch summary data to calculate basic metrics
   const { data: summaryData, isLoading: summaryLoading } = useQuery({
     queryKey: ['organization-summary', id],
     queryFn: () => api.get(`/api/v1/organizations/${id}/summary`),
-    enabled: !!id && org?.success
+    enabled: !!id && org?.success,
+    refetchInterval: 60000, // Refresh every minute for KPI metrics
+    staleTime: 50000 // Consider data fresh for 50 seconds
   });
 
   // Calculate metrics from available data  
