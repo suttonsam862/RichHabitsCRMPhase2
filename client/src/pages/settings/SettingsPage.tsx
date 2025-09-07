@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Save, X, MapPin, Check } from 'lucide-react';
 import { api } from '@/lib/api';
+import { US_STATES } from '@/constants/us-states';
+import { Badge } from '@/components/ui/badge';
 
 type Sport = {
   id: string;
   name: string;
+};
+
+type RegionConfig = {
+  stateCode: string;
+  enabled: boolean;
 };
 
 export function SettingsPage() {
@@ -17,9 +24,14 @@ export function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Load sports on component mount
+  // Regions management state
+  const [enabledRegions, setEnabledRegions] = useState<string[]>([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+
+  // Load sports and regions on component mount
   useEffect(() => {
     loadSports();
+    loadRegionsConfig();
   }, []);
 
   async function loadSports() {
@@ -69,6 +81,50 @@ export function SettingsPage() {
     } else {
       setError(result.error?.message || 'Failed to delete sport');
     }
+  }
+
+  // Regions management functions
+  async function loadRegionsConfig() {
+    setRegionsLoading(true);
+    try {
+      // For now, we'll use localStorage to store enabled regions
+      // In a real app, this would come from a backend API
+      const savedRegions = localStorage.getItem('enabled-regions');
+      if (savedRegions) {
+        setEnabledRegions(JSON.parse(savedRegions));
+      } else {
+        // Default to all US states enabled
+        const allStates = US_STATES.map(state => state.value);
+        setEnabledRegions(allStates);
+        localStorage.setItem('enabled-regions', JSON.stringify(allStates));
+      }
+    } catch (error) {
+      setError('Failed to load regions configuration');
+    }
+    setRegionsLoading(false);
+  }
+
+  function toggleRegion(stateCode: string) {
+    const newEnabledRegions = enabledRegions.includes(stateCode)
+      ? enabledRegions.filter(code => code !== stateCode)
+      : [...enabledRegions, stateCode];
+    
+    setEnabledRegions(newEnabledRegions);
+    localStorage.setItem('enabled-regions', JSON.stringify(newEnabledRegions));
+    setSuccess(`${US_STATES.find(s => s.value === stateCode)?.label} ${enabledRegions.includes(stateCode) ? 'disabled' : 'enabled'} for selection`);
+  }
+
+  function enableAllRegions() {
+    const allStates = US_STATES.map(state => state.value);
+    setEnabledRegions(allStates);
+    localStorage.setItem('enabled-regions', JSON.stringify(allStates));
+    setSuccess('All regions enabled for selection');
+  }
+
+  function disableAllRegions() {
+    setEnabledRegions([]);
+    localStorage.setItem('enabled-regions', JSON.stringify([]));
+    setSuccess('All regions disabled for selection');
   }
 
   // Clear messages after 3 seconds
@@ -224,6 +280,96 @@ export function SettingsPage() {
                   </div>
                 ))
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Regions Management */}
+        <div className="rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+          <h2 className="text-xl font-semibold mb-6 text-white flex items-center gap-3">
+            <MapPin className="h-6 w-6" />
+            Regions Management
+          </h2>
+          <p className="text-white/60 mb-6">Configure which US states are available for salesperson region selection</p>
+
+          {/* Messages */}
+          {error && (
+            <div className="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-400">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 p-4 rounded-xl bg-green-500/20 border border-green-500/50 text-green-400">
+              {success}
+            </div>
+          )}
+
+          {/* Bulk Actions */}
+          <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+            <h3 className="text-lg font-medium mb-4 text-white">Bulk Actions</h3>
+            <div className="flex gap-3">
+              <Button
+                onClick={enableAllRegions}
+                disabled={regionsLoading}
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50"
+                data-testid="button-enable-all-regions"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Enable All
+              </Button>
+              <Button
+                onClick={disableAllRegions}
+                disabled={regionsLoading}
+                variant="outline"
+                className="px-4 py-2 border-red-500/50 text-red-400 hover:bg-red-500/20 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50"
+                data-testid="button-disable-all-regions"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Disable All
+              </Button>
+            </div>
+            <p className="text-sm text-white/50 mt-2">
+              {enabledRegions.length} of {US_STATES.length} regions enabled
+            </p>
+          </div>
+
+          {/* Regions Grid */}
+          {regionsLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-400"></div>
+              <p className="mt-2 text-white/60">Loading regions...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {US_STATES.map((state) => {
+                const isEnabled = enabledRegions.includes(state.value);
+                return (
+                  <div
+                    key={state.value}
+                    className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                      isEnabled
+                        ? 'bg-green-500/10 border-green-500/30 hover:border-green-500/50'
+                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                    }`}
+                    onClick={() => toggleRegion(state.value)}
+                    data-testid={`region-item-${state.value}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-white text-sm">{state.label}</h4>
+                        <p className="text-xs text-white/60">{state.value}</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        isEnabled
+                          ? 'bg-green-500 border-green-500'
+                          : 'border-white/30'
+                      }`}>
+                        {isEnabled && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
