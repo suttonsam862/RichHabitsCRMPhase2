@@ -21,7 +21,7 @@ const salespersonSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   email: z.string().email("Valid email is required"),
   phone: z.string().optional(),
-  employee_id: z.string().optional(),
+  // employee_id: removed - will be auto-generated on backend
   commission_rate: z.number().min(0).max(100).optional(),
   territory: z.array(z.string()).optional(),
   hire_date: z.string().optional(),
@@ -42,7 +42,7 @@ export default function CreateSalesperson() {
       full_name: "",
       email: "",
       phone: "",
-      employee_id: "",
+      // employee_id: removed - auto-generated
       commission_rate: 0,
       territory: [],
       hire_date: "",
@@ -63,7 +63,7 @@ export default function CreateSalesperson() {
       // Then create their profile
       if (userResponse.success && userResponse.data) {
         const profileResponse = await api.post(`/api/v1/sales/salespeople/${userResponse.data.id}/profile`, {
-          employee_id: data.employee_id,
+          // employee_id will be auto-generated on backend
           commission_rate: (data.commission_rate || 0) * 100, // Convert to basis points
           territory: data.territory,
           hire_date: data.hire_date,
@@ -196,24 +196,16 @@ export default function CreateSalesperson() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="employee_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Employee ID</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter employee ID"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-employee-id"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Employee ID
+                      </Label>
+                      <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          Will be auto-generated (EMP-XXXX)
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

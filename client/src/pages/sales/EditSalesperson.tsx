@@ -22,13 +22,14 @@ import {
 } from 'lucide-react';
 import { US_STATES } from '@/constants/us-states';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { useEffect } from 'react';
 
 const editSalespersonSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   email: z.string().email("Valid email is required"),
   phone: z.string().optional(),
-  employee_id: z.string().optional(),
+  // employee_id: removed - auto-generated and read-only
   commission_rate: z.number().min(0).max(100).optional(),
   territory: z.array(z.string()).optional(),
   hire_date: z.string().optional(),
@@ -55,7 +56,7 @@ export default function EditSalesperson() {
       full_name: "",
       email: "",
       phone: "",
-      employee_id: "",
+      // employee_id: removed - read-only
       commission_rate: 0,
       territory: [],
       hire_date: "",
@@ -73,7 +74,7 @@ export default function EditSalesperson() {
         full_name: person.full_name || "",
         email: person.email || "",
         phone: person.phone || "",
-        employee_id: profile?.employee_id || "",
+        // employee_id: removed - read-only display only
         commission_rate: profile?.commission_rate ? (profile.commission_rate / 100) : 0,
         territory: Array.isArray(profile?.territory) ? profile.territory : (profile?.territory ? [profile.territory] : []),
         hire_date: profile?.hire_date ? profile.hire_date.split('T')[0] : "",
@@ -93,7 +94,7 @@ export default function EditSalesperson() {
 
       // Update profile information
       const profileResponse = await api.patch(`/api/v1/sales/salespeople/${id}/profile`, {
-        employee_id: data.employee_id,
+        // employee_id: not sent - read-only field
         commission_rate: (data.commission_rate || 0) * 100, // Convert to basis points
         territory: data.territory,
         hire_date: data.hire_date,
@@ -178,7 +179,7 @@ export default function EditSalesperson() {
             <Avatar className="w-16 h-16">
               <AvatarImage src={profile?.profile_photo_url || undefined} alt={person.full_name} />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xl">
-                {person.full_name.split(' ').map(n => n[0]).join('')}
+                {person.full_name.split(' ').map((n: string) => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -269,24 +270,16 @@ export default function EditSalesperson() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="employee_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Employee ID</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter employee ID"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-employee-id"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Employee ID
+                      </Label>
+                      <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md">
+                        <span className="text-sm text-gray-900 dark:text-gray-100 font-mono">
+                          {salesperson.data.profile?.employee_id || 'Not assigned yet'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

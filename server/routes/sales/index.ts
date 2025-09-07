@@ -92,11 +92,38 @@ const profileSchema = z.object({
   employee_id: z.string().optional(),
   tax_id: z.string().optional(),
   commission_rate: z.number().min(0).max(10000).optional(),
-  territory: z.string().optional(),
+  territory: z.array(z.string()).optional(),
   hire_date: z.string().optional(),
   manager_id: z.string().optional(),
   performance_tier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'standard']).optional()
 });
+
+// Function to generate unique employee ID
+async function generateEmployeeId() {
+  const year = new Date().getFullYear();
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4 digit number
+  let employeeId = `EMP-${year}-${randomSuffix}`;
+  
+  // Check if this ID already exists, if so regenerate
+  let attempts = 0;
+  while (attempts < 10) {
+    const [existing] = await db
+      .select()
+      .from(salespersonProfiles)
+      .where(eq(salespersonProfiles.employee_id, employeeId));
+    
+    if (!existing) {
+      break;
+    }
+    
+    // Generate a new one
+    const newRandomSuffix = Math.floor(1000 + Math.random() * 9000);
+    employeeId = `EMP-${year}-${newRandomSuffix}`;
+    attempts++;
+  }
+  
+  return employeeId;
+}
 
 router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -109,7 +136,7 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
     .where(eq(salespersonProfiles.user_id, id));
 
   if (existing) {
-    // Update existing profile
+    // Update existing profile (keep existing employee_id if present)
     const [updated] = await db
       .update(salespersonProfiles)
       .set({
@@ -122,12 +149,15 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
     
     res.json(updated);
   } else {
-    // Create new profile
+    // Create new profile with auto-generated employee_id
+    const employeeId = await generateEmployeeId();
+    
     const [created] = await db
       .insert(salespersonProfiles)
       .values({
         user_id: id,
         ...profileData,
+        employee_id: employeeId,
         hire_date: profileData.hire_date ? new Date(profileData.hire_date) : undefined
       })
       .returning();
