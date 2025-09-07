@@ -2,7 +2,8 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { paths } from "@/lib/paths";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Home, Users, FileText, TrendingUp } from "lucide-react";
+import { Building2, Home, Users, FileText, TrendingUp, Menu, X } from "lucide-react";
+import { useState } from "react";
 import richHabitsLogo from "@assets/BlackPNG_New_Rich_Habits_Logo_caa84ddc-c1dc-49fa-a3cf-063db73499d3_1757019113547.png";
 
 interface AppLayoutProps {
@@ -12,6 +13,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, footer }: AppLayoutProps) {
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
     { path: paths.home, label: "Home", icon: Home },
@@ -47,8 +49,8 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
               </motion.div>
             </Link>
 
-            {/* Navigation Links */}
-            <div className="flex items-center space-x-6">
+            {/* Desktop Navigation Links - Hidden on mobile */}
+            <div className="hidden md:flex items-center space-x-6">
               {navItems.map(({ path, label, icon: Icon }) => {
                 const isActive = location.pathname === path;
                 return (
@@ -68,9 +70,69 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
                 );
               })}
             </div>
+
+            {/* Hamburger Menu Button - Visible on mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+              data-testid="button-hamburger-menu"
+              aria-label="Toggle navigation menu"
+            >
+              <motion.div
+                animate={{ rotate: isMobileMenuOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </motion.div>
+            </button>
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Dropdown */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden sticky top-16 z-40 backdrop-blur-xl bg-black/30 border-b border-white/10 overflow-hidden"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-4">
+              <nav className="space-y-2">
+                {navItems.map(({ path, label, icon: Icon }) => {
+                  const isActive = location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                          isActive
+                            ? "bg-gradient-to-r from-glow-1/20 to-glow-2/20 text-glow-1 border border-glow-1/30"
+                            : "text-white/70 hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span className="font-medium text-lg">{label}</span>
+                      </motion.div>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <main className="relative">
