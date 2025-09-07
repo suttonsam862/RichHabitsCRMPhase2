@@ -82,6 +82,21 @@ export const CreateOrganizationSchema = z.object({
   universal_discounts: z.any().default({}).transform(val => val === null || val === undefined ? {} : val), // we store as JSONB; accept object/array/null but transform to {}
   brand_primary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
   brand_secondary: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal("").transform(() => undefined)), // hex color
+  
+  // Additional fields from frontend
+  colorPalette: z.array(z.string()).optional().default([]),
+  emailDomain: z.string().optional(),
+  billingEmail: z.string().email().optional().or(z.literal("").transform(() => undefined)),
+  tags: z.array(z.string()).optional().default([]),
+  sports: z.array(z.object({
+    sportId: z.string(),
+    contactName: z.string(),
+    contactEmail: z.string().email(),
+    contactPhone: z.string().optional(),
+    teamName: z.string().optional(),
+    userId: z.string().optional(),
+    saved: z.boolean().optional()
+  })).optional().default([])
 });
 
 // Keep legacy schema for backward compatibility

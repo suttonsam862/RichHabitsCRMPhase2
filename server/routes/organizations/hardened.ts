@@ -27,6 +27,11 @@ const CreateOrganizationSchema = z.object({
   notes: z.string().optional(),
   universalDiscounts: z.record(z.unknown()).default({}),
   logoUrl: z.string().optional(),
+  
+  // Frontend fields that were missing
+  emailDomain: z.string().optional(),
+  billingEmail: z.string().email().optional(),
+  
   sports: z.array(z.object({
     sportId: z.string().uuid(),
     teamName: z.string().min(1, "Team name is required").default("Main Team"), // NEW: Support for multiple teams per sport
