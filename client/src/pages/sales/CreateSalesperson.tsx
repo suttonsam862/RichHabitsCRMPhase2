@@ -12,8 +12,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, UserPlus, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, UserPlus, Loader2, Upload, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { US_STATES } from '@/constants/us-states';
+import { Badge } from '@/components/ui/badge';
 
 const salespersonSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
@@ -21,7 +23,7 @@ const salespersonSchema = z.object({
   phone: z.string().optional(),
   employee_id: z.string().optional(),
   commission_rate: z.number().min(0).max(100).optional(),
-  territory: z.string().optional(),
+  territory: z.array(z.string()).optional(),
   hire_date: z.string().optional(),
   performance_tier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'standard']).optional(),
 });
@@ -42,7 +44,7 @@ export default function CreateSalesperson() {
       phone: "",
       employee_id: "",
       commission_rate: 0,
-      territory: "",
+      territory: [],
       hire_date: "",
       performance_tier: 'standard',
     },
@@ -248,15 +250,65 @@ export default function CreateSalesperson() {
                       control={form.control}
                       name="territory"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Territory</FormLabel>
+                        <FormItem className="col-span-2">
+                          <FormLabel>Sales Regions</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="e.g., North America, Europe"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-territory"
-                              {...field}
-                            />
+                            <div className="space-y-3">
+                              <Select
+                                onValueChange={(value) => {
+                                  const current = field.value || [];
+                                  if (!current.includes(value)) {
+                                    field.onChange([...current, value]);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="bg-white dark:bg-gray-700" data-testid="select-add-region">
+                                  <SelectValue placeholder="Add a region" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {US_STATES
+                                    .filter(state => !(field.value || []).includes(state.value))
+                                    .map((state) => (
+                                      <SelectItem key={state.value} value={state.value}>
+                                        {state.label}
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                              
+                              {/* Selected regions display */}
+                              {field.value && field.value.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {field.value.map((stateCode) => {
+                                    const state = US_STATES.find(s => s.value === stateCode);
+                                    return (
+                                      <Badge
+                                        key={stateCode}
+                                        variant="secondary"
+                                        className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+                                        data-testid={`badge-region-${stateCode}`}
+                                      >
+                                        {state?.label || stateCode}
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-4 w-4 p-0 ml-2 hover:bg-transparent"
+                                          onClick={() => {
+                                            const updated = (field.value || []).filter((code: string) => code !== stateCode);
+                                            field.onChange(updated);
+                                          }}
+                                          data-testid={`button-remove-region-${stateCode}`}
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </Badge>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

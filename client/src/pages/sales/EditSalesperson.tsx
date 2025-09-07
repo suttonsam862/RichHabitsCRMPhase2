@@ -17,8 +17,11 @@ import {
   Loader2, 
   Upload, 
   User,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
+import { US_STATES } from '@/constants/us-states';
+import { Badge } from '@/components/ui/badge';
 import { useEffect } from 'react';
 
 const editSalespersonSchema = z.object({
@@ -27,7 +30,7 @@ const editSalespersonSchema = z.object({
   phone: z.string().optional(),
   employee_id: z.string().optional(),
   commission_rate: z.number().min(0).max(100).optional(),
-  territory: z.string().optional(),
+  territory: z.array(z.string()).optional(),
   hire_date: z.string().optional(),
   performance_tier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'standard']).optional(),
 });
@@ -54,7 +57,7 @@ export default function EditSalesperson() {
       phone: "",
       employee_id: "",
       commission_rate: 0,
-      territory: "",
+      territory: [],
       hire_date: "",
       performance_tier: 'standard',
     },
@@ -72,7 +75,7 @@ export default function EditSalesperson() {
         phone: person.phone || "",
         employee_id: profile?.employee_id || "",
         commission_rate: profile?.commission_rate ? (profile.commission_rate / 100) : 0,
-        territory: profile?.territory || "",
+        territory: Array.isArray(profile?.territory) ? profile.territory : (profile?.territory ? [profile.territory] : []),
         hire_date: profile?.hire_date ? profile.hire_date.split('T')[0] : "",
         performance_tier: (profile?.performance_tier as any) || 'standard',
       });
@@ -89,7 +92,7 @@ export default function EditSalesperson() {
       });
 
       // Update profile information
-      const profileResponse = await api.put(`/api/v1/sales/salespeople/${id}/profile`, {
+      const profileResponse = await api.patch(`/api/v1/sales/salespeople/${id}/profile`, {
         employee_id: data.employee_id,
         commission_rate: (data.commission_rate || 0) * 100, // Convert to basis points
         territory: data.territory,
@@ -308,7 +311,7 @@ export default function EditSalesperson() {
                               className="bg-white dark:bg-gray-700"
                               data-testid="input-commission-rate"
                               {...field}
-                              onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -320,15 +323,65 @@ export default function EditSalesperson() {
                       control={form.control}
                       name="territory"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Territory</FormLabel>
+                        <FormItem className="col-span-2">
+                          <FormLabel>Sales Regions</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="e.g., North America, Europe"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-territory"
-                              {...field}
-                            />
+                            <div className="space-y-3">
+                              <Select
+                                onValueChange={(value) => {
+                                  const current = field.value || [];
+                                  if (!current.includes(value)) {
+                                    field.onChange([...current, value]);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="bg-white dark:bg-gray-700" data-testid="select-add-region">
+                                  <SelectValue placeholder="Add a region" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {US_STATES
+                                    .filter(state => !(field.value || []).includes(state.value))
+                                    .map((state) => (
+                                      <SelectItem key={state.value} value={state.value}>
+                                        {state.label}
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                              
+                              {/* Selected regions display */}
+                              {field.value && field.value.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {field.value.map((stateCode) => {
+                                    const state = US_STATES.find(s => s.value === stateCode);
+                                    return (
+                                      <Badge
+                                        key={stateCode}
+                                        variant="secondary"
+                                        className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+                                        data-testid={`badge-region-${stateCode}`}
+                                      >
+                                        {state?.label || stateCode}
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-4 w-4 p-0 ml-2 hover:bg-transparent"
+                                          onClick={() => {
+                                            const updated = (field.value || []).filter((code: string) => code !== stateCode);
+                                            field.onChange(updated);
+                                          }}
+                                          data-testid={`button-remove-region-${stateCode}`}
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </Badge>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

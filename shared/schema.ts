@@ -203,7 +203,7 @@ export const salespersonProfiles = pgTable('salesperson_profiles', {
   employee_id: text('employee_id'),
   tax_id: text('tax_id'), // SSN or Tax ID
   commission_rate: integer('commission_rate').default(0), // Percentage * 100
-  territory: text('territory'),
+  territory: text('territory').array(), // Array of US state codes
   hire_date: timestamp('hire_date'),
   manager_id: varchar('manager_id').references(() => users.id),
   performance_tier: text('performance_tier').default('standard'), // bronze, silver, gold, platinum
