@@ -1,0 +1,73 @@
+/* 
+ * UNIVERSAL UI LAWS - THESE RULES CANNOT BE OVERRIDDEN
+ * 
+ * These CSS custom properties enforce consistent theming across the entire application.
+ * Any component that doesn't follow these laws will be visually inconsistent.
+ */
+
+:root {
+  /* MANDATORY BACKGROUND COLORS - DO NOT OVERRIDE */
+  --app-bg-primary: linear-gradient(135deg, rgb(17, 24, 39), rgb(31, 41, 55));
+  --app-bg-surface: rgb(31, 41, 55);
+  --app-bg-elevated: rgb(55, 65, 81);
+  
+  /* MANDATORY TEXT COLORS - DO NOT OVERRIDE */
+  --app-text-primary: rgb(255, 255, 255);
+  --app-text-secondary: rgb(209, 213, 219);
+  --app-text-muted: rgb(156, 163, 175);
+  
+  /* MANDATORY ACCENT COLORS */
+  --app-accent-primary: rgb(59, 130, 246);
+  --app-accent-gradient: linear-gradient(135deg, rgb(59, 130, 246), rgb(99, 102, 241));
+  
+  /* MANDATORY SPACING */
+  --app-container-padding: 2rem;
+  --app-section-spacing: 1.5rem;
+}
+
+/* ENFORCE DARK THEME - OVERRIDE ANY ATTEMPTS AT LIGHT THEME */
+.app-page {
+  background: var(--app-bg-primary) !important;
+  min-height: 100vh;
+  color: var(--app-text-primary);
+}
+
+.app-surface {
+  background: var(--app-bg-surface) !important;
+  border-color: rgb(75, 85, 99) !important;
+}
+
+.app-text-primary { color: var(--app-text-primary) !important; }
+.app-text-secondary { color: var(--app-text-secondary) !important; }
+.app-text-muted { color: var(--app-text-muted) !important; }
+
+/* UNIVERSAL COMPONENT OVERRIDES */
+.ui-card {
+  @apply bg-gray-800 border-gray-700 !important;
+}
+
+.ui-input {
+  @apply bg-gray-700 border-gray-600 text-white placeholder-gray-400 !important;
+}
+
+.ui-button-primary {
+  background: var(--app-accent-gradient) !important;
+  color: white !important;
+}
+
+/* PREVENT WHITE BACKGROUNDS ANYWHERE */
+* {
+  /* This catches any rogue white backgrounds */
+}
+
+*[class*="bg-white"] {
+  background-color: var(--app-bg-surface) !important;
+}
+
+*[class*="text-gray-900"] {
+  color: var(--app-text-primary) !important;
+}
+
+*[class*="text-black"] {
+  color: var(--app-text-primary) !important;
+}

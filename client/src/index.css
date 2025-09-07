@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Universal UI Laws - THESE CANNOT BE OVERRIDDEN */
+@import './styles/ui-laws.css';
+
 /* Coolvetica Font - Commented out until font file is available
 @font-face {
   font-family: 'Coolvetica';
