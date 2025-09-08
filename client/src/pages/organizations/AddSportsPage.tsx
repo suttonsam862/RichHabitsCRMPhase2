@@ -13,6 +13,7 @@ import { ArrowLeft, Plus, Trash2, Trophy, Save, Users, UserPlus } from "lucide-r
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { motion } from "framer-motion";
+import { AppLayout } from "@/components/layouts/AppLayout";
 
 // Sports data will be fetched dynamically from API
 
@@ -218,79 +219,65 @@ export default function AddSportsPage() {
 
   if (orgLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <AppLayout>
+        <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto"></div>
           <p className="text-white/60 mt-4">Loading organization...</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!organization?.success || !organization?.data) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <AppLayout>
+        <div className="text-center py-12">
           <h1 className="text-2xl font-bold text-white mb-4">Organization Not Found</h1>
           <p className="text-white/60 mb-6">The organization you're looking for doesn't exist.</p>
           <Link to="/organizations">
             <Button>Back to Organizations</Button>
           </Link>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Link to={`/organizations/${id}/sports`}>
-              <Button variant="ghost" size="sm" className="text-white hover:text-cyan-400 transition-colors">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Sports
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                Add Sports
-              </h1>
-              <p className="text-white/60 mt-1">Add sports programs and contacts to {organization.data.name}</p>
-            </div>
-          </div>
-          
-          <Button 
-            onClick={handleSave}
-            disabled={sportsToAdd.length === 0 || addSportsMutation.isPending}
-            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25 transition-all duration-200"
-            data-testid="button-save-sports"
-          >
-            {addSportsMutation.isPending ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Sports ({sportsToAdd.length})
-              </>
-            )}
-          </Button>
-        </motion.div>
+  const headerActions = (
+    <Button 
+      onClick={handleSave}
+      disabled={sportsToAdd.length === 0 || addSportsMutation.isPending}
+      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25 transition-all duration-200"
+      data-testid="button-save-sports"
+    >
+      {addSportsMutation.isPending ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          Saving...
+        </>
+      ) : (
+        <>
+          <Save className="h-4 w-4 mr-2" />
+          Save Sports ({sportsToAdd.length})
+        </>
+      )}
+    </Button>
+  );
 
-        {/* Add Sport Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-6"
-        >
+  return (
+    <AppLayout
+      title="Add Sports"
+      subtitle={`Add sports programs and contacts to ${organization.data.name}`}
+      showBackButton={true}
+      backHref={`/organizations/${id}/sports`}
+      headerActions={headerActions}
+    >
+
+      {/* Add Sport Form */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-6"
+      >
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             <Plus className="h-5 w-5 mr-2 text-cyan-400" />
             Add Sport & Contact
@@ -453,15 +440,15 @@ export default function AddSportsPage() {
             <Plus className="h-4 w-4 mr-2" />
             Add Sport to List
           </Button>
-        </motion.div>
+      </motion.div>
 
-        {/* Added Sports List */}
-        {sportsToAdd.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6"
-          >
+      {/* Added Sports List */}
+      {sportsToAdd.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6"
+        >
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               <Trophy className="h-5 w-5 mr-2 text-cyan-400" />
               Sports to Add ({sportsToAdd.length})
@@ -501,9 +488,8 @@ export default function AddSportsPage() {
                 </motion.div>
               ))}
             </div>
-          </motion.div>
-        )}
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AppLayout>
   );
 }
