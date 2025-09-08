@@ -5,6 +5,7 @@ import { ArrowLeft, Phone, Mail, User, MapPin, Calendar, Trophy, Users } from 'l
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { motion } from 'framer-motion';
+import { AppLayout } from '@/components/layouts/AppLayout';
 
 interface Sport {
   id: string;
@@ -38,92 +39,76 @@ export default function OrganizationSportsPage() {
 
   if (orgLoading || sportsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
-            <p className="mt-2 text-white/60">Loading organization...</p>
-          </div>
+      <AppLayout>
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+          <p className="mt-2 text-white/60">Loading organization...</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!org?.success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
-        <div className="max-w-6xl mx-auto">
-          <GlowCard className="text-center py-12">
-            <Trophy className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Organization Not Found</h2>
-            <p className="text-white/60 mb-6">The organization you're looking for doesn't exist.</p>
-            <Link to="/organizations">
-              <Button>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Organizations
-              </Button>
-            </Link>
-          </GlowCard>
-        </div>
-      </div>
+      <AppLayout>
+        <GlowCard className="text-center py-12">
+          <Trophy className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2 text-white">Organization Not Found</h2>
+          <p className="text-white/60 mb-6">The organization you're looking for doesn't exist.</p>
+          <Link to="/organizations">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Organizations
+            </Button>
+          </Link>
+        </GlowCard>
+      </AppLayout>
     );
   }
 
   const organization = org.data;
 
+  const headerActions = (
+    <Button 
+      className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/25 transition-all duration-200"
+      onClick={() => navigate(`/organizations/${id}/sports/new`)}
+      data-testid="button-add-sport"
+    >
+      <Trophy className="h-4 w-4 mr-2" />
+      Add Sport
+    </Button>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
+    <AppLayout 
+      title="Sports & Teams"
+      subtitle={`Manage sports programs and contacts for ${organization.name}`}
+      showBackButton={true}
+      backHref={`/organizations/${id}`}
+      headerActions={headerActions}
+    >
+
+      {/* Sports Grid */}
+      {sports.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12"
         >
-          <div className="flex items-center gap-4">
-            <Link to={`/organizations/${id}`}>
-              <Button variant="ghost" size="sm" className="text-white hover:text-cyan-400 transition-colors">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to {organization.name}
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                Sports & Teams
-              </h1>
-              <p className="text-white/60 mt-1">Manage sports programs and contacts for {organization.name}</p>
-            </div>
-          </div>
-          
+          <Trophy className="h-16 w-16 text-white/20 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-white/60 mb-2">No Sports Assigned</h3>
+          <p className="text-white/40 mb-6">No sports have been assigned to this organization yet.</p>
           <Button 
-            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/25 transition-all duration-200"
+            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
             onClick={() => navigate(`/organizations/${id}/sports/new`)}
+            data-testid="button-add-first-sport"
           >
             <Trophy className="h-4 w-4 mr-2" />
-            Add Sport
+            Add First Sport
           </Button>
         </motion.div>
-
-        {/* Sports Grid */}
-        {sports.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
-            <Trophy className="h-16 w-16 text-white/20 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-white/60 mb-2">No Sports Assigned</h3>
-            <p className="text-white/40 mb-6">No sports have been assigned to this organization yet.</p>
-            <Button 
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
-              onClick={() => navigate(`/organizations/${id}/sports/new`)}
-            >
-              <Trophy className="h-4 w-4 mr-2" />
-              Add First Sport
-            </Button>
-          </motion.div>
-        ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sports.map((sport, index) => (
             <motion.div
               key={sport.id}
@@ -149,6 +134,7 @@ export default function OrganizationSportsPage() {
                       variant="ghost"
                       className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
                       onClick={() => navigate(`/organizations/${id}/sports/${sport.id}/edit`)}
+                      data-testid={`button-edit-sport-${sport.id}`}
                     >
                       Edit
                     </Button>
@@ -211,33 +197,8 @@ export default function OrganizationSportsPage() {
               </GlowCard>
             </motion.div>
           ))}
-        </div>
-        )}
-
-        {/* Empty State - This is already handled above, so we can remove this duplicate */}
-        {false && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <GlowCard className="max-w-md mx-auto p-8">
-              <Trophy className="h-16 w-16 text-white/30 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Sports Yet</h3>
-              <p className="text-white/60 mb-6">
-                Get started by adding sports programs for {organization.name}
-              </p>
-              <Button 
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
-                onClick={() => navigate(`/organizations/${id}/sports/new`)}
-              >
-                <Trophy className="h-4 w-4 mr-2" />
-                Add Your First Sport
-              </Button>
-            </GlowCard>
-          </motion.div>
-        )}
       </div>
-    </div>
+      )}
+    </AppLayout>
   );
 }
