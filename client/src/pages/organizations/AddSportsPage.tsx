@@ -157,7 +157,7 @@ export default function AddSportsPage() {
         return;
       }
       contactData = {
-        contact_name: selectedUser.fullName || selectedUser.full_name || selectedUser.name,
+        contact_name: selectedUser.fullName || selectedUser.name || 'Unknown User',
         contact_email: selectedUser.email,
         contact_phone: selectedUser.phone || "",
         userId: selectedUser.id
@@ -404,7 +404,7 @@ export default function AddSportsPage() {
                       ) : (
                         existingUsers.map((user: any) => (
                           <SelectItem key={user.id} value={user.id} className="text-white focus:bg-white/10">
-                            {user.fullName || user.full_name || user.name} ({user.email})
+                            {user.fullName || user.name || 'Unknown User'} ({user.email})
                           </SelectItem>
                         ))
                       )}
@@ -419,7 +419,7 @@ export default function AddSportsPage() {
                       const user = existingUsers.find((u: any) => u.id === selectedUserId);
                       return user ? (
                         <div className="space-y-1 text-sm text-white/80">
-                          <p><strong>Name:</strong> {user.fullName || user.full_name || user.name}</p>
+                          <p><strong>Name:</strong> {user.fullName || user.name || 'Unknown User'}</p>
                           <p><strong>Email:</strong> {user.email}</p>
                           {user.phone && <p><strong>Phone:</strong> {user.phone}</p>}
                         </div>
