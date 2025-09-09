@@ -182,10 +182,11 @@ export default function UsersManagement() {
         }).length;
         
         setStats({
-          totalUsers,
-          activeUsers,
-          recentUsers,
-          roleBreakdown: {}
+          total: totalUsers,
+          active: activeUsers,
+          inactive: totalUsers - activeUsers,
+          recent: recentUsers,
+          byRole: {}
         });
       }
     } catch (error) {

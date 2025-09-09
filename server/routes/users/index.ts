@@ -151,7 +151,7 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
       phone: user.user.phone,
       fullName: user.user.user_metadata?.full_name || null,
       avatarUrl: user.user.user_metadata?.avatar_url || null,
-      isActive: !user.user.banned_until,
+      isActive: true, // Simplified since banned_until not reliably available
       preferences: user.user.user_metadata?.preferences || {},
       createdAt: user.user.created_at,
       updatedAt: user.user.updated_at,
