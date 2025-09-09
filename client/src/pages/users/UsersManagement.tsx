@@ -130,17 +130,27 @@ export default function UsersManagement() {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '20',
-        search,
-        role: roleFilter === 'all' ? '' : roleFilter,
-        is_active: activeFilter === 'all' ? '' : activeFilter
+        pageSize: '20',
+        q: search
+        // Note: role and is_active filters not supported by /api/v1/users yet
       });
 
-      const response = await api.get(`/api/v1/users/comprehensive?${params}`);
+      const response = await api.get(`/api/v1/users?${params}`);
       
       if (response.success) {
-        setUsers(response.data || []);
-        setTotalUsers(response.count || 0);
+        let userData = response.data || [];
+        
+        // Apply client-side filtering since endpoint doesn't support these filters yet
+        if (roleFilter !== 'all') {
+          userData = userData.filter((user: any) => user.role === roleFilter);
+        }
+        if (activeFilter !== 'all') {
+          const isActiveFilter = activeFilter === 'true';
+          userData = userData.filter((user: any) => user.isActive === isActiveFilter);
+        }
+        
+        setUsers(userData);
+        setTotalUsers(userData.length);
       } else {
         throw new Error(response.error?.message || 'Failed to load users');
       }
@@ -155,12 +165,28 @@ export default function UsersManagement() {
     }
   };
 
-  // Load statistics
+  // Load statistics (simplified since comprehensive stats not available)
   const loadStats = async () => {
     try {
-      const response = await api.get('/api/v1/users/comprehensive/__stats');
+      // Calculate basic stats from user list
+      const response = await api.get('/api/v1/users?pageSize=1000'); // Get more users for stats
       if (response.success) {
-        setStats(response.data);
+        const users = response.data || [];
+        const totalUsers = users.length;
+        const activeUsers = users.filter((u: any) => u.isActive).length;
+        const recentUsers = users.filter((u: any) => {
+          const created = new Date(u.createdAt);
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return created >= thirtyDaysAgo;
+        }).length;
+        
+        setStats({
+          totalUsers,
+          activeUsers,
+          recentUsers,
+          roleBreakdown: {}
+        });
       }
     } catch (error) {
       console.warn('Failed to load user stats:', error);
@@ -191,20 +217,13 @@ export default function UsersManagement() {
     try {
       const userData = {
         email: formData.email,
-        full_name: formData.fullName,
-        phone: formData.phone || undefined,
-        role: formData.role,
-        password: formData.password || undefined,
-        address_line1: formData.addressLine1 || undefined,
-        address_line2: formData.addressLine2 || undefined,
-        city: formData.city || undefined,
-        state: formData.state || undefined,
-        postal_code: formData.postalCode || undefined,
-        country: formData.country,
-        notes: formData.notes || undefined
+        fullName: formData.fullName,
+        phone: formData.phone || undefined
+        // Note: Standard users endpoint only supports basic fields (email, phone, fullName)
+        // Extended fields like address, role, notes are not supported in this endpoint
       };
 
-      const response = await api.post('/api/v1/users/comprehensive', userData);
+      const response = await api.post('/api/v1/users', userData);
       
       if (response.success) {
         toast({
@@ -236,20 +255,13 @@ export default function UsersManagement() {
     setUpdating(selectedUser.id);
     try {
       const updateData = {
-        email: formData.email || undefined,
-        full_name: formData.fullName || undefined,
-        phone: formData.phone || undefined,
-        role: formData.role || undefined,
-        address_line1: formData.addressLine1 || undefined,
-        address_line2: formData.addressLine2 || undefined,
-        city: formData.city || undefined,
-        state: formData.state || undefined,
-        postal_code: formData.postalCode || undefined,
-        country: formData.country || undefined,
-        notes: formData.notes || undefined
+        email: formData.email
+        // Note: Standard users endpoint has limited PATCH support
+        // Only email updates are currently supported via /api/v1/users/:id/email
+        // For full user updates, we may need to use the comprehensive endpoint or extend the standard one
       };
 
-      const response = await api.patch(`/api/v1/users/comprehensive/${selectedUser.id}`, updateData);
+      const response = await api.patch(`/api/v1/users/${selectedUser.id}`, updateData);
       
       if (response.success) {
         toast({
@@ -278,7 +290,7 @@ export default function UsersManagement() {
     if (!confirm('Are you sure you want to deactivate this user?')) return;
 
     try {
-      const response = await api.delete(`/api/v1/users/comprehensive/${userId}`);
+      const response = await api.delete(`/api/v1/users/${userId}`);
       
       if (response.success) {
         toast({
