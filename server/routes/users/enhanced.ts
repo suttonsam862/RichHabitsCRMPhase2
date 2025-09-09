@@ -204,7 +204,8 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
       page_access: defaultPageAccess,
       is_active: 1,
       email_verified: 1,
-      created_by: req.user?.id
+      created_by: req.user?.id,
+      initial_temp_password: validatedData.role !== 'customer' ? tempPassword : null // Store for admin viewing
     };
 
     const { data: user, error: userError } = await supabaseAdmin

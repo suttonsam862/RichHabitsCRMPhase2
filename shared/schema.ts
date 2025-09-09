@@ -36,6 +36,7 @@ export const users = pgTable('users', {
   password_reset_token: text('password_reset_token'),
   password_reset_expires: timestamp('password_reset_expires'),
   email_verified: boolean('email_verified').default(false), // false = unverified, true = verified
+  initial_temp_password: text('initial_temp_password'), // Auto-generated password for admin view (encrypted)
   
   // Permissions and access
   permissions: jsonb('permissions').default('{}'), // Detailed action-level permissions
