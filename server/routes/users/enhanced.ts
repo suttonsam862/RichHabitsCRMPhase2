@@ -43,7 +43,10 @@ const updateUserSchema = z.object({
 // List users with staff/customer separation
 router.get('/', requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const { type = 'all', page = '1', limit = '20', search = '' } = req.query;
+    const { type = 'all', page = '1', limit = '20', pageSize, search = '', q = '' } = req.query;
+    
+    // Use q parameter as fallback for search if provided (frontend compatibility)
+    const searchTerm = search || q || '';
     
     // Check if user has permission to view users
     // For now, allow all authenticated users - will be enhanced with proper permission checks
@@ -53,7 +56,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     }
 
     const pageNum = Math.max(1, parseInt(page as string) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 20));
+    const limitNum = Math.min(100, Math.max(1, parseInt((pageSize || limit) as string) || 20));
     const offset = (pageNum - 1) * limitNum;
 
     // Build query based on type filter
@@ -97,8 +100,8 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     }
 
     // Apply search filter
-    if (search && typeof search === 'string') {
-      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+    if (searchTerm && typeof searchTerm === 'string') {
+      query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
     }
 
     // Apply pagination  
