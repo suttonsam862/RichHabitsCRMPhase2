@@ -321,7 +321,8 @@ router.post('/',
         createdAt: newUser.user?.created_at,
         updatedAt: newUser.user?.updated_at
       };
-      sendOk(res, createdUser, undefined, 201);
+      res.status(201);
+      sendOk(res, createdUser);
     } catch (error) {
       handleDatabaseError(res, error, 'create user');
     }
