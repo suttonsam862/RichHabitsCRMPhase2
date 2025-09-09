@@ -83,11 +83,32 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
     const results = authUsers?.users || [];
     const total = authUsers?.total || 0;
 
+    // Filter out test/mock users based on email patterns
+    const isTestUser = (email: string | undefined) => {
+      if (!email) return false;
+      const testPatterns = [
+        /test/i,
+        /mock/i,
+        /demo/i,
+        /fake/i,
+        /example\.com$/i,
+        /test\.com$/i,
+        /mock\.com$/i,
+        /tempmail/i,
+        /10minutemail/i,
+        /throwaway/i,
+        /placeholder/i
+      ];
+      return testPatterns.some(pattern => pattern.test(email));
+    };
+
+    const realUsers = results.filter(user => !isTestUser(user.email));
+
     // Filter by search query if provided
-    let filteredResults = results;
+    let filteredResults = realUsers;
     if (q && typeof q === 'string' && q.trim()) {
       const searchTerm = q.trim().toLowerCase();
-      filteredResults = results.filter(user => 
+      filteredResults = realUsers.filter(user => 
         user.email?.toLowerCase().includes(searchTerm) ||
         user.user_metadata?.full_name?.toLowerCase().includes(searchTerm)
       );
@@ -107,7 +128,7 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
       lastLogin: user.last_sign_in_at,
     }));
 
-    sendOk(res, data, total);
+    sendOk(res, data, filteredResults.length);
   } catch (error) {
     handleDatabaseError(res, error, 'list users');
   }
