@@ -96,6 +96,14 @@ export const orgSports = pgTable('org_sports', {
     contact_name: text('contact_name').notNull(),
     contact_email: text('contact_email').notNull(),
     contact_phone: text('contact_phone'),
+    // Individual shipping address for this sport
+    shipping_address_line1: text('shipping_address_line1'),
+    shipping_address_line2: text('shipping_address_line2'),
+    shipping_city: text('shipping_city'),
+    shipping_state: text('shipping_state'),
+    shipping_postal_code: text('shipping_postal_code'),
+    shipping_country: text('shipping_country').default('United States'),
+    use_org_address: boolean('use_org_address').default(true).notNull(), // true = use org's main address, false = use custom shipping address
     assigned_salesperson_id: varchar('assigned_salesperson_id').references(() => users.id), // Links to assigned salesperson
     is_primary_contact: boolean('is_primary_contact').default(false).notNull(), // false = no, true = yes
     created_at: timestamp('created_at').defaultNow().notNull(),

@@ -82,46 +82,56 @@ async function validateDatabaseSchema() {
   }
 }
 
-// User auto-creation helper function
+// User auto-creation helper function - Updated to use Supabase Auth
 async function createUserFromContact(contactEmail: string, contactName: string, organizationId: string) {
   try {
-    // Check if user already exists
-    const { data: existingUser } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', contactEmail)
-      .single();
+    // Check if Supabase Auth user already exists
+    // Use paginated approach since listUsers doesn't support email filtering
+    let page = 1;
+    let existingUser = null;
+    
+    while (!existingUser) {
+      const { data: authUsersPage, error: authCheckError } = await supabaseAdmin.auth.admin.listUsers({
+        page: page,
+        perPage: 100
+      });
+
+      if (authCheckError) {
+        logger.error(`Failed to check existing auth users: ${authCheckError.message}`);
+        break;
+      }
+
+      existingUser = authUsersPage?.users?.find(user => user.email === contactEmail);
+      
+      // If we found less than 100 users, we've reached the end
+      if (!authUsersPage?.users || authUsersPage.users.length < 100) {
+        break;
+      }
+      page++;
+    }
 
     if (existingUser) {
-      return { success: true, data: existingUser };
+      return { success: true, data: { id: existingUser.id } };
     }
 
-    // Create new user
-    const userData = {
+    // Create new Supabase Auth user (proper authenticated user)
+    const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: contactEmail,
-      full_name: contactName,
-      role: 'contact',
-      organization_id: organizationId,
-      is_active: 1,
-      email_verified: 0,
-      password_hash: null, // Auto-generated accounts don't have passwords initially
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+      user_metadata: {
+        full_name: contactName,
+        organization_id: organizationId,
+        role: 'contact'
+      },
+      email_confirm: false  // Skip email confirmation for auto-created contacts
+    });
 
-    const { data: newUser, error: userError } = await supabaseAdmin
-      .from('users')
-      .insert([userData])
-      .select('id')
-      .single();
-
-    if (userError) {
-      logger.error(`Failed to create user from contact: ${userError.message}`);
-      return { success: false, error: userError.message };
+    if (authError) {
+      logger.error(`Failed to create auth user from contact: ${authError.message}`);
+      return { success: false, error: authError.message };
     }
 
-    logger.info(`Auto-created user for contact: ${contactEmail}`);
-    return { success: true, data: newUser };
+    logger.info(`Auto-created Supabase Auth user for contact: ${contactEmail} (ID: ${newAuthUser.user?.id})`);
+    return { success: true, data: { id: newAuthUser.user?.id } };
 
   } catch (error: any) {
     logger.error('Error in createUserFromContact:', error);

@@ -219,10 +219,10 @@ export function BrandingStep({ formData, updateFormData, onNext, onPrev }: Brand
             <Button
               type="submit"
               className="neon-button"
-              data-testid="button-next-branding"
+              data-testid="button-create-organization"
             >
               <div className="neon-button-inner flex items-center">
-                Next: Sports & Contacts
+                Create Organization
                 <ArrowRight className="ml-2 h-4 w-4" />
               </div>
             </Button>
