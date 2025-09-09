@@ -1254,6 +1254,7 @@ router.get('/:id/sports', async (req, res) => {
 const SportsSchema = z.object({
   sports: z.array(z.object({
     sport_id: z.string(),
+    team_name: z.string().optional(),
     contact_name: z.string().min(1),
     contact_email: z.string().email(),
     contact_phone: z.string().optional()
@@ -1281,9 +1282,11 @@ router.post('/:id/sports', async (req, res) => {
     const orgSportsData = sports.map(sport => ({
       organization_id: organizationId,
       sport_id: sport.sport_id,
+      team_name: sport.team_name || 'Main Team', // Add required team_name field
       contact_name: sport.contact_name,
       contact_email: sport.contact_email,
       contact_phone: sport.contact_phone || null,
+      is_primary_contact: 1, // Add required field
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
