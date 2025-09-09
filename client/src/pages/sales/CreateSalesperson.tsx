@@ -144,7 +144,7 @@ export default function CreateSalesperson() {
                           <FormControl>
                             <Input
                               placeholder="Enter full name"
-                              className="bg-white dark:bg-gray-700"
+                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               data-testid="input-full-name"
                               {...field}
                             />
@@ -164,7 +164,7 @@ export default function CreateSalesperson() {
                             <Input
                               type="email"
                               placeholder="Enter email address"
-                              className="bg-white dark:bg-gray-700"
+                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               data-testid="input-email"
                               {...field}
                             />
@@ -186,7 +186,7 @@ export default function CreateSalesperson() {
                             <Input
                               type="tel"
                               placeholder="Enter phone number"
-                              className="bg-white dark:bg-gray-700"
+                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               data-testid="input-phone"
                               {...field}
                             />
