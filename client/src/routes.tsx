@@ -29,6 +29,8 @@ const AddSportsPage = lazy(() => import('@/pages/organizations/AddSportsPage').t
 const OrganizationKPIPage = lazy(() => import('@/pages/organizations/KPIPage').then(m => ({ default: m.default })));
 // Comprehensive users management with full CRUD, roles, and permissions
 const UsersManagement = lazy(() => import('@/pages/users/UsersManagement').then(m => ({ default: m.default })));
+const UserDetailsPage = lazy(() => import('@/pages/users/UserDetailsPage').then(m => ({ default: m.default })));
+const ComprehensiveUserEditForm = lazy(() => import('@/pages/users/ComprehensiveUserEditForm').then(m => ({ default: m.default })));
 const SalesManagement = lazy(() => import('@/pages/sales/SalesManagement').then(m => ({ default: m.default })));
 const CreateSalesperson = lazy(() => import('@/pages/sales/CreateSalesperson').then(m => ({ default: m.default })));
 const SalespersonDetails = lazy(() => import('@/pages/sales/SalespersonDetails').then(m => ({ default: m.default })));
@@ -38,6 +40,7 @@ const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ d
 const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
 const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const OrganizedSettingsPage = lazy(() => import('@/pages/settings/OrganizedSettingsPage').then(m => ({ default: m.default })));
 const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ default: m.default })));
 const QuoteHistory = lazy(() => import('@/pages/QuoteHistory').then(m => ({ default: m.default })));
 
@@ -82,6 +85,8 @@ export function AppRoutes() {
               
               <Route path="/users" element={<ProtectedRoute />}>
                 <Route index element={<UsersManagement />} />
+                <Route path=":id" element={<UserDetailsPage />} />
+                <Route path=":id/edit" element={<ComprehensiveUserEditForm />} />
               </Route>
               
               <Route path="/sales" element={<ProtectedRoute />}>
@@ -113,7 +118,8 @@ export function AppRoutes() {
               </Route>
               
               <Route path="/settings" element={<ProtectedRoute />}>
-                <Route index element={<SettingsPage />} />
+                <Route index element={<OrganizedSettingsPage />} />
+                <Route path="old" element={<SettingsPage />} />
               </Route>
 
               {/* 404 - Not Found */}

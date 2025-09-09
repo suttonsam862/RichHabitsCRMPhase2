@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,8 @@ import {
   Building,
   Loader2,
   UserPlus,
-  Eye
+  Eye,
+  Settings
 } from 'lucide-react';
 
 interface User {
@@ -627,19 +629,32 @@ export default function UsersManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openViewModal(user)}
-                        data-testid={`button-view-user-${user.id}`}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <Link to={`/users/${user.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-cyan-400 hover:text-cyan-300"
+                          data-testid={`button-view-user-${user.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Link to={`/users/${user.id}/edit`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-purple-400 hover:text-purple-300"
+                          data-testid={`button-edit-user-${user.id}`}
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => openEditModal(user)}
-                        data-testid={`button-edit-user-${user.id}`}
+                        className="text-green-400 hover:text-green-300"
+                        data-testid={`button-quick-edit-user-${user.id}`}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -648,6 +663,7 @@ export default function UsersManagement() {
                         size="sm"
                         onClick={() => handleDeleteUser(user.id)}
                         disabled={!user.isActive}
+                        className="text-red-400 hover:text-red-300 disabled:opacity-50"
                         data-testid={`button-delete-user-${user.id}`}
                       >
                         <Trash2 className="w-4 h-4" />
