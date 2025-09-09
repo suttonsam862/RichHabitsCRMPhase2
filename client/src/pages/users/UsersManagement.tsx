@@ -137,10 +137,10 @@ export default function UsersManagement() {
         // Note: role and is_active filters not supported by /api/v1/users yet
       });
 
-      const response = await api.get(`/api/v1/users?${params}`);
+      const response = await api.get(`/api/v1/users/enhanced?${params}`);
       
       if (response.success) {
-        let userData = response.data || [];
+        let userData = response.data?.users || response.data || [];
         
         // Apply client-side filtering since endpoint doesn't support these filters yet
         if (roleFilter !== 'all') {
@@ -341,12 +341,12 @@ export default function UsersManagement() {
       phone: user.phone || '',
       role: user.role || 'customer', // Ensure role always has a valid value
       password: '', // Don't pre-fill password
-      addressLine1: user.address.line1 || '',
-      addressLine2: user.address.line2 || '',
-      city: user.address.city || '',
-      state: user.address.state || '',
-      postalCode: user.address.postalCode || '',
-      country: user.address.country || 'US',
+      addressLine1: user.address?.line1 || '',
+      addressLine2: user.address?.line2 || '',
+      city: user.address?.city || '',
+      state: user.address?.state || '',
+      postalCode: user.address?.postalCode || '',
+      country: user.address?.country || 'US',
       notes: user.notes || ''
     });
     setShowEditModal(true);

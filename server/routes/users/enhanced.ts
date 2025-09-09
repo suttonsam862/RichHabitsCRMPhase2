@@ -74,8 +74,16 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
         is_active,
         permissions,
         page_access,
+        address_line1,
+        address_line2,
+        city,
+        state,
+        postal_code,
+        country,
+        initial_temp_password,
         last_login,
         email_verified,
+        notes,
         created_at,
         updated_at
       `)
@@ -103,8 +111,32 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       return sendErr(res, 'DATABASE_ERROR', 'Failed to fetch users', error, 500);
     }
 
+    // Transform users to include address object structure
+    const transformedUsers = (users || []).map(user => ({
+      ...user,
+      fullName: user.full_name,
+      isActive: !!user.is_active,
+      emailVerified: !!user.email_verified,
+      organizationId: user.organization_id,
+      jobTitle: user.job_title,
+      hireDate: user.hire_date,
+      avatarUrl: user.avatar_url,
+      lastLogin: user.last_login,
+      initialTempPassword: user.initial_temp_password,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      address: {
+        line1: user.address_line1 || '',
+        line2: user.address_line2 || '',
+        city: user.city || '',
+        state: user.state || '',
+        postalCode: user.postal_code || '',
+        country: user.country || 'US'
+      }
+    }));
+
     return sendSuccess(res, {
-      users: users || [],
+      users: transformedUsers,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -140,7 +172,31 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
       return sendErr(res, 'NOT_FOUND', 'User not found', error, 404);
     }
 
-    return sendSuccess(res, user);
+    // Transform user to include address object structure
+    const transformedUser = {
+      ...user,
+      fullName: user.full_name,
+      isActive: !!user.is_active,
+      emailVerified: !!user.email_verified,
+      organizationId: user.organization_id,
+      jobTitle: user.job_title,
+      hireDate: user.hire_date,
+      avatarUrl: user.avatar_url,
+      lastLogin: user.last_login,
+      initialTempPassword: user.initial_temp_password,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      address: {
+        line1: user.address_line1 || '',
+        line2: user.address_line2 || '',
+        city: user.city || '',
+        state: user.state || '',
+        postalCode: user.postal_code || '',
+        country: user.country || 'US'
+      }
+    };
+
+    return sendSuccess(res, transformedUser);
 
   } catch (error) {
     console.error('Error fetching user:', error);
