@@ -1,0 +1,80 @@
+5:05:10 PM [vite] Skipping frontend handler for API route: /api/v1/sales/salespeople/98b96a70-c42d-4c47-b99a-259212485de9/profile
+{
+  rid: '4ij02epk',
+  error: 'relation "salesperson_profiles" does not exist',
+  stack: 'PostgresError: relation "salesperson_profiles" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)',
+  path: '/api/v1/sales/salespeople',
+  method: 'GET',
+  timestamp: '2025-09-09T17:05:10.512Z'
+}
+{
+  rid: 'q8hxhx8u',
+  error: 'relation "salesperson_assignments" does not exist',
+  stack: 'PostgresError: relation "salesperson_assignments" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)',
+  path: '/api/v1/sales/dashboard?period=30',
+  method: 'GET',
+  timestamp: '2025-09-09T17:05:10.712Z'
+}
+[17:05:10.106] INFO (81): POST 200 456ms /api/v1/users
+    rid: "h5130gou"
+    method: "POST"
+    path: "/api/v1/users"
+    status: 200
+    ms: 456
+[17:05:10.222] WARN (81): POST 404 2ms /api/v1/sales/salespeople/98b96a70-c42d-4c47-b99a-259212485de9/profile
+    rid: "rfffpvfm"
+    method: "POST"
+    path: "/api/v1/sales/salespeople/98b96a70-c42d-4c47-b99a-259212485de9/profile"
+    status: 404
+    ms: 2
+[17:05:10.512] ERROR (81): GET 500 194ms /api/v1/sales/salespeople
+    rid: "4ij02epk"
+    method: "GET"
+    path: "/api/v1/sales/salespeople"
+    status: 500
+    ms: 194
+[17:05:10.712] ERROR (81): GET 500 400ms /api/v1/sales/dashboard?period=30
+    rid: "q8hxhx8u"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 500
+    ms: 400
+[17:05:20.905] INFO (81): Processing sports creation
+    organizationId: "2c037848-00c7-4084-ab5d-814bc04539eb"
+    count: 1
+[17:05:21.285] ERROR (81): Failed to insert sports
+    organizationId: "2c037848-00c7-4084-ab5d-814bc04539eb"
+    error: {
+      "code": "23503",
+      "details": "Key (organization_id)=(2c037848-00c7-4084-ab5d-814bc04539eb) is not present in table \"organizations\".",
+      "hint": null,
+      "message": "insert or update on table \"org_sports\" violates foreign key constraint \"org_sports_organization_id_fkey\""
+    }
+[17:05:21.285] ERROR (81): POST 500 382ms /api/v1/organizations/2c037848-00c7-4084-ab5d-814bc04539eb/sports
+    rid: "0ci1l5tm"
+    method: "POST"
+    path: "/api/v1/organizations/2c037848-00c7-4084-ab5d-814bc04539eb/sports"
+    status: 500
+    ms: 382
+[17:05:22.003] INFO (81): POST 201 121ms /api/v1/sports
+    rid: "jph5s9ew"
+    method: "POST"
+    path: "/api/v1/sports"
+    status: 201
+    ms: 121
