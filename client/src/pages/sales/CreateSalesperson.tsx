@@ -227,7 +227,7 @@ export default function CreateSalesperson() {
                               max="100"
                               step="0.5"
                               placeholder="0"
-                              className="bg-white dark:bg-gray-700"
+                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               data-testid="input-commission-rate"
                               {...field}
                               onChange={e => field.onChange(parseFloat(e.target.value) || 0)}

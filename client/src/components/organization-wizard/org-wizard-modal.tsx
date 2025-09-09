@@ -71,7 +71,7 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
               {/* Scrollable Tab Bar */}
               <div className="border-b border-white/10 px-4">
                 <ScrollArea>
-                  <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 h-12">
+                  <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 h-12">
                     <TabsTrigger
                       value="primary"
                       className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white text-white/70"
@@ -85,13 +85,6 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
                       data-testid="tab-branding"
                     >
                       Branding
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="sports"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white text-white/70"
-                      data-testid="tab-sports"
-                    >
-                      Sports & Contacts
                     </TabsTrigger>
                   </TabsList>
                 </ScrollArea>
@@ -111,17 +104,8 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
                   <BrandingStep
                     formData={formData}
                     updateFormData={updateFormData}
-                    onNext={() => setActiveTab("sports")}
+                    onNext={handleSuccess}
                     onPrev={() => setActiveTab("primary")}
-                  />
-                </TabsContent>
-
-                <TabsContent value="sports" className="mt-0">
-                  <SportsContactsStep
-                    formData={formData}
-                    updateFormData={updateFormData}
-                    onPrev={() => setActiveTab("branding")}
-                    onSuccess={handleSuccess}
                   />
                 </TabsContent>
               </div>
