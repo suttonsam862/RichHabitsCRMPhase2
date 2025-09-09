@@ -189,6 +189,20 @@ export const userRoles = pgTable('user_roles', {
   expires_at: timestamp('expires_at') // for temporary role assignments
 }, (t) => ({ pk: primaryKey({ columns: [t.user_id, t.role_id, t.organization_id] }) }));
 
+// Permission templates for creating reusable permission sets
+export const permissionTemplates = pgTable('permission_templates', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  name: text('name').notNull(),
+  description: text('description'),
+  template_type: text('template_type').default('custom').notNull(), // 'system', 'custom', 'role-based'
+  permissions: jsonb('permissions').notNull().default('{}'), // Action permissions
+  page_access: jsonb('page_access').notNull().default('{}'), // Page access permissions
+  is_active: boolean('is_active').default(true).notNull(),
+  created_by: varchar('created_by').references(() => users.id),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull()
+});
+
 // Salesperson team assignments
 export const salespersonAssignments = pgTable('salesperson_assignments', {
   id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
@@ -260,6 +274,10 @@ export const rolesRelations = relations(roles, ({ many }) => ({
   userRoles: many(userRoles)
 }));
 
+export const permissionTemplatesRelations = relations(permissionTemplates, ({ one }) => ({
+  createdBy: one(users, { fields: [permissionTemplates.created_by], references: [users.id] })
+}));
+
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
   user: one(users, { fields: [userRoles.user_id], references: [users.id] }),
   role: one(roles, { fields: [userRoles.role_id], references: [roles.id] }),
@@ -320,6 +338,9 @@ export type InsertPermission = typeof permissions.$inferInsert;
 
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof roles.$inferInsert;
+
+export type PermissionTemplate = typeof permissionTemplates.$inferSelect;
+export type InsertPermissionTemplate = typeof permissionTemplates.$inferInsert;
 
 export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = typeof userRoles.$inferInsert;
