@@ -84,7 +84,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     // Apply search filter
     if (searchTerm && typeof searchTerm === 'string') {
       whereConditions.push(or(
-        like(users.full_name, `%${searchTerm}%`),
+        like(users.fullName, `%${searchTerm}%`),
         like(users.email, `%${searchTerm}%`)
       ));
     }
@@ -94,7 +94,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     // Execute query with Drizzle ORM
     const usersQuery = db.select().from(users)
       .where(whereClause)
-      .orderBy(desc(users.created_at))
+      .orderBy(desc(users.createdAt))
       .limit(limitNum)
       .offset(offset);
 
@@ -111,23 +111,12 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     // Transform users to include address object structure
     const transformedUsers = (usersResult || []).map(user => ({
       ...user,
-      fullName: user.full_name,
-      isActive: !!user.is_active,
-      emailVerified: !!user.email_verified,
-      organizationId: user.organization_id,
-      jobTitle: user.job_title,
-      hireDate: user.hire_date,
-      avatarUrl: user.avatar_url,
-      lastLogin: user.last_login,
-      initialTempPassword: user.initial_temp_password,
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
       address: {
-        line1: user.address_line1 || '',
-        line2: user.address_line2 || '',
+        line1: user.addressLine1 || '',
+        line2: user.addressLine2 || '',
         city: user.city || '',
         state: user.state || '',
-        postalCode: user.postal_code || '',
+        postalCode: user.postalCode || '',
         country: user.country || 'US'
       }
     }));
@@ -170,23 +159,12 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
     // Transform user to include address object structure
     const transformedUser = {
       ...user,
-      fullName: user.full_name,
-      isActive: !!user.is_active,
-      emailVerified: !!user.email_verified,
-      organizationId: user.organization_id,
-      jobTitle: user.job_title,
-      hireDate: user.hire_date,
-      avatarUrl: user.avatar_url,
-      lastLogin: user.last_login,
-      initialTempPassword: user.initial_temp_password,
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
       address: {
-        line1: user.address_line1 || '',
-        line2: user.address_line2 || '',
+        line1: user.addressLine1 || '',
+        line2: user.addressLine2 || '',
         city: user.city || '',
         state: user.state || '',
-        postalCode: user.postal_code || '',
+        postalCode: user.postalCode || '',
         country: user.country || 'US'
       }
     };
@@ -243,23 +221,23 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
     const userData = {
       id: authUser.user.id,
       email: validatedData.email,
-      full_name: validatedData.fullName,
+      fullName: validatedData.fullName,
       phone: validatedData.phone || null,
       role: validatedData.role,
       subrole: validatedData.subrole || null,
-      organization_id: validatedData.organizationId || null,
-      job_title: validatedData.jobTitle || null,
+      organizationId: validatedData.organizationId || null,
+      jobTitle: validatedData.jobTitle || null,
       department: validatedData.department || null,
-      hire_date: validatedData.hireDate ? new Date(validatedData.hireDate) : null,
+      hireDate: validatedData.hireDate || null,
       permissions: defaultPermissions,
-      page_access: defaultPageAccess,
-      is_active: true,
-      email_verified: true,
-      created_by: req.user?.id,
-      initial_temp_password: validatedData.role !== 'customer' ? tempPassword : null
+      pageAccess: defaultPageAccess,
+      isActive: 1,
+      emailVerified: 1,
+      createdBy: req.user?.id,
+      initialTempPassword: validatedData.role !== 'customer' ? tempPassword : null
     };
 
-    const [user] = await db.insert(users).values(userData).returning();
+    const [user] = await db.insert(users).values([userData]).returning();
 
     if (!user) {
       console.error('User table creation failed - no user returned');
