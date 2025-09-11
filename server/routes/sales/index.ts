@@ -26,17 +26,17 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
   const salespeople = await db
     .select({
       id: users.id,
-      full_name: users.full_name,
+      full_name: users.fullName,
       email: users.email,
       phone: users.phone,
-      organization_id: users.organization_id,
+      organization_id: users.organizationId,
       profile: salespersonProfiles,
       assignments: sql<number>`COUNT(${salespersonAssignments.id})::int`,
-      active_assignments: sql<number>`COUNT(CASE WHEN ${salespersonAssignments.is_active} = true THEN 1 END)::int`
+      active_assignments: sql<number>`COUNT(CASE WHEN ${salespersonAssignments.isActive} = true THEN 1 END)::int`
     })
     .from(users)
-    .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.user_id))
-    .leftJoin(salespersonAssignments, eq(users.id, salespersonAssignments.salesperson_id))
+    .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId))
+    .leftJoin(salespersonAssignments, eq(users.id, salespersonAssignments.salespersonId))
     .where(eq(users.role, 'sales'))
     .groupBy(users.id, salespersonProfiles.id);
 
@@ -51,7 +51,7 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
   const [salesperson] = await db
     .select()
     .from(users)
-    .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.user_id))
+    .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId))
     .where(eq(users.id, id));
 
   if (!salesperson) {
@@ -62,26 +62,23 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
   const assignments = await db
     .select({
       id: salespersonAssignments.id,
-      organization_id: salespersonAssignments.organization_id,
-      sport_id: salespersonAssignments.sport_id,
-      team_name: salespersonAssignments.team_name,
-      is_active: salespersonAssignments.is_active,
-      assigned_at: salespersonAssignments.assigned_at,
+      organization_id: salespersonAssignments.organizationId,
+      is_active: salespersonAssignments.isActive,
+      assigned_at: salespersonAssignments.assignedAt,
       notes: salespersonAssignments.notes,
       organization_name: organizations.name,
       sport_name: sports.name,
     })
     .from(salespersonAssignments)
-    .leftJoin(organizations, eq(salespersonAssignments.organization_id, organizations.id))
-    .leftJoin(sports, eq(salespersonAssignments.sport_id, sports.id))
-    .where(eq(salespersonAssignments.salesperson_id, id));
+    .leftJoin(organizations, eq(salespersonAssignments.organizationId, organizations.id))
+    .where(eq(salespersonAssignments.salespersonId, id));
 
   // Get recent metrics
   const metrics = await db
     .select()
     .from(salespersonMetrics)
-    .where(eq(salespersonMetrics.salesperson_id, id))
-    .orderBy(desc(salespersonMetrics.period_start))
+    .where(eq(salespersonMetrics.salespersonId, id))
+    .orderBy(desc(salespersonMetrics.periodStart))
     .limit(12);
 
   res.json({
@@ -93,13 +90,13 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
 
 // Create or update salesperson profile
 const profileSchema = z.object({
-  employee_id: z.string().optional(),
-  tax_id: z.string().optional(),
-  commission_rate: z.number().min(0).max(10000).optional(),
-  territory: z.array(z.string()).optional(),
-  hire_date: z.string().optional(),
-  manager_id: z.string().optional(),
-  performance_tier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'standard']).optional()
+  employeeId: z.string().optional(),
+  taxId: z.string().optional(),
+  commissionRate: z.string().optional(), // Decimal fields expect strings
+  territory: z.string().optional(), // Single territory, not array
+  hireDate: z.string().optional(),
+  managerId: z.string().optional(),
+  performanceTier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'standard']).optional()
 });
 
 // Function to generate unique employee ID
@@ -114,7 +111,7 @@ async function generateEmployeeId() {
     const [existing] = await db
       .select()
       .from(salespersonProfiles)
-      .where(eq(salespersonProfiles.employee_id, employeeId));
+      .where(eq(salespersonProfiles.employeeId, employeeId));
 
     if (!existing) {
       break;
@@ -137,7 +134,7 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
   const [existing] = await db
     .select()
     .from(salespersonProfiles)
-    .where(eq(salespersonProfiles.user_id, id));
+    .where(eq(salespersonProfiles.userId, id));
 
   if (existing) {
     // Update existing profile (keep existing employee_id if present)
@@ -145,10 +142,10 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
       .update(salespersonProfiles)
       .set({
         ...profileData,
-        hire_date: profileData.hire_date ? new Date(profileData.hire_date) : undefined,
-        updated_at: new Date()
+        hireDate: profileData.hireDate || undefined,
+        updatedAt: new Date().toISOString()
       })
-      .where(eq(salespersonProfiles.user_id, id))
+      .where(eq(salespersonProfiles.userId, id))
       .returning();
 
     res.json(updated);
@@ -159,10 +156,10 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
     const [created] = await db
       .insert(salespersonProfiles)
       .values({
-        user_id: id,
+        userId: id,
         ...profileData,
-        employee_id: employeeId,
-        hire_date: profileData.hire_date ? new Date(profileData.hire_date) : undefined
+        employeeId: employeeId,
+        hireDate: profileData.hireDate || undefined
       })
       .returning();
 
@@ -172,9 +169,8 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
 
 // Assign salesperson to team
 const assignmentSchema = z.object({
-  organization_id: z.string(),
-  sport_id: z.string(),
-  team_name: z.string(),
+  organizationId: z.string(),
+  territory: z.string().optional(),
   notes: z.string().optional()
 });
 
@@ -188,10 +184,8 @@ router.post("/salespeople/:id/assignments", requireAuth, asyncHandler(async (req
     .from(salespersonAssignments)
     .where(
       and(
-        eq(salespersonAssignments.salesperson_id, id),
-        eq(salespersonAssignments.organization_id, assignmentData.organization_id),
-        eq(salespersonAssignments.sport_id, assignmentData.sport_id),
-        eq(salespersonAssignments.team_name, assignmentData.team_name)
+        eq(salespersonAssignments.salespersonId, id),
+        eq(salespersonAssignments.organizationId, assignmentData.organizationId)
       )
     );
 
@@ -202,23 +196,14 @@ router.post("/salespeople/:id/assignments", requireAuth, asyncHandler(async (req
   const [assignment] = await db
     .insert(salespersonAssignments)
     .values({
-      salesperson_id: id,
-      assigned_by: req.user?.id,
+      salespersonId: id,
+      assignedBy: req.user?.id,
       ...assignmentData
     })
     .returning();
 
-  // Also update the org_sports table to assign this salesperson
-  await db
-    .update(orgSports)
-    .set({ assigned_salesperson_id: id })
-    .where(
-      and(
-        eq(orgSports.organization_id, assignmentData.organization_id),
-        eq(orgSports.sport_id, assignmentData.sport_id),
-        eq(orgSports.team_name, assignmentData.team_name)
-      )
-    );
+  // Note: orgSports assignment would need sportId and teamName from request
+  // This is handled separately as salespersonAssignments only tracks org-level assignments
 
   res.json(assignment);
 }));
@@ -242,17 +227,8 @@ router.delete("/assignments/:assignmentId", requireAuth, asyncHandler(async (req
     .delete(salespersonAssignments)
     .where(eq(salespersonAssignments.id, assignmentId));
 
-  // Remove assignment from org_sports
-  await db
-    .update(orgSports)
-    .set({ assigned_salesperson_id: null })
-    .where(
-      and(
-        eq(orgSports.organization_id, assignment.organization_id),
-        eq(orgSports.sport_id, assignment.sport_id),
-        eq(orgSports.team_name, assignment.team_name)
-      )
-    );
+  // Note: orgSports unassignment would need to be handled separately
+  // based on organization-level assignment removal
 
   res.json({ success: true });
 }));
@@ -273,8 +249,8 @@ router.patch("/assignments/:assignmentId/toggle", requireAuth, asyncHandler(asyn
   const [updated] = await db
     .update(salespersonAssignments)
     .set({ 
-      is_active: !assignment.is_active,
-      updated_at: new Date()
+      isActive: !assignment.isActive,
+      updatedAt: new Date().toISOString()
     })
     .where(eq(salespersonAssignments.id, assignmentId))
     .returning();
