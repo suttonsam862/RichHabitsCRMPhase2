@@ -81,9 +81,24 @@ export default function SimplifiedSetup() {
   });
 
   // Fetch available sports from API
-  const { data: availableSports = [] } = useQuery({
+  const { 
+    data: availableSports = [], 
+    isLoading: sportsLoading, 
+    error: sportsError 
+  } = useQuery({
     queryKey: ['sports'],
-    queryFn: () => api.get('/api/v1/sports').then(r => r.success ? r.data : []),
+    queryFn: async () => {
+      try {
+        const response = await api.get('/api/v1/sports');
+        if (response.success && Array.isArray(response.data)) {
+          return response.data;
+        }
+        return [];
+      } catch (error) {
+        console.warn('Failed to fetch sports:', error);
+        return [];
+      }
+    },
   });
 
   // Load organization data
@@ -157,7 +172,9 @@ export default function SimplifiedSetup() {
 
   // Sports contact management
   const addSportContact = () => {
-    const sportName = availableSports.find((s: any) => s.id === selectedSportId)?.name;
+    // Ensure availableSports is an array before using find
+    const sportsArray = Array.isArray(availableSports) ? availableSports : [];
+    const sportName = sportsArray.find((s: any) => s.id === selectedSportId)?.name;
     
     if (!selectedSportId || !sportName) {
       toast({
@@ -506,9 +523,12 @@ export default function SimplifiedSetup() {
                   onChange={(e) => setSelectedSportId(e.target.value)}
                   className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:border-cyan-500/50"
                   data-testid="select-sport"
+                  disabled={sportsLoading}
                 >
-                  <option value="">Select a sport...</option>
-                  {availableSports.filter((sport: any) => !sports.some((s: SportContact) => s.sport_id === sport.id)).map((sport: any) => (
+                  <option value="">
+                    {sportsLoading ? "Loading sports..." : sportsError ? "Error loading sports" : "Select a sport..."}
+                  </option>
+                  {Array.isArray(availableSports) && availableSports.filter((sport: any) => !sports.some((s: SportContact) => s.sport_id === sport.id)).map((sport: any) => (
                     <option key={sport.id} value={sport.id} className="bg-gray-800">
                       {sport.name}
                     </option>
