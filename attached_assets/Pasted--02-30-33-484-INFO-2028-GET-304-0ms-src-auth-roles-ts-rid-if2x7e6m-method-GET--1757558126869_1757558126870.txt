@@ -1,0 +1,81 @@
+[02:30:33.484] INFO (2028): GET 304 0ms /src/auth/roles.ts
+    rid: "if2x7e6m"
+    method: "GET"
+    path: "/src/auth/roles.ts"
+    status: 304
+    ms: 0
+[02:30:33.485] INFO (2028): GET 304 0ms /src/auth/guard.tsx
+    rid: "8ndu0dwk"
+    method: "GET"
+    path: "/src/auth/guard.tsx"
+    status: 304
+    ms: 0
+[02:30:33.485] INFO (2028): GET 304 0ms /@fs/home/runner/workspace/attached_assets/BlackPNG_New_Rich_Habits_Logo_caa84ddc-c1dc-49fa-a3cf-063db73499d3_1757019113547.png?import
+    rid: "1v32r52w"
+    method: "GET"
+    path: "/@fs/home/runner/workspace/attached_assets/BlackPNG_New_Rich_Habits_Logo_caa84ddc-c1dc-49fa-a3cf-063db73499d3_1757019113547.png?import"
+    status: 304
+    ms: 0
+[02:30:33.494] INFO (2028): GET 304 0ms /src/lib/devtools.ts
+    rid: "8qb6hg0l"
+    method: "GET"
+    path: "/src/lib/devtools.ts"
+    status: 304
+    ms: 0
+[02:31:26.147] INFO (2028): organizations.list ok
+    rid: "1310q8rw"
+    count: 10
+[02:31:26.147] INFO (2028): GET 304 256ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "1310q8rw"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 256
+Error fetching users: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "users.role".',
+  message: 'column users.subrole does not exist'
+}
+Error fetching users: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "users.role".',
+  message: 'column users.subrole does not exist'
+}
+Error fetching users: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "users.role".',
+  message: 'column users.subrole does not exist'
+}
+Error fetching users: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "users.role".',
+  message: 'column users.subrole does not exist'
+}
+[02:34:57.767] ERROR (2028): GET 500 252ms /api/v1/users/enhanced?pageSize=1000
+    rid: "ciodc129"
+    method: "GET"
+    path: "/api/v1/users/enhanced?pageSize=1000"
+    status: 500
+    ms: 252
+[02:34:57.988] ERROR (2028): GET 500 620ms /api/v1/users/enhanced?page=1&pageSize=20&q=
+    rid: "1un9kr69"
+    method: "GET"
+    path: "/api/v1/users/enhanced?page=1&pageSize=20&q="
+    status: 500
+    ms: 620
+[02:34:58.250] ERROR (2028): GET 500 431ms /api/v1/users/enhanced?pageSize=1000
+    rid: "sdt8h2of"
+    method: "GET"
+    path: "/api/v1/users/enhanced?pageSize=1000"
+    status: 500
+    ms: 431
+[02:34:58.368] ERROR (2028): GET 500 323ms /api/v1/users/enhanced?page=1&pageSize=20&q=
+    rid: "fueip7zg"
+    method: "GET"
+    path: "/api/v1/users/enhanced?page=1&pageSize=20&q="
+    status: 500
+    ms: 323
