@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-09-11T02:59:39.399Z",
+  "generatedAt": "2025-09-11T17:16:42.580Z",
   "columns": [
     {
       "table_schema": "public",
@@ -1503,6 +1503,14 @@
       "column_name": "assigned_salesperson_id",
       "data_type": "character varying",
       "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "column_name": "team_name",
+      "data_type": "text",
+      "is_nullable": "NO",
       "character_maximum_length": null
     },
     {
@@ -3274,6 +3282,12 @@
     {
       "table_schema": "public",
       "table_name": "org_sports",
+      "constraint_name": "2200_90123_19_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
       "constraint_name": "2200_90123_1_not_null",
       "constraint_type": "CHECK"
     },
@@ -4048,13 +4062,13 @@
     },
     {
       "table_schema": "public",
-      "table_name": "org_sports",
-      "rls_enabled": true
+      "table_name": "orders",
+      "rls_enabled": false
     },
     {
       "table_schema": "public",
-      "table_name": "orders",
-      "rls_enabled": false
+      "table_name": "org_sports",
+      "rls_enabled": true
     },
     {
       "table_schema": "public",
