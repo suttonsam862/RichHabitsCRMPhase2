@@ -43,15 +43,58 @@ const CreateOrganizationSchema = z.object({
 
 type CreateOrganizationRequest = z.infer<typeof CreateOrganizationSchema>;
 
+// Auto-tagging function based on organization name
+function autoTagOrganization(name: string, isBusiness: boolean = false): string[] {
+  const tags: string[] = [];
+  const nameLower = name.toLowerCase();
+  
+  // Business classification takes precedence
+  if (isBusiness) {
+    tags.push('Business');
+    return tags;
+  }
+  
+  // High School detection
+  if (nameLower.includes('high school') || nameLower.includes('hs ') || nameLower.includes(' hs')) {
+    tags.push('High School');
+  }
+  // Middle School detection  
+  else if (nameLower.includes('middle school') || nameLower.includes('junior high') || 
+           nameLower.includes('ms ') || nameLower.includes(' ms')) {
+    tags.push('Middle School');
+  }
+  // Elementary School detection
+  else if (nameLower.includes('elementary') || nameLower.includes('primary school') ||
+           nameLower.includes('grade school')) {
+    tags.push('Elementary School');
+  }
+  // General school detection
+  else if (nameLower.includes('school') || nameLower.includes('academy') || 
+           nameLower.includes('institute') || nameLower.includes('university') ||
+           nameLower.includes('college')) {
+    tags.push('School');
+  }
+  // Default to Club if no school indicators
+  else {
+    tags.push('Club');
+  }
+  
+  return tags;
+}
+
 // Column mapping function to convert camelCase to snake_case
 function mapFieldsToDbColumns(data: CreateOrganizationRequest) {
+  // Auto-generate tags based on name and type
+  const autoTags = autoTagOrganization(data.name, data.isBusiness);
+  const combinedTags = [...new Set([...autoTags, ...(data.tags || [])])]; // Merge and dedupe
+
   const dbPayload: Record<string, any> = {
     name: data.name,
     is_business: data.isBusiness,
     brand_primary: data.brandPrimary || null,
     brand_secondary: data.brandSecondary || null,
     color_palette: JSON.stringify(data.colorPalette || []),
-    tags: data.tags || [],
+    tags: combinedTags,
     state: data.state || null,
     phone: data.phone || null,
     email: data.email || null,
@@ -590,6 +633,24 @@ router.post('/:id/setup', async (req: any, res) => {
       if (state) orgUpdateData.state = state;
       if (zip) orgUpdateData.zip = zip;
       if (complete !== undefined) orgUpdateData.setup_complete = complete;
+
+      // Apply auto-tagging during setup if completing setup
+      if (complete) {
+        // Get current org data to generate tags
+        const { data: currentOrg } = await sb
+          .from('organizations')
+          .select('name, is_business, tags')
+          .eq('id', orgId)
+          .single();
+
+        if (currentOrg) {
+          const autoTags = autoTagOrganization(currentOrg.name, currentOrg.is_business);
+          const existingTags = currentOrg.tags || [];
+          const combinedTags = [...new Set([...autoTags, ...existingTags])];
+          orgUpdateData.tags = combinedTags;
+          logger.info({ orgId, autoTags, existingTags, combinedTags }, 'Applied auto-tagging during setup completion');
+        }
+      }
 
       const { error: orgError } = await sb
         .from('organizations')

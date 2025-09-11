@@ -920,7 +920,7 @@ export default function SimplifiedSetup() {
             {sports.length > 0 && (
               <div className="space-y-3 mt-6">
                 <h4 className="text-white font-medium">Added Sports & Contacts:</h4>
-                {sports.map((currentSport) => (
+                {sports.map((currentSport, index) => (
                   <div key={currentSport.id} className="flex items-center justify-between bg-white/5 rounded-lg p-4 border border-white/10">
                     <div>
                       <h4 className="font-medium text-white">

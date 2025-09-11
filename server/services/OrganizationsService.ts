@@ -84,6 +84,19 @@ export class OrganizationsService {
         query = query.eq('is_archived', false);
       }
 
+      // Tag filter - support both single tag and organization type filters
+      if (params.tag && params.tag.trim()) {
+        const tagValue = params.tag.trim();
+        // Support filtering by organization type categories
+        if (['High School', 'Middle School', 'Elementary School', 'School', 'Club', 'Business'].includes(tagValue)) {
+          query = query.contains('tags', [tagValue]);
+        } else {
+          // General tag filtering
+          query = query.contains('tags', [tagValue]);
+        }
+      }
+
+
       // Apply sorting
       const sortColumn = params.sort === 'updated' ? 'updated_at' : 'name';
       const ascending = params.dir === 'asc';
@@ -106,7 +119,7 @@ export class OrganizationsService {
         };
       }
 
-      // Transform data using hardened mapping
+      // Transform data using hardened mapping and apply auto-tagging
       const transformedData = organizations?.map(org => this.transformOrganization(org)) || [];
 
       return {
@@ -127,11 +140,31 @@ export class OrganizationsService {
 
   /**
    * HARDENED METHOD: Transform database row to frontend format
-   * Handles missing fields gracefully with sensible defaults
+   * Handles missing fields gracefully with sensible defaults and applies auto-tagging
    */
-  // Transform snake_case to camelCase for frontend consumption
+  // Transform snake_case to camelCase for frontend consumption and add auto-tagging
   static transformOrganization(org: any): any {
     if (!org) return null;
+
+    const name = org.name || '';
+    let tags = Array.isArray(org.tags) ? [...org.tags] : [];
+
+    // Auto-tagging logic
+    if (name.toLowerCase().includes('high school')) {
+      if (!tags.includes('High School')) tags.push('High School');
+    } else if (name.toLowerCase().includes('middle school')) {
+      if (!tags.includes('Middle School')) tags.push('Middle School');
+    } else if (!name.toLowerCase().includes('school')) { // If no "school" in name, classify as club
+      if (!tags.includes('Club')) tags.push('Club');
+    }
+    // If none of the above, and it's not explicitly a business, it could be a general club or business
+    if (org.is_business && !tags.includes('Business')) {
+       tags.push('Business');
+    } else if (!org.is_business && !tags.includes('Club') && !tags.includes('High School') && !tags.includes('Middle School')) {
+      // Default to 'Club' if no other specific tag applies and it's not a business
+      if (!tags.includes('Club')) tags.push('Club');
+    }
+
 
     return {
       id: org.id,
@@ -151,7 +184,7 @@ export class OrganizationsService {
       gradientCss: org.gradient_css,
       isBusiness: org.is_business || false,
       isArchived: org.is_archived || false,
-      tags: Array.isArray(org.tags) ? org.tags : [],
+      tags: tags, // Use the potentially modified tags array
       setupComplete: org.setup_complete || false,
       setupCompletedAt: org.setup_completed_at,
       createdAt: org.created_at,

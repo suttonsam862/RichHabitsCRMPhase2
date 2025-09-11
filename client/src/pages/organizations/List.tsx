@@ -242,6 +242,30 @@ export default function OrganizationsList(){
             </div>
           </div>
 
+          {/* Organization Type Filter Buttons */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            <span className="text-white/60 text-sm font-medium flex items-center">Filter by Type:</span>
+            {['All', 'High School', 'Middle School', 'Elementary School', 'School', 'Club', 'Business'].map((filterType) => (
+              <Button
+                key={filterType}
+                variant={tag === (filterType === 'All' ? '' : filterType) ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setOffset(0);
+                  setTag(filterType === 'All' ? '' : filterType);
+                }}
+                className={`transition-all duration-200 ${
+                  tag === (filterType === 'All' ? '' : filterType)
+                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/25' 
+                    : 'border-white/20 text-white/70 hover:bg-white/10 hover:border-cyan-500/50'
+                }`}
+                data-testid={`filter-${filterType.toLowerCase().replace(' ', '-')}`}
+              >
+                {filterType}
+              </Button>
+            ))}
+          </div>
+
           {/* Search and Filters */}
           <div className="flex flex-wrap gap-4 items-center">
             <input 
@@ -255,7 +279,7 @@ export default function OrganizationsList(){
               className="w-48 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
               value={tag} 
               onChange={e=>{setOffset(0);setTag(e.target.value)}} 
-              placeholder="Filter by tag..."
+              placeholder="Custom tag filter..."
               data-testid="input-tag-filter"
             />
             <label className="flex items-center gap-2 text-sm">
@@ -450,8 +474,33 @@ export default function OrganizationsList(){
                       </div>
                       <div className="text-white/60 text-xs" data-testid={`text-type-${org.id}`}>
                         {org.isBusiness ? 'Business' : 'Organization'}
-                        {org.tags?.length > 0 && ` · ${org.tags.slice(0,2).join(' · ')}`}
-                        {org.financeEmail && ` · Finance: ${org.financeEmail}`}
+                        {org.tags?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {org.tags.slice(0, 3).map((orgTag: string, idx: number) => (
+                              <span 
+                                key={idx}
+                                className={`px-2 py-0.5 text-xs rounded-md border ${
+                                  ['High School', 'Middle School', 'Elementary School'].includes(orgTag)
+                                    ? 'bg-green-500/20 text-green-300 border-green-500/50'
+                                    : orgTag === 'Business'
+                                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                                    : orgTag === 'Club'
+                                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/50'
+                                    : 'bg-gray-500/20 text-gray-300 border-gray-500/50'
+                                }`}
+                                data-testid={`tag-${orgTag.toLowerCase().replace(' ', '-')}-${org.id}`}
+                              >
+                                {orgTag}
+                              </span>
+                            ))}
+                            {org.tags.length > 3 && (
+                              <span className="text-white/40 text-xs">+{org.tags.length - 3} more</span>
+                            )}
+                          </div>
+                        )}
+                        {org.financeEmail && (
+                          <div className="text-white/40 text-xs mt-1">Finance: {org.financeEmail}</div>
+                        )}
                       </div>
                     </div>
                     <button 
