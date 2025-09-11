@@ -54,13 +54,15 @@ import {
 interface SportContact {
   id: string;
   sport_id: string;
-  sportName: string;
-  teamName: string; // Team name field
+  sportName?: string; // Optional sport name
+  teamName?: string; // Team name field
   contact_name: string;
   contact_email: string;
   contact_phone?: string;
   user_id?: string; // For existing users
   assigned_salesperson_id?: string; // For salesperson assignment
+  name?: string; // To store the sport's name from the API
+  team_name?: string; // To store the team's name from the API
 }
 
 type SportRow = { sportId:string; contactName:string; contactEmail:string; contactPhone:string; teamName:string; assignedSalespersonId?:string; saved:boolean };
@@ -747,24 +749,24 @@ export default function SimplifiedSetup() {
                         control={form.control}
                         name="assigned_salesperson_id"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                            <Select
-                              onValueChange={(value) => {
-                                const formSport = sports.find(s => s.id === sportToAdd); // Find the current sport being edited
-                                if (formSport) {
-                                  const updatedSports = sports.map(s =>
-                                    s.id === formSport.id ? { ...s, assigned_salesperson_id: value === 'unassigned' ? null : value } : s
-                                  );
-                                  setSports(updatedSports);
-                                }
-                                field.onChange(value === 'unassigned' ? null : value);
-                              }}
-                              value={field.value || (sports.find(s => s.id === sportToAdd)?.assigned_salesperson_id || 'unassigned')}
-                            >
-                              <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400">
-                                <SelectValue placeholder="Select salesperson" />
-                              </SelectTrigger>
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-white font-medium">Assigned Salesperson</FormLabel>
+                            <Select onValueChange={(value) => {
+                              const newSports = [...sports];
+                              // Find the current sport being edited based on sportToAdd
+                              const currentIndex = newSports.findIndex(s => s.sport_id === sportToAdd);
+                              if (currentIndex !== -1) {
+                                newSports[currentIndex].assigned_salesperson_id = value === 'unassigned' ? null : value;
+                                setSports(newSports);
+                              }
+                              field.onChange(value === 'unassigned' ? null : value); // Update form state
+                            }}
+                            value={field.value || (sports.find(s => s.sport_id === sportToAdd)?.assigned_salesperson_id || 'unassigned')}>
+                              <FormControl>
+                                <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400">
+                                  <SelectValue placeholder="Select salesperson" />
+                                </SelectTrigger>
+                              </FormControl>
                               <SelectContent className="bg-gray-800 border-white/20">
                                 <SelectItem value="unassigned" className="text-white/70">Unassigned</SelectItem>
                                 {salespeopleLoading ? (
@@ -918,28 +920,34 @@ export default function SimplifiedSetup() {
             {sports.length > 0 && (
               <div className="space-y-3 mt-6">
                 <h4 className="text-white font-medium">Added Sports & Contacts:</h4>
-                {sports.map((sport) => (
-                  <div key={sport.id} className="flex items-center justify-between bg-white/5 rounded-lg p-4 border border-white/10">
+                {sports.map((currentSport) => (
+                  <div key={currentSport.id} className="flex items-center justify-between bg-white/5 rounded-lg p-4 border border-white/10">
                     <div>
-                      <h4 className="font-semibold text-white">{sport.sportName}</h4>
-                      <div className="text-white/70 text-sm">
-                        <div><strong>Team:</strong> {sport.teamName}</div>
-                        <div><strong>Contact:</strong> {sport.contact_name} • {sport.contact_email}
-                        {sport.contact_phone && ` • ${sport.contact_phone}`}</div>
-                        {sport.assigned_salesperson_id && (
-                          <div><strong>Salesperson:</strong> {(() => {
-                            const sp = salespeople.find((p: any) => p.id === sport.assigned_salesperson_id);
-                            return sp ? (sp.fullName || sp.name || 'Unknown') : 'Unknown';
-                          })()}</div>
-                        )}
-                      </div>
+                      <h4 className="font-medium text-white">
+                        {currentSport.name || currentSport.sportName || 'Unknown Sport'}
+                      </h4>
+                      <p className="text-white/60 text-sm">
+                        Team: {currentSport.teamName || currentSport.team_name || 'Main Team'}
+                      </p>
+                      <p className="text-white/60 text-sm">
+                        Contact: {currentSport.contact_name} • {currentSport.contact_email}
+                      </p>
+                      {currentSport.contact_phone && (
+                        <p className="text-white/60 text-sm">Phone: {currentSport.contact_phone}</p>
+                      )}
+                      {currentSport.assigned_salesperson_id && (
+                        <div><strong>Salesperson:</strong> {(() => {
+                          const sp = salespeople.find((p: any) => p.id === currentSport.assigned_salesperson_id);
+                          return sp ? (sp.fullName || sp.name || 'Unknown') : 'Unknown';
+                        })()}</div>
+                      )}
                     </div>
                     <Button
-                      onClick={() => removeSportContact(sport.id)}
+                      onClick={() => removeSportContact(currentSport.id)}
                       variant="outline"
                       size="sm"
                       className="border-red-400/50 text-red-400 hover:bg-red-400/10"
-                      data-testid={`button-remove-sport-${sport.id}`}
+                      data-testid={`button-remove-sport-${currentSport.id}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

@@ -576,14 +576,37 @@ router.post('/:id/setup', async (req: any, res) => {
   try {
     const sb = supabaseAdmin;
     const orgId = req.params.id;
-    const { sports } = req.body;
+    const { sports, brand_primary, brand_secondary, address, city, state, zip, complete } = req.body;
 
-    logger.info({ orgId, sportsCount: sports?.length || 0 }, 'Setup save started');
+    logger.info({ orgId, sportsCount: sports?.length || 0, payload: req.body }, 'Setup save started');
+
+    // Update organization fields if provided
+    if (brand_primary || brand_secondary || address || city || state || zip || complete !== undefined) {
+      const orgUpdateData: any = {};
+      if (brand_primary) orgUpdateData.brand_primary = brand_primary;
+      if (brand_secondary) orgUpdateData.brand_secondary = brand_secondary;
+      if (address) orgUpdateData.address = address;
+      if (city) orgUpdateData.city = city;
+      if (state) orgUpdateData.state = state;
+      if (zip) orgUpdateData.zip = zip;
+      if (complete !== undefined) orgUpdateData.setup_complete = complete;
+
+      const { error: orgError } = await sb
+        .from('organizations')
+        .update(orgUpdateData)
+        .eq('id', orgId);
+
+      if (orgError) {
+        logger.error({ orgId, error: orgError }, 'Failed to update organization');
+      }
+    }
 
     // Process sports if provided
     if (sports && Array.isArray(sports) && sports.length > 0) {
       for (const sport of sports) {
         const { sport_id, team_name, contact_name, contact_email, contact_phone, assigned_salesperson_id } = sport;
+        
+        logger.info({ orgId, sportId: sport_id, teamName: team_name }, 'Processing sport');
 
         // Insert or update org_sports record
         const { error: sportError } = await sb
