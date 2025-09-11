@@ -269,6 +269,16 @@ export default function SimplifiedSetup() {
   const addSportContact = () => {
     const formValues = form.getValues();
 
+    // Validate that a sport is selected
+    if (!sportToAdd) {
+      toast({
+        title: "Missing sport selection",
+        description: "Please select a sport first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let contactData;
 
     if (contactMode === 'new') {
@@ -307,12 +317,15 @@ export default function SimplifiedSetup() {
       };
     }
 
-    const sportName = availableSports.find((s: any) => s.id === selectedSportId)?.name;
+    // Get the sport name from the available sports using sportToAdd instead of selectedSportId
+    const selectedSport = availableSports.find((s: any) => s.id === sportToAdd);
+    const sportName = selectedSport?.name || 'Unknown Sport';
 
     const newContact: SportContact = {
       id: Math.random().toString(36).substring(7), // Temporary unique ID
-      sport_id: selectedSportId,
-      sportName: sportName || 'Unknown Sport',
+      sport_id: sportToAdd, // Use sportToAdd instead of selectedSportId
+      sportName: sportName, // This will now be properly set
+      name: sportName, // Also set the name field for compatibility
       ...contactData
     };
 
@@ -326,7 +339,7 @@ export default function SimplifiedSetup() {
       team_name: "Main Team",
       assigned_salesperson_id: "",
     });
-    setSelectedSportId("");
+    setSelectedSportId(""); // Keep this for compatibility
     setSelectedUserId("");
     setContactMode('new'); // Reset to new contact mode
     setSportToAdd(""); // Reset the sport selection dropdown
@@ -924,7 +937,7 @@ export default function SimplifiedSetup() {
                   <div key={currentSport.id} className="flex items-center justify-between bg-white/5 rounded-lg p-4 border border-white/10">
                     <div>
                       <h4 className="font-medium text-white">
-                        {currentSport.name || currentSport.sportName || 'Unknown Sport'}
+                        {currentSport.sportName || currentSport.name || 'Unknown Sport'}
                       </h4>
                       <p className="text-white/60 text-sm">
                         Team: {currentSport.teamName || currentSport.team_name || 'Main Team'}
@@ -936,10 +949,10 @@ export default function SimplifiedSetup() {
                         <p className="text-white/60 text-sm">Phone: {currentSport.contact_phone}</p>
                       )}
                       {currentSport.assigned_salesperson_id && (
-                        <div><strong>Salesperson:</strong> {(() => {
+                        <p className="text-white/60 text-sm"><strong>Salesperson:</strong> {(() => {
                           const sp = salespeople.find((p: any) => p.id === currentSport.assigned_salesperson_id);
                           return sp ? (sp.fullName || sp.name || 'Unknown') : 'Unknown';
-                        })()}</div>
+                        })()}</p>
                       )}
                     </div>
                     <Button
