@@ -1,0 +1,48 @@
+~/workspace$ npm run db:push
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/home/runner/workspace/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+
++ status column will be created
+--- all columns conflicts in orders table resolved ---
+
+
+~ ship_address_line1 › shipping_address_line1 column will be renamed
+
+~ ship_address_line2 › shipping_address_line2 column will be renamed
+
+~ ship_city › shipping_city column will be renamed
+
+~ ship_state › shipping_state column will be renamed
+
+~ ship_postal_code › shipping_postal_code column will be renamed
+
+~ ship_country › shipping_country column will be renamed
+
++ use_org_address column will be created
+--- all columns conflicts in org_sports table resolved ---
+
+ Warning  Found data-loss statements:
+· You're about to delete status_orders table with 5 items
+· You're about to delete status_order_items table with 6 items
+· You're about to change name column type from text to varchar(255) with 5 items
+· You're about to change updated_at column type from timestamp with time zone to timestamp with 5 items
+· You're about to change setup_completed_at column type from timestamp with time zone to timestamp with 5 items
+· You're about to change contact_user_id column type from uuid to varchar with 3 items
+· You're about to change is_primary_contact column type from integer to boolean with 3 items
+· You're about to change created_at column type from timestamp with time zone to timestamp with 8 items
+· You're about to change id column type from uuid to varchar with 3 items
+· You're about to change name column type from varchar(255) to text with 3 items
+· You're about to change template_type column type from varchar(50) to text with 3 items
+· You're about to change created_by column type from uuid to varchar with 3 items
+· You're about to change is_active column type from integer to boolean with 5 items
+· You're about to change email_verified column type from integer to boolean with 5 items
+· You're about to delete tax_exempt_doc_key column in organizations table with 5 items
+· You're about to delete id column in org_sports table with 3 items
+· You're about to delete description column in sports table with 5 items
+· You're about to delete created_at column in sports table with 5 items
