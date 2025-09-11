@@ -1,10 +1,13 @@
 import express from 'express';
 import { z } from 'zod';
-import { supabaseAdmin } from '../../lib/supabaseAdmin';
+import { db } from '../../db';
+import { users } from '../../../shared/schema';
 import { sendSuccess, sendErr, sendCreated } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { ROLE_DEFAULTS, hasPermission, ACTION_PERMISSIONS, PAGE_ACCESS } from '../../lib/permissions';
 import { randomBytes } from 'crypto';
+import { supabaseAdmin } from '../../lib/supabaseAdmin';
+import { eq, like, or, and, count, desc } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -59,38 +62,30 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt((pageSize || limit) as string) || 20));
     const offset = (pageNum - 1) * limitNum;
 
-    // Build query based on type filter
-    let query = supabaseAdmin
-      .from('users')
-      .select(`
-        id,
-        email,
-        full_name,
-        phone,
-        role,
-        subrole,
-        organization_id,
-        job_title,
-        department,
-        hire_date,
-        avatar_url,
-        is_active,
-        permissions,
-        page_access,
-        address_line1,
-        address_line2,
-        city,
-        state,
-        postal_code,
-        country,
-        initial_temp_password,
-        last_login,
-        email_verified,
-        notes,
-        created_at,
-        updated_at
-      `)
-      .order('created_at', { ascending: false });
+    // Build query using Drizzle ORM
+    let whereConditions = [];
+    
+    // Apply type filter
+    if (type === 'staff') {
+      whereConditions.push(or(
+        eq(users.role, 'admin'),
+        eq(users.role, 'sales'),
+        eq(users.role, 'designer'),
+        eq(users.role, 'manufacturing')
+      ));
+    } else if (type === 'customers') {
+      whereConditions.push(eq(users.role, 'customer'));
+    }
+    
+    // Apply search filter
+    if (searchTerm && typeof searchTerm === 'string') {
+      whereConditions.push(or(
+        like(users.full_name, `%${searchTerm}%`),
+        like(users.email, `%${searchTerm}%`)
+      ));
+    }
+    
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     // Apply type filter  
     if (type === 'staff') {
@@ -107,15 +102,25 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     // Apply pagination  
     query = query.range(offset, offset + limitNum - 1);
 
-    const { data: users, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching users:', error);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to fetch users', error, 500);
-    }
+    // Execute query with Drizzle ORM
+    const usersQuery = db.select().from(users)
+      .where(whereClause)
+      .orderBy(desc(users.created_at))
+      .limit(limitNum)
+      .offset(offset);
+    
+    const totalQuery = db.select({ count: count() }).from(users)
+      .where(whereClause);
+    
+    const [usersResult, totalResult] = await Promise.all([
+      usersQuery,
+      totalQuery
+    ]);
+    
+    const totalCount = totalResult[0]?.count || 0;
 
     // Transform users to include address object structure
-    const transformedUsers = (users || []).map(user => ({
+    const transformedUsers = (usersResult || []).map(user => ({
       ...user,
       fullName: user.full_name,
       isActive: !!user.is_active,
@@ -143,8 +148,8 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: count || 0,
-        pages: Math.ceil((count || 0) / limitNum)
+        total: totalCount,
+        pages: Math.ceil(totalCount / limitNum)
       }
     });
 
@@ -165,15 +170,13 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
       return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
     }
 
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !user) {
-      return sendErr(res, 'NOT_FOUND', 'User not found', error, 404);
+    const userResult = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    
+    if (!userResult || userResult.length === 0) {
+      return sendErr(res, 'NOT_FOUND', 'User not found', undefined, 404);
     }
+    
+    const user = userResult[0];
 
     // Transform user to include address object structure
     const transformedUser = {
@@ -247,7 +250,7 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
       return sendErr(res, 'DATABASE_ERROR', 'Failed to create user authentication', authError, 500);
     }
 
-    // Create user record in our users table
+    // Create user record in our users table using Drizzle ORM
     const userData = {
       id: authUser.user.id,
       email: validatedData.email,
@@ -258,26 +261,22 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
       organization_id: validatedData.organizationId || null,
       job_title: validatedData.jobTitle || null,
       department: validatedData.department || null,
-      hire_date: validatedData.hireDate ? new Date(validatedData.hireDate).toISOString() : null,
+      hire_date: validatedData.hireDate ? new Date(validatedData.hireDate) : null,
       permissions: defaultPermissions,
       page_access: defaultPageAccess,
-      is_active: 1,
-      email_verified: 1,
+      is_active: true,
+      email_verified: true,
       created_by: req.user?.id,
-      initial_temp_password: validatedData.role !== 'customer' ? tempPassword : null // Store for admin viewing
+      initial_temp_password: validatedData.role !== 'customer' ? tempPassword : null
     };
 
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('users')
-      .insert(userData)
-      .select()
-      .single();
+    const [user] = await db.insert(users).values(userData).returning();
 
-    if (userError) {
-      console.error('User table creation error:', userError);
+    if (!user) {
+      console.error('User table creation failed - no user returned');
       // Clean up auth user if table insert fails
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to create user record', userError, 500);
+      return sendErr(res, 'DATABASE_ERROR', 'Failed to create user record', undefined, 500);
     }
 
     return sendCreated(res, {
@@ -308,7 +307,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
 
     const validatedData = updateUserSchema.parse(req.body);
     
-    // Build update object
+    // Build update object for Drizzle ORM
     const updateData: any = {};
     if (validatedData.fullName) updateData.full_name = validatedData.fullName;
     if (validatedData.phone !== undefined) updateData.phone = validatedData.phone;
@@ -318,27 +317,20 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
     if (validatedData.jobTitle !== undefined) updateData.job_title = validatedData.jobTitle;
     if (validatedData.department !== undefined) updateData.department = validatedData.department;
     if (validatedData.hireDate !== undefined) {
-      updateData.hire_date = validatedData.hireDate ? new Date(validatedData.hireDate).toISOString() : null;
+      updateData.hire_date = validatedData.hireDate ? new Date(validatedData.hireDate) : null;
     }
     if (validatedData.permissions) updateData.permissions = validatedData.permissions;
     if (validatedData.pageAccess) updateData.page_access = validatedData.pageAccess;
-    if (validatedData.isActive !== undefined) updateData.is_active = validatedData.isActive ? 1 : 0;
+    if (validatedData.isActive !== undefined) updateData.is_active = validatedData.isActive;
     if (validatedData.avatarUrl !== undefined) updateData.avatar_url = validatedData.avatarUrl;
     
-    updateData.updated_at = new Date().toISOString();
+    updateData.updated_at = new Date();
 
-    // Update user record
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating user:', error);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to update user', error, 500);
-    }
+    // Update user record using Drizzle ORM
+    const [user] = await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
 
     if (!user) {
       return sendErr(res, 'NOT_FOUND', 'User not found', undefined, 404);
