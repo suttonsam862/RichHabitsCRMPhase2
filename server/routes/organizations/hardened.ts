@@ -430,7 +430,9 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // Delete related org_sports first (foreign key constraint)
+    // COMPREHENSIVE CLEANUP: Delete all related data in correct order to avoid foreign key violations
+
+    // 1. Delete org_sports (references organization_id)
     const { error: sportsError } = await supabaseAdmin
       .from('org_sports')
       .delete()
@@ -445,7 +447,29 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // Delete the organization
+    // 2. Update any users that reference this organization (set organization_id to null)
+    const { error: usersUpdateError } = await supabaseAdmin
+      .from('users')
+      .update({ organization_id: null })
+      .eq('organization_id', id);
+
+    if (usersUpdateError) {
+      logSbError(req, 'orgs.delete.users_update', usersUpdateError);
+      logger.warn({ orgId: id, error: usersUpdateError }, 'Failed to unlink users from organization, continuing with deletion');
+    }
+
+    // 3. Delete org_users relationships (if table exists)
+    const { error: orgUsersError } = await supabaseAdmin
+      .from('org_users')
+      .delete()
+      .eq('organization_id', id);
+
+    if (orgUsersError) {
+      // Log but don't fail - table might not exist
+      logger.warn({ orgId: id, error: orgUsersError }, 'Failed to delete org_users relationships');
+    }
+
+    // 4. Finally, delete the organization itself
     const { error: deleteError } = await supabaseAdmin
       .from('organizations')
       .delete()

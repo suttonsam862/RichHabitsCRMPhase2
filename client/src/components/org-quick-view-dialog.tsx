@@ -22,7 +22,8 @@ import {
   Globe,
   User,
   Shield,
-  Star
+  Star,
+  Trash2 // Import Trash2 icon
 } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -127,16 +128,16 @@ function formatDateSafe(dateString?: string | null): string {
 // Helper to format file size
 function formatFileSize(bytes?: number): string {
   if (!bytes) return '—';
-  
+
   const units = ['B', 'KB', 'MB', 'GB'];
   let size = bytes;
   let unitIndex = 0;
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;
     unitIndex++;
   }
-  
+
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
@@ -172,11 +173,20 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
     },
     onError: (error) => {
       console.error("Delete failed:", error);
-      setDeleteError(error instanceof Error ? error.message : 'Failed to delete organization');
+      // Check if the error is a string or an object with a message property
+      let errorMessage = 'Failed to delete organization';
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      setDeleteError(errorMessage);
       toast({
         variant: "destructive",
         title: "Delete failed",
-        description: "Could not delete organization. Please try again.",
+        description: `Could not delete organization: ${errorMessage}. Please try again.`,
       });
     },
   });
@@ -188,7 +198,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
       try {
         await deleteOrgMutation.mutateAsync();
       } catch (error) {
-        console.error('Delete failed:', error);
+        // The onError handler in useMutation will catch this, but we can log here too for safety.
+        console.error('Error during deleteOrgMutation.mutateAsync:', error);
       }
     }
   };
@@ -237,7 +248,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
         <DialogDescription className="sr-only">
           {editMode ? "Edit organization details and settings" : "View comprehensive organization details, branding, sports, and users"}
         </DialogDescription>
-        
+
         {/* Header */}
         <DialogHeader className="p-6 pb-4 border-b">
           <div className="flex items-start justify-between">
@@ -294,18 +305,28 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               >
                 <Edit className="h-4 w-4" />
               </Button>
+              {/* Updated Delete Button */}
               <Button
-                variant="outline"
+                variant="destructive"
                 size="sm"
                 onClick={handleDelete}
                 disabled={deleteOrgMutation.isPending}
-                className="text-destructive hover:text-destructive hover:border-destructive"
-                data-testid="button-delete-org"
+                className={`transition-all duration-200 ${
+                  deleteOrgMutation.isPending
+                    ? 'animate-pulse cursor-not-allowed opacity-75'
+                    : 'hover:scale-105'
+                }`}
               >
                 {deleteOrgMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Deleting...
+                  </>
                 ) : (
-                  <Trash className="h-4 w-4" />
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Organization
+                  </>
                 )}
               </Button>
               <Button
@@ -378,7 +399,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                           </p>
                         </div>
                       </div>
-                      
+
                       {organization.notes && (
                         <div>
                           <p className="text-muted-foreground mb-1">Notes</p>

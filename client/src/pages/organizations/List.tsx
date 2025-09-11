@@ -39,11 +39,12 @@ export default function OrganizationsList(){
   const [offset, setOffset] = useState(0);
   const [includeArchived, setIncludeArchived] = useState(false);
   const [groupBy, setGroupBy] = useState<'none' | 'type' | 'state'>('type');
+  const [isDeleting, setIsDeleting] = useState<string | null>(null); // State to track deleting organization
 
   // Convert to React Query for proper cache management
   const queryParams = useMemo(() => ({ q, tag, onlyFav, includeArchived, sort, dir, limit, offset }), [q, tag, onlyFav, includeArchived, sort, dir, limit, offset]);
-  
-  const { data, isLoading: loading, error } = useQuery({
+
+  const { data, isLoading: loading, error, refetch } = useQuery({
     queryKey: ['organizations', queryParams],
     queryFn: async () => {
       const result = await api.get(`/api/v1/organizations?q=${encodeURIComponent(q)}&tag=${encodeURIComponent(tag)}&onlyFavorites=${onlyFav}&includeArchived=${includeArchived}&sort=${sort}&dir=${dir}&limit=${limit}&offset=${offset}`);
@@ -69,17 +70,20 @@ export default function OrganizationsList(){
     if (!confirm(`Are you sure you want to delete "${orgName}"? This action cannot be undone.`)) {
       return;
     }
-    
+
+    setIsDeleting(orgId); // Set the organization as deleting
     try {
       const r = await api.delete(`/api/v1/organizations/${orgId}`);
       if (r.success) {
-        // Note: This will auto-refresh due to React Query refetch
+        refetch(); // Refetch data after successful deletion
         // Show success message (you could add a toast here)
       } else {
         alert('Failed to delete organization: ' + (r.error || 'Unknown error'));
       }
     } catch (error) {
       alert('Failed to delete organization: ' + error);
+    } finally {
+      setIsDeleting(null); // Reset deleting state
     }
   }
 
@@ -101,11 +105,11 @@ export default function OrganizationsList(){
     }
 
     const grouped = new Map<string, Org[]>();
-    
+
     rows.forEach((org: Org) => {
       let key = '';
       let title = '';
-      
+
       if (groupBy === 'type') {
         key = org.isBusiness ? 'business' : 'organization';
         title = org.isBusiness ? 'Businesses' : 'Organizations & Schools';
@@ -114,7 +118,7 @@ export default function OrganizationsList(){
         key = state.toLowerCase();
         title = state === 'Unknown' ? 'Location Not Set' : state;
       }
-      
+
       if (!grouped.has(key)) {
         grouped.set(key, []);
       }
@@ -125,7 +129,7 @@ export default function OrganizationsList(){
     const sortedGroups = Array.from(grouped.entries()).map(([key, orgs]) => {
       let title = '';
       let priority = 999;
-      
+
       if (groupBy === 'type') {
         if (key === 'organization') {
           title = 'Organizations & Schools';
@@ -138,7 +142,7 @@ export default function OrganizationsList(){
         title = key === 'unknown' ? 'Location Not Set' : orgs[0]?.state || key;
         priority = key === 'unknown' ? 999 : 1;
       }
-      
+
       return {
         key,
         title,
@@ -237,7 +241,7 @@ export default function OrganizationsList(){
               </Button>
             </div>
           </div>
-          
+
           {/* Search and Filters */}
           <div className="flex flex-wrap gap-4 items-center">
             <input 
@@ -401,7 +405,7 @@ export default function OrganizationsList(){
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Content */}
                   <div className="p-4 flex items-center gap-3">
                     <div className="h-12 w-12 rounded-xl bg-white/10 overflow-hidden flex items-center justify-center border border-white/10 relative">
@@ -459,7 +463,7 @@ export default function OrganizationsList(){
                       ★
                     </button>
                   </div>
-                  
+
                   {/* Actions */}
                   <div className="px-4 pb-4 flex gap-2 h-12">
                     {needsSetup && canManageOrgSetup(org.id) ? (
@@ -487,12 +491,17 @@ export default function OrganizationsList(){
                           Edit
                         </Link>
                         <button 
-                          className="flex-1 flex items-center justify-center text-xs rounded-md bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-all duration-200 font-medium text-red-300 hover:text-red-200"
+                          className={`flex-1 flex items-center justify-center text-xs rounded-md transition-all duration-200 font-medium ${
+                            isDeleting === org.id 
+                              ? 'bg-red-500/40 border border-red-400/60 text-red-200 cursor-not-allowed animate-pulse'
+                              : 'bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 text-red-300 hover:text-red-200'
+                          }`}
                           onClick={(e) => { e.stopPropagation(); deleteOrganization(org.id, org.name); }}
                           data-testid={`button-delete-${org.id}`}
                           title="Delete organization"
+                          disabled={isDeleting === org.id}
                         >
-                          Delete
+                          {isDeleting === org.id ? 'Deleting...' : 'Delete'}
                         </button>
                       </>
                     ) : (
@@ -513,12 +522,17 @@ export default function OrganizationsList(){
                           Edit
                         </Link>
                         <button 
-                          className="flex-1 flex items-center justify-center text-sm rounded-md bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 transition-all duration-200 font-medium text-red-300 hover:text-red-200"
+                          className={`flex-1 flex items-center justify-center text-sm rounded-md transition-all duration-200 font-medium ${
+                            isDeleting === org.id
+                              ? 'bg-red-500/40 border border-red-400/60 text-red-200 cursor-not-allowed animate-pulse'
+                              : 'bg-red-500/20 border border-red-500/30 hover:border-red-400 hover:bg-red-500/30 text-red-300 hover:text-red-200'
+                          }`}
                           onClick={(e) => { e.stopPropagation(); deleteOrganization(org.id, org.name); }}
                           data-testid={`button-delete-${org.id}`}
                           title="Delete organization"
+                          disabled={isDeleting === org.id}
                         >
-                          Delete
+                          {isDeleting === org.id ? 'Deleting...' : 'Delete'}
                         </button>
                       </>
                     )}
