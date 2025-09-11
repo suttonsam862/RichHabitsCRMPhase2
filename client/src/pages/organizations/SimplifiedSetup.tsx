@@ -569,7 +569,7 @@ export default function SimplifiedSetup() {
 
               <div>
                 <Label className="text-white font-medium mb-2 block">State/Province *</Label>
-                <Select 
+                <Select
                   onValueChange={(value) => setState(value)}
                   value={state && state.trim() !== '' ? state : undefined}
                 >
@@ -578,7 +578,7 @@ export default function SimplifiedSetup() {
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-white/20">
                     {US_STATES.map((stateOption) => (
-                      <SelectItem 
+                      <SelectItem
                         key={stateOption.value}
                         value={stateOption.value}
                         className="text-white focus:bg-white/10"
@@ -622,7 +622,7 @@ export default function SimplifiedSetup() {
               {/* Sport Selection Dropdown */}
               <div>
                 <Label className="text-white font-medium mb-2 block">Sport</Label>
-                <Select 
+                <Select
                   onValueChange={(value) => setSportToAdd(value)}
                   value={sportToAdd && sportToAdd.trim() !== '' ? sportToAdd : undefined}
                 >
@@ -631,8 +631,8 @@ export default function SimplifiedSetup() {
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-white/20">
                     {filteredSports.map((sport) => (
-                      <SelectItem 
-                        key={sport.id} 
+                      <SelectItem
+                        key={sport.id}
                         value={sport.id}
                         className="text-white focus:bg-white/10"
                       >
@@ -749,10 +749,10 @@ export default function SimplifiedSetup() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                            <Select 
+                            <Select
                               onValueChange={(value) => {
-                                setSports(prev => prev.map(s => 
-                                  s.id === sport.id 
+                                setSports(prev => prev.map(s =>
+                                  s.id === sportToAdd // Use sportToAdd here to correctly identify the sport being added/edited
                                     ? { ...s, assigned_salesperson_id: value === 'unassigned' ? null : value }
                                     : s
                                 ));
@@ -761,7 +761,7 @@ export default function SimplifiedSetup() {
                                   field.onChange(value === 'unassigned' ? null : value);
                                 }
                               }}
-                              value={sport.assigned_salesperson_id || 'unassigned'}
+                              value={sports.find(s => s.id === sportToAdd)?.assigned_salesperson_id || ''}
                             >
                               <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400">
                                 <SelectValue placeholder="Select salesperson" />
@@ -774,8 +774,8 @@ export default function SimplifiedSetup() {
                                   <div className="p-2 text-white/60 text-sm">No salespeople available</div>
                                 ) : (
                                   salespeople.map((person: any) => (
-                                    <SelectItem 
-                                      key={person.id} 
+                                    <SelectItem
+                                      key={person.id}
                                       value={person.id}
                                       className="text-white focus:bg-white/10"
                                     >
@@ -846,7 +846,7 @@ export default function SimplifiedSetup() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                              <Select 
+                              <Select
                                 onValueChange={(value) => {
                                   // Update form state directly
                                   field.onChange(value === 'unassigned' ? null : value);
@@ -866,8 +866,8 @@ export default function SimplifiedSetup() {
                                     <div className="p-2 text-white/60 text-sm">No salespeople available</div>
                                   ) : (
                                     salespeople.map((person: any) => (
-                                      <SelectItem 
-                                        key={person.id} 
+                                      <SelectItem
+                                        key={person.id}
                                         value={person.id}
                                         className="text-white focus:bg-white/10"
                                       >
