@@ -72,6 +72,7 @@ interface OrganizationSummary {
     id: string;
     sportId: string;
     sportName: string;
+    teamName?: string;
     sportEmoji?: string;
     contactName?: string;
     contactEmail?: string;
@@ -154,13 +155,13 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
   // Fetch organization summary using new endpoint
   const { data: summary, isLoading, error } = useQuery({
     queryKey: ['organizations', organizationId, 'summary'],
-    queryFn: () => apiRequest(`/v1/organizations/${organizationId}/summary`),
+    queryFn: () => apiRequest(`/api/v1/organizations/${organizationId}/summary`),
     enabled: open && !!organizationId,
     staleTime: 30000, // Cache for 30 seconds
   });
 
   const deleteOrgMutation = useMutation({
-    mutationFn: () => apiRequest(`/v1/organizations/${organizationId}`, { method: 'DELETE' }),
+    mutationFn: () => apiRequest(`/api/v1/organizations/${organizationId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       onClose();
@@ -543,7 +544,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                               <div className="text-2xl">{sport.sportEmoji || '🏃'}</div>
                               <div>
                                 <p className="font-medium" data-testid={`sport-name-${sport.id}`}>
-                                  {sport.name}
+                                  {sport.sportName}
                                 </p>
                                 {sport.teamName && (
                                   <p className="text-sm text-muted-foreground">

@@ -522,17 +522,17 @@ router.get('/:id/setup', async (req: any, res) => {
         
       const sportsMap = new Map(sportsNames?.map((s: any) => [s.id, s.name]) || []);
       
-      // Transform the data to match frontend expectations
+      // Transform the data to match frontend expectations - all camelCase
       sports = orgSportsData.map((os: any) => ({
         id: os.sport_id,
-        sport_id: os.sport_id,
+        sportId: os.sport_id,
         sportName: sportsMap.get(os.sport_id) || `Sport ${os.sport_id}`,
         teamName: os.team_name || 'Main Team',
-        contact_name: os.contact_name,
-        contact_email: os.contact_email,
-        contact_phone: os.contact_phone || '',
-        created_at: os.created_at,
-        updated_at: os.updated_at
+        contactName: os.contact_name,
+        contactEmail: os.contact_email,
+        contactPhone: os.contact_phone || '',
+        createdAt: os.created_at,
+        updatedAt: os.updated_at
       }));
     }
     
