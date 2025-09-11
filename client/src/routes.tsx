@@ -44,6 +44,7 @@ const OrganizedSettingsPage = lazy(() => import('@/pages/settings/OrganizedSetti
 const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ default: m.default })));
 const QuoteHistory = lazy(() => import('@/pages/QuoteHistory').then(m => ({ default: m.default })));
 const CatalogManagement = lazy(() => import('@/pages/catalog/CatalogManagement').then(m => ({ default: m.CatalogManagement })));
+const DesignerManagement = lazy(() => import('@/pages/designers/DesignerManagement').then(m => ({ default: m.DesignerManagement })));
 
 // Loading component for lazy loaded pages
 function PageLoader() {
@@ -116,6 +117,10 @@ export function AppRoutes() {
               
               <Route path="/catalog" element={<ProtectedRoute />}>
                 <Route index element={<CatalogManagement />} />
+              </Route>
+              
+              <Route path="/designers" element={<ProtectedRoute />}>
+                <Route index element={<DesignerManagement />} />
               </Route>
               
               <Route path="/analytics" element={<ProtectedRoute />}>

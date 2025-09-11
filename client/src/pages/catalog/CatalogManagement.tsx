@@ -42,8 +42,8 @@ type CatalogItem = z.infer<typeof catalogItemSchema> & {
 
 export function CatalogManagement() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSport, setSelectedSport] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSport, setSelectedSport] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
@@ -55,8 +55,8 @@ export function CatalogManagement() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
-      if (selectedSport) params.append('sportId', selectedSport);
-      if (selectedCategory) params.append('categoryId', selectedCategory);
+      if (selectedSport && selectedSport !== 'all') params.append('sportId', selectedSport);
+      if (selectedCategory && selectedCategory !== 'all') params.append('categoryId', selectedCategory);
       params.append('limit', '100');
       
       const response = await fetch(`/api/v1/catalog?${params}`, {
@@ -80,28 +80,32 @@ export function CatalogManagement() {
   });
 
   // Fetch sports
-  const { data: sports = [] } = useQuery({
+  const { data: sportsData } = useQuery({
     queryKey: ['/api/v1/sports'],
     queryFn: async () => {
       const response = await fetch('/api/v1/sports', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error('Failed to fetch sports');
-      return response.json();
+      const result = await response.json();
+      return result.data || result || [];
     }
   });
+  const sports = Array.isArray(sportsData) ? sportsData : [];
 
   // Fetch manufacturers
-  const { data: manufacturers = [] } = useQuery({
+  const { data: manufacturersData } = useQuery({
     queryKey: ['/api/v1/manufacturers'],
     queryFn: async () => {
       const response = await fetch('/api/v1/manufacturers', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) return [];
-      return response.json();
+      const result = await response.json();
+      return result.data || result || [];
     }
   });
+  const manufacturers = Array.isArray(manufacturersData) ? manufacturersData : [];
 
   // Create catalog item mutation
   const createMutation = useMutation({
@@ -222,7 +226,7 @@ export function CatalogManagement() {
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((cat: any) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
@@ -235,7 +239,7 @@ export function CatalogManagement() {
                 <SelectValue placeholder="All Sports" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sports</SelectItem>
+                <SelectItem value="all">All Sports</SelectItem>
                 {sports.map((sport: any) => (
                   <SelectItem key={sport.id} value={sport.id}>
                     {sport.name}
@@ -247,8 +251,8 @@ export function CatalogManagement() {
               variant="outline" 
               onClick={() => {
                 setSearchQuery('');
-                setSelectedCategory('');
-                setSelectedSport('');
+                setSelectedCategory('all');
+                setSelectedSport('all');
               }}
               data-testid="button-clear-filters"
             >
