@@ -466,7 +466,7 @@ export default function AddSportsPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-gray-800 border-white/20">
-                            <SelectItem value="" className="text-white focus:bg-white/10">No assignment</SelectItem>
+                            <SelectItem value="none" className="text-white focus:bg-white/10">No assignment</SelectItem>
                             {salespeopleLoading ? (
                               <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
                             ) : salespeople.length === 0 ? (
@@ -549,7 +549,7 @@ export default function AddSportsPage() {
                               <SelectValue placeholder="Select salesperson" />
                             </SelectTrigger>
                             <SelectContent className="bg-gray-800 border-white/20">
-                              <SelectItem value="" className="text-white focus:bg-white/10">No assignment</SelectItem>
+                              <SelectItem value="none" className="text-white focus:bg-white/10">No assignment</SelectItem>
                               {salespeopleLoading ? (
                                 <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
                               ) : salespeople.length === 0 ? (
