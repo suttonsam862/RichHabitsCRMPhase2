@@ -48,8 +48,8 @@ export const US_STATES = [
   { value: 'WA', label: 'Washington' },
   { value: 'WV', label: 'West Virginia' },
   { value: 'WI', label: 'Wisconsin' },
-  { value: 'WY', label: 'Wyoming' }
-].filter(state => state.value && state.label); // Filter out any undefined values
+  { value: 'WY', label: 'Wyoming' },
+] as const;
 
 // Ensure all states have valid values
 export const VALID_US_STATES = US_STATES.map(state => ({

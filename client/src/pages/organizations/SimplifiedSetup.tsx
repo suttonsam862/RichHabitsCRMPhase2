@@ -73,6 +73,39 @@ const contactSchema = z.object({
   assigned_salesperson_id: z.string().optional(),
 });
 
+// Define US_STATES here or import it if it's defined elsewhere
+const US_STATES = [
+  { value: "AL", label: "Alabama" }, { value: "AK", label: "Alaska" },
+  { value: "AZ", label: "Arizona" }, { value: "AR", label: "Arkansas" },
+  { value: "CA", label: "California" }, { value: "CO", label: "Colorado" },
+  { value: "CT", label: "Connecticut" }, { value: "DE", label: "Delaware" },
+  { value: "FL", label: "Florida" }, { value: "GA", label: "Georgia" },
+  { value: "HI", label: "Hawaii" }, { value: "ID", label: "Idaho" },
+  { value: "IL", label: "Illinois" }, { value: "IN", label: "Indiana" },
+  { value: "IA", label: "Iowa" }, { value: "KS", label: "Kansas" },
+  { value: "KY", label: "Kentucky" }, { value: "LA", label: "Louisiana" },
+  { value: "ME", label: "Maine" }, { value: "MD", label: "Maryland" },
+  { value: "MA", label: "Massachusetts" }, { value: "MI", label: "Michigan" },
+  { value: "MN", label: "Minnesota" }, { value: "MS", label: "Mississippi" },
+  { value: "MO", label: "Missouri" }, { value: "MT", label: "Montana" },
+  { value: "NE", label: "Nebraska" }, { value: "NV", label: "Nevada" },
+  { value: "NH", label: "New Hampshire" }, { value: "NJ", label: "New Jersey" },
+  { value: "NM", label: "New Mexico" }, { value: "NY", label: "New York" },
+  { value: "NC", label: "North Carolina" }, { value: "ND", label: "North Dakota" },
+  { value: "OH", label: "Ohio" }, { value: "OK", label: "Oklahoma" },
+  { value: "OR", label: "Oregon" }, { value: "PA", label: "Pennsylvania" },
+  { value: "RI", label: "Rhode Island" }, { value: "SC", label: "South Carolina" },
+  { value: "SD", label: "South Dakota" }, { value: "TN", label: "Tennessee" },
+  { value: "TX", label: "Texas" }, { value: "UT", label: "Utah" },
+  { value: "VT", label: "Vermont" }, { value: "VA", label: "Virginia" },
+  { value: "WA", label: "Washington" }, { value: "WV", label: "West Virginia" },
+  { value: "WI", label: "Wisconsin" }, { value: "WY", label: "Wyoming" },
+  { value: "DC", label: "District of Columbia" },
+  { value: "PR", label: "Puerto Rico" }, { value: "GU", label: "Guam" },
+  { value: "VI", label: "Virgin Islands" }, { value: "AS", label: "American Samoa" },
+  { value: "MP", label: "Northern Mariana Islands" }
+];
+
 export default function SimplifiedSetup() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -102,6 +135,7 @@ export default function SimplifiedSetup() {
   const [selectedUserId, setSelectedUserId] = useState(''); // For selecting existing users
   const [contactMode, setContactMode] = useState<'new' | 'existing'>('new');
   const [userSearch, setUserSearch] = useState("");
+  const [sportToAdd, setSportToAdd] = useState(""); // State for the sport selection dropdown
 
   const form = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
@@ -293,6 +327,7 @@ export default function SimplifiedSetup() {
     setSelectedSportId("");
     setSelectedUserId("");
     setContactMode('new'); // Reset to new contact mode
+    setSportToAdd(""); // Reset the sport selection dropdown
   };
 
   const removeSportContact = (id: string) => {
@@ -534,14 +569,25 @@ export default function SimplifiedSetup() {
 
               <div>
                 <Label className="text-white font-medium mb-2 block">State/Province *</Label>
-                <Input
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  placeholder="IL"
-                  className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
-                  data-testid="input-state"
-                  required
-                />
+                <Select 
+                  onValueChange={(value) => setState(value)}
+                  value={state && state.trim() !== '' ? state : undefined}
+                >
+                  <SelectTrigger className="glass text-white border-white/20 focus:border-green-400">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-white/20">
+                    {US_STATES.map((stateOption) => (
+                      <SelectItem 
+                        key={stateOption.value}
+                        value={stateOption.value}
+                        className="text-white focus:bg-white/10"
+                      >
+                        {stateOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -573,25 +619,28 @@ export default function SimplifiedSetup() {
 
             {/* Add Sport Form */}
             <div className="space-y-6 mb-6">
-              {/* Sport Selection */}
+              {/* Sport Selection Dropdown */}
               <div>
                 <Label className="text-white font-medium mb-2 block">Sport</Label>
-                <select
-                  value={selectedSportId}
-                  onChange={(e) => setSelectedSportId(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:border-cyan-500/50"
-                  data-testid="select-sport"
-                  disabled={sportsLoading}
+                <Select 
+                  onValueChange={(value) => setSportToAdd(value)}
+                  value={sportToAdd && sportToAdd.trim() !== '' ? sportToAdd : undefined}
                 >
-                  <option value="">
-                    {sportsLoading ? "Loading sports..." : sportsError ? "Error loading sports" : "Select a sport..."}
-                  </option>
-                  {(filteredSports || []).map((sport: any) => (
-                    <option key={sport.id} value={sport.id} className="bg-gray-800">
-                      {sport.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="glass text-white border-white/20 focus:border-cyan-400">
+                    <SelectValue placeholder="Select a sport" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-white/20">
+                    {filteredSports.map((sport) => (
+                      <SelectItem 
+                        key={sport.id} 
+                        value={sport.id}
+                        className="text-white focus:bg-white/10"
+                      >
+                        {sport.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Contact Form Tabs */}
@@ -700,21 +749,36 @@ export default function SimplifiedSetup() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                            <Select value={field.value || undefined} onValueChange={field.onChange}>
-                              <FormControl>
-                                <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson">
-                                  <SelectValue placeholder="Select salesperson" />
-                                </SelectTrigger>
-                              </FormControl>
+                            <Select 
+                              onValueChange={(value) => {
+                                setSports(prev => prev.map(s => 
+                                  s.id === sport.id 
+                                    ? { ...s, assigned_salesperson_id: value === 'unassigned' ? null : value }
+                                    : s
+                                ));
+                                // Also update the form value if this is for the current form submission
+                                if (field.value !== undefined) {
+                                  field.onChange(value === 'unassigned' ? null : value);
+                                }
+                              }}
+                              value={sport.assigned_salesperson_id || 'unassigned'}
+                            >
+                              <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400">
+                                <SelectValue placeholder="Select salesperson" />
+                              </SelectTrigger>
                               <SelectContent className="bg-gray-800 border-white/20">
-                                <SelectItem value="" className="text-white focus:bg-white/10">No assignment</SelectItem>
+                                <SelectItem value="unassigned" className="text-white/70">Unassigned</SelectItem>
                                 {salespeopleLoading ? (
                                   <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
                                 ) : salespeople.length === 0 ? (
                                   <div className="p-2 text-white/60 text-sm">No salespeople available</div>
                                 ) : (
                                   salespeople.map((person: any) => (
-                                    <SelectItem key={person.id} value={person.id} className="text-white focus:bg-white/10">
+                                    <SelectItem 
+                                      key={person.id} 
+                                      value={person.id}
+                                      className="text-white focus:bg-white/10"
+                                    >
                                       {person.fullName || person.name || 'Unknown User'} ({person.email})
                                     </SelectItem>
                                   ))
@@ -782,21 +846,31 @@ export default function SimplifiedSetup() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                              <Select value={field.value || undefined} onValueChange={field.onChange}>
+                              <Select 
+                                onValueChange={(value) => {
+                                  // Update form state directly
+                                  field.onChange(value === 'unassigned' ? null : value);
+                                }}
+                                value={field.value || 'unassigned'}
+                              >
                                 <FormControl>
-                                  <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson-existing">
+                                  <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400" data-testid="select-salesperson-existing">
                                     <SelectValue placeholder="Select salesperson" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="bg-gray-800 border-white/20">
-                                  <SelectItem value="" className="text-white focus:bg-white/10">No assignment</SelectItem>
+                                  <SelectItem value="unassigned" className="text-white/70">Unassigned</SelectItem>
                                   {salespeopleLoading ? (
                                     <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
                                   ) : salespeople.length === 0 ? (
                                     <div className="p-2 text-white/60 text-sm">No salespeople available</div>
                                   ) : (
                                     salespeople.map((person: any) => (
-                                      <SelectItem key={person.id} value={person.id} className="text-white focus:bg-white/10">
+                                      <SelectItem 
+                                        key={person.id} 
+                                        value={person.id}
+                                        className="text-white focus:bg-white/10"
+                                      >
                                         {person.fullName || person.name || 'Unknown User'} ({person.email})
                                       </SelectItem>
                                     ))
@@ -833,7 +907,7 @@ export default function SimplifiedSetup() {
 
             <Button
               onClick={addSportContact}
-              disabled={!selectedSportId || filteredSports.length === 0 || !form.watch("team_name") || (contactMode === 'new' ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUserId)}
+              disabled={!sportToAdd || !form.watch("team_name") || (contactMode === 'new' ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUserId)}
               className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 mt-4"
               data-testid="button-add-sport"
             >
