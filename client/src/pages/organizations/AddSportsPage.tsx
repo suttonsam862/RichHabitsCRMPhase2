@@ -105,7 +105,7 @@ export default function AddSportsPage() {
           contact_email: sport.contact_email,
           contact_phone: sport.contact_phone || "",
           team_name: sport.team_name || "Main Team",
-          assigned_salesperson_id: sport.assigned_salesperson_id || null,
+          assigned_salesperson_id: (sport.assigned_salesperson_id && sport.assigned_salesperson_id !== 'none') ? sport.assigned_salesperson_id : null
         })),
       };
 
@@ -114,19 +114,19 @@ export default function AddSportsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['organizations', id, 'sports'] });
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
-      
+
       toast({
         title: "Sports added successfully!",
         description: `Added ${sportsToAdd.length} sport${sportsToAdd.length > 1 ? 's' : ''} to ${organization?.data?.name}`,
       });
-      
+
       navigate(`/organizations/${id}/sports`);
     },
     onError: (error: any) => {
       console.error('Failed to add sports:', error);
       const message = error?.response?.data?.error || error?.message || "Failed to add sports. Please try again.";
       toast({
-        title: "Error", 
+        title: "Error",
         description: message,
         variant: "destructive",
       });
@@ -147,7 +147,7 @@ export default function AddSportsPage() {
     }
 
     let contactData;
-    
+
     if (contactMode === 'new') {
       if (!formValues.contact_name || !formValues.contact_email || !formValues.team_name) {
         toast({
@@ -162,7 +162,7 @@ export default function AddSportsPage() {
         contact_email: formValues.contact_email,
         contact_phone: formValues.contact_phone || "",
         team_name: formValues.team_name,
-        assigned_salesperson_id: formValues.assigned_salesperson_id || null
+        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : null
       };
     } else {
       const selectedUser = existingUsers.find((u: any) => u.id === selectedUserId);
@@ -180,7 +180,7 @@ export default function AddSportsPage() {
         contact_phone: selectedUser.phone || "",
         userId: selectedUser.id,
         team_name: formValues.team_name,
-        assigned_salesperson_id: formValues.assigned_salesperson_id || null
+        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : null
       };
     }
 
@@ -235,8 +235,8 @@ export default function AddSportsPage() {
   // Get filtered sports (filter out existing ones and already added ones)
   const existingSportIds = existingSports?.data?.map((s: any) => s.id) || [];
   const addedSportIds = sportsToAdd.map(s => s.sport_id);
-  const filteredSports = Array.isArray(availableSports) 
-    ? availableSports.filter((sport: any) => 
+  const filteredSports = Array.isArray(availableSports)
+    ? availableSports.filter((sport: any) =>
         !existingSportIds.includes(sport.id) && !addedSportIds.includes(sport.id)
       )
     : [];
@@ -269,7 +269,7 @@ export default function AddSportsPage() {
   }
 
   const headerActions = (
-    <Button 
+    <Button
       onClick={handleSave}
       disabled={sportsToAdd.length === 0 || addSportsMutation.isPending}
       className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25 transition-all duration-200"
@@ -551,7 +551,7 @@ export default function AddSportsPage() {
                     />
                   </Form>
                 </div>
-                
+
                 {selectedUserId && (
                   <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                     <h4 className="text-white font-medium mb-2">Selected User Details</h4>

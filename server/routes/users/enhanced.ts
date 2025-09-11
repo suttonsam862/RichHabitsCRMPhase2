@@ -7,7 +7,7 @@ import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { ROLE_DEFAULTS, hasPermission, ACTION_PERMISSIONS, PAGE_ACCESS } from '../../lib/permissions';
 import { randomBytes } from 'crypto';
 import { supabaseAdmin } from '../../lib/supabaseAdmin';
-import { eq, like, or, and, count, desc } from 'drizzle-orm';
+import { eq, like, or, and, count, desc, sql } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -98,12 +98,12 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       .limit(limitNum)
       .offset(offset);
     
-    const totalQuery = db.select({ count: count() }).from(users)
+    const totalQuery = db.select({ count: sql<number>`count(*)` }).from(users)
       .where(whereClause);
     
     const [usersResult, totalResult] = await Promise.all([
-      usersQuery,
-      totalQuery
+      usersQuery.execute(),
+      totalQuery.execute()
     ]);
     
     const totalCount = totalResult[0]?.count || 0;
