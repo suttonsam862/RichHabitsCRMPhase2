@@ -71,7 +71,7 @@ export default function CreateSalesperson() {
         });
         return { user: userResponse.data, profile: profileResponse.data };
       }
-      
+
       throw new Error('Failed to create user');
     },
     onSuccess: (data) => {
@@ -122,8 +122,8 @@ export default function CreateSalesperson() {
         {/* Form */}
         <Card className="max-w-4xl bg-gray-800 border-gray-700 shadow-sm">
           <CardHeader>
-            <CardTitle>Salesperson Information</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-white">Salesperson Information</CardTitle>
+            <CardDescription className="text-gray-300">
               Enter the details for the new salesperson. All fields with * are required.
             </CardDescription>
           </CardHeader>
@@ -131,25 +131,25 @@ export default function CreateSalesperson() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Basic Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold text-white">Basic Information</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="full_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name *</FormLabel>
+                          <FormLabel className="text-white font-medium">Full Name *</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="Enter full name"
-                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors"
                               data-testid="input-full-name"
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-400" />
                         </FormItem>
                       )}
                     />
@@ -159,81 +159,78 @@ export default function CreateSalesperson() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Address *</FormLabel>
+                          <FormLabel className="text-white font-medium">Email Address *</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
                               placeholder="Enter email address"
-                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors"
                               data-testid="input-email"
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-400" />
                         </FormItem>
                       )}
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
+                          <FormLabel className="text-white font-medium">Phone Number</FormLabel>
                           <FormControl>
                             <Input
-                              type="tel"
                               placeholder="Enter phone number"
-                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors"
                               data-testid="input-phone"
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-400" />
                         </FormItem>
                       )}
                     />
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Employee ID
-                      </Label>
-                      <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md">
-                        <span className="text-sm text-gray-600 dark:text-gray-300">
-                          Will be auto-generated (EMP-XXXX)
-                        </span>
-                      </div>
+                    <div>
+                      <Label className="text-white font-medium">Employee ID</Label>
+                      <Input
+                        value="Will be auto-generated (EMP-XXXX)"
+                        disabled
+                        className="bg-white/5 border border-white/10 text-white/60 cursor-not-allowed"
+                        data-testid="input-employee-id"
+                      />
                     </div>
                   </div>
                 </div>
 
                 {/* Sales Configuration */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sales Configuration</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold text-white">Sales Configuration</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="commission_rate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Commission Rate (%)</FormLabel>
+                          <FormLabel className="text-white font-medium">Commission Rate (%)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               min="0"
                               max="100"
-                              step="0.5"
-                              placeholder="0"
-                              className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              step="0.1"
+                              placeholder="5.0"
+                              className="bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors"
                               data-testid="input-commission-rate"
                               {...field}
-                              onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-400" />
                         </FormItem>
                       )}
                     />
@@ -242,88 +239,75 @@ export default function CreateSalesperson() {
                       control={form.control}
                       name="territory"
                       render={({ field }) => (
-                        <FormItem className="col-span-2">
-                          <FormLabel>Sales Regions</FormLabel>
+                        <FormItem>
+                          <FormLabel className="text-white font-medium">Sales Regions</FormLabel>
                           <FormControl>
                             <div className="space-y-3">
+                              <div className="flex flex-wrap gap-2 min-h-[50px] p-3 bg-white/5 border border-white/10 rounded-xl">
+                                {field.value?.map((state, index) => (
+                                  <Badge
+                                    key={index}
+                                    className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/30"
+                                  >
+                                    {state}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newTerritories = field.value?.filter((_, i) => i !== index) || [];
+                                        field.onChange(newTerritories);
+                                      }}
+                                      className="ml-2 text-cyan-300 hover:text-cyan-100"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
                               <Select
                                 onValueChange={(value) => {
-                                  const current = field.value || [];
-                                  if (!current.includes(value)) {
-                                    field.onChange([...current, value]);
+                                  if (!field.value?.includes(value)) {
+                                    field.onChange([...(field.value || []), value]);
                                   }
                                 }}
+                                data-testid="select-territory"
                               >
-                                <SelectTrigger className="bg-white dark:bg-gray-700" data-testid="select-add-region">
+                                <SelectTrigger className="bg-white/5 border border-white/10 text-white focus:border-cyan-500/50">
                                   <SelectValue placeholder="Add a region" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                  {US_STATES
-                                    .filter(state => !(field.value || []).includes(state.value))
-                                    .map((state) => (
-                                      <SelectItem key={state.value} value={state.value}>
-                                        {state.label}
-                                      </SelectItem>
-                                    ))
-                                  }
+                                <SelectContent className="bg-gray-800 border-white/10 max-h-[200px]">
+                                  {US_STATES.filter(state => !field.value?.includes(state.abbreviation)).map((state) => (
+                                    <SelectItem
+                                      key={state.abbreviation}
+                                      value={state.abbreviation}
+                                      className="text-white hover:bg-white/10"
+                                    >
+                                      {state.name} ({state.abbreviation})
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
-                              
-                              {/* Selected regions display */}
-                              {field.value && field.value.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                  {field.value.map((stateCode) => {
-                                    const state = US_STATES.find(s => s.value === stateCode);
-                                    return (
-                                      <Badge
-                                        key={stateCode}
-                                        variant="secondary"
-                                        className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
-                                        data-testid={`badge-region-${stateCode}`}
-                                      >
-                                        {state?.label || stateCode}
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-4 w-4 p-0 ml-2 hover:bg-transparent"
-                                          onClick={() => {
-                                            const updated = (field.value || []).filter((code: string) => code !== stateCode);
-                                            field.onChange(updated);
-                                          }}
-                                          data-testid={`button-remove-region-${stateCode}`}
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </Button>
-                                      </Badge>
-                                    );
-                                  })}
-                                </div>
-                              )}
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-400" />
                         </FormItem>
                       )}
                     />
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                     <FormField
                       control={form.control}
                       name="hire_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Hire Date</FormLabel>
+                          <FormLabel className="text-white font-medium">Hire Date</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
-                              className="bg-white dark:bg-gray-700"
+                              className="bg-white/5 border border-white/10 text-white focus:border-cyan-500/50 focus:outline-none transition-colors"
                               data-testid="input-hire-date"
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-400" />
                         </FormItem>
                       )}
                     />
@@ -331,12 +315,13 @@ export default function CreateSalesperson() {
                 </div>
 
                 {/* Form Actions */}
-                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-700">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => navigate('/sales')}
                     data-testid="button-cancel"
+                    className="text-white border-gray-700 hover:bg-gray-800/50"
                   >
                     Cancel
                   </Button>

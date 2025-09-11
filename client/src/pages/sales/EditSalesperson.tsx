@@ -69,7 +69,7 @@ export default function EditSalesperson() {
     if (salesperson?.data) {
       const person = salesperson.data;
       const profile = person.profile;
-      
+
       form.reset({
         full_name: person.full_name || "",
         email: person.email || "",
@@ -194,249 +194,248 @@ export default function EditSalesperson() {
         </div>
 
         {/* Form */}
-        <Card className="max-w-4xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-          <CardHeader>
-            <CardTitle>Salesperson Information</CardTitle>
-            <CardDescription>
-              Update the details for this salesperson. All fields with * are required.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="full_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name *</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter full name"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-full-name"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+        <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-2">Update Salesperson Information</h2>
+            <p className="text-white/60">
+              Modify the details for this salesperson. All fields with * are required.
+            </p>
+          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
 
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email Address *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="Enter email address"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-email"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-200">Full Name *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter full name"
+                            className="bg-gray-800 text-white border-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                            data-testid="input-full-name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="tel"
-                              placeholder="Enter phone number"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-phone"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-200">Email Address *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Enter email address"
+                            className="bg-gray-800 text-white border-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                            data-testid="input-email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Employee ID
-                      </Label>
-                      <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md">
-                        <span className="text-sm text-gray-900 dark:text-gray-100 font-mono">
-                          {salesperson.data.profile?.employee_id || 'Not assigned yet'}
-                        </span>
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-200">Phone Number</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="Enter phone number"
+                            className="bg-gray-800 text-white border-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                            data-testid="input-phone"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-200">
+                      Employee ID
+                    </Label>
+                    <div className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-md">
+                      <span className="text-sm text-gray-100 font-mono">
+                        {salesperson.data.profile?.employee_id || 'Not assigned yet'}
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Sales Configuration */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sales Configuration</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="commission_rate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Commission Rate (%)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.5"
-                              placeholder="0"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-commission-rate"
-                              {...field}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              {/* Sales Configuration */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-200">Sales Configuration</h3>
 
-                    <FormField
-                      control={form.control}
-                      name="territory"
-                      render={({ field }) => (
-                        <FormItem className="col-span-2">
-                          <FormLabel>Sales Regions</FormLabel>
-                          <FormControl>
-                            <div className="space-y-3">
-                              <Select
-                                onValueChange={(value) => {
-                                  const current = field.value || [];
-                                  if (!current.includes(value)) {
-                                    field.onChange([...current, value]);
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="bg-white dark:bg-gray-700" data-testid="select-add-region">
-                                  <SelectValue placeholder="Add a region" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {US_STATES
-                                    .filter(state => !(field.value || []).includes(state.value))
-                                    .map((state) => (
-                                      <SelectItem key={state.value} value={state.value}>
-                                        {state.label}
-                                      </SelectItem>
-                                    ))
-                                  }
-                                </SelectContent>
-                              </Select>
-                              
-                              {/* Selected regions display */}
-                              {field.value && field.value.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                  {field.value.map((stateCode) => {
-                                    const state = US_STATES.find(s => s.value === stateCode);
-                                    return (
-                                      <Badge
-                                        key={stateCode}
-                                        variant="secondary"
-                                        className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
-                                        data-testid={`badge-region-${stateCode}`}
-                                      >
-                                        {state?.label || stateCode}
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-4 w-4 p-0 ml-2 hover:bg-transparent"
-                                          onClick={() => {
-                                            const updated = (field.value || []).filter((code: string) => code !== stateCode);
-                                            field.onChange(updated);
-                                          }}
-                                          data-testid={`button-remove-region-${stateCode}`}
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </Button>
-                                      </Badge>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="hire_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hire Date</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              className="bg-white dark:bg-gray-700"
-                              data-testid="input-hire-date"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate(`/sales/${id}`)}
-                    data-testid="button-cancel"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={updateSalespersonMutation.isPending}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    data-testid="button-save-salesperson"
-                  >
-                    {updateSalespersonMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Changes
-                      </>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="commission_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-200">Commission Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            placeholder="0"
+                            className="bg-gray-800 text-white border-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                            data-testid="input-commission-rate"
+                            {...field}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </Button>
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="territory"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-gray-200">Sales Regions</FormLabel>
+                        <FormControl>
+                          <div className="space-y-3">
+                            <Select
+                              onValueChange={(value) => {
+                                const current = field.value || [];
+                                if (!current.includes(value)) {
+                                  field.onChange([...current, value]);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="bg-gray-800 text-white border-gray-700" data-testid="select-add-region">
+                                <SelectValue placeholder="Add a region" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {US_STATES
+                                  .filter(state => !(field.value || []).includes(state.value))
+                                  .map((state) => (
+                                    <SelectItem key={state.value} value={state.value}>
+                                      {state.label}
+                                    </SelectItem>
+                                  ))
+                                }
+                              </SelectContent>
+                            </Select>
+
+                            {/* Selected regions display */}
+                            {field.value && field.value.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {field.value.map((stateCode) => {
+                                  const state = US_STATES.find(s => s.value === stateCode);
+                                  return (
+                                    <Badge
+                                      key={stateCode}
+                                      variant="secondary"
+                                      className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+                                      data-testid={`badge-region-${stateCode}`}
+                                    >
+                                      {state?.label || stateCode}
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-4 w-4 p-0 ml-2 hover:bg-transparent"
+                                        onClick={() => {
+                                          const updated = (field.value || []).filter((code: string) => code !== stateCode);
+                                          field.onChange(updated);
+                                        }}
+                                        data-testid={`button-remove-region-${stateCode}`}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="hire_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-200">Hire Date</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            className="bg-gray-800 text-white border-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                            data-testid="input-hire-date"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-700">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(`/sales/${id}`)}
+                  data-testid="button-cancel"
+                  className="text-gray-300 hover:bg-gray-700 hover:text-white border-gray-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateSalespersonMutation.isPending}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  data-testid="button-save-salesperson"
+                >
+                  {updateSalespersonMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </div>
     </div>
   );
