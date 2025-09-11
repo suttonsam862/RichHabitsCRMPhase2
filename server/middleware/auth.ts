@@ -74,3 +74,6 @@ export async function optionalAuth(req: AuthedRequest, res: Response, next: Next
     next();
   }
 }
+
+// Export alias for backward compatibility
+export const authenticateToken = requireAuth;
