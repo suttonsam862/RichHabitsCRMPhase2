@@ -771,7 +771,7 @@ export default function UsersAdminPage() {
                       <SelectValue placeholder="Select organization" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Global (no organization)</SelectItem>
+                      <SelectItem value="global">Global (no organization)</SelectItem>
                       {organizations.map((org: Organization) => (
                         <SelectItem key={org.id} value={org.id}>
                           {org.name}
