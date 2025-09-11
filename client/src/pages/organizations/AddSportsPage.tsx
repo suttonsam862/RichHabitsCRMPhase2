@@ -36,6 +36,18 @@ interface SportContact {
   assigned_salesperson_id?: string;
 }
 
+const formSchema = z.object({
+  sports: z.array(z.object({
+    sportId: z.string().min(1, "Sport is required"),
+    teamName: z.string().min(1, "Team name is required"),
+    contactName: z.string().min(1, "Contact name is required"),
+    contactEmail: z.string().email("Valid email is required"),
+    contactPhone: z.string().optional(),
+    userId: z.string().optional().nullable()
+  }))
+});
+
+
 export default function AddSportsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -46,15 +58,20 @@ export default function AddSportsPage() {
   const [contactMode, setContactMode] = useState<'new' | 'existing'>('new');
   const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  const form = useForm({
-    resolver: zodResolver(contactSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      contact_name: "",
-      contact_email: "",
-      contact_phone: "",
-      team_name: "Main Team",
-      assigned_salesperson_id: "",
-    },
+      sports: [
+        {
+          sportId: undefined,
+          teamName: 'Main Team',
+          contactName: '',
+          contactEmail: '',
+          contactPhone: '',
+          userId: undefined
+        }
+      ]
+    }
   });
 
   // Fetch organization details
@@ -321,7 +338,7 @@ export default function AddSportsPage() {
                   <div className="p-2 text-white/60 text-sm">No additional sports available</div>
                 ) : (
                   filteredSports.map((sport: any) => (
-                    <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
+                    <SelectItem key={sport.id} value={sport.id || `sport-${sport.name}`} className="text-white focus:bg-white/10">
                       {sport.name}
                     </SelectItem>
                   ))
@@ -486,8 +503,8 @@ export default function AddSportsPage() {
                         <div className="p-2 text-white/60 text-sm">No users available</div>
                       ) : (
                         existingUsers.map((user: any) => (
-                          <SelectItem key={user.id} value={user.id} className="text-white focus:bg-white/10">
-                            {user.fullName || user.name || 'Unknown User'} ({user.email})
+                          <SelectItem key={user.id} value={user.id || `user-${user.email}`} className="text-white focus:bg-white/10">
+                            {user.fullName || user.email}
                           </SelectItem>
                         ))
                       )}
@@ -524,12 +541,13 @@ export default function AddSportsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                          <Select value={field.value || undefined} onValueChange={field.onChange}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson-existing">
-                                <SelectValue placeholder="Select salesperson" />
-                              </SelectTrigger>
-                            </FormControl>
+                          <Select
+                            value={field.value || undefined}
+                            onValueChange={(value) => field.onChange(value || undefined)}
+                          >
+                            <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson-existing">
+                              <SelectValue placeholder="Select salesperson" />
+                            </SelectTrigger>
                             <SelectContent className="bg-gray-800 border-white/20">
                               <SelectItem value="" className="text-white focus:bg-white/10">No assignment</SelectItem>
                               {salespeopleLoading ? (
