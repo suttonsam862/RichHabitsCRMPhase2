@@ -8,6 +8,7 @@ import organizationsRoutes from './organizations/index.js';
 import sportsRoutes from './sports/index';
 import salesRoutes from './sales/index';
 import permissionTemplatesRoutes from './permission-templates';
+import catalogRoutes from './catalog/index';
 // Removed uploadRoutes import - deprecated in favor of objects endpoint
 import { brandingRouter } from './files/branding.js';
 
@@ -23,6 +24,7 @@ router.use('/organizations', organizationsRoutes);
 router.use('/files', brandingRouter); // Mount branding routes under /files
 router.use('/sports', sportsRoutes);
 router.use('/sales', salesRoutes);
+router.use('/catalog', catalogRoutes);
 router.use('/permission-templates', permissionTemplatesRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
 

@@ -43,6 +43,7 @@ const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m =
 const OrganizedSettingsPage = lazy(() => import('@/pages/settings/OrganizedSettingsPage').then(m => ({ default: m.default })));
 const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ default: m.default })));
 const QuoteHistory = lazy(() => import('@/pages/QuoteHistory').then(m => ({ default: m.default })));
+const CatalogManagement = lazy(() => import('@/pages/catalog/CatalogManagement').then(m => ({ default: m.CatalogManagement })));
 
 // Loading component for lazy loaded pages
 function PageLoader() {
@@ -111,6 +112,10 @@ export function AppRoutes() {
               
               <Route path="/products" element={<ProtectedRoute />}>
                 <Route index element={<ProductsPage />} />
+              </Route>
+              
+              <Route path="/catalog" element={<ProtectedRoute />}>
+                <Route index element={<CatalogManagement />} />
               </Route>
               
               <Route path="/analytics" element={<ProtectedRoute />}>
