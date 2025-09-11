@@ -186,10 +186,10 @@ export default function OrganizationSportsPage() {
                     <div className="flex items-center justify-between text-xs text-white/50">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        Added {new Date(sport.created_at).toLocaleDateString()}
+                        Added {sport.created_at ? new Date(sport.created_at).toLocaleDateString() : 'Unknown'}
                       </div>
                       <div className="flex items-center gap-1">
-                        Updated {new Date(sport.updated_at).toLocaleDateString()}
+                        Updated {sport.updated_at ? new Date(sport.updated_at).toLocaleDateString() : 'Unknown'}
                       </div>
                     </div>
                   </div>

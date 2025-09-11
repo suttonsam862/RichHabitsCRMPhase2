@@ -147,7 +147,7 @@ export default function UsersManagement() {
           userData = userData.filter((user: any) => user.role === roleFilter);
         }
         if (activeFilter !== 'all') {
-          const isActiveFilter = activeFilter === 'true';
+          const isActiveFilter = activeFilter === '1';
           userData = userData.filter((user: any) => user.isActive === isActiveFilter);
         }
         
@@ -170,14 +170,16 @@ export default function UsersManagement() {
   // Load statistics (simplified since comprehensive stats not available)
   const loadStats = async () => {
     try {
-      // Calculate basic stats from user list
-      const response = await api.get('/api/v1/users?pageSize=1000'); // Get more users for stats
+      // Calculate basic stats from user list using consistent endpoint
+      const response = await api.get('/api/v1/users/enhanced?pageSize=1000'); // Use enhanced endpoint for consistency
       if (response.success) {
-        const users = response.data || [];
+        const users = response.data?.users || response.data || [];
         const totalUsers = users.length;
         const activeUsers = users.filter((u: any) => u.isActive).length;
         const recentUsers = users.filter((u: any) => {
+          if (!u.createdAt) return false;
           const created = new Date(u.createdAt);
+          if (isNaN(created.getTime())) return false;
           const thirtyDaysAgo = new Date();
           thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
           return created >= thirtyDaysAgo;
@@ -624,7 +626,7 @@ export default function UsersManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-gray-400">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
                     </div>
                   </TableCell>
                   <TableCell>
