@@ -45,6 +45,7 @@ const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ 
 const QuoteHistory = lazy(() => import('@/pages/QuoteHistory').then(m => ({ default: m.default })));
 const CatalogManagement = lazy(() => import('@/pages/catalog/CatalogManagement').then(m => ({ default: m.CatalogManagement })));
 const DesignerManagement = lazy(() => import('@/pages/designers/DesignerManagement').then(m => ({ default: m.DesignerManagement })));
+const ManufacturerManagement = lazy(() => import('@/pages/manufacturers/ManufacturerManagement').then(m => ({ default: m.ManufacturerManagement })));
 
 // Loading component for lazy loaded pages
 function PageLoader() {
@@ -121,6 +122,10 @@ export function AppRoutes() {
               
               <Route path="/designers" element={<ProtectedRoute />}>
                 <Route index element={<DesignerManagement />} />
+              </Route>
+              
+              <Route path="/manufacturers" element={<ProtectedRoute />}>
+                <Route index element={<ManufacturerManagement />} />
               </Route>
               
               <Route path="/analytics" element={<ProtectedRoute />}>

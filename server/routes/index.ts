@@ -10,6 +10,7 @@ import salesRoutes from './sales/index';
 import permissionTemplatesRoutes from './permission-templates';
 import catalogRoutes from './catalog/index';
 import designerRoutes from './designers/index';
+import manufacturerRoutes from './manufacturers/index';
 // Removed uploadRoutes import - deprecated in favor of objects endpoint
 import { brandingRouter } from './files/branding.js';
 
@@ -27,6 +28,7 @@ router.use('/sports', sportsRoutes);
 router.use('/sales', salesRoutes);
 router.use('/catalog', catalogRoutes);
 router.use('/designers', designerRoutes);
+router.use('/manufacturers', manufacturerRoutes);
 router.use('/permission-templates', permissionTemplatesRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
 

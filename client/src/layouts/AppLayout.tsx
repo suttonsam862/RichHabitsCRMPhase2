@@ -2,7 +2,7 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { paths } from "@/lib/paths";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Home, Users, FileText, TrendingUp, Menu, X, Package, Palette } from "lucide-react";
+import { Building2, Home, Users, FileText, TrendingUp, Menu, X, Package, Palette, Factory } from "lucide-react";
 import { useState } from "react";
 import richHabitsLogo from "@assets/BlackPNG_New_Rich_Habits_Logo_caa84ddc-c1dc-49fa-a3cf-063db73499d3_1757019113547.png";
 
@@ -22,6 +22,7 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
     { path: "/sales", label: "Sales", icon: TrendingUp },
     { path: "/catalog", label: "Catalog", icon: Package },
     { path: "/designers", label: "Designers", icon: Palette },
+    { path: "/manufacturers", label: "Manufacturers", icon: Factory },
     { path: paths.quotes, label: "Quote Generator", icon: FileText },
   ];
 
