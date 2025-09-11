@@ -330,16 +330,17 @@ export default function EditSalesperson() {
                               <SelectTrigger className="bg-gray-800 text-white border-gray-700" data-testid="select-add-region">
                                 <SelectValue placeholder="Add a region" />
                               </SelectTrigger>
-                              <SelectContent>
-                                {US_STATES
-                                  .filter(state => !(field.value || []).includes(state.value))
-                                  .map((state) => (
-                                    <SelectItem key={state.value} value={state.value}>
-                                      {state.label}
+                              <SelectContent className="bg-gray-800 border-white/10 max-h-[200px]">
+                                  {US_STATES.filter(state => !field.value?.includes(state.abbreviation)).map((state) => (
+                                    <SelectItem
+                                      key={`edit-state-${state.abbreviation}`}
+                                      value={state.abbreviation}
+                                      className="text-white hover:bg-white/10"
+                                    >
+                                      {state.name} ({state.abbreviation})
                                     </SelectItem>
-                                  ))
-                                }
-                              </SelectContent>
+                                  ))}
+                                </SelectContent>
                             </Select>
 
                             {/* Selected regions display */}

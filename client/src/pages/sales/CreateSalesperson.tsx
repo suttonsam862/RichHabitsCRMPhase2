@@ -54,10 +54,10 @@ export default function CreateSalesperson() {
     mutationFn: async (data: SalespersonFormData) => {
       // First create the user
       const userResponse = await api.post('/api/v1/users', {
-        fullName: data.full_name,
+        full_name: data.full_name,
         email: data.email,
         phone: data.phone,
-        role: 'salesperson'
+        role: 'sales'
       });
 
       // Then create their profile
@@ -277,7 +277,7 @@ export default function CreateSalesperson() {
                                 <SelectContent className="bg-gray-800 border-white/10 max-h-[200px]">
                                   {US_STATES.filter(state => !field.value?.includes(state.abbreviation)).map((state) => (
                                     <SelectItem
-                                      key={state.abbreviation}
+                                      key={`state-${state.abbreviation}`}
                                       value={state.abbreviation}
                                       className="text-white hover:bg-white/10"
                                     >
