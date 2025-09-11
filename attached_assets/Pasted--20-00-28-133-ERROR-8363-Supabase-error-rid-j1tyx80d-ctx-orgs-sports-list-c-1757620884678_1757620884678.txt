@@ -1,0 +1,87 @@
+[20:00:28.133] ERROR (8363): 🔴 Supabase error
+    rid: "j1tyx80d"
+    ctx: "orgs.sports.list"
+    code: "42703"
+    message: "column org_sports.assigned_salesperson_id does not exist"
+    details: {
+      "code": "42703",
+      "details": null,
+      "hint": null,
+      "message": "column org_sports.assigned_salesperson_id does not exist"
+    }
+[20:00:28.134] WARN (8363): GET 400 144ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "j1tyx80d"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 400
+    ms: 144
+[20:00:29.077] INFO (8363): GET 200 88ms /src/pages/organizations/AddSportsPage.tsx
+    rid: "5vjgg2ij"
+    method: "GET"
+    path: "/src/pages/organizations/AddSportsPage.tsx"
+    status: 200
+    ms: 88
+[20:00:29.173] INFO (8363): GET 304 0ms /src/components/ui/tabs.tsx
+    rid: "qep80jsy"
+    method: "GET"
+    path: "/src/components/ui/tabs.tsx"
+    status: 304
+    ms: 0
+[20:00:29.476] INFO (8363): GET 304 231ms /api/v1/sports
+    rid: "f52q40wn"
+    method: "GET"
+    path: "/api/v1/sports"
+    status: 304
+    ms: 231
+[20:00:29.575] INFO (8363): GET 304 323ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30
+    rid: "y40ja8cn"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30"
+    status: 304
+    ms: 323
+Error in users list: PostgresError: syntax error at or near "desc"
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42601',
+  position: '551',
+  file: 'scan.l',
+  line: '1188',
+  routine: 'scanner_yyerror'
+}
+[20:00:29.823] ERROR (8363): GET 500 575ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "5d0mtsux"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 500
+    ms: 575
+Error in users list: PostgresError: syntax error at or near "desc"
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42601',
+  position: '505',
+  file: 'scan.l',
+  line: '1188',
+  routine: 'scanner_yyerror'
+}
+[20:00:29.976] ERROR (8363): GET 500 720ms /api/v1/users/enhanced?type=customers&pageSize=100
+    rid: "e26bo5uj"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=customers&pageSize=100"
+    status: 500
+    ms: 720
