@@ -64,7 +64,7 @@ export default function CreateWizard(){
       emailDomain: emailDomain || undefined,
       billingEmail: billingEmail || undefined,
       tags: tags.split(',').map(s=>s.trim()).filter(Boolean),
-      sports: isBusiness ? [] : sports.filter(s=>s.sportId && s.contactEmail && s.contactName && s.saved)
+      sports: [] // Remove sports creation from this step
     };
     
     const r = await api.post('/api/v1/organizations', payload);
@@ -105,14 +105,21 @@ export default function CreateWizard(){
 
         {/* Progress Steps */}
         <div className="mb-8 flex items-center justify-center gap-4">
-          {[1, 2, 3].map(num => (
+          {[
+            { num: 1, label: 'Basic Info' },
+            { num: 2, label: 'Branding' },
+            { num: 3, label: 'Review' }
+          ].map(({ num, label }) => (
             <div key={num} className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                step >= num 
-                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white' 
-                  : 'bg-white/10 text-white/50'
-              }`}>
-                {num}
+              <div className="flex flex-col items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                  step >= num 
+                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white' 
+                    : 'bg-white/10 text-white/50'
+                }`}>
+                  {num}
+                </div>
+                <span className="text-xs text-white/60 mt-1">{label}</span>
               </div>
               {num < 3 && (
                 <div className={`w-12 h-px mx-2 transition-colors ${
@@ -284,138 +291,42 @@ export default function CreateWizard(){
                   onClick={() => setStep(3)}
                   data-testid="button-next-step2"
                 >
-                  Next: Sports
+                  Next: Review
                 </button>
               </div>
             </div>
           )}
 
-          {/* Step 3: Sports (for non-business orgs) */}
+          {/* Step 3: Review & Create */}
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold mb-6">
-                {isBusiness ? 'Review & Create' : 'Sports Contacts'}
-              </h2>
+              <h2 className="text-2xl font-semibold mb-6">Review & Create</h2>
               
-              {!isBusiness && (
-                <>
-                  <p className="text-white/60 mb-4">
-                    Add sports and contact information for your organization (optional)
-                  </p>
-                  
-                  {sports.map((sport, i) => (
-                    <div key={i} className={`p-4 rounded-xl border transition-colors ${sport.saved ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <select 
-                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:border-cyan-500/50 focus:outline-none transition-colors" 
-                          value={sport.sportId} 
-                          onChange={e=>updateSport(i,{sportId:e.target.value})}
-                          data-testid={`select-sport-${i}`}
-                          disabled={sport.saved}
-                        >
-                          <option value="" className="bg-gray-800">Select a sport...</option>
-                          {availableSports.map(availableSport => (
-                            <option key={availableSport.id} value={availableSport.id} className="bg-gray-800">
-                              {availableSport.name}
-                            </option>
-                          ))}
-                        </select>
-                        <input 
-                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
-                          value={sport.contactName} 
-                          onChange={e=>updateSport(i,{contactName:e.target.value})}
-                          placeholder="Contact Name"
-                          data-testid={`input-contact-name-${i}`}
-                          disabled={sport.saved}
-                        />
-                        <input 
-                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
-                          value={sport.contactEmail} 
-                          onChange={e=>updateSport(i,{contactEmail:e.target.value})}
-                          placeholder="Contact Email"
-                          data-testid={`input-contact-email-${i}`}
-                          disabled={sport.saved}
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <input 
-                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none transition-colors" 
-                          value={sport.contactPhone} 
-                          onChange={e=>updateSport(i,{contactPhone:e.target.value})}
-                          placeholder="Contact Phone (optional)"
-                          data-testid={`input-contact-phone-${i}`}
-                          disabled={sport.saved}
-                        />
-                        <div className="flex gap-2">
-                          {!sport.saved ? (
-                            <>
-                              <button 
-                                className="flex-1 px-4 py-2 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
-                                onClick={() => saveSport(i)}
-                                disabled={!sport.sportId || !sport.contactName || !sport.contactEmail}
-                                data-testid={`button-done-sport-${i}`}
-                              >
-                                ✓ Done
-                              </button>
-                              <button 
-                                className="px-3 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                                onClick={() => removeSport(i)}
-                                data-testid={`button-remove-sport-${i}`}
-                              >
-                                ✕
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex-1 px-4 py-2 rounded-xl bg-green-500/20 text-green-400 text-center">
-                                ✓ Saved
-                              </div>
-                              <button 
-                                className="px-3 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                                onClick={() => removeSport(i)}
-                                data-testid={`button-remove-sport-${i}`}
-                              >
-                                ✕
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <button 
-                    className="w-full px-4 py-3 rounded-xl border-2 border-dashed border-white/20 text-white/60 hover:border-cyan-500/50 hover:text-cyan-400 transition-colors"
-                    onClick={addSport}
-                    data-testid="button-add-sport"
-                  >
-                    + Add Sport Contact
-                  </button>
-                </>
-              )}
-
-              {/* Summary for business orgs */}
-              {isBusiness && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                    <h3 className="font-semibold mb-2">Organization Summary</h3>
-                    <div className="text-sm space-y-1 text-white/80">
-                      <div><strong>Name:</strong> {name}</div>
-                      <div><strong>Type:</strong> Business</div>
-                      {emailDomain && <div><strong>Email Domain:</strong> {emailDomain}</div>}
-                      {billingEmail && <div><strong>Billing Email:</strong> {billingEmail}</div>}
-                      {tags && <div><strong>Tags:</strong> {tags}</div>}
-                    </div>
-                  </div>
-                  
-                  {/* Preview card */}
-                  <div className="h-32 rounded-xl" style={{ background: previewGradient }}>
-                    <div className="h-full flex items-center justify-center text-white font-semibold text-xl">
-                      {name}
-                    </div>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <h3 className="font-semibold mb-2">Organization Summary</h3>
+                  <div className="text-sm space-y-1 text-white/80">
+                    <div><strong>Name:</strong> {name}</div>
+                    <div><strong>Type:</strong> {isBusiness ? 'Business' : 'Organization'}</div>
+                    {emailDomain && <div><strong>Email Domain:</strong> {emailDomain}</div>}
+                    {billingEmail && <div><strong>Billing Email:</strong> {billingEmail}</div>}
+                    {tags && <div><strong>Tags:</strong> {tags}</div>}
                   </div>
                 </div>
-              )}
+                
+                {/* Preview card */}
+                <div className="h-32 rounded-xl" style={{ background: previewGradient }}>
+                  <div className="h-full flex items-center justify-center text-white font-semibold text-xl">
+                    {name}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <p className="text-sm">
+                    <strong>Note:</strong> You can add sports and contacts after creating the organization using the Setup Wizard or Sports page.
+                  </p>
+                </div>
+              </div>
 
               {/* Messages */}
               {err && (
