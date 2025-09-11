@@ -1,0 +1,39 @@
+Warning: A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://reactjs.org/link/controlled-components
+    at input
+    at _c (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/input.tsx:20:11)
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GR3B7I3S.js?v=ad036335:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GR3B7I3S.js?v=ad036335:56:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/form.tsx:130:9
+    at div
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/form.tsx:72:6
+    at Controller (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YGCRICWC.js?v=ad036335:298:35)
+    at FormField (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/form.tsx:33:6)
+    at div
+    at div
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVHSTOKX.js?v=ad036335:42:13
+    at Presence (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-75LFS2LN.js?v=ad036335:24:11)
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=ad036335:171:13
+    at _c5 (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/tabs.tsx:72:12)
+    at div
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVHSTOKX.js?v=ad036335:42:13
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-72DEVCPZ.js?v=ad036335:48:15)
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=ad036335:49:7
+    at form
+    at FormProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YGCRICWC.js?v=ad036335:102:11)
+    at div
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVHSTOKX.js?v=ad036335:42:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3MDRJWLS.js?v=ad036335:59:7
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GR3B7I3S.js?v=ad036335:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GR3B7I3S.js?v=ad036335:56:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVHSTOKX.js?v=ad036335:42:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6YNPD2E6.js?v=ad036335:57:5
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=ad036335:233:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=ad036335:156:58
+    at Presence (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-75LFS2LN.js?v=ad036335:24:11)
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=ad036335:147:64
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GR3B7I3S.js?v=ad036335:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GR3B7I3S.js?v=ad036335:56:13
+    at…
+API request failed for /api/v1/manufacturers: 
+Object {error: Error, message: "HTTP 404: Not Found", stack: "Error: HTTP 404: Not Found↵    at apiRequest…", toString: "Error: HTTP 404: Not Found", name: "Error"}
+
