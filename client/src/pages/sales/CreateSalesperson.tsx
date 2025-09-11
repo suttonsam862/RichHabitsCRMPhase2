@@ -277,8 +277,8 @@ export default function CreateSalesperson() {
                                 <SelectTrigger className="bg-white/5 border border-white/10 text-white focus:border-cyan-500/50">
                                   <SelectValue placeholder="Add a region" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-gray-800 border-white/10 max-h-[200px]">
-                                  {US_STATES.filter(state => !field.value?.includes(state.value)).map((state) => (
+                                <SelectContent className="bg-gray-800 border-gray-700 text-white max-h-60">
+                                  {US_STATES.filter(state => state && state.value && state.value.trim() !== '' && !field.value?.includes(state.value)).map((state) => (
                                     <SelectItem
                                       key={`state-${state.value}`}
                                       value={state.value}

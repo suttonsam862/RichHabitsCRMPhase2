@@ -56,7 +56,7 @@ export default function EditSalesperson() {
       full_name: "",
       email: "",
       phone: "",
-      // employee_id: removed - read-only
+      // employee_id: removed - read-only display only
       commission_rate: 0,
       territory: [],
       hire_date: "",
@@ -331,7 +331,7 @@ export default function EditSalesperson() {
                                 <SelectValue placeholder="Add a region" />
                               </SelectTrigger>
                               <SelectContent className="bg-gray-800 border-white/10 max-h-[200px]">
-                                  {US_STATES.filter(state => !field.value?.includes(state.value)).map((state) => (
+                                  {US_STATES.filter(state => state && state.value && state.value.trim() !== '' && !field.value?.includes(state.value)).map((state) => (
                                     <SelectItem
                                       key={`edit-state-${state.value}`}
                                       value={state.value}

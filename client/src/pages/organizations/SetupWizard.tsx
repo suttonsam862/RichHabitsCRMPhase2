@@ -684,7 +684,7 @@ export default function SetupWizard() {
                 <div className="space-y-3">
                   <Label className="text-white font-medium">State/Province</Label>
                   <Input
-                    value={contactInfo.state}
+                    value={contactInfo.state || ''}
                     onChange={(e) => setContactInfo(prev => ({ ...prev, state: e.target.value }))}
                     placeholder="NY"
                     className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-green-500/50"

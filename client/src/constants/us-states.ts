@@ -48,7 +48,14 @@ export const US_STATES = [
   { value: 'WA', label: 'Washington' },
   { value: 'WV', label: 'West Virginia' },
   { value: 'WI', label: 'Wisconsin' },
-  { value: 'WY', label: 'Wyoming' },
-] as const;
+  { value: 'WY', label: 'Wyoming' }
+].filter(state => state.value && state.label); // Filter out any undefined values
+
+// Ensure all states have valid values
+export const VALID_US_STATES = US_STATES.map(state => ({
+  ...state,
+  value: state.value || '', // Ensure value is never undefined
+  label: state.label || state.value || 'Unknown' // Fallback label
+}));
 
 export type USState = typeof US_STATES[number]['value'];
