@@ -751,17 +751,16 @@ export default function SimplifiedSetup() {
                             <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
                             <Select
                               onValueChange={(value) => {
-                                setSports(prev => prev.map(s =>
-                                  s.id === sportToAdd // Use sportToAdd here to correctly identify the sport being added/edited
-                                    ? { ...s, assigned_salesperson_id: value === 'unassigned' ? null : value }
-                                    : s
-                                ));
-                                // Also update the form value if this is for the current form submission
-                                if (field.value !== undefined) {
-                                  field.onChange(value === 'unassigned' ? null : value);
+                                const formSport = sports.find(s => s.id === sportToAdd); // Find the current sport being edited
+                                if (formSport) {
+                                  const updatedSports = sports.map(s =>
+                                    s.id === formSport.id ? { ...s, assigned_salesperson_id: value === 'unassigned' ? null : value } : s
+                                  );
+                                  setSports(updatedSports);
                                 }
+                                field.onChange(value === 'unassigned' ? null : value);
                               }}
-                              value={sports.find(s => s.id === sportToAdd)?.assigned_salesperson_id || ''}
+                              value={field.value || (sports.find(s => s.id === sportToAdd)?.assigned_salesperson_id || 'unassigned')}
                             >
                               <SelectTrigger className="glass text-white border-white/20 focus:border-blue-400">
                                 <SelectValue placeholder="Select salesperson" />

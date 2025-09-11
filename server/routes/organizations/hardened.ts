@@ -584,7 +584,7 @@ router.post('/:id/setup', async (req: any, res) => {
     if (sports && Array.isArray(sports) && sports.length > 0) {
       for (const sport of sports) {
         const { sport_id, team_name, contact_name, contact_email, contact_phone, assigned_salesperson_id } = sport;
-        
+
         // Insert or update org_sports record
         const { error: sportError } = await sb
           .from('org_sports')
@@ -1410,7 +1410,7 @@ const SportsSchema = z.object({
   }))
 });
 
-router.post('/:id/sports', async (req, res) => {
+router.post('/:id/sports', async (req: any, res) => {
   try {
     const { id: organizationId } = req.params;
     const parseResult = SportsSchema.safeParse(req.body);
