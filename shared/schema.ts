@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, jsonb, integer, boolean, primaryKey, foreignKey, index, numeric } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
@@ -14,15 +14,15 @@ export const users = pgTable('users', {
   subrole: text('subrole'), // salesperson, designer, manufacturer (for staff roles)
   avatar_url: text('avatar_url'), // profile picture
   is_active: boolean('is_active').default(true).notNull(), // true = active, false = inactive
-  
+
   // Organization relationship
   organization_id: varchar('organization_id'),
-  
+
   // Enhanced profile fields
   job_title: text('job_title'),
   department: text('department'),
   hire_date: timestamp('hire_date'),
-  
+
   // Customer/Contact specific fields
   address_line1: text('address_line1'),
   address_line2: text('address_line2'), 
@@ -30,18 +30,18 @@ export const users = pgTable('users', {
   state: text('state'),
   postal_code: text('postal_code'),
   country: text('country').default('US'),
-  
+
   // Authentication and profile
   last_login: timestamp('last_login'),
   password_reset_token: text('password_reset_token'),
   password_reset_expires: timestamp('password_reset_expires'),
   email_verified: boolean('email_verified').default(false), // false = unverified, true = verified
   initial_temp_password: text('initial_temp_password'), // Auto-generated password for admin view (encrypted)
-  
+
   // Permissions and access
   permissions: jsonb('permissions').default('{}'), // Detailed action-level permissions
   page_access: jsonb('page_access').default('{}'), // Page and subpage access control
-  
+
   // Metadata
   notes: text('notes'),
   created_by: varchar('created_by'),
@@ -51,7 +51,7 @@ export const users = pgTable('users', {
 export const organizations = pgTable('organizations', {
   id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
   name: varchar('name', { length: 255 }).notNull(),
-  
+
   // Required setup fields (from user requirements)
   address: text('address'), // Full Address field
   city: text('city'), 
@@ -60,12 +60,12 @@ export const organizations = pgTable('organizations', {
   phone: text('phone'),
   email: text('email'),
   finance_email: text('finance_email'), // Finance contact email
-  
+
   // Branding (required setup fields)
   logo_url: text('logo_url'), // Organization Logo
   brand_primary: text('brand_primary'), // Primary Brand Color 
   brand_secondary: text('brand_secondary'), // Secondary Brand Color
-  
+
   // Optional/legacy fields
   website: text('website'),
   tertiary_color: text('tertiary_color'),
@@ -74,12 +74,12 @@ export const organizations = pgTable('organizations', {
   universal_discounts: jsonb('universal_discounts').notNull().default('{}'),
   tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`),
   gradient_css: text('gradient_css'),
-  
+
   // Business type and setup status
   is_business: boolean('is_business').default(false).notNull(), // false = school, true = business
   setup_complete: boolean('setup_complete').default(false).notNull(), // false = incomplete, true = complete
   setup_completed_at: timestamp('setup_completed_at'),
-  
+
   // Audit fields
   is_archived: boolean('is_archived').default(false).notNull(),
   status: text('status').default('active').notNull(),

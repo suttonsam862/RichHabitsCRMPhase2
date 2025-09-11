@@ -28,7 +28,7 @@ function dbRowToDto(row: any): any {
   if (!row) return null;
 
   const mapped = mapDbToDto(row, DTO_TO_DB_MAPPING);
-  
+
   return {
     id: row.id,
     email: row.email,
@@ -69,7 +69,7 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   try {
     // Build where conditions
     const conditions = [];
-    
+
     // Use Supabase Auth to get users instead of custom table
     const { data: authUsers, error } = await supabaseAdmin.auth.admin.listUsers({
       page: pageNum,
@@ -165,7 +165,7 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
       JOIN roles r ON ur.role_id = r.id
       WHERE ur.user_id = ${id}
     `);
-    
+
     const mappedUser = {
       ...userData,
       roles: rolesResult || []
@@ -179,24 +179,24 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
 // PATCH /:id/email - Update user email
 router.patch('/:id/email', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
-  
+
   try {
     // Validate request body
     const validation = updateEmailSchema.safeParse(req.body);
     if (!validation.success) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid email format', validation.error.flatten(), 400);
     }
-    
+
     const { email } = validation.data;
-    
+
     // Update email using Supabase Admin
     const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { email });
-    
+
     if (error) {
       logSecurityEvent(req, 'USER_EMAIL_UPDATE_FAILED', { userId: id, error: error.message });
       return sendErr(res, 'UPDATE_ERROR', error.message, undefined, 400);
     }
-    
+
     logDatabaseOperation(req, 'USER_EMAIL_UPDATED', 'users', { userId: id });
     sendOk(res, { success: true });
   } catch (error) {
@@ -207,7 +207,7 @@ router.patch('/:id/email', requireAuth, asyncHandler(async (req: AuthedRequest, 
 // POST /:id/reset-password - Reset user password
 router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
-  
+
   try {
     // Generate random password
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
@@ -215,17 +215,17 @@ router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedR
     for (let i = 0; i < 12; i++) {
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    
+
     // Update password using Supabase Admin
     const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { password });
-    
+
     if (error) {
       logSecurityEvent(req, 'USER_PASSWORD_RESET_FAILED', { userId: id, error: error.message });
       return sendErr(res, 'UPDATE_ERROR', error.message, undefined, 400);
     }
-    
+
     logSecurityEvent(req, 'USER_PASSWORD_RESET', { userId: id, adminId: req.user?.id });
-    
+
     // Only return masked version (first 3 chars)
     const maskedPassword = password.substring(0, 3) + '*'.repeat(9);
     sendOk(res, { 
@@ -241,28 +241,28 @@ router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedR
 // PATCH /:id/roles - Update user roles
 router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
-  
+
   try {
     // Validate request body
     const validation = updateRolesSchema.safeParse(req.body);
     if (!validation.success) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid roles data', validation.error.flatten(), 400);
     }
-    
+
     const { roles } = validation.data;
-    
+
     for (const roleChange of roles) {
       // Get role ID from slug
       const roleResult = await db.execute(sql`
         SELECT id FROM roles WHERE slug = ${roleChange.slug} LIMIT 1
       `);
-      
+
       if (!roleResult || roleResult.length === 0) {
         continue;
       }
-      
+
       const roleId = (roleResult as any)[0].id;
-      
+
       if (roleChange.action === 'add') {
         // Add role
         await db.execute(sql`
@@ -278,7 +278,7 @@ router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, 
         `);
       }
     }
-    
+
     logDatabaseOperation(req, 'USER_ROLES_UPDATED', 'user_roles', { userId: id, changes: roles });
     sendOk(res, { success: true });
   } catch (error) {

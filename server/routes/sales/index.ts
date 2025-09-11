@@ -14,8 +14,12 @@ import {
 import { requireAuth, AuthedRequest } from "../../middleware/auth";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { z } from "zod";
+import dashboardRouter from "./dashboard.js";
 
 const router = Router();
+
+// Mount dashboard routes
+router.use('/', dashboardRouter);
 
 // Get all salespeople with their profiles and metrics
 router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
@@ -42,7 +46,7 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
 // Get salesperson details with assignments and metrics
 router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
-  
+
   // Get salesperson basic info and profile
   const [salesperson] = await db
     .select()
@@ -103,7 +107,7 @@ async function generateEmployeeId() {
   const year = new Date().getFullYear();
   const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4 digit number
   let employeeId = `EMP-${year}-${randomSuffix}`;
-  
+
   // Check if this ID already exists, if so regenerate
   let attempts = 0;
   while (attempts < 10) {
@@ -111,17 +115,17 @@ async function generateEmployeeId() {
       .select()
       .from(salespersonProfiles)
       .where(eq(salespersonProfiles.employee_id, employeeId));
-    
+
     if (!existing) {
       break;
     }
-    
+
     // Generate a new one
     const newRandomSuffix = Math.floor(1000 + Math.random() * 9000);
     employeeId = `EMP-${year}-${newRandomSuffix}`;
     attempts++;
   }
-  
+
   return employeeId;
 }
 
@@ -146,12 +150,12 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
       })
       .where(eq(salespersonProfiles.user_id, id))
       .returning();
-    
+
     res.json(updated);
   } else {
     // Create new profile with auto-generated employee_id
     const employeeId = await generateEmployeeId();
-    
+
     const [created] = await db
       .insert(salespersonProfiles)
       .values({
@@ -161,7 +165,7 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
         hire_date: profileData.hire_date ? new Date(profileData.hire_date) : undefined
       })
       .returning();
-    
+
     res.json(created);
   }
 }));
@@ -276,59 +280,6 @@ router.patch("/assignments/:assignmentId/toggle", requireAuth, asyncHandler(asyn
     .returning();
 
   res.json(updated);
-}));
-
-// Get sales dashboard KPIs
-router.get("/dashboard", requireAuth, asyncHandler(async (req, res) => {
-  const { period = '30' } = req.query;
-  const periodDays = parseInt(period as string);
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - periodDays);
-
-  // Get overall KPIs
-  const [totalSalespeople] = await db
-    .select({ count: sql<number>`COUNT(*)::int` })
-    .from(users)
-    .where(eq(users.role, 'sales'));
-
-  const [activeAssignments] = await db
-    .select({ count: sql<number>`COUNT(*)::int` })
-    .from(salespersonAssignments)
-    .where(eq(salespersonAssignments.is_active, true));
-
-  const [totalOrders] = await db
-    .select({ 
-      count: sql<number>`COUNT(*)::int`,
-      revenue: sql<number>`COALESCE(SUM(total_amount), 0)::int`
-    })
-    .from(orders)
-    .where(sql`created_at >= ${startDate}`);
-
-  // Get top performers
-  const topPerformers = await db
-    .select({
-      salesperson_id: salespersonMetrics.salesperson_id,
-      full_name: users.full_name,
-      total_sales: sql<number>`SUM(${salespersonMetrics.total_sales})::int`,
-      orders_count: sql<number>`SUM(${salespersonMetrics.orders_count})::int`,
-      commission_earned: sql<number>`SUM(${salespersonMetrics.commission_earned})::int`
-    })
-    .from(salespersonMetrics)
-    .leftJoin(users, eq(salespersonMetrics.salesperson_id, users.id))
-    .where(sql`${salespersonMetrics.period_start} >= ${startDate}`)
-    .groupBy(salespersonMetrics.salesperson_id, users.full_name)
-    .orderBy(desc(sql`SUM(${salespersonMetrics.total_sales})`))
-    .limit(10);
-
-  res.json({
-    overview: {
-      total_salespeople: totalSalespeople.count,
-      active_assignments: activeAssignments.count,
-      total_orders: totalOrders.count,
-      total_revenue: totalOrders.revenue
-    },
-    top_performers: topPerformers
-  });
 }));
 
 export default router;
