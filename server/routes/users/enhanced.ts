@@ -87,21 +87,6 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
-    // Apply type filter  
-    if (type === 'staff') {
-      query = query.in('role', ['admin', 'sales', 'designer', 'manufacturing']);
-    } else if (type === 'customers') {
-      query = query.eq('role', 'customer');
-    }
-
-    // Apply search filter
-    if (searchTerm && typeof searchTerm === 'string') {
-      query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-    }
-
-    // Apply pagination  
-    query = query.range(offset, offset + limitNum - 1);
-
     // Execute query with Drizzle ORM
     const usersQuery = db.select().from(users)
       .where(whereClause)
