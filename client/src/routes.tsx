@@ -36,9 +36,6 @@ const CreateSalesperson = lazy(() => import('@/pages/sales/CreateSalesperson').t
 const SalespersonDetails = lazy(() => import('@/pages/sales/SalespersonDetails').then(m => ({ default: m.default })));
 const EditSalesperson = lazy(() => import('@/pages/sales/EditSalesperson').then(m => ({ default: m.default })));
 const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
-const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
-const ProductsPage = lazy(() => import('@/pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
-const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const OrganizedSettingsPage = lazy(() => import('@/pages/settings/OrganizedSettingsPage').then(m => ({ default: m.default })));
 const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ default: m.default })));
@@ -108,13 +105,6 @@ export function AppRoutes() {
                 <Route index element={<QuoteGenerator />} />
               </Route>
               
-              <Route path="/orders" element={<ProtectedRoute />}>
-                <Route index element={<OrdersPage />} />
-              </Route>
-              
-              <Route path="/products" element={<ProtectedRoute />}>
-                <Route index element={<ProductsPage />} />
-              </Route>
               
               <Route path="/catalog" element={<ProtectedRoute />}>
                 <Route index element={<CatalogManagement />} />
@@ -126,10 +116,6 @@ export function AppRoutes() {
               
               <Route path="/manufacturers" element={<ProtectedRoute />}>
                 <Route index element={<ManufacturerManagement />} />
-              </Route>
-              
-              <Route path="/analytics" element={<ProtectedRoute />}>
-                <Route index element={<AnalyticsPage />} />
               </Route>
               
               <Route path="/settings" element={<ProtectedRoute />}>
