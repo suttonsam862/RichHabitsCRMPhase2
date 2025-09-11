@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Users, FileText, ShoppingCart, Package, BarChart3, Settings, LogOut, TrendingUp } from 'lucide-react';
+import { Building2, Users, FileText, ShoppingCart, Package, BarChart3, Settings, LogOut, TrendingUp, Palette, Factory, BookOpen } from 'lucide-react';
 
 export function HomePage() {
   const { user, signOut } = useAuth();
@@ -37,34 +37,34 @@ export function HomePage() {
       glowColor: 'shadow-orange-500/25'
     },
     {
-      title: 'Quotes',
-      description: 'Create and manage sales quotes',
-      icon: FileText,
-      href: '/quotes',
+      title: 'Product Catalog',
+      description: 'Manage catalog items and templates',
+      icon: BookOpen,
+      href: '/catalog',
+      color: 'bg-green-500',
+      glowColor: 'shadow-green-500/25'
+    },
+    {
+      title: 'Designers',
+      description: 'Manage design team and specializations',
+      icon: Palette,
+      href: '/designers',
       color: 'bg-purple-500',
       glowColor: 'shadow-purple-500/25'
     },
     {
-      title: 'Orders',
-      description: 'Track and manage customer orders',
-      icon: ShoppingCart,
-      href: '/orders',
-      color: 'bg-emerald-500',
-      glowColor: 'shadow-emerald-500/25'
-    },
-    {
-      title: 'Products',
-      description: 'Product catalog and inventory',
-      icon: Package,
-      href: '/products',
+      title: 'Manufacturers',
+      description: 'Production partners and capabilities',
+      icon: Factory,
+      href: '/manufacturers',
       color: 'bg-pink-500',
       glowColor: 'shadow-pink-500/25'
     },
     {
-      title: 'Analytics',
-      description: 'Business insights and reporting',
-      icon: BarChart3,
-      href: '/analytics',
+      title: 'Quote Generator',
+      description: 'Create and manage sales quotes',
+      icon: FileText,
+      href: '/quotes',
       color: 'bg-indigo-500',
       glowColor: 'shadow-indigo-500/25'
     }

@@ -1,10 +1,16 @@
-
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { paths } from "@/lib/paths";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Home, Users, FileText, TrendingUp, Menu, X, Package, Palette, Factory } from "lucide-react";
-import { useState } from "react";
+import { Building2, Home, Users, FileText, TrendingUp, Menu, X, Package, Palette, Factory, ChevronDown, Settings2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import richHabitsLogo from "@assets/BlackPNG_New_Rich_Habits_Logo_caa84ddc-c1dc-49fa-a3cf-063db73499d3_1757019113547.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,16 +21,26 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navItems = [
+  // Main navigation items
+  const mainNavItems = [
     { path: paths.home, label: "Home", icon: Home },
     { path: paths.organizations, label: "Organizations", icon: Building2 },
     { path: paths.users, label: "Users", icon: Users },
     { path: "/sales", label: "Sales", icon: TrendingUp },
+    { path: paths.quotes, label: "Quote Generator", icon: FileText },
+  ];
+
+  // Management dropdown items
+  const managementItems = [
     { path: "/catalog", label: "Catalog", icon: Package },
     { path: "/designers", label: "Designers", icon: Palette },
     { path: "/manufacturers", label: "Manufacturers", icon: Factory },
-    { path: paths.quotes, label: "Quote Generator", icon: FileText },
   ];
+
+  // All items for mobile menu
+  const allNavItems = [...mainNavItems, ...managementItems];
+
+  const isManagementActive = managementItems.some(item => location.pathname === item.path);
 
   return (
     <div className="min-h-screen bg-bg-void">
@@ -53,8 +69,8 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
             </Link>
 
             {/* Desktop Navigation Links - Hidden on mobile */}
-            <div className="hidden md:flex items-center space-x-6">
-              {navItems.map(({ path, label, icon: Icon }) => {
+            <div className="hidden md:flex items-center space-x-4">
+              {mainNavItems.map(({ path, label, icon: Icon }) => {
                 const isActive = location.pathname === path;
                 return (
                   <Link key={path} to={path}>
@@ -67,11 +83,48 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
                       }`}
                     >
                       <Icon className="h-4 w-4" />
-                      <span className="font-medium">{label}</span>
+                      <span className="font-medium text-sm">{label}</span>
                     </motion.div>
                   </Link>
                 );
               })}
+
+              {/* Management Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${
+                      isManagementActive
+                        ? "bg-gradient-to-r from-glow-1/20 to-glow-2/20 text-glow-1 border border-glow-1/30"
+                        : "text-white/70 hover:text-white hover:bg-white/5"
+                    }`}
+                    data-testid="button-management-dropdown"
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    <span className="font-medium text-sm">Management</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </motion.button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-black/90 backdrop-blur-xl border-white/10">
+                  {managementItems.map(({ path, label, icon: Icon }) => {
+                    const isActive = location.pathname === path;
+                    return (
+                      <DropdownMenuItem key={path} asChild>
+                        <Link 
+                          to={path}
+                          className={`flex items-center space-x-2 px-3 py-2 cursor-pointer ${
+                            isActive ? "text-glow-1 bg-glow-1/10" : "text-white/70 hover:text-white"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{label}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Hamburger Menu Button - Visible on mobile */}
@@ -108,7 +161,8 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
           >
             <div className="max-w-7xl mx-auto px-4 py-4">
               <nav className="space-y-2">
-                {navItems.map(({ path, label, icon: Icon }) => {
+                {/* Main Nav Items */}
+                {mainNavItems.map(({ path, label, icon: Icon }) => {
                   const isActive = location.pathname === path;
                   return (
                     <Link
@@ -126,7 +180,36 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
                         }`}
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="font-medium text-lg">{label}</span>
+                        <span className="font-medium">{label}</span>
+                      </motion.div>
+                    </Link>
+                  );
+                })}
+
+                {/* Separator */}
+                <div className="border-t border-white/10 my-2" />
+                
+                {/* Management Section */}
+                <div className="px-4 py-2 text-white/50 text-xs uppercase tracking-wider">Management</div>
+                {managementItems.map(({ path, label, icon: Icon }) => {
+                  const isActive = location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                          isActive
+                            ? "bg-gradient-to-r from-glow-1/20 to-glow-2/20 text-glow-1 border border-glow-1/30"
+                            : "text-white/70 hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span className="font-medium">{label}</span>
                       </motion.div>
                     </Link>
                   );
