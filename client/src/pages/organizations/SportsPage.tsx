@@ -1,15 +1,18 @@
+import { useState } from "react";
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Phone, Mail, User, MapPin, Calendar, Trophy, Users } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, User, MapPin, Calendar, Trophy, Users, Edit } from 'lucide-react';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layouts/AppLayout';
+import EditSportModal from "./EditSportModal";
 
 interface Sport {
   id: string;
   name: string;
+  team_name?: string;
   assigned_salesperson?: string;
   contact_name?: string;
   contact_email?: string;
@@ -21,7 +24,9 @@ interface Sport {
 export default function OrganizationSportsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+  const [editingSport, setEditingSport] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const { data: org, isLoading: orgLoading } = useQuery({
     queryKey: ['organization', id],
     queryFn: () => api.get(`/api/v1/organizations/${id}`),
@@ -87,6 +92,15 @@ export default function OrganizationSportsPage() {
       backHref={`/organizations/${id}`}
       headerActions={headerActions}
     >
+      {/* Render the EditSportModal */}
+      {isEditModalOpen && editingSport && (
+        <EditSportModal 
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          sportData={editingSport}
+          organizationId={id}
+        />
+      )}
 
       {/* Sports Grid */}
       {sports.length === 0 ? (
@@ -129,26 +143,39 @@ export default function OrganizationSportsPage() {
                         <p className="text-white/60 text-sm">Active Sport</p>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
-                      onClick={() => navigate(`/organizations/${id}/sports/${sport.id}/edit`)}
-                      data-testid={`button-edit-sport-${sport.id}`}
-                    >
-                      Edit
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                          Active
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingSport(sport);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="border-white/20 text-white hover:bg-white/10"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
                   </div>
 
                   {/* Contact Information */}
                   <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-white/80">
+                      <Trophy className="h-4 w-4 text-cyan-400" />
+                      <span className="text-sm font-medium">Team: {sport.team_name || 'Main Team'}</span>
+                    </div>
+
                     {sport.contact_name && (
                       <div className="flex items-center gap-3 text-white/80">
                         <User className="h-4 w-4 text-cyan-400" />
                         <span className="text-sm">{sport.contact_name}</span>
                       </div>
                     )}
-                    
+
                     {sport.contact_email && (
                       <div className="flex items-center gap-3 text-white/80">
                         <Mail className="h-4 w-4 text-cyan-400" />
@@ -160,7 +187,7 @@ export default function OrganizationSportsPage() {
                         </a>
                       </div>
                     )}
-                    
+
                     {sport.contact_phone && (
                       <div className="flex items-center gap-3 text-white/80">
                         <Phone className="h-4 w-4 text-cyan-400" />
@@ -172,7 +199,7 @@ export default function OrganizationSportsPage() {
                         </a>
                       </div>
                     )}
-                    
+
                     {sport.assigned_salesperson && (
                       <div className="flex items-center gap-3 text-white/80">
                         <Users className="h-4 w-4 text-cyan-400" />

@@ -21,6 +21,8 @@ const contactSchema = z.object({
   contact_name: z.string().min(1, "Contact name is required"),
   contact_email: z.string().email("Valid email is required"),
   contact_phone: z.string().optional(),
+  team_name: z.string().min(1, "Team name is required"),
+  assigned_salesperson_id: z.string().optional(),
 });
 
 interface SportContact {
@@ -30,6 +32,8 @@ interface SportContact {
   contact_name: string;
   contact_email: string;
   contact_phone?: string;
+  team_name: string;
+  assigned_salesperson_id?: string;
 }
 
 export default function AddSportsPage() {
@@ -48,6 +52,8 @@ export default function AddSportsPage() {
       contact_name: "",
       contact_email: "",
       contact_phone: "",
+      team_name: "Main Team",
+      assigned_salesperson_id: "",
     },
   });
 
@@ -82,6 +88,14 @@ export default function AddSportsPage() {
 
   const existingUsers = existingUsersData?.data?.users || existingUsersData?.data || [];
 
+  // Fetch staff/sales users for salesperson assignment
+  const { data: salespeopleData = {}, isLoading: salespeopleLoading } = useQuery({
+    queryKey: ['users-salespeople'],
+    queryFn: () => api.get('/api/v1/users/enhanced?type=staff&pageSize=100'),
+  });
+
+  const salespeople = salespeopleData?.data?.users || salespeopleData?.data || [];
+
   const addSportsMutation = useMutation({
     mutationFn: async (sports: SportContact[]) => {
       const payload = {
@@ -90,6 +104,8 @@ export default function AddSportsPage() {
           contact_name: sport.contact_name,
           contact_email: sport.contact_email,
           contact_phone: sport.contact_phone || "",
+          team_name: sport.team_name || "Main Team",
+          assigned_salesperson_id: sport.assigned_salesperson_id || null,
         })),
       };
 
@@ -133,10 +149,10 @@ export default function AddSportsPage() {
     let contactData;
     
     if (contactMode === 'new') {
-      if (!formValues.contact_name || !formValues.contact_email) {
+      if (!formValues.contact_name || !formValues.contact_email || !formValues.team_name) {
         toast({
           title: "Missing information",
-          description: "Please fill in all required contact fields.",
+          description: "Please fill in all required fields including team name.",
           variant: "destructive",
         });
         return;
@@ -144,14 +160,16 @@ export default function AddSportsPage() {
       contactData = {
         contact_name: formValues.contact_name,
         contact_email: formValues.contact_email,
-        contact_phone: formValues.contact_phone || ""
+        contact_phone: formValues.contact_phone || "",
+        team_name: formValues.team_name,
+        assigned_salesperson_id: formValues.assigned_salesperson_id || null
       };
     } else {
       const selectedUser = existingUsers.find((u: any) => u.id === selectedUserId);
-      if (!selectedUser) {
+      if (!selectedUser || !formValues.team_name) {
         toast({
           title: "Missing information",
-          description: "Please select an existing user.",
+          description: "Please select an existing user and provide team name.",
           variant: "destructive",
         });
         return;
@@ -160,7 +178,9 @@ export default function AddSportsPage() {
         contact_name: selectedUser.fullName || selectedUser.name || 'Unknown User',
         contact_email: selectedUser.email,
         contact_phone: selectedUser.phone || "",
-        userId: selectedUser.id
+        userId: selectedUser.id,
+        team_name: formValues.team_name,
+        assigned_salesperson_id: formValues.assigned_salesperson_id || null
       };
     }
 
@@ -184,7 +204,13 @@ export default function AddSportsPage() {
     setSportsToAdd(prev => [...prev, newContact]);
 
     // Reset form and selection
-    form.reset();
+    form.reset({
+      contact_name: "",
+      contact_email: "",
+      contact_phone: "",
+      team_name: "Main Team",
+      assigned_salesperson_id: "",
+    });
     setSelectedSportId("");
     setSelectedUserId("");
   };
@@ -363,7 +389,28 @@ export default function AddSportsPage() {
                 </Form>
               </div>
 
-              <div className="mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <Form {...form}>
+                  <FormField
+                    control={form.control}
+                    name="team_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Team Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter team name"
+                            className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                            data-testid="input-team-name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </Form>
+
                 <Form {...form}>
                   <FormField
                     control={form.control}
@@ -380,6 +427,42 @@ export default function AddSportsPage() {
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </Form>
+              </div>
+
+              <div className="mt-4">
+                <Form {...form}>
+                  <FormField
+                    control={form.control}
+                    name="assigned_salesperson_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
+                        <Select value={field.value || undefined} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson">
+                              <SelectValue placeholder="Select salesperson" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-gray-800 border-white/20">
+                            <SelectItem value="" className="text-white focus:bg-white/10">No assignment</SelectItem>
+                            {salespeopleLoading ? (
+                              <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
+                            ) : salespeople.length === 0 ? (
+                              <div className="p-2 text-white/60 text-sm">No salespeople available</div>
+                            ) : (
+                              salespeople.map((person: any) => (
+                                <SelectItem key={person.id} value={person.id} className="text-white focus:bg-white/10">
+                                  {person.fullName || person.name || 'Unknown User'} ({person.email})
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -411,6 +494,63 @@ export default function AddSportsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Form {...form}>
+                    <FormField
+                      control={form.control}
+                      name="team_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-white">Team Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter team name"
+                              className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                              data-testid="input-team-name-existing"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </Form>
+
+                  <Form {...form}>
+                    <FormField
+                      control={form.control}
+                      name="assigned_salesperson_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
+                          <Select value={field.value || undefined} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson-existing">
+                                <SelectValue placeholder="Select salesperson" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-gray-800 border-white/20">
+                              <SelectItem value="" className="text-white focus:bg-white/10">No assignment</SelectItem>
+                              {salespeopleLoading ? (
+                                <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
+                              ) : salespeople.length === 0 ? (
+                                <div className="p-2 text-white/60 text-sm">No salespeople available</div>
+                              ) : (
+                                salespeople.map((person: any) => (
+                                  <SelectItem key={person.id} value={person.id} className="text-white focus:bg-white/10">
+                                    {person.fullName || person.name || 'Unknown User'} ({person.email})
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </Form>
+                </div>
                 
                 {selectedUserId && (
                   <div className="bg-white/5 rounded-lg p-4 border border-white/10">
@@ -433,7 +573,7 @@ export default function AddSportsPage() {
 
           <Button
             onClick={addSportContact}
-            disabled={!selectedSportId || filteredSports.length === 0 || (contactMode === 'new' ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUserId)}
+            disabled={!selectedSportId || filteredSports.length === 0 || !form.watch("team_name") || (contactMode === 'new' ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUserId)}
             className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 mt-4"
             data-testid="button-add-sport"
           >
@@ -471,8 +611,15 @@ export default function AddSportsPage() {
                     <div>
                       <h4 className="font-semibold text-white">{sport.sportName}</h4>
                       <div className="text-white/70 text-sm">
-                        {sport.contact_name} • {sport.contact_email}
-                        {sport.contact_phone && ` • ${sport.contact_phone}`}
+                        <div><strong>Team:</strong> {sport.team_name}</div>
+                        <div><strong>Contact:</strong> {sport.contact_name} • {sport.contact_email}
+                        {sport.contact_phone && ` • ${sport.contact_phone}`}</div>
+                        {sport.assigned_salesperson_id && (
+                          <div><strong>Salesperson:</strong> {(() => {
+                            const sp = salespeople.find((p: any) => p.id === sport.assigned_salesperson_id);
+                            return sp ? (sp.fullName || sp.name || 'Unknown') : 'Unknown';
+                          })()}</div>
+                        )}
                       </div>
                     </div>
                   </div>

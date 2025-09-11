@@ -548,6 +548,93 @@ router.get('/:id/setup', async (req: any, res) => {
 });
 
 // POST setup save (all essential fields)
+router.post('/:id/setup', async (req: any, res) => {
+  try {
+    const sb = supabaseAdmin;
+    const orgId = req.params.id;
+    const { sports } = req.body;
+
+    logger.info({ orgId, sportsCount: sports?.length || 0 }, 'Setup save started');
+
+    // Process sports if provided
+    if (sports && Array.isArray(sports) && sports.length > 0) {
+      for (const sport of sports) {
+        const { sport_id, team_name, contact_name, contact_email, contact_phone, assigned_salesperson_id } = sport;
+        
+        // Insert or update org_sports record
+        const { error: sportError } = await sb
+          .from('org_sports')
+          .upsert({
+            organization_id: orgId,
+            sport_id,
+            team_name: team_name || 'Main Team',
+            contact_name,
+            contact_email,
+            contact_phone: contact_phone || '',
+            assigned_salesperson_id: assigned_salesperson_id || null
+          }, {
+            onConflict: 'organization_id,sport_id'
+          });
+
+        if (sportError) {
+          logger.error({ orgId, sportId: sport_id, error: sportError }, 'Failed to save sport');
+          return sendErr(res, 'DB_ERROR', `Failed to save sport: ${sportError.message}`, undefined, 400);
+        }
+      }
+    }
+
+    return sendOk(res, { message: 'Setup completed successfully' });
+  } catch (error: any) {
+    logSbError(req, 'orgs.setup.save', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// PATCH endpoint to update individual sport
+router.patch('/:id/sports/:sportId', async (req: any, res) => {
+  try {
+    const sb = supabaseAdmin;
+    const { id: orgId, sportId } = req.params;
+    const { team_name, contact_name, contact_email, contact_phone, assigned_salesperson_id } = req.body;
+
+    logger.info({ orgId, sportId }, 'Updating sport');
+
+    const { data, error } = await sb
+      .from('org_sports')
+      .update({
+        team_name: team_name || 'Main Team',
+        contact_name,
+        contact_email,
+        contact_phone: contact_phone || '',
+        assigned_salesperson_id: assigned_salesperson_id || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('organization_id', orgId)
+      .eq('sport_id', sportId)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error({ orgId, sportId, error }, 'Failed to update sport');
+      return sendErr(res, 'DB_ERROR', error.message, undefined, 400);
+    }
+
+    return sendOk(res, data);
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.update', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// POST setup save (all essential fields)
 const SetupSchema = z.object({
   brand_primary: z.string().optional(),
   brand_secondary: z.string().optional(),
