@@ -1,0 +1,58 @@
+{
+  rid: 'f6gzcdoz',
+  error: 'relation "salesperson_assignments" does not exist',
+  stack: 'PostgresError: relation "salesperson_assignments" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)',
+  path: '/api/v1/sales/dashboard?period=30',
+  method: 'GET',
+  timestamp: '2025-09-11T16:26:32.646Z'
+}
+[16:26:32.648] ERROR (288): GET 500 895ms /api/v1/sales/dashboard?period=30
+    rid: "f6gzcdoz"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 500
+    ms: 895
+[16:26:32.651] INFO (288): GET 304 866ms /api/v1/users/enhanced?type=staff
+    rid: "9k5ondb4"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff"
+    status: 304
+    ms: 866
+[16:26:32.687] INFO (288): GET 304 908ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "801abgbx"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 304
+    ms: 908
+[16:26:33.631] INFO (288): GET 200 66ms /src/pages/sales/CreateSalesperson.tsx
+    rid: "5xm2q9jz"
+    method: "GET"
+    path: "/src/pages/sales/CreateSalesperson.tsx"
+    status: 200
+    ms: 66
+[16:26:33.735] INFO (288): GET 304 0ms /src/components/ui/form.tsx
+    rid: "f1f6058w"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 304
+    ms: 0
+[16:26:33.739] INFO (288): GET 200 3ms /src/constants/us-states.ts
+    rid: "olttfhk8"
+    method: "GET"
+    path: "/src/constants/us-states.ts"
+    status: 200
+    ms: 3
+[16:27:29.911] WARN (288): POST 400 145ms /api/v1/users
+    rid: "rmrus08k"
+    method: "POST"
+    path: "/api/v1/users"
+    status: 400
+    ms: 145
