@@ -33,7 +33,7 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
     .from(users)
     .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.user_id))
     .leftJoin(salespersonAssignments, eq(users.id, salespersonAssignments.salesperson_id))
-    .where(eq(users.role, 'salesperson'))
+    .where(eq(users.role, 'sales'))
     .groupBy(users.id, salespersonProfiles.id);
 
   res.json(salespeople);
@@ -289,7 +289,7 @@ router.get("/dashboard", requireAuth, asyncHandler(async (req, res) => {
   const [totalSalespeople] = await db
     .select({ count: sql<number>`COUNT(*)::int` })
     .from(users)
-    .where(eq(users.role, 'salesperson'));
+    .where(eq(users.role, 'sales'));
 
   const [activeAssignments] = await db
     .select({ count: sql<number>`COUNT(*)::int` })
