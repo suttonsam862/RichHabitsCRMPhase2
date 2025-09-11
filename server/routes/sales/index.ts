@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { db } from "../../db";
 import { 
   salespersonAssignments, 
@@ -155,12 +156,13 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
 
     const [created] = await db
       .insert(salespersonProfiles)
-      .values({
+      .values([{
+        id: randomUUID(),
         userId: id,
         ...profileData,
         employeeId: employeeId,
         hireDate: profileData.hireDate || undefined
-      })
+      }])
       .returning();
 
     res.json(created);
@@ -195,11 +197,12 @@ router.post("/salespeople/:id/assignments", requireAuth, asyncHandler(async (req
 
   const [assignment] = await db
     .insert(salespersonAssignments)
-    .values({
+    .values([{
+      id: randomUUID(),
       salespersonId: id,
       assignedBy: req.user?.id,
       ...assignmentData
-    })
+    }])
     .returning();
 
   // Note: orgSports assignment would need sportId and teamName from request
