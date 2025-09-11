@@ -28,8 +28,16 @@ const manufacturerSchema = z.object({
   postalCode: z.string().optional(),
   country: z.string().optional(),
   specialties: z.array(z.string()).optional(),
-  minimumOrderQuantity: z.number().int().positive().optional(),
-  leadTimeDays: z.number().int().positive().optional(),
+  minimumOrderQuantity: z.union([z.number().int().positive(), z.string()]).optional().transform((val) => {
+    if (typeof val === 'string' && val === '') return undefined;
+    if (typeof val === 'string') return parseInt(val);
+    return val;
+  }),
+  leadTimeDays: z.union([z.number().int().positive(), z.string()]).optional().transform((val) => {
+    if (typeof val === 'string' && val === '') return undefined;
+    if (typeof val === 'string') return parseInt(val);
+    return val;
+  }),
   isActive: z.boolean().optional()
 });
 
@@ -183,8 +191,8 @@ export function ManufacturerManagement() {
       postalCode: '',
       country: '',
       specialties: [],
-      minimumOrderQuantity: undefined,
-      leadTimeDays: undefined,
+      minimumOrderQuantity: '',
+      leadTimeDays: '',
       isActive: true
     }
   });
@@ -192,21 +200,21 @@ export function ManufacturerManagement() {
   // Edit form
   const editForm = useForm<z.infer<typeof manufacturerSchema>>({
     resolver: zodResolver(manufacturerSchema),
-    defaultValues: selectedManufacturer ? {
-      name: selectedManufacturer.name,
-      contactEmail: selectedManufacturer.contactEmail || '',
-      contactPhone: selectedManufacturer.contactPhone || '',
-      addressLine1: selectedManufacturer.addressLine1 || '',
-      addressLine2: selectedManufacturer.addressLine2 || '',
-      city: selectedManufacturer.city || '',
-      state: selectedManufacturer.state || '',
-      postalCode: selectedManufacturer.postalCode || '',
-      country: selectedManufacturer.country || '',
-      specialties: selectedManufacturer.specialties || [],
-      minimumOrderQuantity: selectedManufacturer.minimumOrderQuantity,
-      leadTimeDays: selectedManufacturer.leadTimeDays,
-      isActive: selectedManufacturer.isActive
-    } : {}
+    defaultValues: {
+      name: '',
+      contactEmail: '',
+      contactPhone: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: '',
+      specialties: [],
+      minimumOrderQuantity: '',
+      leadTimeDays: '',
+      isActive: true
+    }
   });
 
   const handleSpecialtyToggle = (spec: string, isEdit = false) => {
@@ -423,9 +431,9 @@ export function ManufacturerManagement() {
                                 postalCode: manufacturer.postalCode || '',
                                 country: manufacturer.country || '',
                                 specialties: manufacturer.specialties || [],
-                                minimumOrderQuantity: manufacturer.minimumOrderQuantity,
-                                leadTimeDays: manufacturer.leadTimeDays,
-                                isActive: manufacturer.isActive
+                                minimumOrderQuantity: manufacturer.minimumOrderQuantity || '',
+                                leadTimeDays: manufacturer.leadTimeDays || '',
+                                isActive: manufacturer.isActive ?? true
                               });
                               setIsEditDialogOpen(true);
                             }}
@@ -646,7 +654,8 @@ export function ManufacturerManagement() {
                               {...field} 
                               type="number" 
                               placeholder="e.g., 50"
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                              value={field.value || ''}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
                               data-testid="input-min-order"
                             />
                           </FormControl>
@@ -667,7 +676,8 @@ export function ManufacturerManagement() {
                               {...field} 
                               type="number" 
                               placeholder="e.g., 14"
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                              value={field.value || ''}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
                               data-testid="input-lead-time"
                             />
                           </FormControl>
@@ -902,7 +912,8 @@ export function ManufacturerManagement() {
                               <Input 
                                 {...field} 
                                 type="number"
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                                value={field.value || ''}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
                                 data-testid="input-edit-min-order"
                               />
                             </FormControl>
@@ -921,7 +932,8 @@ export function ManufacturerManagement() {
                               <Input 
                                 {...field} 
                                 type="number"
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                                value={field.value || ''}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
                                 data-testid="input-edit-lead-time"
                               />
                             </FormControl>

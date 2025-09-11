@@ -9,50 +9,42 @@ async function throwIfResNotOk(res: Response) {
 
 export type HttpMethod = 'GET'|'POST'|'PATCH'|'DELETE';
 
-export async function apiRequest(endpoint: string, options: { method?: string; data?: any; headers?: Record<string, string> } = {}) {
+export const apiRequest = async (url: string, options: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; data?: any; headers?: Record<string, string>; } = {}) => {
   const { method = 'GET', data, headers = {} } = options;
 
   const config: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...headers,
-    },
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      ...headers
+    }
   };
 
   if (data && method !== 'GET') {
     config.body = JSON.stringify(data);
   }
 
-  try {
-    const response = await fetch(`/api${endpoint}`, config);
+  // Remove leading /api if it exists to avoid double /api
+  const cleanUrl = url.startsWith('/api') ? url : `/api${url}`;
+  const response = await fetch(cleanUrl, config);
 
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch {
-        // If we can't parse error as JSON, use the status text
-      }
-      throw new Error(errorMessage);
+  if (!response.ok) {
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      // If we can't parse error as JSON, use the status text
     }
-
-    const result = await response.json();
-    return result;
-  } catch (error: any) {
-    console.error(`API request failed for ${endpoint}:`, {
-      error,
-      message: error?.message,
-      stack: error?.stack,
-      toString: error?.toString?.(),
-      name: error?.name
-    });
-    throw error;
+    throw new Error(errorMessage);
   }
-}
 
-type UnauthorizedBehavior = "returnNull" | "throw";
+  const result = await response.json();
+  return result;
+};
+
+export type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
