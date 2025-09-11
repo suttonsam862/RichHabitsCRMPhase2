@@ -331,13 +331,13 @@ export default function EditSalesperson() {
                                 <SelectValue placeholder="Add a region" />
                               </SelectTrigger>
                               <SelectContent className="bg-gray-800 border-white/10 max-h-[200px]">
-                                  {US_STATES.filter(state => !field.value?.includes(state.abbreviation)).map((state) => (
+                                  {US_STATES.filter(state => !field.value?.includes(state.value)).map((state) => (
                                     <SelectItem
-                                      key={`edit-state-${state.abbreviation}`}
-                                      value={state.abbreviation}
+                                      key={`edit-state-${state.value}`}
+                                      value={state.value}
                                       className="text-white hover:bg-white/10"
                                     >
-                                      {state.name} ({state.abbreviation})
+                                      {state.name} ({state.value})
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -346,24 +346,22 @@ export default function EditSalesperson() {
                             {/* Selected regions display */}
                             {field.value && field.value.length > 0 && (
                               <div className="flex flex-wrap gap-2">
-                                {field.value.map((stateCode) => {
-                                  const state = US_STATES.find(s => s.value === stateCode);
+                                {field.value?.map((stateCode, index) => {
+                                  const stateInfo = US_STATES.find(state => state.value === stateCode);
                                   return (
                                     <Badge
-                                      key={stateCode}
-                                      variant="secondary"
-                                      className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
-                                      data-testid={`badge-region-${stateCode}`}
+                                      key={`edit-selected-${stateCode}-${index}`}
+                                      className="bg-blue-500/20 text-blue-300 border-blue-500/30"
                                     >
-                                      {state?.label || stateCode}
+                                      {stateInfo ? `${stateInfo.label} (${stateInfo.value})` : stateCode}
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="h-4 w-4 p-0 ml-2 hover:bg-transparent"
+                                        className="ml-1 h-4 w-4 p-0 text-blue-300 hover:text-blue-100"
                                         onClick={() => {
-                                          const updated = (field.value || []).filter((code: string) => code !== stateCode);
-                                          field.onChange(updated);
+                                          const newTerritories = field.value?.filter((_, i) => i !== index) || [];
+                                          field.onChange(newTerritories);
                                         }}
                                         data-testid={`button-remove-region-${stateCode}`}
                                       >

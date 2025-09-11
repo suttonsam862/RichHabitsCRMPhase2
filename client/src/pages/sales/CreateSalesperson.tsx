@@ -264,24 +264,27 @@ export default function CreateSalesperson() {
                                 ))}
                               </div>
                               <Select
+                                value=""
                                 onValueChange={(value) => {
-                                  if (!field.value?.includes(value)) {
-                                    field.onChange([...(field.value || []), value]);
+                                  if (value) {
+                                    const current = field.value || [];
+                                    if (!current.includes(value)) {
+                                      field.onChange([...current, value]);
+                                    }
                                   }
                                 }}
-                                data-testid="select-territory"
                               >
                                 <SelectTrigger className="bg-white/5 border border-white/10 text-white focus:border-cyan-500/50">
                                   <SelectValue placeholder="Add a region" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-gray-800 border-white/10 max-h-[200px]">
-                                  {US_STATES.filter(state => !field.value?.includes(state.abbreviation)).map((state) => (
+                                  {US_STATES.filter(state => !field.value?.includes(state.value)).map((state) => (
                                     <SelectItem
-                                      key={`state-${state.abbreviation}`}
-                                      value={state.abbreviation}
+                                      key={`state-${state.value}`}
+                                      value={state.value}
                                       className="text-white hover:bg-white/10"
                                     >
-                                      {state.name} ({state.abbreviation})
+                                      {state.name} ({state.value})
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
