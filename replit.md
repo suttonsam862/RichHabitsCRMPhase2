@@ -152,6 +152,15 @@ Include exact commands and pass/fail. On any **fail**, stop and propose a fix; d
 
 ---
 
+## TESTING CREDENTIALS
+**Test Account Login:**
+- Email: `samsutton@rich-habits.com`
+- Password: `Arlodog2010!`
+
+Use these credentials for testing authentication, user management features, and full system functionality.
+
+---
+
 ## QUICK COMMANDS (reference)
 - Preflight: `npm run db:preflight`  
 - Validate schema: `npm run db:validate`  
