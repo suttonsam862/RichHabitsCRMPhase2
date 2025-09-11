@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-09-04T02:25:59.467Z",
+  "generatedAt": "2025-09-11T02:59:39.399Z",
   "columns": [
     {
       "table_schema": "public",
@@ -1347,6 +1347,30 @@
     },
     {
       "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "salesperson_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "sport_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "column_name": "team_name",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
       "table_name": "org_sports",
       "column_name": "id",
       "data_type": "character varying",
@@ -1476,9 +1500,9 @@
     {
       "table_schema": "public",
       "table_name": "org_sports",
-      "column_name": "team_name",
-      "data_type": "text",
-      "is_nullable": "NO",
+      "column_name": "assigned_salesperson_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
       "character_maximum_length": null
     },
     {
@@ -1827,6 +1851,86 @@
     },
     {
       "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": 255
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "template_type",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": 50
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "permissions",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "page_access",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
       "table_name": "permissions",
       "column_name": "id",
       "data_type": "uuid",
@@ -2015,6 +2119,270 @@
       "column_name": "commission_rate_default",
       "data_type": "numeric",
       "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "salesperson_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "organization_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "sport_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "team_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "assigned_by",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "assigned_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "salesperson_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "period_start",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "period_end",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "total_sales",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "orders_count",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "conversion_rate",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "average_deal_size",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "commission_earned",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "active_assignments",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "user_id",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "employee_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "tax_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "commission_rate",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "territory",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "hire_date",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "manager_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "performance_tier",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
       "character_maximum_length": null
     },
     {
@@ -2399,6 +2767,62 @@
       "column_name": "updated_at",
       "data_type": "timestamp without time zone",
       "is_nullable": "NO",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "initial_temp_password",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "subrole",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "job_title",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "department",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "hire_date",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "permissions",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "character_maximum_length": null
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
+      "column_name": "page_access",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
       "character_maximum_length": null
     }
   ],
@@ -2820,6 +3244,18 @@
     {
       "table_schema": "public",
       "table_name": "orders",
+      "constraint_name": "orders_salesperson_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
+      "constraint_name": "orders_sport_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "orders",
       "constraint_name": "orders_status_code_fkey",
       "constraint_type": "FOREIGN KEY"
     },
@@ -2833,12 +3269,6 @@
       "table_schema": "public",
       "table_name": "org_sports",
       "constraint_name": "2200_90123_16_not_null",
-      "constraint_type": "CHECK"
-    },
-    {
-      "table_schema": "public",
-      "table_name": "org_sports",
-      "constraint_name": "2200_90123_17_not_null",
       "constraint_type": "CHECK"
     },
     {
@@ -2874,8 +3304,26 @@
     {
       "table_schema": "public",
       "table_name": "org_sports",
+      "constraint_name": "org_sports_assigned_salesperson_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
       "constraint_name": "org_sports_pkey",
       "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "org_sports_sport_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "org_sports",
+      "constraint_name": "org_sports_unique_org_sport",
+      "constraint_type": "UNIQUE"
     },
     {
       "table_schema": "public",
@@ -3002,6 +3450,36 @@
       "table_name": "organizations",
       "constraint_name": "organizations_pkey",
       "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "constraint_name": "2200_376832_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "constraint_name": "2200_376832_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "constraint_name": "permission_templates_name_key",
+      "constraint_type": "UNIQUE"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "constraint_name": "permission_templates_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "constraint_name": "permission_templates_template_type_check",
+      "constraint_type": "CHECK"
     },
     {
       "table_schema": "public",
@@ -3140,6 +3618,180 @@
       "table_name": "salespeople",
       "constraint_name": "salespeople_pkey",
       "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_10_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_11_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_5_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_7_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "2200_360448_8_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "salesperson_assignments_assigned_by_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "salesperson_assignments_organization_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "salesperson_assignments_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "salesperson_assignments_salesperson_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_assignments",
+      "constraint_name": "salesperson_assignments_sport_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "constraint_name": "2200_360504_11_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "constraint_name": "2200_360504_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "constraint_name": "2200_360504_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "constraint_name": "2200_360504_3_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "constraint_name": "2200_360504_4_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "constraint_name": "salesperson_metrics_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "constraint_name": "salesperson_metrics_salesperson_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "2200_360480_10_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "2200_360480_11_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "2200_360480_1_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "2200_360480_2_not_null",
+      "constraint_type": "CHECK"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "salesperson_profiles_manager_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "salesperson_profiles_pkey",
+      "constraint_type": "PRIMARY KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "salesperson_profiles_user_id_fkey",
+      "constraint_type": "FOREIGN KEY"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "constraint_name": "salesperson_profiles_user_id_key",
+      "constraint_type": "UNIQUE"
     },
     {
       "table_schema": "public",
@@ -3396,8 +4048,8 @@
     },
     {
       "table_schema": "public",
-      "table_name": "sports",
-      "rls_enabled": false
+      "table_name": "org_sports",
+      "rls_enabled": true
     },
     {
       "table_schema": "public",
@@ -3411,8 +4063,8 @@
     },
     {
       "table_schema": "public",
-      "table_name": "org_sports",
-      "rls_enabled": true
+      "table_name": "sports",
+      "rls_enabled": false
     },
     {
       "table_schema": "public",
@@ -3556,12 +4208,32 @@
     },
     {
       "table_schema": "public",
-      "table_name": "users",
+      "table_name": "permissions",
       "rls_enabled": false
     },
     {
       "table_schema": "public",
-      "table_name": "permissions",
+      "table_name": "salesperson_assignments",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_profiles",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "salesperson_metrics",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "permission_templates",
+      "rls_enabled": false
+    },
+    {
+      "table_schema": "public",
+      "table_name": "users",
       "rls_enabled": false
     }
   ]
