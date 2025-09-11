@@ -76,6 +76,8 @@ export default function SimplifiedSetup() {
       const params = new URLSearchParams();
       if (userSearch) params.append("search", userSearch);
       params.append("limit", "10");
+      // Add role filter for sports contacts and sales
+      params.append("roles", "contact,staff"); 
       const response = await api.get(`/api/v1/users?${params.toString()}`);
       return response.data; // Return only the data array
     },
@@ -84,7 +86,7 @@ export default function SimplifiedSetup() {
 
   // Fetch available sports from API
   const { 
-    data: availableSports = [], 
+    data: sportsData, 
     isLoading: sportsLoading, 
     error: sportsError 
   } = useQuery({
@@ -92,6 +94,7 @@ export default function SimplifiedSetup() {
     queryFn: async () => {
       try {
         const response = await api.get('/api/v1/sports');
+        // Ensure response.data is an array, if not, default to empty array
         if (response.success && Array.isArray(response.data)) {
           return response.data;
         }
@@ -102,6 +105,9 @@ export default function SimplifiedSetup() {
       }
     },
   });
+
+  // Use the fetched sports data, ensuring it's an array
+  const availableSports = Array.isArray(sportsData) ? sportsData : [];
 
   // Load organization data
   useEffect(() => {
@@ -543,7 +549,9 @@ export default function SimplifiedSetup() {
                   <option value="">
                     {sportsLoading ? "Loading sports..." : sportsError ? "Error loading sports" : "Select a sport..."}
                   </option>
-                  {Array.isArray(availableSports) && availableSports.filter((sport: any) => !sports.some((s: SportContact) => s.sport_id === sport.id)).map((sport: any) => (
+                  {availableSports.filter((sport: any) => 
+                    !sports.some(s => s.sport_id === sport.id)
+                  ).map((sport: any) => (
                     <option key={sport.id} value={sport.id} className="bg-gray-800">
                       {sport.name}
                     </option>

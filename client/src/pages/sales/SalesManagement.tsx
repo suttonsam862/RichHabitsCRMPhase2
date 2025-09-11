@@ -144,7 +144,7 @@ export default function SalesManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  
+
   // State
   const [selectedPeriod, setSelectedPeriod] = useState('30');
   const [search, setSearch] = useState('');
@@ -152,7 +152,7 @@ export default function SalesManagement() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [selectedSalesperson, setSelectedSalesperson] = useState<string | null>(null);
-  
+
   // Profile form state
   const [profileData, setProfileData] = useState({
     employee_id: '',
@@ -235,6 +235,17 @@ export default function SalesManagement() {
     }
   });
 
+  // Fetch users with staff roles for salesperson assignment
+  const { data: usersResponse, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/v1/users/enhanced-staff'],
+    queryFn: async () => {
+      const response = await api.get('/api/v1/users/enhanced?type=staff&pageSize=100');
+      return response;
+    },
+  });
+
+  const allUsers = usersResponse?.data?.users || usersResponse?.data || [];
+
   // Mutations
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof profileData) => {
@@ -270,7 +281,7 @@ export default function SalesManagement() {
   // Filtered salespeople
   // Ensure salespeople is always an array to prevent filter errors
   const salespeopleArray = Array.isArray(salespeople) ? salespeople : [];
-  
+
   const filteredSalespeople = salespeopleArray.filter(person => {
     const matchesSearch = person.full_name.toLowerCase().includes(search.toLowerCase()) ||
                           person.email.toLowerCase().includes(search.toLowerCase());
@@ -313,7 +324,7 @@ export default function SalesManagement() {
   };
 
   // Show loading state while data is fetching
-  if (dashboardLoading || salespeopleLoading) {
+  if (dashboardLoading || salespeopleLoading || usersLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
@@ -645,8 +656,8 @@ export default function SalesManagement() {
                 <Input
                   id="commission_rate"
                   type="number"
-                  value={profileData.commission_rate / 100}
-                  onChange={(e) => setProfileData({ ...profileData, commission_rate: parseFloat(e.target.value) * 100 })}
+                  value={profileData.commission_rate}
+                  onChange={(e) => setProfileData({ ...profileData, commission_rate: parseFloat(e.target.value) })}
                   data-testid="input-commission-rate"
                 />
               </div>

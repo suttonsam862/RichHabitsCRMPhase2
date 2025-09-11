@@ -56,17 +56,16 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
     },
   });
 
-  // Fetch users for selection
+  // Fetch users for contact selection (filter by contact role)
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["/api/v1/users", userSearch],
+    queryKey: ["/api/v1/users/enhanced", userSearch],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (userSearch) params.append("q", userSearch);
-      params.append("pageSize", "10");
-      const result = await apiRequest(`/api/v1/users?${params.toString()}`, { method: "GET" });
-      console.log("🔍 Organization wizard users API response:", result);
-      console.log("🔍 Search term:", userSearch);
-      return result;
+      params.append("type", "customers"); // Filter for contact/customer role users
+      params.append("pageSize", "20");
+      const response = await apiRequest(`/api/v1/users/enhanced?${params.toString()}`);
+      return response;
     },
     enabled: contactType === "existing",
   });
@@ -134,7 +133,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
 
   const addSportContact = () => {
     const sportName = availableSports.find((s: any) => s.id === selectedSportId)?.name;
-    
+
     if (!selectedSportId || !sportName) {
       toast({
         title: "Missing Information",
@@ -143,7 +142,7 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       });
       return;
     }
-    
+
     // NEW: Validate team name is provided
     if (!teamName.trim()) {
       toast({
@@ -153,12 +152,12 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       });
       return;
     }
-    
+
     // NEW: Check for duplicate sport + team name combination
     const existingTeam = (formData.sports || []).find(
       s => s.sport_id === selectedSportId && s.teamName.toLowerCase() === teamName.toLowerCase().trim()
     );
-    
+
     if (existingTeam) {
       toast({
         title: "Team Already Exists",

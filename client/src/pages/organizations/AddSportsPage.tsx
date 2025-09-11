@@ -74,13 +74,13 @@ export default function AddSportsPage() {
   // Handle API response structure
   const availableSports = availableSportsData?.data || [];
 
-  // Fetch existing users for selection
+  // Fetch existing users for selection (filter by contact role)
   const { data: existingUsersData = {}, isLoading: usersLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => api.get('/api/v1/users'),
+    queryKey: ['users-contacts'],
+    queryFn: () => api.get('/api/v1/users/enhanced?type=customers&pageSize=100'),
   });
 
-  const existingUsers = existingUsersData?.data || [];
+  const existingUsers = existingUsersData?.data?.users || existingUsersData?.data || [];
 
   const addSportsMutation = useMutation({
     mutationFn: async (sports: SportContact[]) => {

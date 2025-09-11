@@ -76,6 +76,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     } else if (type === 'customers') {
       whereConditions.push(eq(users.role, 'customer'));
     }
+    // If type === 'all', don't add any role filter - show all users
     
     // Apply search filter
     if (searchTerm && typeof searchTerm === 'string') {

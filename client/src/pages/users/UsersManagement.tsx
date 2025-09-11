@@ -128,15 +128,15 @@ export default function UsersManagement() {
     jobTitle: '' // Added jobTitle to formData
   });
 
-  // Load users
+  // Load users (show ALL users in the system)
   const loadUsers = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         pageSize: '20',
-        q: search
-        // Note: role and is_active filters not supported by /api/v1/users yet
+        q: search,
+        type: 'all' // Explicitly request all users
       });
 
       const response = await api.get(`/api/v1/users/enhanced?${params}`);
@@ -173,7 +173,7 @@ export default function UsersManagement() {
   const loadStats = async () => {
     try {
       // Calculate basic stats from user list using consistent endpoint
-      const response = await api.get('/api/v1/users/enhanced?pageSize=1000'); // Use enhanced endpoint for consistency
+      const response = await api.get('/api/v1/users/enhanced?type=all&pageSize=1000'); // Explicitly request all users
       if (response.success) {
         const users = response.data?.users || response.data || [];
         const totalUsers = users.length;
@@ -187,12 +187,15 @@ export default function UsersManagement() {
           return created >= thirtyDaysAgo;
         }).length;
 
+        // Count contacts (customer role users)
+        const contactUsers = users.filter((u: any) => u.role === 'customer').length;
+
         setStats({
           total: totalUsers,
           active: activeUsers,
           inactive: totalUsers - activeUsers,
           recent: recentUsers,
-          byRole: {}
+          byRole: { contact: contactUsers }
         });
       }
     } catch (error) {
