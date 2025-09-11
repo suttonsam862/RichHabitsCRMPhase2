@@ -144,12 +144,14 @@ function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: s
   return sports.map(sport => ({
     organization_id: orgId,
     sport_id: sport.sportId,
+    team_name: sport.teamName || 'Main Team', // Add missing team_name field
     contact_name: sport.contactName,
     contact_email: sport.contactEmail,
     contact_phone: sport.contactPhone || null,
     contact_user_id: null,
-    is_primary_contact: 0, // Add missing field with default value
-    updated_at: new Date().toISOString() // Add missing field
+    is_primary_contact: 1, // Set as primary contact
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }));
 }
 
@@ -490,14 +492,51 @@ router.get('/:id/setup', async (req: any, res) => {
     
     // fetch org + its sports (ids & current addresses) - only select fields that exist in DB
     const org = await sb.from('organizations')
-      .select('id,name,logo_url,brand_primary,brand_secondary,color_palette,gradient_css')
+      .select('id,name,logo_url,brand_primary,brand_secondary,color_palette,gradient_css,address,city,state,zip')
       .eq('id', orgId).maybeSingle();
     
     if (org.error) return sendErr(res, 'DB_ERROR', org.error.message, undefined, 400);
     
-    // For now, just return org data without sports until shipping fields are added to schema
-    const sports: any[] = []; // TODO: Implement sports shipping addresses when schema is ready
+    // Fetch existing sports for this organization
+    const { data: orgSportsData, error: sportsError } = await sb
+      .from('org_sports')
+      .select(`
+        sport_id,
+        team_name,
+        contact_name,
+        contact_email,
+        contact_phone,
+        created_at,
+        updated_at
+      `)
+      .eq('organization_id', orgId);
     
+    let sports: any[] = [];
+    if (orgSportsData && orgSportsData.length > 0) {
+      // Get sport names from sports table
+      const sportIds = orgSportsData.map(os => os.sport_id);
+      const { data: sportsNames } = await sb
+        .from('sports')
+        .select('id, name')
+        .in('id', sportIds);
+        
+      const sportsMap = new Map(sportsNames?.map((s: any) => [s.id, s.name]) || []);
+      
+      // Transform the data to match frontend expectations
+      sports = orgSportsData.map((os: any) => ({
+        id: os.sport_id,
+        sport_id: os.sport_id,
+        sportName: sportsMap.get(os.sport_id) || `Sport ${os.sport_id}`,
+        teamName: os.team_name || 'Main Team',
+        contact_name: os.contact_name,
+        contact_email: os.contact_email,
+        contact_phone: os.contact_phone || '',
+        created_at: os.created_at,
+        updated_at: os.updated_at
+      }));
+    }
+    
+    logger.info({ orgId, sportsCount: sports.length }, 'Setup endpoint fetched sports');
     return sendOk(res, { org: org.data, sports });
   } catch (error: any) {
     logSbError(req, 'orgs.setup.get', error);
@@ -1097,6 +1136,7 @@ router.get('/:id/summary', async (req, res) => {
       .from('org_sports')
       .select(`
         sport_id,
+        team_name,
         contact_name,
         contact_email,
         contact_phone,
@@ -1120,6 +1160,7 @@ router.get('/:id/summary', async (req, res) => {
       sports = orgSportsData.map((os: any) => ({
         id: os.sport_id,
         name: sportsMap.get(os.sport_id) || `Sport ${os.sport_id}`,
+        teamName: os.team_name || 'Main Team', // Include team name in summary
         contact_name: os.contact_name,
         contact_email: os.contact_email,
         contact_phone: os.contact_phone || '',

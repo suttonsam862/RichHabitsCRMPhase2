@@ -88,29 +88,27 @@ export function SportsContactsStep({ formData, updateFormData, onPrev, onSuccess
       };
 
       console.log("🔍 Sending organization payload:", payload);
-      const orgResponse = await apiRequest("/v1/organizations", {
+      // Include sports data in the main organization creation payload
+      const fullPayload = {
+        ...payload,
+        sports: (data.sports || []).map(sport => ({
+          sportId: sport.sport_id, // Backend expects camelCase
+          teamName: sport.teamName || 'Main Team', // Backend expects camelCase
+          contactName: sport.contact_name, // Backend expects camelCase
+          contactEmail: sport.contact_email, // Backend expects camelCase
+          contactPhone: sport.contact_phone, // Backend expects camelCase
+          userId: sport.user_id // Backend expects camelCase
+        }))
+      };
+
+      console.log("🔍 Sending full organization payload with sports:", fullPayload);
+      const orgResponse = await apiRequest("/api/v1/organizations", {
         method: "POST",
-        data: payload,
+        data: fullPayload,
       });
 
-      // Then create org_sports entries for each sport
-      if (data.sports && data.sports.length > 0) {
-        await Promise.all(
-          data.sports.map(sport =>
-            apiRequest("/org-sports", {
-              method: "POST",
-              data: {
-                orgId: orgResponse.id,
-                sport_id: sport.sport_id,
-                contactName: sport.contact_name,
-                contactEmail: sport.contact_email,
-                contactPhone: sport.contact_phone,
-                userId: sport.user_id, // Include user_id for existing users
-              },
-            })
-          )
-        );
-      }
+      // Sports are now created as part of the main organization creation
+      // No separate API call needed since hardened.ts handles sports in the main POST route
 
       return orgResponse;
     },

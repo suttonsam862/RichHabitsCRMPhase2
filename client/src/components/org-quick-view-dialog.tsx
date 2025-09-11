@@ -545,6 +545,11 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                                 <p className="font-medium" data-testid={`sport-name-${sport.id}`}>
                                   {sport.name}
                                 </p>
+                                {sport.teamName && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Team: {sport.teamName}
+                                  </p>
+                                )}
                                 {sport.contact_name && (
                                   <p className="text-sm text-muted-foreground">
                                     Contact: {sport.contact_name}

@@ -28,6 +28,7 @@ interface SportContact {
   id: string;
   sport_id: string;
   sportName: string;
+  teamName: string; // Team name field
   contact_name: string;
   contact_email: string;
   contact_phone?: string;
@@ -60,6 +61,7 @@ export default function SimplifiedSetup() {
   // Sports and contacts
   const [sports, setSports] = useState<SportContact[]>([]);
   const [selectedSportId, setSelectedSportId] = useState('');
+  const [teamName, setTeamName] = useState(''); // Add team name state
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -185,6 +187,15 @@ export default function SimplifiedSetup() {
       return;
     }
 
+    if (!teamName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter a team name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     let newContact: SportContact;
 
     if (contactType === "new") {
@@ -201,6 +212,7 @@ export default function SimplifiedSetup() {
         id: Date.now().toString(),
         sport_id: selectedSportId,
         sportName,
+        teamName: teamName.trim(),
         contact_name: contactName,
         contact_email: contactEmail,
         contact_phone: contactPhone,
@@ -220,6 +232,7 @@ export default function SimplifiedSetup() {
         id: Date.now().toString(),
         sport_id: selectedSportId,
         sportName,
+        teamName: teamName.trim(),
         contact_name: selectedUser.fullName || selectedUser.email,
         contact_email: selectedUser.email,
         contact_phone: selectedUser.phone || "",
@@ -231,6 +244,7 @@ export default function SimplifiedSetup() {
     
     // Reset form
     setSelectedSportId('');
+    setTeamName(''); // Reset team name
     setContactName('');
     setContactEmail('');
     setContactPhone('');
@@ -292,6 +306,7 @@ export default function SimplifiedSetup() {
         const sportsResult = await api.post(`/api/v1/organizations/${id}/sports`, {
           sports: sports.map(s => ({
             sport_id: s.sport_id,
+            team_name: s.teamName || 'Main Team', // Include team_name field
             contact_name: s.contact_name,
             contact_email: s.contact_email,
             contact_phone: s.contact_phone
@@ -536,6 +551,21 @@ export default function SimplifiedSetup() {
                 </select>
               </div>
 
+              {/* Team Name Input */}
+              <div>
+                <Label className="text-white font-medium mb-2 block">Team Name *</Label>
+                <Input
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="e.g. Varsity, JV, Middle School, High School"
+                  className="bg-white/5 border-white/20 text-white placeholder-white/40 focus:border-cyan-500/50"
+                  data-testid="input-team-name"
+                />
+                <p className="text-white/50 text-sm mt-1">
+                  Enter a name to distinguish this team (e.g., Varsity, JV, Middle School, High School)
+                </p>
+              </div>
+
               {/* Contact Type Toggle */}
               <div className="space-y-3">
                 <Label className="text-white font-medium">Contact Type</Label>
@@ -663,7 +693,7 @@ export default function SimplifiedSetup() {
 
             <Button
               onClick={addSportContact}
-              disabled={!selectedSportId || (contactType === "new" ? (!contactName || !contactEmail) : !selectedUser)}
+              disabled={!selectedSportId || !teamName.trim() || (contactType === "new" ? (!contactName || !contactEmail) : !selectedUser)}
               className="mb-6 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
               data-testid="button-add-sport"
             >
@@ -678,7 +708,7 @@ export default function SimplifiedSetup() {
                 {sports.map((sport) => (
                   <div key={sport.id} className="flex items-center justify-between bg-white/5 rounded-lg p-4 border border-white/10">
                     <div>
-                      <div className="text-white font-medium">{sport.sportName}</div>
+                      <div className="text-white font-medium">{sport.sportName} - {sport.teamName}</div>
                       <div className="text-white/70 text-sm">{sport.contact_name} - {sport.contact_email}</div>
                       {sport.contact_phone && <div className="text-white/50 text-sm">{sport.contact_phone}</div>}
                     </div>
