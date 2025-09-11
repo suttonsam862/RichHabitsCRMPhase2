@@ -184,13 +184,29 @@ export default function SalesManagement() {
   });
 
   const { data: salespeople, isLoading: salespeopleLoading } = useQuery<Salesperson[]>({
-    queryKey: ['/api/v1/sales/salespeople'],
+    queryKey: ['/api/v1/users/enhanced', 'sales'],
     queryFn: async () => {
-      const response = await api.get('/api/v1/sales/salespeople');
-      return response; // Server returns direct array, not wrapped in .data
+      const response = await api.get('/api/v1/users/enhanced?type=staff');
+      // Filter for sales role users and map to expected format
+      const users = response.success ? (response.data?.users || response.data || []) : [];
+      return users
+        .filter((user: any) => user.role === 'sales' || user.subrole === 'salesperson')
+        .map((user: any) => ({
+          id: user.id,
+          full_name: user.fullName || user.full_name,
+          email: user.email,
+          phone: user.phone,
+          organization_id: user.organizationId || user.organization_id,
+          profile: user.salesperson_profile || {
+            performance_tier: 'standard',
+            commission_rate: 0
+          },
+          assignments: 0, // Will be populated by separate query if needed
+          active_assignments: 0
+        }));
     },
-    refetchInterval: 60000, // Refresh every minute for sales team updates
-    staleTime: 50000 // Consider data fresh for 50 seconds
+    refetchInterval: 60000,
+    staleTime: 50000
   });
 
   const { data: salespersonDetails } = useQuery<SalespersonDetails>({

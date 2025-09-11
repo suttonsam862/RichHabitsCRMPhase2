@@ -39,25 +39,25 @@ export default function SimplifiedSetup() {
   const { id } = useParams();
   const nav = useNavigate();
   const { toast } = useToast();
-  
+
   // Basic org data
   const [org, setOrg] = useState<any>();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   // Essential branding fields
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [brandPrimary, setBrandPrimary] = useState('#6EE7F9');
   const [brandSecondary, setBrandSecondary] = useState('#A78BFA');
   // File upload now handled by ObjectUploader component
-  
+
   // Essential address fields
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
-  
+
   // Sports and contacts
   const [sports, setSports] = useState<SportContact[]>([]);
   const [selectedSportId, setSelectedSportId] = useState('');
@@ -77,7 +77,7 @@ export default function SimplifiedSetup() {
       if (userSearch) params.append("search", userSearch);
       params.append("limit", "10");
       const response = await api.get(`/api/v1/users?${params.toString()}`);
-      return response;
+      return response.data; // Return only the data array
     },
     enabled: contactType === "existing",
   });
@@ -106,7 +106,7 @@ export default function SimplifiedSetup() {
   // Load organization data
   useEffect(() => {
     if (!id) return;
-    
+
     setLoading(true);
     (async () => {
       try {
@@ -119,17 +119,17 @@ export default function SimplifiedSetup() {
           });
           return;
         }
-        
+
         setOrg(r.data.org);
         setSports(r.data.sports || []);
-        
+
         // Populate existing data
         if (r.data.org?.brand_primary) setBrandPrimary(r.data.org.brand_primary);
         if (r.data.org?.brand_secondary) setBrandSecondary(r.data.org.brand_secondary);
         if (r.data.org?.logo_url) {
           setLogoPreview(r.data.org.logo_url);
         }
-        
+
         // Set existing address info
         if (r.data.org) {
           setAddress(r.data.org.address || '');
@@ -137,7 +137,7 @@ export default function SimplifiedSetup() {
           setState(r.data.org.state || '');
           setZip(r.data.org.zip || '');
         }
-        
+
       } catch (error: any) {
         toast({
           title: "Error",
@@ -177,7 +177,7 @@ export default function SimplifiedSetup() {
     // Ensure availableSports is an array before using find
     const sportsArray = Array.isArray(availableSports) ? availableSports : [];
     const sportName = sportsArray.find((s: any) => s.id === selectedSportId)?.name;
-    
+
     if (!selectedSportId || !sportName) {
       toast({
         title: "Missing Information",
@@ -241,7 +241,7 @@ export default function SimplifiedSetup() {
     }
 
     setSports([...sports, newContact]);
-    
+
     // Reset form
     setSelectedSportId('');
     setTeamName(''); // Reset team name
@@ -294,9 +294,9 @@ export default function SimplifiedSetup() {
         logo_url: logoPreview, // Save the uploaded logo URL
         complete: true
       };
-      
+
       const updateResult = await api.post(`/api/v1/organizations/${id}/setup`, updatePayload);
-      
+
       if (!updateResult.success) {
         throw new Error(updateResult.error?.message || 'Failed to update organization');
       }
@@ -318,15 +318,15 @@ export default function SimplifiedSetup() {
           // Don't fail the whole setup for this
         }
       }
-      
+
       toast({
         title: "Setup completed!",
         description: "Your organization setup has been completed successfully.",
         duration: 5000
       });
-      
+
       nav(`/organizations/${id}`);
-      
+
     } catch (error: any) {
       toast({
         title: "Save failed",
@@ -383,7 +383,7 @@ export default function SimplifiedSetup() {
               {/* Logo Upload */}
               <div className="space-y-4">
                 <Label className="text-white font-medium">Organization Logo</Label>
-                
+
                 {logoPreview ? (
                   <div className="relative w-32 h-32 mx-auto">
                     <img
@@ -644,8 +644,8 @@ export default function SimplifiedSetup() {
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {usersLoading ? (
                         <div className="text-white/60 text-center py-4">Loading users...</div>
-                      ) : usersData?.data?.length > 0 ? (
-                        usersData.data.map((user: any) => (
+                      ) : (
+                        Array.isArray(usersData) && usersData.map((user: any) => (
                           <div
                             key={user.id}
                             onClick={() => setSelectedUser(user)}
@@ -670,9 +670,11 @@ export default function SimplifiedSetup() {
                             </div>
                           </div>
                         ))
-                      ) : userSearch ? (
+                      )}
+                      {(!usersData || usersData.length === 0) && userSearch && (
                         <div className="text-white/60 text-center py-4">No users found</div>
-                      ) : (
+                      )}
+                      {(!usersData || usersData.length === 0) && !userSearch && (
                         <div className="text-white/60 text-center py-4">
                           Start typing to search for users
                         </div>

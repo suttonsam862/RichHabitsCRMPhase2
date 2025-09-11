@@ -70,6 +70,7 @@ interface User {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  jobTitle?: string; // Added jobTitle to the interface
 }
 
 interface UserStats {
@@ -89,27 +90,27 @@ const USER_ROLES = [
 
 export default function UsersManagement() {
   const { toast } = useToast();
-  
+
   // State
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
-  
+
   // Filters and pagination
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [activeFilter, setActiveFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  
+
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     email: '',
@@ -123,7 +124,8 @@ export default function UsersManagement() {
     state: '',
     postalCode: '',
     country: 'US',
-    notes: ''
+    notes: '',
+    jobTitle: '' // Added jobTitle to formData
   });
 
   // Load users
@@ -138,10 +140,10 @@ export default function UsersManagement() {
       });
 
       const response = await api.get(`/api/v1/users/enhanced?${params}`);
-      
+
       if (response.success) {
         let userData = response.data?.users || response.data || [];
-        
+
         // Apply client-side filtering since endpoint doesn't support these filters yet
         if (roleFilter !== 'all') {
           userData = userData.filter((user: any) => user.role === roleFilter);
@@ -150,7 +152,7 @@ export default function UsersManagement() {
           const isActiveFilter = activeFilter === '1';
           userData = userData.filter((user: any) => user.isActive === isActiveFilter);
         }
-        
+
         setUsers(userData);
         setTotalUsers(userData.length);
       } else {
@@ -184,7 +186,7 @@ export default function UsersManagement() {
           thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
           return created >= thirtyDaysAgo;
         }).length;
-        
+
         setStats({
           total: totalUsers,
           active: activeUsers,
@@ -223,13 +225,14 @@ export default function UsersManagement() {
       const userData = {
         email: formData.email,
         fullName: formData.fullName,
-        phone: formData.phone || undefined
+        phone: formData.phone || undefined,
+        jobTitle: formData.jobTitle || undefined // Include jobTitle in creation payload
         // Note: Standard users endpoint only supports basic fields (email, phone, fullName)
         // Extended fields like address, role, notes are not supported in this endpoint
       };
 
       const response = await api.post('/api/v1/users', userData);
-      
+
       if (response.success) {
         toast({
           title: "Success",
@@ -260,14 +263,19 @@ export default function UsersManagement() {
     setUpdating(selectedUser.id);
     try {
       const updateData = {
-        email: formData.email
+        email: formData.email,
+        fullName: formData.fullName, // Added fullName to updateData
+        phone: formData.phone || undefined, // Added phone to updateData
+        role: formData.role, // Added role to updateData
+        jobTitle: formData.jobTitle || undefined, // Added jobTitle to updateData
+        notes: formData.notes || undefined, // Added notes to updateData
         // Note: Standard users endpoint has limited PATCH support
         // Only email updates are currently supported via /api/v1/users/:id/email
         // For full user updates, we may need to use the comprehensive endpoint or extend the standard one
       };
 
       const response = await api.patch(`/api/v1/users/${selectedUser.id}`, updateData);
-      
+
       if (response.success) {
         toast({
           title: "Success",
@@ -296,7 +304,7 @@ export default function UsersManagement() {
 
     try {
       const response = await api.delete(`/api/v1/users/${userId}`);
-      
+
       if (response.success) {
         toast({
           title: "Success",
@@ -330,7 +338,8 @@ export default function UsersManagement() {
       state: '',
       postalCode: '',
       country: 'US',
-      notes: ''
+      notes: '',
+      jobTitle: '' // Reset jobTitle
     });
   };
 
@@ -349,7 +358,8 @@ export default function UsersManagement() {
       state: user.address?.state || '',
       postalCode: user.address?.postalCode || '',
       country: user.address?.country || 'US',
-      notes: user.notes || ''
+      notes: user.notes || '',
+      jobTitle: user.jobTitle || '' // Initialize jobTitle in formData
     });
     setShowEditModal(true);
   };
@@ -382,7 +392,7 @@ export default function UsersManagement() {
           </h1>
           <p className="text-white/70 mt-2">Manage all system users and contacts</p>
         </div>
-        
+
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
@@ -397,7 +407,7 @@ export default function UsersManagement() {
                 Add a new user to the system
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="grid gap-4 py-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -422,7 +432,7 @@ export default function UsersManagement() {
                   />
                 </div>
               </div>
-              
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="phone">Phone</Label>
@@ -452,6 +462,18 @@ export default function UsersManagement() {
               </div>
 
               <div>
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input
+                  id="jobTitle"
+                  value={formData.jobTitle || ''}
+                  onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
+                  className="bg-gray-800 border-gray-600"
+                  placeholder="e.g., Sales Representative, Sales Manager"
+                  data-testid="input-create-job-title"
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="password">Password (optional)</Label>
                 <Input
                   id="password"
@@ -463,7 +485,7 @@ export default function UsersManagement() {
                   data-testid="input-create-password"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="notes">Notes</Label>
                 <Input
@@ -475,7 +497,7 @@ export default function UsersManagement() {
                 />
               </div>
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => {setShowCreateModal(false); resetForm();}}>
                 Cancel
@@ -531,7 +553,7 @@ export default function UsersManagement() {
               />
             </div>
           </div>
-          
+
           <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger className="w-40 bg-gray-700 border-gray-600" data-testid="select-filter-role">
               <SelectValue placeholder="All Roles" />
@@ -545,7 +567,7 @@ export default function UsersManagement() {
               ))}
             </SelectContent>
           </Select>
-          
+
           <Select value={activeFilter} onValueChange={setActiveFilter}>
             <SelectTrigger className="w-40 bg-gray-700 border-gray-600" data-testid="select-filter-status">
               <SelectValue placeholder="All Status" />
@@ -600,6 +622,12 @@ export default function UsersManagement() {
                         <div className="text-sm text-gray-400 flex items-center mt-1">
                           <Phone className="w-3 h-3 mr-1" />
                           {user.phone}
+                        </div>
+                      )}
+                      {user.jobTitle && ( // Display job title
+                        <div className="text-sm text-gray-400 flex items-center mt-1">
+                          <Building className="w-3 h-3 mr-1" />
+                          {user.jobTitle}
                         </div>
                       )}
                     </div>
@@ -713,7 +741,7 @@ export default function UsersManagement() {
               Update user information
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -738,7 +766,7 @@ export default function UsersManagement() {
                 />
               </div>
             </div>
-            
+
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="edit-phone">Phone</Label>
@@ -766,7 +794,19 @@ export default function UsersManagement() {
                 </Select>
               </div>
             </div>
-            
+
+            <div>
+              <Label htmlFor="edit-jobTitle">Job Title</Label>
+              <Input
+                id="edit-jobTitle"
+                value={formData.jobTitle || ''}
+                onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
+                className="bg-gray-800 border-gray-600"
+                placeholder="e.g., Sales Representative, Sales Manager"
+                data-testid="input-edit-job-title"
+              />
+            </div>
+
             <div>
               <Label htmlFor="edit-notes">Notes</Label>
               <Input
@@ -778,7 +818,7 @@ export default function UsersManagement() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditModal(false)}>
               Cancel
@@ -805,7 +845,7 @@ export default function UsersManagement() {
               View complete user information
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedUser && (
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
@@ -841,15 +881,21 @@ export default function UsersManagement() {
                     </Badge>
                   </div>
                 </div>
+                {selectedUser.jobTitle && ( // Display job title in view modal
+                  <div>
+                    <Label className="text-gray-400">Job Title</Label>
+                    <div className="text-white">{selectedUser.jobTitle}</div>
+                  </div>
+                )}
               </div>
-              
+
               {selectedUser.notes && (
                 <div>
                   <Label className="text-gray-400">Notes</Label>
                   <div className="text-white bg-gray-800 p-3 rounded">{selectedUser.notes}</div>
                 </div>
               )}
-              
+
               <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-400">
                 <div>
                   <Label className="text-gray-400">Created</Label>
@@ -862,7 +908,7 @@ export default function UsersManagement() {
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowViewModal(false)}>
               Close
