@@ -1,0 +1,73 @@
+[16:59:12.068] INFO (2354): GET 304 0ms /src/components/ui/badge.tsx
+    rid: "evg9ca26"
+    method: "GET"
+    path: "/src/components/ui/badge.tsx"
+    status: 304
+    ms: 0
+{
+  rid: '14vskwda',
+  error: 'relation "salesperson_assignments" does not exist',
+  stack: 'PostgresError: relation "salesperson_assignments" does not exist\n' +
+    '    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)\n' +
+    '    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)\n' +
+    '    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)\n' +
+    '    at Socket.emit (node:events:524:28)\n' +
+    '    at addChunk (node:internal/streams/readable:561:12)\n' +
+    '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+    '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+    '    at TCP.onStreamRead (node:internal/stream_base_commons:191:23)',
+  path: '/api/v1/sales/dashboard?period=30',
+  method: 'GET',
+  timestamp: '2025-09-11T16:59:12.480Z'
+}
+[16:59:12.427] INFO (2354): GET 304 289ms /api/v1/users/enhanced?type=staff
+    rid: "8qome0vm"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff"
+    status: 304
+    ms: 289
+[16:59:12.430] INFO (2354): GET 304 281ms /api/v1/sports
+    rid: "thbb97x5"
+    method: "GET"
+    path: "/api/v1/sports"
+    status: 304
+    ms: 281
+[16:59:12.483] ERROR (2354): GET 500 336ms /api/v1/sales/dashboard?period=30
+    rid: "14vskwda"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 500
+    ms: 336
+[16:59:12.543] INFO (2354): organizations.list ok
+    rid: "pg3tw4hy"
+    count: 6
+[16:59:12.545] INFO (2354): GET 200 411ms /api/v1/organizations
+    rid: "pg3tw4hy"
+    method: "GET"
+    path: "/api/v1/organizations"
+    status: 200
+    ms: 411
+[16:59:12.798] INFO (2354): GET 304 647ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "60e45nmz"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 304
+    ms: 647
+[16:59:14.575] INFO (2354): GET 304 51ms /src/pages/sales/CreateSalesperson.tsx
+    rid: "77c27q3n"
+    method: "GET"
+    path: "/src/pages/sales/CreateSalesperson.tsx"
+    status: 304
+    ms: 51
+[16:59:14.628] INFO (2354): GET 304 0ms /src/constants/us-states.ts
+    rid: "jb9rf146"
+    method: "GET"
+    path: "/src/constants/us-states.ts"
+    status: 304
+    ms: 0
+[16:59:45.403] WARN (2354): POST 400 167ms /api/v1/users
+    rid: "2hi514hz"
+    method: "POST"
+    path: "/api/v1/users"
+    status: 400
+    ms: 167
