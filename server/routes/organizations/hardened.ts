@@ -47,13 +47,13 @@ type CreateOrganizationRequest = z.infer<typeof CreateOrganizationSchema>;
 function autoTagOrganization(name: string, isBusiness: boolean = false): string[] {
   const tags: string[] = [];
   const nameLower = name.toLowerCase();
-  
+
   // Business classification takes precedence
   if (isBusiness) {
     tags.push('Business');
     return tags;
   }
-  
+
   // High School detection
   if (nameLower.includes('high school') || nameLower.includes('hs ') || nameLower.includes(' hs')) {
     tags.push('High School');
@@ -78,7 +78,7 @@ function autoTagOrganization(name: string, isBusiness: boolean = false): string[
   else {
     tags.push('Club');
   }
-  
+
   return tags;
 }
 
@@ -666,7 +666,7 @@ router.post('/:id/setup', async (req: any, res) => {
     if (sports && Array.isArray(sports) && sports.length > 0) {
       for (const sport of sports) {
         const { sport_id, team_name, contact_name, contact_email, contact_phone, assigned_salesperson_id } = sport;
-        
+
         logger.info({ orgId, sportId: sport_id, teamName: team_name }, 'Processing sport');
 
         // Insert or update org_sports record
@@ -1395,91 +1395,63 @@ router.get('/:id/summary', async (req, res) => {
 
 
 
-// Sports endpoints  
-router.get('/:id/sports', async (req, res) => {
+/* ---------- Get organization sports ---------- */
+router.get('/:id/sports', async (req: any, res) => {
+  const orgId = req.params.id;
+  const sb = supabaseAdmin;
+
   try {
-    const { id } = req.params;
-
-    logger.info({ orgId: id }, 'Fetching sports for organization');
-
-    // Query sports for this organization with salesperson information
-    const { data: orgSports, error } = await supabaseAdmin
+    // Fetch existing sports for this organization
+    const { data: orgSportsData, error: sportsError } = await sb
       .from('org_sports')
       .select(`
+        id,
         sport_id,
+        team_name,
         contact_name,
         contact_email,
         contact_phone,
         assigned_salesperson_id,
         created_at,
-        updated_at,
-        assigned_salesperson:users!assigned_salesperson_id (
-          id,
-          full_name,
-          email,
-          phone
-        )
+        updated_at
       `)
-      .eq('organization_id', id);
-
-    if (error) {
-      logger.error({ orgId: id, error }, 'Sports query failed');
-      return res.status(500).json({ 
-        success: false,
-        error: 'Failed to fetch sports', 
-        details: error.message 
-      });
-    }
-
-    // If no sports found, return empty array
-    if (!orgSports || orgSports.length === 0) {
-      logger.info({ orgId: id, count: 0 }, 'No sports found for organization');
-      return res.json({
-        success: true,
-        data: []
-      });
-    }
-
-    // Get sport names from sports table
-    const sportIds = orgSports.map(os => os.sport_id);
-    const { data: sportsData, error: sportsError } = await supabaseAdmin
-      .from('sports')
-      .select('id, name')
-      .in('id', sportIds);
+      .eq('organization_id', orgId);
 
     if (sportsError) {
-      logger.warn({ orgId: id, error: sportsError }, 'Failed to fetch sport names, using IDs');
+      logSbError(req, 'orgs.sports.list', sportsError);
+      return sendErr(res, 'DB_ERROR', 'Failed to fetch sports', sportsError, 400);
     }
 
-    const sportsMap = new Map(sportsData?.map((s: any) => [s.id, s.name]) || []);
+    let sports: any[] = [];
+    if (orgSportsData && orgSportsData.length > 0) {
+      // Get sport names from sports table
+      const sportIds = orgSportsData.map(os => os.sport_id);
+      const { data: sportsNames } = await sb
+        .from('sports')
+        .select('id, name')
+        .in('id', sportIds);
 
-    // Transform the data
-    const sports = orgSports.map((os: any) => ({
-      id: os.sport_id,
-      name: sportsMap.get(os.sport_id) || `Sport ${os.sport_id}`,
-      contact_name: os.contact_name,
-      contact_email: os.contact_email,
-      contact_phone: os.contact_phone || '',
-      assigned_salesperson: os.assigned_salesperson?.full_name || null,
-      assigned_salesperson_id: os.assigned_salesperson_id || null,
-      assigned_salesperson_details: os.assigned_salesperson || null,
-      created_at: os.created_at || new Date().toISOString(),
-      updated_at: os.updated_at || new Date().toISOString()
-    }));
+      const sportsMap = new Map(sportsNames?.map((s: any) => [s.id, s.name]) || []);
 
-    logger.info({ orgId: id, count: sports.length }, 'Successfully fetched sports');
+      sports = orgSportsData.map(orgSport => ({
+        id: orgSport.id,
+        sportId: orgSport.sport_id,
+        sportName: sportsMap.get(orgSport.sport_id) || 'Unknown',
+        teamName: orgSport.team_name,
+        contactName: orgSport.contact_name,
+        contactEmail: orgSport.contact_email,
+        contactPhone: orgSport.contact_phone,
+        assignedSalespersonId: orgSport.assigned_salesperson_id,
+        createdAt: orgSport.created_at,
+        updatedAt: orgSport.updated_at
+      }));
+    }
 
-    res.json({
-      success: true,
-      data: sports
-    });
-  } catch (error) {
-    logger.error({ orgId: req.params.id, error }, 'Unexpected error in sports endpoint');
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to fetch sports',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    return sendOk(res, sports);
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.list.catch', error);
+    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
   }
 });
 
