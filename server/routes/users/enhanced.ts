@@ -234,7 +234,9 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
       isActive: 1,
       emailVerified: 1,
       createdBy: req.user?.id,
-      initialTempPassword: validatedData.role !== 'customer' ? tempPassword : null
+      initialTempPassword: validatedData.role !== 'customer' ? tempPassword : null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     const [user] = await db.insert(users).values([userData]).returning();
@@ -274,24 +276,24 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
 
     const validatedData = updateUserSchema.parse(req.body);
 
-    // Build update object for Drizzle ORM
-    const updateData: any = {};
-    if (validatedData.fullName) updateData.full_name = validatedData.fullName;
+    // Build update object for Drizzle ORM with camelCase properties
+    const updateData: Partial<typeof users.$inferInsert> = {};
+    if (validatedData.fullName) updateData.fullName = validatedData.fullName;
     if (validatedData.phone !== undefined) updateData.phone = validatedData.phone;
     if (validatedData.role) updateData.role = validatedData.role;
     if (validatedData.subrole !== undefined) updateData.subrole = validatedData.subrole;
-    if (validatedData.organizationId !== undefined) updateData.organization_id = validatedData.organizationId;
-    if (validatedData.jobTitle !== undefined) updateData.job_title = validatedData.jobTitle;
+    if (validatedData.organizationId !== undefined) updateData.organizationId = validatedData.organizationId;
+    if (validatedData.jobTitle !== undefined) updateData.jobTitle = validatedData.jobTitle;
     if (validatedData.department !== undefined) updateData.department = validatedData.department;
     if (validatedData.hireDate !== undefined) {
-      updateData.hire_date = validatedData.hireDate ? new Date(validatedData.hireDate) : null;
+      updateData.hireDate = validatedData.hireDate || null;
     }
     if (validatedData.permissions) updateData.permissions = validatedData.permissions;
-    if (validatedData.pageAccess) updateData.page_access = validatedData.pageAccess;
-    if (validatedData.isActive !== undefined) updateData.is_active = validatedData.isActive;
-    if (validatedData.avatarUrl !== undefined) updateData.avatar_url = validatedData.avatarUrl;
+    if (validatedData.pageAccess) updateData.pageAccess = validatedData.pageAccess;
+    if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive ? 1 : 0;
+    if (validatedData.avatarUrl !== undefined) updateData.avatarUrl = validatedData.avatarUrl;
 
-    updateData.updated_at = new Date();
+    updateData.updatedAt = new Date().toISOString();
 
     // Update user record using Drizzle ORM
     const [user] = await db.update(users)
