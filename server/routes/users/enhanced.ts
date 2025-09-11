@@ -74,7 +74,10 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
         eq(users.role, 'manufacturing')
       ));
     } else if (type === 'customers') {
-      whereConditions.push(eq(users.role, 'customer'));
+      whereConditions.push(or(
+        eq(users.role, 'customer'),
+        eq(users.role, 'contact')
+      ));
     }
     // If type === 'all', don't add any role filter - show all users
     

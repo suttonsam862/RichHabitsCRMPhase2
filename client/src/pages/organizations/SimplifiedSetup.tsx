@@ -549,7 +549,7 @@ export default function SimplifiedSetup() {
                   <option value="">
                     {sportsLoading ? "Loading sports..." : sportsError ? "Error loading sports" : "Select a sport..."}
                   </option>
-                  {availableSports.filter((sport: any) => 
+                  {(availableSports || []).filter((sport: any) => 
                     !sports.some(s => s.sport_id === sport.id)
                   ).map((sport: any) => (
                     <option key={sport.id} value={sport.id} className="bg-gray-800">
