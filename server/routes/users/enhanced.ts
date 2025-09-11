@@ -47,10 +47,10 @@ const updateUserSchema = z.object({
 router.get('/', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { type = 'all', page = '1', limit = '20', pageSize, search = '', q = '' } = req.query;
-    
+
     // Use q parameter as fallback for search if provided (frontend compatibility)
     const searchTerm = search || q || '';
-    
+
     // Check if user has permission to view users
     // For now, allow all authenticated users - will be enhanced with proper permission checks
     const requestingUserId = req.user?.id;
@@ -64,7 +64,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
 
     // Build query using Drizzle ORM
     let whereConditions = [];
-    
+
     // Apply type filter
     if (type === 'staff') {
       whereConditions.push(or(
@@ -80,7 +80,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       ));
     }
     // If type === 'all', don't add any role filter - show all users
-    
+
     // Apply search filter
     if (searchTerm && typeof searchTerm === 'string') {
       whereConditions.push(or(
@@ -88,7 +88,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
         like(users.email, `%${searchTerm}%`)
       ));
     }
-    
+
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     // Execute query with Drizzle ORM
@@ -97,15 +97,15 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       .orderBy(desc(users.created_at))
       .limit(limitNum)
       .offset(offset);
-    
-    const totalQuery = db.select({ count: sql<number>`count(*)` }).from(users)
+
+    const totalQuery = db.select({ count: count() }).from(users)
       .where(whereClause);
-    
+
     const [usersResult, totalResult] = await Promise.all([
-      usersQuery.execute(),
-      totalQuery.execute()
+      usersQuery,
+      totalQuery
     ]);
-    
+
     const totalCount = totalResult[0]?.count || 0;
 
     // Transform users to include address object structure
@@ -152,7 +152,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
 router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check permissions - for now allow all authenticated users
     const requestingUserId = req.user?.id;
     if (!requestingUserId) {
@@ -160,11 +160,11 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
     }
 
     const userResult = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    
+
     if (!userResult || userResult.length === 0) {
       return sendErr(res, 'NOT_FOUND', 'User not found', undefined, 404);
     }
-    
+
     const user = userResult[0];
 
     // Transform user to include address object structure
@@ -209,10 +209,10 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
     }
 
     const validatedData = createUserSchema.parse(req.body);
-    
+
     // Generate temporary password for staff users
     const tempPassword = randomBytes(12).toString('base64').replace(/[/+=]/g, '').substring(0, 12);
-    
+
     // Determine default permissions based on role
     const roleDefaults = ROLE_DEFAULTS[validatedData.role.toUpperCase() as keyof typeof ROLE_DEFAULTS];
     const defaultPermissions = validatedData.permissions || roleDefaults?.permissions || {};
@@ -277,7 +277,7 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
     if (error instanceof z.ZodError) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid user data', error.errors, 400);
     }
-    
+
     console.error('Error creating user:', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
   }
@@ -287,7 +287,7 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
 router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check permissions - for now allow all authenticated users
     const requestingUserId = req.user?.id;
     if (!requestingUserId) {
@@ -295,7 +295,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
     }
 
     const validatedData = updateUserSchema.parse(req.body);
-    
+
     // Build update object for Drizzle ORM
     const updateData: any = {};
     if (validatedData.fullName) updateData.full_name = validatedData.fullName;
@@ -312,7 +312,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
     if (validatedData.pageAccess) updateData.page_access = validatedData.pageAccess;
     if (validatedData.isActive !== undefined) updateData.is_active = validatedData.isActive;
     if (validatedData.avatarUrl !== undefined) updateData.avatar_url = validatedData.avatarUrl;
-    
+
     updateData.updated_at = new Date();
 
     // Update user record using Drizzle ORM
@@ -345,7 +345,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
     if (error instanceof z.ZodError) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid update data', error.errors, 400);
     }
-    
+
     console.error('Error updating user:', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
   }
@@ -355,7 +355,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
 router.post('/:id/reset-password', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check permissions - for now allow all authenticated users
     const requestingUserId = req.user?.id;
     if (!requestingUserId) {
@@ -390,7 +390,7 @@ router.post('/:id/reset-password', requireAuth, async (req: AuthedRequest, res) 
 router.get('/:id/permissions', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check permissions - for now allow all authenticated users
     const requestingUserId = req.user?.id;
     if (!requestingUserId) {
@@ -425,7 +425,7 @@ router.patch('/:id/permissions', requireAuth, async (req: AuthedRequest, res) =>
   try {
     const { id } = req.params;
     const { permissions, pageAccess } = req.body;
-    
+
     // Check permissions - for now allow all authenticated users
     const requestingUserId = req.user?.id;
     if (!requestingUserId) {
@@ -435,11 +435,11 @@ router.patch('/:id/permissions', requireAuth, async (req: AuthedRequest, res) =>
     const updateData: any = {
       updated_at: new Date().toISOString()
     };
-    
+
     if (permissions && typeof permissions === 'object') {
       updateData.permissions = permissions;
     }
-    
+
     if (pageAccess && typeof pageAccess === 'object') {
       updateData.page_access = pageAccess;
     }
@@ -483,7 +483,7 @@ router.patch('/:id/permissions', requireAuth, async (req: AuthedRequest, res) =>
 router.patch('/:id/deactivate', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check permissions - for now allow all authenticated users
     const requestingUserId = req.user?.id;
     if (!requestingUserId) {
