@@ -1401,20 +1401,10 @@ router.get('/:id/sports', async (req: any, res) => {
   const sb = supabaseAdmin;
 
   try {
-    // Fetch existing sports for this organization
+    // Fetch existing sports for this organization - use select('*') to be robust
     const { data: orgSportsData, error: sportsError } = await sb
       .from('org_sports')
-      .select(`
-        id,
-        sport_id,
-        team_name,
-        contact_name,
-        contact_email,
-        contact_phone,
-        assigned_salesperson_id,
-        created_at,
-        updated_at
-      `)
+      .select('*')
       .eq('organization_id', orgId);
 
     if (sportsError) {
@@ -1441,7 +1431,7 @@ router.get('/:id/sports', async (req: any, res) => {
         contactName: orgSport.contact_name,
         contactEmail: orgSport.contact_email,
         contactPhone: orgSport.contact_phone,
-        assignedSalespersonId: orgSport.assigned_salesperson_id,
+        assignedSalespersonId: orgSport.assigned_salesperson_id || null, // Safe mapping
         createdAt: orgSport.created_at,
         updatedAt: orgSport.updated_at
       }));
@@ -1462,7 +1452,8 @@ const SportsSchema = z.object({
     team_name: z.string().optional(),
     contact_name: z.string().min(1),
     contact_email: z.string().email(),
-    contact_phone: z.string().optional()
+    contact_phone: z.string().optional(),
+    assigned_salesperson_id: z.string().optional()
   }))
 });
 
@@ -1483,23 +1474,34 @@ router.post('/:id/sports', async (req: any, res) => {
     const { sports } = parseResult.data;
     logger.info({ organizationId, count: sports.length }, 'Processing sports creation');
 
-    // Prepare org_sports records - simplified without user creation
-    const orgSportsData = sports.map(sport => ({
-      organization_id: organizationId,
-      sport_id: sport.sport_id,
-      team_name: sport.team_name || 'Main Team', // Add required team_name field
-      contact_name: sport.contact_name,
-      contact_email: sport.contact_email,
-      contact_phone: sport.contact_phone || null,
-      is_primary_contact: 1, // Add required field
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
+    // Prepare org_sports records with conditional assigned_salesperson_id
+    const orgSportsData = sports.map(sport => {
+      const baseRecord: any = {
+        organization_id: organizationId,
+        sport_id: sport.sport_id,
+        team_name: sport.team_name || 'Main Team', // Add required team_name field
+        contact_name: sport.contact_name,
+        contact_email: sport.contact_email,
+        contact_phone: sport.contact_phone || null,
+        is_primary_contact: 1, // Add required field
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only include assigned_salesperson_id if provided to avoid schema issues
+      if (sport.assigned_salesperson_id) {
+        baseRecord.assigned_salesperson_id = sport.assigned_salesperson_id;
+      }
+      
+      return baseRecord;
+    });
 
-    // Insert sports data using Supabase
+    // Use upsert to handle duplicates atomically
     const { data: insertedSports, error: insertError } = await supabaseAdmin
       .from('org_sports')
-      .insert(orgSportsData)
+      .upsert(orgSportsData, {
+        onConflict: 'organization_id,sport_id'
+      })
       .select();
 
     if (insertError) {
@@ -1519,7 +1521,7 @@ router.post('/:id/sports', async (req: any, res) => {
 
     return res.json({
       success: true,
-      message: `Successfully added ${sports.length} sport${sports.length > 1 ? 's' : ''}`,
+      message: `Successfully processed ${sports.length} sport${sports.length > 1 ? 's' : ''} to ${organizationId}`,
       data: insertedSports
     });
 
