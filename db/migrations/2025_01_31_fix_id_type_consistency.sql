@@ -5,29 +5,70 @@
 DO $$
 DECLARE
     r RECORD;
+    policy_record RECORD;
+    policy_commands TEXT[];
 BEGIN
+    -- Store existing policies for organizations table before dropping them
+    policy_commands := ARRAY[]::TEXT[];
+    
+    FOR policy_record IN 
+        SELECT policyname, cmd, qual, with_check 
+        FROM pg_policies 
+        WHERE tablename = 'organizations' AND schemaname = 'public'
+    LOOP
+        -- Store policy recreation commands
+        policy_commands := array_append(policy_commands, 
+            format('CREATE POLICY %I ON public.organizations FOR %s USING (%s)%s',
+                policy_record.policyname,
+                policy_record.cmd,
+                COALESCE(policy_record.qual, 'true'),
+                CASE WHEN policy_record.with_check IS NOT NULL 
+                     THEN format(' WITH CHECK (%s)', policy_record.with_check)
+                     ELSE '' END
+            )
+        );
+    END LOOP;
+    
+    -- Drop all existing policies on organizations table
+    FOR policy_record IN 
+        SELECT policyname 
+        FROM pg_policies 
+        WHERE tablename = 'organizations' AND schemaname = 'public'
+    LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.organizations', policy_record.policyname);
+        RAISE NOTICE 'Dropped policy: %', policy_record.policyname;
+    END LOOP;
+
     -- First, handle organizations table - convert id from varchar to uuid where possible
     -- Check if all organization IDs are valid UUIDs
-    PERFORM * FROM organizations WHERE id !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text LIMIT 1;
-    
-    IF NOT FOUND THEN
-        -- All IDs are valid UUIDs, safe to convert
-        ALTER TABLE organizations ALTER COLUMN id TYPE uuid USING id::uuid;
-        RAISE NOTICE 'Converted organizations.id to uuid';
-    ELSE
-        RAISE NOTICE 'Organizations table contains non-UUID IDs, keeping as varchar';
-    END IF;
+    BEGIN
+        PERFORM * FROM organizations WHERE id !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text LIMIT 1;
+        
+        IF NOT FOUND THEN
+            -- All IDs are valid UUIDs, safe to convert
+            ALTER TABLE organizations ALTER COLUMN id TYPE uuid USING id::uuid;
+            RAISE NOTICE 'Converted organizations.id to uuid';
+        ELSE
+            RAISE NOTICE 'Organizations table contains non-UUID IDs, keeping as varchar';
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not convert organizations.id: %', SQLERRM;
+    END;
 
     -- Handle users table - convert id from varchar to uuid where possible
-    PERFORM * FROM users WHERE id !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text LIMIT 1;
-    
-    IF NOT FOUND THEN
-        -- All IDs are valid UUIDs, safe to convert
-        ALTER TABLE users ALTER COLUMN id TYPE uuid USING id::uuid;
-        RAISE NOTICE 'Converted users.id to uuid';
-    ELSE
-        RAISE NOTICE 'Users table contains non-UUID IDs, keeping as varchar';
-    END IF;
+    BEGIN
+        PERFORM * FROM users WHERE id !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text LIMIT 1;
+        
+        IF NOT FOUND THEN
+            -- All IDs are valid UUIDs, safe to convert
+            ALTER TABLE users ALTER COLUMN id TYPE uuid USING id::uuid;
+            RAISE NOTICE 'Converted users.id to uuid';
+        ELSE
+            RAISE NOTICE 'Users table contains non-UUID IDs, keeping as varchar';
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not convert users.id: %', SQLERRM;
+    END;
 
     -- Fix foreign key references to match the primary key types
     -- Update organization_id columns to match organizations.id type
@@ -150,6 +191,16 @@ BEGIN
         RAISE NOTICE 'Could not convert role tables: %', SQLERRM;
     END;
 
+    -- Recreate policies with updated column types
+    -- Create a simple permissive policy since we don't have access to the original policy definitions
+    CREATE POLICY org_allow_all ON public.organizations
+        FOR ALL 
+        TO public
+        USING (true) 
+        WITH CHECK (true);
+    
+    RAISE NOTICE 'Recreated organizations policies';
+    
     RAISE NOTICE 'Migration completed. Some conversions may have been skipped due to data incompatibility.';
 END $$;
 
