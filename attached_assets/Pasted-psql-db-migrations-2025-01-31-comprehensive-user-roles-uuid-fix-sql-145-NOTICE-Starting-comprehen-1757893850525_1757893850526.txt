@@ -1,0 +1,23 @@
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Starting comprehensive user_roles.user_id UUID conversion with policy handling
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Backed up valid data to temporary table
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Dropped policy: org_selects on table organizationss
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Dropped policy: organizations_updates on table organizationss
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Dropped policy: organizations_deletes on table organizationss
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Dropped policy: org_sports_inserts on table org_sportss
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Dropped policy: org_sports_selects on table org_sportss
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Dropped policy: org_sports_updates on table org_sportss
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Dropped policy: org_sports_deletes on table org_sportss
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Disabled RLS on user_roles
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Successfully converted user_roles.user_id to UUID
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Restored data from backup
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Re-enabled RLS on user_roles
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Created permissive policy for user_roles
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Created permissive policy for org_sports
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: NOTICE:  Created permissive policy for organizations
+psql:db/migrations/2025_01_31_comprehensive_user_roles_uuid_fix.sql:145: ERROR:  foreign key constraint "user_roles_user_id_fkey" cannot be implemented
+DETAIL:  Key columns "user_id" and "id" are of incompatible types: uuid and character varying.
+CONTEXT:  SQL statement "ALTER TABLE user_roles 
+        ADD CONSTRAINT user_roles_user_id_fkey 
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+PL/pgSQL function inline_code_block line 129 at SQL statement
+NOTIFY
