@@ -179,7 +179,7 @@ export default function AddSportsPage() {
         contact_email: formValues.contact_email,
         contact_phone: formValues.contact_phone || "",
         team_name: formValues.team_name,
-        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : null
+        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : undefined
       };
     } else {
       const selectedUser = existingUsers.find((u: any) => u.id === selectedUserId);
@@ -197,7 +197,7 @@ export default function AddSportsPage() {
         contact_phone: selectedUser.phone || "",
         userId: selectedUser.id,
         team_name: formValues.team_name,
-        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : null
+        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : undefined
       };
     }
 

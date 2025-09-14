@@ -58,7 +58,7 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
       contact_name: sport.contact_name || "",
       contact_email: sport.contact_email || "",
       contact_phone: sport.contact_phone || "",
-      assigned_salesperson_id: sport.assigned_salesperson_id || "",
+      assigned_salesperson_id: sport.assigned_salesperson_id || "none",
       user_id: "",
     },
   });
@@ -73,7 +73,7 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
   });
 
   // Fetch users for contact selection (with search) - using same pattern as setup route
-  const { data: usersData, isLoading: usersLoading } = useQuery({
+  const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['users-enhanced', userSearch, 'customers'],
     queryFn: async () => {
       console.log('🔍 Searching for users:', userSearch, 'User authenticated:', !!user);
@@ -81,11 +81,19 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
       if (userSearch) params.append('q', userSearch);
       params.append('type', 'customers'); // This includes both 'customer' and 'contact' roles
       params.append('pageSize', '50');
-      const result = await apiRequest(`/api/v1/users/enhanced?${params.toString()}`);
-      console.log('👥 Users API response:', result);
-      return result;
+      
+      try {
+        const result = await apiRequest(`/api/v1/users/enhanced?${params.toString()}`);
+        console.log('👥 Users API response:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Users API error:', error);
+        throw error;
+      }
     },
     enabled: contactType === "existing" && userSearch.length >= 2 && !!user,
+    retry: 1,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   const salespeople = salespeopleData?.data || [];
@@ -289,9 +297,9 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {usersLoading ? (
                       <div className="text-white/60 text-center py-4">Loading users...</div>
-                    ) : usersData?.error ? (
+                    ) : usersError ? (
                       <div className="text-red-400 text-center py-4">
-                        Error loading users: {usersData.error.message || 'Unknown error'}
+                        Error loading users: {usersError?.message || 'Authentication required'}
                       </div>
                     ) : users?.length > 0 ? (
                       users.map((user: any) => (
