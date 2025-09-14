@@ -1,4 +1,3 @@
-
 -- Ultimate user_roles.user_id UUID conversion handling ALL policy dependencies
 -- This migration comprehensively handles policies across ALL tables that reference user_roles.user_id
 
@@ -18,7 +17,7 @@ DECLARE
     table_name TEXT;
 BEGIN
     RAISE NOTICE 'Starting ultimate user_roles.user_id UUID conversion';
-    
+
     -- Step 1: Check if conversion is needed
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
@@ -30,11 +29,11 @@ BEGIN
         RAISE NOTICE 'user_roles.user_id is already UUID type, skipping conversion';
         RETURN;
     END IF;
-    
+
     -- Step 2: Create backup table with correct structure
     EXECUTE format('CREATE TABLE %I (LIKE user_roles INCLUDING ALL)', temp_table_name);
     EXECUTE format('ALTER TABLE %I ALTER COLUMN user_id TYPE uuid USING user_id::uuid', temp_table_name);
-    
+
     -- Step 3: Copy valid data to backup table
     EXECUTE format('
         INSERT INTO %I 
@@ -48,13 +47,13 @@ BEGIN
         FROM user_roles
         WHERE user_id IS NOT NULL
     ', temp_table_name);
-    
+
     RAISE NOTICE 'Backed up valid data to temporary table';
-    
+
     -- Step 4: Drop ALL policies across ALL tables that might reference user_roles or auth.uid()
     FOREACH table_name IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = table_name AND table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND table_schema = 'public') THEN
             FOR policy_record IN 
                 SELECT schemaname, tablename, policyname, qual, with_check
                 FROM pg_policies 
@@ -73,11 +72,11 @@ BEGIN
             END LOOP;
         END IF;
     END LOOP;
-    
+
     -- Step 5: Disable RLS on all affected tables temporarily
     FOREACH table_name IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = table_name AND table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND table_schema = 'public') THEN
             BEGIN
                 EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', table_name);
                 RAISE NOTICE 'Disabled RLS on table %s', table_name;
@@ -86,7 +85,7 @@ BEGIN
             END;
         END IF;
     END LOOP;
-    
+
     -- Step 6: Drop all foreign key constraints that reference user_id
     FOR constraint_record IN 
         SELECT constraint_name, table_name
@@ -111,23 +110,23 @@ BEGIN
                          SQLERRM;
         END;
     END LOOP;
-    
+
     -- Step 7: Clear and convert the user_roles.user_id column
     DELETE FROM user_roles;
     ALTER TABLE user_roles ALTER COLUMN user_id TYPE uuid USING user_id::uuid;
     RAISE NOTICE 'Successfully converted user_roles.user_id to UUID';
-    
+
     -- Step 8: Restore data from backup
     EXECUTE format('INSERT INTO user_roles SELECT * FROM %I WHERE user_id IS NOT NULL', temp_table_name);
     RAISE NOTICE 'Restored data from backup';
-    
+
     -- Step 9: Re-enable RLS with simple permissive policies
     FOREACH table_name IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = table_name AND table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND table_schema = 'public') THEN
             BEGIN
                 EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);
-                
+
                 -- Create simple permissive policy for development
                 EXECUTE format('
                     CREATE POLICY %I_dev_access ON %I
@@ -136,14 +135,14 @@ BEGIN
                     USING (true)
                     WITH CHECK (true)
                 ', table_name, table_name);
-                
+
                 RAISE NOTICE 'Re-enabled RLS with permissive policy for table %s', table_name;
             EXCEPTION WHEN OTHERS THEN
                 RAISE NOTICE 'Could not re-enable RLS on table %s: %', table_name, SQLERRM;
             END;
         END IF;
     END LOOP;
-    
+
     -- Step 10: Recreate essential foreign key constraints
     BEGIN
         -- user_roles to users
@@ -156,11 +155,11 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'Could not recreate user_roles FK constraint: %', SQLERRM;
     END;
-    
+
     -- Step 11: Clean up backup table
     EXECUTE format('DROP TABLE IF EXISTS %I', temp_table_name);
     RAISE NOTICE 'Cleaned up temporary backup table';
-    
+
     RAISE NOTICE 'Ultimate user_roles UUID conversion completed successfully';
 END $$;
 
