@@ -11,7 +11,7 @@ import {
   orgSports,
   organizations,
   sports
-} from "../../shared/schema";
+} from "../../../shared/schema.js";
 import { requireAuth, AuthedRequest } from "../../middleware/auth";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { z } from "zod";
