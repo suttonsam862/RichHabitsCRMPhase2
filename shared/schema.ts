@@ -1,4 +1,3 @@
-
 // Schema updated to match actual database structure on 2025-09-11
 // Aligned with business database - removed auth enums, added real business tables
 
@@ -478,3 +477,26 @@ export const salespersonMetrics = pgTable("salesperson_metrics", {
         createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
         updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
+
+export {
+  users,
+  organizations,
+  orgSports,
+  sports,
+  orders,
+  roles,
+  userRoles,
+  permissions,
+  rolePermissions,
+  leads,
+  products,
+  quotes,
+  quoteItems,
+  orderStatuses,
+  regions,
+  performanceTiers,
+  permissionTemplates,
+  salespersonProfiles,
+  salespersonAssignments,
+  salespersonMetrics
+};

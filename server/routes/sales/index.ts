@@ -11,7 +11,7 @@ import {
   orgSports,
   organizations,
   sports
-} from "@shared/schema";
+} from "../../shared/schema";
 import { requireAuth, AuthedRequest } from "../../middleware/auth";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { z } from "zod";
@@ -127,9 +127,9 @@ async function generateEmployeeId() {
   return employeeId;
 }
 
-router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res) => {
+router.post("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const profileData = profileSchema.parse(req.body);
+  const profileData = req.body;
 
   // Check if profile exists
   const [existing] = await db
@@ -142,9 +142,11 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
     const [updated] = await db
       .update(salespersonProfiles)
       .set({
-        ...profileData,
-        hireDate: profileData.hireDate || undefined,
-        updatedAt: new Date().toISOString()
+        commissionRate: profileData.commission_rate ? Math.round(profileData.commission_rate * 100) : existing.commissionRate,
+        territory: profileData.territory || existing.territory,
+        hireDate: profileData.hire_date || existing.hireDate,
+        performanceTier: profileData.performance_tier || existing.performanceTier,
+        updatedAt: new Date()
       })
       .where(eq(salespersonProfiles.userId, id))
       .returning();
@@ -156,13 +158,17 @@ router.put("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res
 
     const [created] = await db
       .insert(salespersonProfiles)
-      .values([{
+      .values({
         id: randomUUID(),
         userId: id,
-        ...profileData,
         employeeId: employeeId,
-        hireDate: profileData.hireDate || undefined
-      }])
+        commissionRate: profileData.commission_rate ? Math.round(profileData.commission_rate * 100) : 0,
+        territory: profileData.territory || [],
+        hireDate: profileData.hire_date ? new Date(profileData.hire_date) : null,
+        performanceTier: profileData.performance_tier || 'standard',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
       .returning();
 
     res.json(created);

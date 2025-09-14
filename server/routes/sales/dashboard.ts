@@ -1,13 +1,13 @@
 
 import { Router } from 'express';
 import { db } from '../../db.js';
-import { salespersonAssignments, salespeople, organizations } from '../../../shared/schema.js';
+import { salespersonAssignments, salespersonProfiles, organizations } from '../../../shared/schema.js';
 import { eq, and, gte, sql } from 'drizzle-orm';
-import { authenticateToken } from '../../middleware/auth.js';
+import { requireAuth } from '../../middleware/auth.js';
 
 const router = Router();
 
-router.get('/dashboard', authenticateToken, async (req, res) => {
+router.get('/dashboard', requireAuth, async (req, res) => {
   try {
     const { period = 30 } = req.query;
     const startDate = new Date();

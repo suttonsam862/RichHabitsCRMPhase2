@@ -54,17 +54,15 @@ export default function CreateSalesperson() {
     mutationFn: async (data: SalespersonFormData) => {
       // First create the user
       const userResponse = await api.post('/api/v1/users', {
-        full_name: data.full_name,
+        fullName: data.full_name,
         email: data.email,
-        phone: data.phone,
-        role: 'sales'
+        phone: data.phone
       });
 
       // Then create their profile
       if (userResponse.success && userResponse.data) {
         const profileResponse = await api.post(`/api/v1/sales/salespeople/${userResponse.data.id}/profile`, {
-          // employee_id will be auto-generated on backend
-          commission_rate: (data.commission_rate || 0) * 100, // Convert to basis points
+          commission_rate: data.commission_rate || 0,
           territory: data.territory,
           hire_date: data.hire_date,
           performance_tier: data.performance_tier,
