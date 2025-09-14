@@ -63,7 +63,7 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
 
   // Fetch staff/sales users for salesperson assignment
   const { data: salespeopleData, isLoading: salespeopleLoading } = useQuery({
-    queryKey: ['/api/v1/users/enhanced', 'staff'],
+    queryKey: ['users-enhanced', 'staff'],
     queryFn: async () => {
       return await apiRequest('/api/v1/users/enhanced?type=staff&pageSize=100');
     },
@@ -71,7 +71,7 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
 
   // Fetch users for contact selection (with search) - using same pattern as setup route
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ['/api/v1/users/enhanced', userSearch, 'customers'],
+    queryKey: ['users-enhanced', userSearch, 'customers'],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (userSearch) params.append('q', userSearch);
@@ -112,7 +112,9 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/organizations', organizationId, 'sports'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations', organizationId, 'sports'] });
+      queryClient.invalidateQueries({ queryKey: ['organization', organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['organization-summary', organizationId] });
       toast({
         title: "Sport updated successfully!",
         description: `Updated ${sport.name} for this organization`,
