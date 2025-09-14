@@ -1,0 +1,47 @@
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Starting ultimate user_roles.user_id UUID conversion
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Backed up valid data to temporary table
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: user_roles_allow_alls on table user_roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_insert_policys on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_update_policys on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_inserts on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_selects on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_updates on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_deletes on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_selects on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: organizations_updates on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: organizations_deletes on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: users_authenticated_accesss on table userss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table user_roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table orderss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table order_itemss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table userss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table salesperson_profiless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table salesperson_assignmentss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table salesperson_metricss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table organization_favoritess
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table organization_metricss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table permissionss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table role_permissionss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table audit_logss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table customerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table design_jobss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table design_assetss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table manufacturing_work_orderss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table catalog_itemss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table designerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table manufacturerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: ERROR:  column reference "constraint_name" is ambiguous
+LINE 1: SELECT constraint_name, table_name
+               ^
+QUERY:  SELECT constraint_name, table_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu 
+            ON tc.constraint_name = kcu.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = 'public'
+        AND kcu.column_name LIKE '%user_id%'
+CONTEXT:  PL/pgSQL function inline_code_block line 87 at FOR over SELECT rows
+NOTIFY
