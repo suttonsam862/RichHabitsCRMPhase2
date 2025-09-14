@@ -1,0 +1,100 @@
+You’re changing created_by to uuid, but Postgres can’t auto-cast. Fix = do the type change with a USING clause after cleaning bad values. Here’s the fastest, safe path you can run locally and then commit as a manual Drizzle migration.
+
+0) Find where created_by lives
+-- list all tables that have a created_by column
+SELECT table_schema, table_name
+FROM information_schema.columns
+WHERE column_name = 'created_by';
+
+1) Inspect what’s in there
+-- see a sample of current values
+SELECT created_by, COUNT(*)
+FROM your_table
+GROUP BY created_by
+ORDER BY COUNT(*) DESC
+LIMIT 50;
+
+2) If it’s TEXT that already holds UUID-looking strings
+
+First, null out anything not a valid v1–v5 UUID so the cast won’t explode:
+
+-- optional: wrap in a txn
+BEGIN;
+
+-- drop default while converting (if any)
+ALTER TABLE your_table ALTER COLUMN created_by DROP DEFAULT;
+
+-- nuke obvious non-uuids (or handle them however you want)
+UPDATE your_table
+SET created_by = NULL
+WHERE created_by IS NOT NULL
+  AND created_by !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
+
+-- now do the type change with USING
+ALTER TABLE your_table
+  ALTER COLUMN created_by TYPE uuid USING created_by::uuid;
+
+COMMIT;
+
+
+If you need a default random UUID on insert (usually not for created_by, but mentioning):
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+ALTER TABLE your_table ALTER COLUMN created_by SET DEFAULT gen_random_uuid();
+
+
+(Again, for a “created_by” FK, you typically don’t want a random default—let the app set it from the current user.)
+
+3) If created_by currently stores INT IDs for users
+
+You must map old ints → new user UUIDs:
+
+-- Example: users_old.id (int) -> users.id (uuid), and your_table.created_by is int
+BEGIN;
+
+-- add a temp uuid column
+ALTER TABLE your_table ADD COLUMN created_by_uuid uuid;
+
+-- map via a join table you control (adjust names/joins)
+UPDATE your_table y
+SET created_by_uuid = u.id
+FROM users u
+WHERE u.legacy_int_id = y.created_by;  -- <-- adapt to your real mapping
+
+-- flip columns
+ALTER TABLE your_table DROP COLUMN created_by;
+ALTER TABLE your_table RENAME COLUMN created_by_uuid TO created_by;
+
+-- add the FK if desired
+ALTER TABLE your_table
+  ADD CONSTRAINT your_table_created_by_fkey
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+COMMIT;
+
+4) If it’s a mix of good/bad strings and you just want to keep good ones
+
+Same as (2): NULL out junk, then USING created_by::uuid.
+
+Drizzle (manual SQL migration) snippet
+
+Create a migration (e.g., drizzle/20240914_created_by_uuid.sql) with something like:
+
+BEGIN;
+ALTER TABLE "your_table" ALTER COLUMN "created_by" DROP DEFAULT;
+UPDATE "your_table"
+SET "created_by" = NULL
+WHERE "created_by" IS NOT NULL
+  AND "created_by" !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
+ALTER TABLE "your_table"
+  ALTER COLUMN "created_by" TYPE uuid USING ("created_by"::uuid);
+-- optional FK (adjust names)
+-- ALTER TABLE "your_table"
+--   ADD CONSTRAINT "your_table_created_by_fkey"
+--   FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;
+COMMIT;
+
+
+Then run your usual drizzle-kit migration apply (or db push if it respects existing SQL migrations first). The key is the USING created_by::uuid and making sure no non-castable rows remain before the cast.
+
+If you paste your actual table name + what created_by holds (text/ints/mixed), I’ll give you the exact queries wired to your schema.
