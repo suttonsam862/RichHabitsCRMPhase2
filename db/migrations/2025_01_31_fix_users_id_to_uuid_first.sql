@@ -46,10 +46,16 @@ BEGIN
     -- Step 3: Create backup table with correct UUID structure
     EXECUTE format('CREATE TABLE %I (LIKE users INCLUDING ALL)', temp_table_name);
     EXECUTE format('ALTER TABLE %I ALTER COLUMN id TYPE uuid USING id::uuid', temp_table_name);
+    EXECUTE format('ALTER TABLE %I ALTER COLUMN created_by TYPE uuid USING created_by::uuid', temp_table_name);
     
-    -- Step 4: Copy valid data to backup table (using actual column names)
+    -- Step 4: Copy valid data to backup table with explicit column mapping
     EXECUTE format('
-        INSERT INTO %I 
+        INSERT INTO %I (id, email, password_hash, full_name, phone, role, is_active, 
+                       organization_id, avatar_url, address_line1, address_line2, 
+                       city, state, postal_code, country, last_login, 
+                       password_reset_token, password_reset_expires, email_verified, 
+                       notes, created_at, updated_at, initial_temp_password, 
+                       subrole, job_title, department, created_by)
         SELECT 
                CASE 
                    WHEN id::text ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'' 
