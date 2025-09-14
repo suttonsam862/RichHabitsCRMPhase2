@@ -11,14 +11,21 @@ export type HttpMethod = 'GET'|'POST'|'PATCH'|'DELETE';
 
 export const apiRequest = async (url: string, options: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; data?: any; headers?: Record<string, string>; } = {}) => {
   const { method = 'GET', data, headers = {} } = options;
+  const token = localStorage.getItem('token');
+
+  const requestHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...headers
+  };
+
+  // Only add Authorization header if we have a valid token
+  if (token) {
+    requestHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   const config: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      ...headers
-    }
+    headers: requestHeaders
   };
 
   if (data && method !== 'GET') {
@@ -50,8 +57,18 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

@@ -1,0 +1,105 @@
+    ms: 615
+[22:01:59.672] WARN (3430): Security event
+    rid: "fr5rptkm"
+    event: "AUTH_INVALID_TOKEN"
+    details: {
+      "path": "/",
+      "error": "invalid JWT: unable to parse or verify signature, token is malformed: token contains an invalid number of segments"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.11.46"
+[22:01:59.672] WARN (3430): GET 401 217ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "fr5rptkm"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 401
+    ms: 217
+[22:02:55.685] WARN (3430): Security event
+    rid: "ij4gwlcv"
+    event: "AUTH_INVALID_TOKEN"
+    details: {
+      "path": "/",
+      "error": "invalid JWT: unable to parse or verify signature, token is malformed: token contains an invalid number of segments"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.11.46"
+[22:02:55.686] WARN (3430): GET 401 229ms /api/v1/users/enhanced?q=Fr&type=customers&pageSize=50
+    rid: "ij4gwlcv"
+    method: "GET"
+    path: "/api/v1/users/enhanced?q=Fr&type=customers&pageSize=50"
+    status: 401
+    ms: 229
+[22:02:55.784] WARN (3430): Security event
+    rid: "gkyophtp"
+    event: "AUTH_INVALID_TOKEN"
+    details: {
+      "path": "/",
+      "error": "invalid JWT: unable to parse or verify signature, token is malformed: token contains an invalid number of segments"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.10.61"
+[22:02:55.785] WARN (3430): GET 401 137ms /api/v1/users/enhanced?q=Fra&type=customers&pageSize=50
+    rid: "gkyophtp"
+    method: "GET"
+    path: "/api/v1/users/enhanced?q=Fra&type=customers&pageSize=50"
+    status: 401
+    ms: 137
+[22:02:55.981] WARN (3430): Security event
+    rid: "nolh7p71"
+    event: "AUTH_INVALID_TOKEN"
+    details: {
+      "path": "/",
+      "error": "invalid JWT: unable to parse or verify signature, token is malformed: token contains an invalid number of segments"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.11.46"
+[22:02:55.982] WARN (3430): GET 401 235ms /api/v1/users/enhanced?q=Fran&type=customers&pageSize=50
+    rid: "nolh7p71"
+    method: "GET"
+    path: "/api/v1/users/enhanced?q=Fran&type=customers&pageSize=50"
+    status: 401
+    ms: 235
+[22:02:56.004] WARN (3430): Security event
+    rid: "pq9mnr28"
+    event: "AUTH_INVALID_TOKEN"
+    details: {
+      "path": "/",
+      "error": "invalid JWT: unable to parse or verify signature, token is malformed: token contains an invalid number of segments"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.10.61"
+[22:02:56.005] WARN (3430): GET 401 102ms /api/v1/users/enhanced?q=Frank&type=customers&pageSize=50
+    rid: "pq9mnr28"
+    method: "GET"
+    path: "/api/v1/users/enhanced?q=Frank&type=customers&pageSize=50"
+    status: 401
+    ms: 102
+[22:02:56.189] WARN (3430): Security event
+    rid: "yk0aryg0"
+    event: "AUTH_INVALID_TOKEN"
+    details: {
+      "path": "/",
+      "error": "invalid JWT: unable to parse or verify signature, token is malformed: token contains an invalid number of segments"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.10.61"
+[22:02:56.189] WARN (3430): GET 401 105ms /api/v1/users/enhanced?q=Franki&type=customers&pageSize=50
+    rid: "yk0aryg0"
+    method: "GET"
+    path: "/api/v1/users/enhanced?q=Franki&type=customers&pageSize=50"
+    status: 401
+    ms: 105
+[22:02:56.458] WARN (3430): Security event
+    rid: "auu1rjqt"
+    event: "AUTH_INVALID_TOKEN"
+    details: {
+      "path": "/",
+      "error": "invalid JWT: unable to parse or verify signature, token is malformed: token contains an invalid number of segments"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.11.46"
+[22:02:56.458] WARN (3430): GET 401 255ms /api/v1/users/enhanced?q=Frankie&type=customers&pageSize=50
+    rid: "auu1rjqt"
+    method: "GET"
+    path: "/api/v1/users/enhanced?q=Frankie&type=customers&pageSize=50"
+    status: 401
