@@ -1,0 +1,59 @@
+Sales dashboard error: PostgresError: relation "salesperson_assignments" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '22',
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+[23:36:36.575] INFO (16136): GET 304 805ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "tdmxn9a8"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 304
+    ms: 805
+[23:36:36.578] ERROR (16136): GET 500 827ms /api/v1/sales/dashboard?period=30
+    rid: "x8pmnvei"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 500
+    ms: 827
+[23:36:36.581] INFO (16136): GET 304 804ms /api/v1/users/enhanced?type=staff
+    rid: "ge24xmyt"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff"
+    status: 304
+    ms: 804
+[23:36:37.466] INFO (16136): GET 200 104ms /src/pages/sales/CreateSalesperson.tsx
+    rid: "o14re3at"
+    method: "GET"
+    path: "/src/pages/sales/CreateSalesperson.tsx"
+    status: 200
+    ms: 104
+[23:36:37.570] INFO (16136): GET 304 0ms /src/components/ui/form.tsx
+    rid: "z0m2myvk"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 304
+    ms: 0
+[23:36:37.570] INFO (16136): GET 304 0ms /src/constants/us-states.ts
+    rid: "w9vqakyf"
+    method: "GET"
+    path: "/src/constants/us-states.ts"
+    status: 304
+    ms: 0
+[23:36:46.873] WARN (16136): POST 400 502ms /api/v1/users
+    rid: "6mgqj1lc"
+    method: "POST"
+    path: "/api/v1/users"
+    status: 400
+    ms: 502
