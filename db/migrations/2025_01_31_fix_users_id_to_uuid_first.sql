@@ -52,7 +52,7 @@ BEGIN
         INSERT INTO %I 
         SELECT 
                CASE 
-                   WHEN id ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'' 
+                   WHEN id::text ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'' 
                    THEN id::uuid 
                    ELSE gen_random_uuid()
                END as id,
@@ -63,7 +63,7 @@ BEGIN
                notes, created_at, updated_at, initial_temp_password, 
                subrole, job_title, department,
                CASE 
-                   WHEN created_by ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'' 
+                   WHEN created_by IS NOT NULL AND created_by::text ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'' 
                    THEN created_by::uuid 
                    ELSE NULL 
                END as created_by
