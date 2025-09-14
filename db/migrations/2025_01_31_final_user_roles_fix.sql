@@ -30,13 +30,13 @@ BEGIN
     -- Step 3: Copy valid data to backup table
     EXECUTE format('
         INSERT INTO %I 
-        SELECT id, role, 
+        SELECT id, 
                CASE 
                    WHEN user_id ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'' 
                    THEN user_id::uuid 
                    ELSE NULL 
                END as user_id,
-               created_at, updated_at
+               org_id, role_id, created_at
         FROM user_roles
     ', temp_table_name);
     
