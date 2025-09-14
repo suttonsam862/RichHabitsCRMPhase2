@@ -47,7 +47,7 @@ BEGIN
     EXECUTE format('CREATE TABLE %I (LIKE users INCLUDING ALL)', temp_table_name);
     EXECUTE format('ALTER TABLE %I ALTER COLUMN id TYPE uuid USING id::uuid', temp_table_name);
     
-    -- Step 4: Copy valid data to backup table
+    -- Step 4: Copy valid data to backup table (using actual column names)
     EXECUTE format('
         INSERT INTO %I 
         SELECT 
@@ -56,8 +56,12 @@ BEGIN
                    THEN id::uuid 
                    ELSE gen_random_uuid()
                END as id,
-               email, password_hash, first_name, last_name, phone, 
-               created_at, updated_at, is_active, role, profile_picture_url,
+               email, password_hash, full_name, phone, role, is_active, 
+               organization_id, avatar_url, address_line1, address_line2, 
+               city, state, postal_code, country, last_login, 
+               password_reset_token, password_reset_expires, email_verified, 
+               notes, created_at, updated_at, initial_temp_password, 
+               subrole, job_title, department,
                CASE 
                    WHEN created_by ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'' 
                    THEN created_by::uuid 
