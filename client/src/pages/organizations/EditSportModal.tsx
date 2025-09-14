@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { Search, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/auth/AuthProvider";
 
 const editSportSchema = z.object({
   team_name: z.string().min(1, "Team name is required"),
@@ -43,6 +44,7 @@ interface EditSportModalProps {
 export default function EditSportModal({ isOpen, onClose, organizationId, sport }: EditSportModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth(); // Get authenticated user
   
   // Contact selector state
   const [contactType, setContactType] = useState<"new" | "existing">("new");
@@ -67,19 +69,23 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
     queryFn: async () => {
       return await apiRequest('/api/v1/users/enhanced?type=staff&pageSize=100');
     },
+    enabled: !!user,
   });
 
   // Fetch users for contact selection (with search) - using same pattern as setup route
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users-enhanced', userSearch, 'customers'],
     queryFn: async () => {
+      console.log('🔍 Searching for users:', userSearch, 'User authenticated:', !!user);
       const params = new URLSearchParams();
       if (userSearch) params.append('q', userSearch);
-      params.append('type', 'customers');
+      params.append('type', 'customers'); // This includes both 'customer' and 'contact' roles
       params.append('pageSize', '50');
-      return await apiRequest(`/api/v1/users/enhanced?${params.toString()}`);
+      const result = await apiRequest(`/api/v1/users/enhanced?${params.toString()}`);
+      console.log('👥 Users API response:', result);
+      return result;
     },
-    enabled: contactType === "existing" && userSearch.length >= 2,
+    enabled: contactType === "existing" && userSearch.length >= 2 && !!user,
   });
 
   const salespeople = salespeopleData?.data || [];
@@ -283,6 +289,10 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {usersLoading ? (
                       <div className="text-white/60 text-center py-4">Loading users...</div>
+                    ) : usersData?.error ? (
+                      <div className="text-red-400 text-center py-4">
+                        Error loading users: {usersData.error.message || 'Unknown error'}
+                      </div>
                     ) : users?.length > 0 ? (
                       users.map((user: any) => (
                         <div
