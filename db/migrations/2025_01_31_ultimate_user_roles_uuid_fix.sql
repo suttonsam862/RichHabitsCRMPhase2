@@ -22,7 +22,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' 
-        AND table_name = 'user_roles' 
+        AND information_schema.columns.table_name = 'user_roles' 
         AND column_name = 'user_id'
         AND data_type = 'character varying'
     ) THEN
