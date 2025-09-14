@@ -1,0 +1,28 @@
+ReferenceError: Badge is not defined
+    at OrganizationSportsPage (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/pages/organizations/SportsPage.tsx:30:18)
+    at RenderedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=ad036335:5653:26)
+    at Outlet (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=ad036335:6323:26)
+    at div
+    at MotionComponent (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=ad036335:6536:40)
+    at PresenceChild (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=ad036335:7742:24)
+    at AnimatePresence (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=ad036335:7800:26)
+    at div
+    at main
+    at div
+    at AppLayout (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/layouts/AppLayout.tsx:30:29)
+    at ProtectedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/auth/ProtectedRoute.tsx:23:20)
+    at RenderedRoute (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=ad036335:5653:26)
+    at Routes (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=ad036335:6389:3)
+    at Suspense
+    at AuthProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/auth/AuthProvider.tsx:21:32)
+    at Router (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=ad036335:6332:13)
+    at BrowserRouter (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=ad036335:9416:3)
+    at ErrorBoundary (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ErrorBoundary.tsx:25:5)
+    at AppRoutes
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-72DEVCPZ.js?v=ad036335:48:15)
+    at TooltipProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=ad036335:59:5)
+    at QueryClientProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=ad036335:2805:3)
+    at _a (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-helmet-async.js?v=ad036335:624:5)
+    at App
+Try Again
+Back to Home

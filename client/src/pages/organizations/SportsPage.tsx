@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Phone, Mail, User, MapPin, Calendar, Trophy, Users, Edit } from 'lucide-react';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
@@ -97,8 +98,8 @@ export default function OrganizationSportsPage() {
         <EditSportModal 
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          sportData={editingSport}
-          organizationId={id}
+          sport={editingSport}
+          organizationId={id!}
         />
       )}
 
