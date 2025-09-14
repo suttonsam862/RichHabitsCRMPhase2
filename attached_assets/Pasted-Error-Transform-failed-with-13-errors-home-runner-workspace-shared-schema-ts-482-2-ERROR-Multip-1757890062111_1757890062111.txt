@@ -1,0 +1,125 @@
+Error: Transform failed with 13 errors:
+/home/runner/workspace/shared/schema.ts:482:2: ERROR: Multiple exports with the same name "users"
+/home/runner/workspace/shared/schema.ts:483:2: ERROR: Multiple exports with the same name "organizations"
+/home/runner/workspace/shared/schema.ts:484:2: ERROR: Multiple exports with the same name "orgSports"
+/home/runner/workspace/shared/schema.ts:485:2: ERROR: Multiple exports with the same name "sports"
+/home/runner/workspace/shared/schema.ts:486:2: ERROR: Multiple exports with the same name "orders"
+...
+    at failureErrorWithLog (/home/runner/workspace/node_modules/drizzle-kit/node_modules/esbuild/lib/main.js:1651:15)
+    at /home/runner/workspace/node_modules/drizzle-kit/node_modules/esbuild/lib/main.js:849:29
+    at responseCallbacks.<computed> (/home/runner/workspace/node_modules/drizzle-kit/node_modules/esbuild/lib/main.js:704:9)
+    at handleIncomingPacket (/home/runner/workspace/node_modules/drizzle-kit/node_modules/esbuild/lib/main.js:764:9)
+    at Socket.readFromStdout (/home/runner/workspace/node_modules/drizzle-kit/node_modules/esbuild/lib/main.js:680:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23) {
+  errors: [
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "users"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "organizations"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "orgSports"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "sports"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "orders"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "roles"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "userRoles"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "permissions"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "rolePermissions"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "permissionTemplates"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "salespersonProfiles"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "salespersonAssignments"'
+    },
+    {
+      detail: undefined,
+      id: '',
+      location: [Object],
+      notes: [Array],
+      pluginName: '',
+      text: 'Multiple exports with the same name "salespersonMetrics"'
+    }
+  ],
+  warnings: []
+}
