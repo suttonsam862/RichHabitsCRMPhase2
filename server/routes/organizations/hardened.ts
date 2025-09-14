@@ -86,7 +86,7 @@ function autoTagOrganization(name: string, isBusiness: boolean = false): string[
 function mapFieldsToDbColumns(data: CreateOrganizationRequest) {
   // Auto-generate tags based on name and type
   const autoTags = autoTagOrganization(data.name, data.isBusiness);
-  const combinedTags = [...new Set([...autoTags, ...(data.tags || [])])]; // Merge and dedupe
+  const combinedTags = Array.from(new Set([...autoTags, ...(data.tags || [])])); // Merge and dedupe
 
   const dbPayload: Record<string, any> = {
     name: data.name,
@@ -646,7 +646,7 @@ router.post('/:id/setup', async (req: any, res) => {
         if (currentOrg) {
           const autoTags = autoTagOrganization(currentOrg.name, currentOrg.is_business);
           const existingTags = currentOrg.tags || [];
-          const combinedTags = [...new Set([...autoTags, ...existingTags])];
+          const combinedTags = Array.from(new Set([...autoTags, ...existingTags]));
           orgUpdateData.tags = combinedTags;
           logger.info({ orgId, autoTags, existingTags, combinedTags }, 'Applied auto-tagging during setup completion');
         }
