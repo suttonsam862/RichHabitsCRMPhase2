@@ -1,0 +1,182 @@
+~/workspace$ npm run db:push
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/home/runner/workspace/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+
++ slug column will be created
+--- all columns conflicts in sports table resolved ---
+
+
++ order_item_id column will be created
+
++ instructions column will be created
+
++ estimated_completion_date column will be created
+
++ actual_completion_date column will be created
+--- all columns conflicts in manufacturing_work_orders table resolved ---
+
+
++ specializations column will be created
+
++ portfolio_url column will be created
+
++ hourly_rate column will be created
+
++ is_active column will be created
+
++ created_at column will be created
+
++ updated_at column will be created
+--- all columns conflicts in designers table resolved ---
+
+
++ employee_id column will be created
+
++ territory column will be created
+
++ commission_rate column will be created
+
++ is_active column will be created
+
++ created_at column will be created
+
++ updated_at column will be created
+--- all columns conflicts in salespeople table resolved ---
+
+
++ size_code column will be created
+
++ quantity column will be created
+--- all columns conflicts in order_item_sizes table resolved ---
+
+
++ id column will be created
+
++ organization_id column will be created
+
++ created_at column will be created
+--- all columns conflicts in organization_favorites table resolved ---
+
+
++ contact_phone column will be created
+
++ address_line1 column will be created
+
++ address_line2 column will be created
+
++ city column will be created
+
++ state column will be created
+
++ postal_code column will be created
+
++ country column will be created
+
++ specialties column will be created
+
++ minimum_order_quantity column will be created
+
++ lead_time_days column will be created
+
++ is_active column will be created
+
++ created_at column will be created
+
++ updated_at column will be created
+--- all columns conflicts in manufacturers table resolved ---
+
+
++ org_id column will be created
+
++ period_start column will be created
+
++ period_end column will be created
+
++ updated_at column will be created
+--- all columns conflicts in organization_metrics table resolved ---
+
+
++ name column will be created
+
++ slug column will be created
+
++ updated_at column will be created
+--- all columns conflicts in permissions table resolved ---
+
+
++ territory column will be created
+
++ commission_rate column will be created
+--- all columns conflicts in salesperson_assignments table resolved ---
+
+
++ total_orders column will be created
+
++ target_sales column will be created
+
++ updated_at column will be created
+--- all columns conflicts in salesperson_metrics table resolved ---
+
+ Warning  Found data-loss statements:
+· You're about to change id column type from varchar to uuid with 5 items
+· You're about to change name column type from text to varchar(100) with 5 items
+· You're about to change id column type from varchar to uuid with 8 items
+· You're about to change slug column type from text to varchar(100) with 8 items
+· You're about to change name column type from text to varchar(100) with 8 items
+· You're about to change id column type from varchar to uuid with 5 items
+· You're about to change total_revenue column type from integer to numeric(12, 2) with 5 items
+· You're about to change average_order_value column type from integer to numeric(10, 2) with 5 items
+· You're about to change created_at column type from timestamp to timestamp with time zone with 5 items
+· You're about to change name column type from varchar(255) to text with 3 items
+· You're about to change template_type column type from varchar(50) to text with 3 items
+· You're about to change created_at column type from timestamp to timestamp with time zone with 3 items
+· You're about to change updated_at column type from timestamp to timestamp with time zone with 3 items
+· You're about to add not-null slug column without default value, which contains 5 items
+· You're about to add not-null org_id column without default value, which contains 5 items
+· You're about to add not-null period_start column without default value, which contains 5 items
+· You're about to add not-null period_end column without default value, which contains 5 items
+· You're about to delete description column in sports table with 5 items
+· You're about to delete created_at column in sports table with 5 items
+· You're about to delete organization_id column in organization_metrics table with 5 items
+· You're about to delete active_sports column in organization_metrics table with 5 items
+· You're about to delete years_with_company column in organization_metrics table with 5 items
+· You're about to delete repeat_customer_rate column in organization_metrics table with 5 items
+· You're about to delete growth_rate column in organization_metrics table with 5 items
+· You're about to delete satisfaction_score column in organization_metrics table with 5 items
+· You're about to delete last_updated column in organization_metrics table with 5 items
+· You're about to delete description column in permission_templates table with 3 items
+· You're about to delete page_access column in permission_templates table with 3 items
+
+THIS ACTION WILL CAUSE DATA LOSS AND CANNOT BE REVERTED
+
+Do you still want to push changes?
+error: column "user_id" cannot be cast automatically to type uuid
+    at /home/runner/workspace/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:66575:26)
+    at async pgPush (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:70117:13)
+    at async Object.handler (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:79124:9)
+    at async run (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:78381:7) {
+  length: 179,
+  severity: 'ERROR',
+  code: '42804',
+  detail: undefined,
+  hint: 'You might need to specify "USING user_id::uuid".',
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'tablecmds.c',
+  line: '12561',
+  routine: 'ATPrepAlterColumnType'
