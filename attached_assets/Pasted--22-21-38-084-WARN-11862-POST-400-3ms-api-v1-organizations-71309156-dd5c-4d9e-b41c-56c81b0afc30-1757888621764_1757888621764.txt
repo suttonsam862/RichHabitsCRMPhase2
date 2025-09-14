@@ -1,0 +1,104 @@
+[22:21:38.084] WARN (11862): POST 400 3ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "8to8zb8h"
+    method: "POST"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 400
+    ms: 3
+[22:21:38.378] INFO (11862): GET 304 216ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "ny85arxw"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 304
+    ms: 216
+[22:21:38.430] INFO (11862): GET 304 263ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30
+    rid: "0du3nqi6"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30"
+    status: 304
+    ms: 263
+[22:21:38.728] INFO (11862): GET 304 303ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "dea5uhzi"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 304
+    ms: 303
+Sales dashboard error: PostgresError: relation "salesperson_assignments" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '22',
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+[22:22:29.234] INFO (11862): GET 304 359ms /src/pages/sales/SalesManagement.tsx
+    rid: "onxt57h7"
+    method: "GET"
+    path: "/src/pages/sales/SalesManagement.tsx"
+    status: 304
+    ms: 359
+[22:22:29.287] INFO (11862): GET 304 0ms /src/components/ui/table.tsx
+    rid: "vn352hkj"
+    method: "GET"
+    path: "/src/components/ui/table.tsx"
+    status: 304
+    ms: 0
+[22:22:29.520] INFO (11862): organizations.list ok
+    rid: "dbe2awgh"
+    count: 15
+[22:22:29.521] INFO (11862): GET 304 170ms /api/v1/organizations
+    rid: "dbe2awgh"
+    method: "GET"
+    path: "/api/v1/organizations"
+    status: 304
+    ms: 170
+[22:22:29.561] ERROR (11862): GET 500 218ms /api/v1/sales/dashboard?period=30
+    rid: "ia0xzsn0"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 500
+    ms: 218
+[22:22:29.623] INFO (11862): GET 304 268ms /api/v1/users/enhanced?type=staff
+    rid: "erezbnth"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff"
+    status: 304
+    ms: 268
+[22:22:29.637] INFO (11862): GET 304 288ms /api/v1/sports
+    rid: "7znrdxfg"
+    method: "GET"
+    path: "/api/v1/sports"
+    status: 304
+    ms: 288
+[22:22:30.058] INFO (11862): GET 304 701ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "tes1kg2v"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 304
+    ms: 701
+[22:22:31.452] INFO (11862): GET 200 72ms /src/pages/sales/CreateSalesperson.tsx
+    rid: "b7ezvr90"
+    method: "GET"
+    path: "/src/pages/sales/CreateSalesperson.tsx"
+    status: 200
+    ms: 72
+[22:22:31.559] INFO (11862): GET 304 1ms /src/constants/us-states.ts
+    rid: "ngn10czk"
+    method: "GET"
+    path: "/src/constants/us-states.ts"
+    status: 304
+    ms: 1
+[22:22:50.627] WARN (11862): POST 400 258ms /api/v1/users
+    rid: "f5f7owh6"
+    method: "POST"
+    path: "/api/v1/users"
+    status: 400
+    ms: 258
