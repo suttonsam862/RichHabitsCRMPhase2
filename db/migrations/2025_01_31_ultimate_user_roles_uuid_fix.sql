@@ -14,7 +14,7 @@ DECLARE
         'role_permissions', 'audit_logs', 'customers', 'design_jobs', 'design_assets',
         'manufacturing_work_orders', 'catalog_items', 'designers', 'manufacturers'
     ];
-    table_name TEXT;
+    current_table TEXT;
 BEGIN
     RAISE NOTICE 'Starting ultimate user_roles.user_id UUID conversion';
 
@@ -51,14 +51,14 @@ BEGIN
     RAISE NOTICE 'Backed up valid data to temporary table';
 
     -- Step 4: Drop ALL policies across ALL tables that might reference user_roles or auth.uid()
-    FOREACH table_name IN ARRAY table_list
+    FOREACH current_table IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND information_schema.tables.table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = current_table AND information_schema.tables.table_schema = 'public') THEN
             FOR policy_record IN 
                 SELECT schemaname, tablename, policyname, qual, with_check
                 FROM pg_policies 
                 WHERE schemaname = 'public'
-                AND pg_policies.tablename = table_name
+                AND pg_policies.tablename = current_table
             LOOP
                 BEGIN
                     EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', 
@@ -74,14 +74,14 @@ BEGIN
     END LOOP;
 
     -- Step 5: Disable RLS on all affected tables temporarily
-    FOREACH table_name IN ARRAY table_list
+    FOREACH current_table IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND information_schema.tables.table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = current_table AND information_schema.tables.table_schema = 'public') THEN
             BEGIN
-                EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', table_name);
-                RAISE NOTICE 'Disabled RLS on table %s', table_name;
+                EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', current_table);
+                RAISE NOTICE 'Disabled RLS on table %s', current_table;
             EXCEPTION WHEN OTHERS THEN
-                RAISE NOTICE 'Could not disable RLS on table %s: %', table_name, SQLERRM;
+                RAISE NOTICE 'Could not disable RLS on table %s: %', current_table, SQLERRM;
             END;
         END IF;
     END LOOP;
@@ -121,11 +121,11 @@ BEGIN
     RAISE NOTICE 'Restored data from backup';
 
     -- Step 9: Re-enable RLS with simple permissive policies
-    FOREACH table_name IN ARRAY table_list
+    FOREACH current_table IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND information_schema.tables.table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = current_table AND information_schema.tables.table_schema = 'public') THEN
             BEGIN
-                EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);
+                EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', current_table);
 
                 -- Create simple permissive policy for development
                 EXECUTE format('
@@ -134,11 +134,11 @@ BEGIN
                     TO authenticated, public
                     USING (true)
                     WITH CHECK (true)
-                ', table_name, table_name);
+                ', current_table, current_table);
 
-                RAISE NOTICE 'Re-enabled RLS with permissive policy for table %s', table_name;
+                RAISE NOTICE 'Re-enabled RLS with permissive policy for table %s', current_table;
             EXCEPTION WHEN OTHERS THEN
-                RAISE NOTICE 'Could not re-enable RLS on table %s: %', table_name, SQLERRM;
+                RAISE NOTICE 'Could not re-enable RLS on table %s: %', current_table, SQLERRM;
             END;
         END IF;
     END LOOP;
