@@ -17,28 +17,28 @@ export default function OrganizationKPIPage() {
     staleTime: 80000 // Consider data fresh for 80 seconds
   });
 
-  // Fetch summary data to calculate basic metrics
-  const { data: summaryData, isLoading: summaryLoading } = useQuery({
-    queryKey: ['organization-summary', id],
-    queryFn: () => api.get(`/api/v1/organizations/${id}/summary`),
+  // Fetch real metrics data from the API
+  const { data: metricsData, isLoading: metricsLoading } = useQuery({
+    queryKey: ['organization-metrics', id],
+    queryFn: () => api.get(`/api/v1/organizations/${id}/metrics`),
     enabled: !!id && org?.success,
     refetchInterval: 60000, // Refresh every minute for KPI metrics
     staleTime: 50000 // Consider data fresh for 50 seconds
   });
 
-  // Calculate metrics from available data  
-  const kpiData = {
-    totalRevenue: 24500, // Sample data for now
-    totalOrders: 127,
-    activeSports: summaryData?.data?.stats?.sportsCount || 0,
-    yearsWithRichHabits: 3, // Sample data - could calculate from org creation date
-    averageOrderValue: 193,
-    repeatCustomerRate: 68,
-    growthRate: 24,
-    satisfactionScore: 4.8
+  // Use real data from API or fallback to defaults
+  const kpiData = metricsData?.success ? metricsData.data : {
+    totalRevenue: 0,
+    totalOrders: 0,
+    activeSports: 0,
+    yearsWithRichHabits: 1,
+    averageOrderValue: 0,
+    repeatCustomerRate: 0,
+    growthRate: 0,
+    satisfactionScore: 0
   };
 
-  if (orgLoading || summaryLoading) {
+  if (orgLoading || metricsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white p-6">
         <div className="max-w-6xl mx-auto">
@@ -93,7 +93,14 @@ export default function OrganizationKPIPage() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Key Performance Indicators
               </h1>
-              <p className="text-white/60 mt-1">Performance metrics and insights for {organization.name}</p>
+              <p className="text-white/60 mt-1">
+                Performance metrics and insights for {organization.name}
+                {metricsData?.computed && (
+                  <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">
+                    Computed Data
+                  </span>
+                )}
+              </p>
             </div>
           </div>
         </motion.div>
