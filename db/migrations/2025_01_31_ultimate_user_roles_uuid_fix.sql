@@ -53,7 +53,7 @@ BEGIN
     -- Step 4: Drop ALL policies across ALL tables that might reference user_roles or auth.uid()
     FOREACH table_name IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND information_schema.tables.table_schema = 'public') THEN
             FOR policy_record IN 
                 SELECT schemaname, tablename, policyname, qual, with_check
                 FROM pg_policies 
@@ -76,7 +76,7 @@ BEGIN
     -- Step 5: Disable RLS on all affected tables temporarily
     FOREACH table_name IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND information_schema.tables.table_schema = 'public') THEN
             BEGIN
                 EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', table_name);
                 RAISE NOTICE 'Disabled RLS on table %s', table_name;
@@ -123,7 +123,7 @@ BEGIN
     -- Step 9: Re-enable RLS with simple permissive policies
     FOREACH table_name IN ARRAY table_list
     LOOP
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE information_schema.tables.table_name = table_name AND information_schema.tables.table_schema = 'public') THEN
             BEGIN
                 EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);
 
