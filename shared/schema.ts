@@ -216,7 +216,7 @@ export const organizations = pgTable("organizations", {
         tertiaryColor: text("tertiary_color"),
         city: text(),
         website: text(),
-        createdBy: varchar("created_by"),
+        createdBy: uuid("created_by"),
 });
 
 export const orgSports = pgTable("org_sports", {
@@ -424,7 +424,7 @@ export const users = pgTable("users", {
         passwordResetExpires: timestamp("password_reset_expires", { mode: 'string' }),
         emailVerified: integer("email_verified"),
         notes: text(),
-        createdBy: varchar("created_by"),
+        createdBy: uuid("created_by"),
         createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
         initialTempPassword: text("initial_temp_password"),
