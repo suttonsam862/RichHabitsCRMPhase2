@@ -121,10 +121,48 @@ BEGIN
         RAISE NOTICE 'Could not convert users.organization_id: %', SQLERRM;
     END;
 
+    -- Fix created_by columns across all tables
     BEGIN
         ALTER TABLE users ALTER COLUMN created_by TYPE uuid USING created_by::uuid;
     EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'Could not convert users.created_by: %', SQLERRM;
+    END;
+
+    BEGIN
+        ALTER TABLE organizations ALTER COLUMN created_by TYPE uuid USING created_by::uuid;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not convert organizations.created_by: %', SQLERRM;
+    END;
+
+    -- Handle any other created_by columns that might exist
+    BEGIN
+        -- Check if permission_templates table exists and has created_by column
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'permission_templates' 
+            AND column_name = 'created_by'
+        ) THEN
+            ALTER TABLE permission_templates ALTER COLUMN created_by TYPE uuid USING created_by::uuid;
+            RAISE NOTICE 'Converted permission_templates.created_by to uuid';
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not convert permission_templates.created_by: %', SQLERRM;
+    END;
+
+    BEGIN
+        -- Check if roles table exists and has created_by column
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'roles' 
+            AND column_name = 'created_by'
+        ) THEN
+            ALTER TABLE roles ALTER COLUMN created_by TYPE uuid USING created_by::uuid;
+            RAISE NOTICE 'Converted roles.created_by to uuid';
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not convert roles.created_by: %', SQLERRM;
     END;
 
     -- Fix salesperson tables - convert varchar IDs to uuid
