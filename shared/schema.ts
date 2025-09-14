@@ -1,4 +1,3 @@
-
 // Schema updated to match actual database structure on 2025-09-11
 // Aligned with business database - removed auth enums, added real business tables
 
@@ -217,7 +216,7 @@ export const organizations = pgTable("organizations", {
         tertiaryColor: text("tertiary_color"),
         city: text(),
         website: text(),
-        createdBy: varchar("created_by"), // Keep as varchar to match existing data
+        createdBy: uuid("created_by"),
 });
 
 export const orgSports = pgTable("org_sports", {
@@ -324,7 +323,7 @@ export const permissionTemplates = pgTable("permission_templates", {
         name: text().notNull(),
         templateType: text("template_type").notNull(),
         permissions: jsonb(),
-        createdBy: varchar("created_by"), // Keep as varchar to match existing data
+        createdBy: uuid("created_by"),
         isActive: boolean("is_active").default(true),
         createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -425,7 +424,7 @@ export const users = pgTable("users", {
         passwordResetExpires: timestamp("password_reset_expires", { mode: 'string' }),
         emailVerified: integer("email_verified"),
         notes: text(),
-        createdBy: varchar("created_by"), // Keep as varchar to match existing data
+        createdBy: uuid("created_by"),
         createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
         initialTempPassword: text("initial_temp_password"),
