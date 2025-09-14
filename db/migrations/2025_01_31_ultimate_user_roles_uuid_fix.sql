@@ -58,7 +58,7 @@ BEGIN
                 SELECT schemaname, tablename, policyname, qual, with_check
                 FROM pg_policies 
                 WHERE schemaname = 'public'
-                AND tablename = table_name
+                AND pg_policies.tablename = table_name
             LOOP
                 BEGIN
                     EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', 
