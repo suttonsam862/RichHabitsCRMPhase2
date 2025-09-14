@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Search, User } from "lucide-react";
 import { api } from "@/lib/api";
 
 const editSportSchema = z.object({
@@ -39,6 +42,11 @@ interface EditSportModalProps {
 export default function EditSportModal({ isOpen, onClose, organizationId, sport }: EditSportModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Contact selector state
+  const [contactType, setContactType] = useState<"new" | "existing">("new");
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const form = useForm({
     resolver: zodResolver(editSportSchema),
@@ -57,7 +65,32 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
     queryFn: () => api.get('/api/v1/users/enhanced?type=staff&pageSize=100'),
   });
 
+  // Fetch users for contact selection (with search)
+  const { data: usersData = {}, isLoading: usersLoading } = useQuery({
+    queryKey: ['users-enhanced', organizationId, userSearch],
+    queryFn: () => api.get(`/api/v1/users/enhanced?search=${encodeURIComponent(userSearch)}&pageSize=50`),
+    enabled: contactType === "existing" && userSearch.length >= 2,
+  });
+
   const salespeople = salespeopleData?.data?.users || salespeopleData?.data || [];
+  const users = usersData?.data?.users || usersData?.data || [];
+
+  // Update form values when user is selected from existing contacts
+  useEffect(() => {
+    if (contactType === "existing" && selectedUser) {
+      form.setValue("contact_name", selectedUser.fullName || selectedUser.email || "");
+      form.setValue("contact_email", selectedUser.email || "");
+      form.setValue("contact_phone", selectedUser.phone || "");
+    }
+  }, [selectedUser, contactType, form]);
+
+  // Reset selected user when switching to new contact
+  useEffect(() => {
+    if (contactType === "new") {
+      setSelectedUser(null);
+      setUserSearch("");
+    }
+  }, [contactType]);
 
   const updateSportMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -97,83 +130,172 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="team_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">Team Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter team name"
-                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="contact_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">Contact Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter contact name"
-                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Contact Type Toggle */}
+            <div className="space-y-3">
+              <label className="text-white text-sm font-medium">Contact Information</label>
+              <RadioGroup 
+                value={contactType} 
+                onValueChange={(value: "new" | "existing") => setContactType(value)}
+                className="flex gap-6"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="new" id="new" className="border-white/40 text-cyan-400" />
+                  <Label htmlFor="new" className="text-white cursor-pointer">Edit Current Contact</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="existing" id="existing" className="border-white/40 text-cyan-400" />
+                  <Label htmlFor="existing" className="text-white cursor-pointer">Select Existing User</Label>
+                </div>
+              </RadioGroup>
             </div>
+            {/* Team Name - Always visible */}
+            <FormField
+              control={form.control}
+              name="team_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white">Team Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter team name"
+                      className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="contact_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">Contact Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="Enter email address"
-                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {contactType === "new" ? (
+              /* Current Contact Form */
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="contact_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Contact Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter contact name"
+                            className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="contact_phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">Contact Phone (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="tel"
-                        placeholder="Enter phone number"
-                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormField
+                    control={form.control}
+                    name="contact_email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Contact Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Enter email address"
+                            className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="contact_phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">Contact Phone (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="Enter phone number"
+                          className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            ) : (
+              /* User Selection */
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-white text-sm font-medium">Search Users</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-white/40" />
+                    <Input
+                      placeholder="Search by name or email..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="bg-white/5 text-white border-white/20 focus:border-cyan-400 pl-10"
+                      data-testid="input-user-search"
+                    />
+                  </div>
+                </div>
+
+                {/* User Selection List */}
+                {contactType === "existing" && (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {usersLoading ? (
+                      <div className="text-white/60 text-center py-4">Loading users...</div>
+                    ) : users?.length > 0 ? (
+                      users.map((user: any) => (
+                        <div
+                          key={user.id}
+                          onClick={() => setSelectedUser(user)}
+                          className={`p-3 rounded border cursor-pointer transition-colors ${
+                            selectedUser?.id === user.id
+                              ? 'border-cyan-400 bg-cyan-400/10'
+                              : 'border-white/20 bg-white/5 hover:bg-white/10'
+                          }`}
+                          data-testid={`user-option-${user.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <User className="w-4 h-4 text-white/60" />
+                            <div>
+                              <div className="text-white font-medium">
+                                {user.fullName || user.email}
+                              </div>
+                              <div className="text-white/60 text-sm">{user.email}</div>
+                              {user.phone && (
+                                <div className="text-white/60 text-sm">{user.phone}</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : userSearch ? (
+                      <div className="text-white/60 text-center py-4">No users found</div>
+                    ) : (
+                      <div className="text-white/60 text-center py-4">
+                        Start typing to search for users
+                      </div>
+                    )}
+                  </div>
                 )}
-              />
-            </div>
+
+                {selectedUser && (
+                  <div className="p-3 border border-green-400/50 rounded bg-green-400/10">
+                    <div className="text-white font-medium">Selected User:</div>
+                    <div className="text-white/80">{selectedUser.fullName || selectedUser.email}</div>
+                    <div className="text-white/60 text-sm">{selectedUser.email}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
 
             <FormField
               control={form.control}
