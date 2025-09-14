@@ -1,0 +1,119 @@
+[19:48:24.133] ERROR (295): 🔴 Supabase error
+    rid: "392c3tn2"
+    ctx: "orgs.sports.list"
+    code: "42703"
+    message: "column org_sports.assigned_salesperson_id does not exist"
+    details: {
+      "code": "42703",
+      "details": null,
+      "hint": null,
+      "message": "column org_sports.assigned_salesperson_id does not exist"
+    }
+[19:48:24.134] WARN (295): GET 400 325ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "392c3tn2"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 400
+    ms: 325
+[19:48:25.415] INFO (295): GET 200 121ms /src/pages/organizations/AddSportsPage.tsx
+    rid: "ykhhmvib"
+    method: "GET"
+    path: "/src/pages/organizations/AddSportsPage.tsx"
+    status: 200
+    ms: 121
+[19:48:25.521] INFO (295): GET 304 1ms /src/components/ui/tabs.tsx
+    rid: "x6rf0ega"
+    method: "GET"
+    path: "/src/components/ui/tabs.tsx"
+    status: 304
+    ms: 1
+[19:48:25.832] INFO (295): GET 304 239ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30
+    rid: "e3k9hshq"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30"
+    status: 304
+    ms: 239
+[19:48:25.871] INFO (295): GET 304 266ms /api/v1/sports
+    rid: "mdj6ffw7"
+    method: "GET"
+    path: "/api/v1/sports"
+    status: 304
+    ms: 266
+[19:48:26.322] INFO (295): GET 200 714ms /api/v1/users/enhanced?type=customers&pageSize=100
+    rid: "e42hssf6"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=customers&pageSize=100"
+    status: 200
+    ms: 714
+[19:48:26.380] INFO (295): GET 200 783ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "3qrwleux"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 200
+    ms: 783
+[19:48:45.747] INFO (295): Processing sports creation
+    organizationId: "71309156-dd5c-4d9e-b41c-56c81b0afc30"
+    count: 1
+[19:48:46.039] ERROR (295): Failed to insert sports
+    organizationId: "71309156-dd5c-4d9e-b41c-56c81b0afc30"
+    error: {
+      "code": "23505",
+      "details": "Key (organization_id, sport_id)=(71309156-dd5c-4d9e-b41c-56c81b0afc30, 4e3f3304-3348-467e-a760-89ee261e2666) already exists.",
+      "hint": null,
+      "message": "duplicate key value violates unique constraint \"org_sports_organization_id_sport_id_key\""
+    }
+[19:48:46.040] ERROR (295): POST 500 295ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "qs5x8wyv"
+    method: "POST"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 500
+    ms: 295
+[19:48:46.241] ERROR (295): 🔴 Supabase error
+    rid: "w2utewtg"
+    ctx: "orgs.sports.list"
+    code: "42703"
+    message: "column org_sports.assigned_salesperson_id does not exist"
+    details: {
+      "code": "42703",
+      "details": null,
+      "hint": null,
+      "message": "column org_sports.assigned_salesperson_id does not exist"
+    }
+[19:48:46.241] WARN (295): GET 400 121ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "w2utewtg"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 400
+    ms: 121
+[19:48:46.390] ERROR (295): 🔴 Supabase error
+    rid: "bsk6d9wx"
+    ctx: "orgs.sports.list"
+    code: "42703"
+    message: "column org_sports.assigned_salesperson_id does not exist"
+    details: {
+      "code": "42703",
+      "details": null,
+      "hint": null,
+      "message": "column org_sports.assigned_salesperson_id does not exist"
+    }
+[19:48:46.391] WARN (295): GET 400 99ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports
+    rid: "bsk6d9wx"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30/sports"
+    status: 400
+    ms: 99
+[19:48:46.411] INFO (295): GET 304 283ms /api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30
+    rid: "kb381w0f"
+    method: "GET"
+    path: "/api/v1/organizations/71309156-dd5c-4d9e-b41c-56c81b0afc30"
+    status: 304
+    ms: 283
+[19:49:01.640] INFO (295): organizations.list ok
+    rid: "mmwxleou"
+    count: 15
+[19:49:01.640] INFO (295): GET 304 258ms /api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0
+    rid: "mmwxleou"
+    method: "GET"
+    path: "/api/v1/organizations?q=&tag=&onlyFavorites=false&includeArchived=false&sort=updated&dir=desc&limit=24&offset=0"
+    status: 304
+    ms: 258
