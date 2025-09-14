@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Search, User } from "lucide-react";
-import { api } from "@/lib/api";
+import { apiRequest } from "@/lib/queryClient";
 
 const editSportSchema = z.object({
   team_name: z.string().min(1, "Team name is required"),
@@ -21,6 +21,7 @@ const editSportSchema = z.object({
   contact_email: z.string().email("Valid email is required"),
   contact_phone: z.string().optional(),
   assigned_salesperson_id: z.string().optional(),
+  user_id: z.string().optional(),
 });
 
 interface EditSportModalProps {
@@ -56,24 +57,33 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
       contact_email: sport.contact_email || "",
       contact_phone: sport.contact_phone || "",
       assigned_salesperson_id: sport.assigned_salesperson_id || "",
+      user_id: "",
     },
   });
 
   // Fetch staff/sales users for salesperson assignment
-  const { data: salespeopleData = {}, isLoading: salespeopleLoading } = useQuery({
-    queryKey: ['users-salespeople'],
-    queryFn: () => api.get('/api/v1/users/enhanced?type=staff&pageSize=100'),
+  const { data: salespeopleData, isLoading: salespeopleLoading } = useQuery({
+    queryKey: ['/api/v1/users/enhanced', 'staff'],
+    queryFn: async () => {
+      return await apiRequest('/api/v1/users/enhanced?type=staff&pageSize=100');
+    },
   });
 
-  // Fetch users for contact selection (with search)
-  const { data: usersData = {}, isLoading: usersLoading } = useQuery({
-    queryKey: ['users-enhanced', organizationId, userSearch],
-    queryFn: () => api.get(`/api/v1/users/enhanced?search=${encodeURIComponent(userSearch)}&pageSize=50`),
+  // Fetch users for contact selection (with search) - using same pattern as setup route
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/v1/users/enhanced', userSearch, 'customers'],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (userSearch) params.append('q', userSearch);
+      params.append('type', 'customers');
+      params.append('pageSize', '50');
+      return await apiRequest(`/api/v1/users/enhanced?${params.toString()}`);
+    },
     enabled: contactType === "existing" && userSearch.length >= 2,
   });
 
-  const salespeople = salespeopleData?.data?.users || salespeopleData?.data || [];
-  const users = usersData?.data?.users || usersData?.data || [];
+  const salespeople = salespeopleData?.data || [];
+  const users = usersData?.data || [];
 
   // Update form values when user is selected from existing contacts
   useEffect(() => {
@@ -81,6 +91,7 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
       form.setValue("contact_name", selectedUser.fullName || selectedUser.email || "");
       form.setValue("contact_email", selectedUser.email || "");
       form.setValue("contact_phone", selectedUser.phone || "");
+      form.setValue("user_id", selectedUser.id || "");
     }
   }, [selectedUser, contactType, form]);
 
@@ -89,15 +100,19 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
     if (contactType === "new") {
       setSelectedUser(null);
       setUserSearch("");
+      form.setValue("user_id", "");
     }
-  }, [contactType]);
+  }, [contactType, form]);
 
   const updateSportMutation = useMutation({
     mutationFn: async (data: any) => {
-      return api.patch(`/api/v1/organizations/${organizationId}/sports/${sport.id}`, data);
+      return apiRequest(`/api/v1/organizations/${organizationId}/sports/${sport.id}`, {
+        method: 'PATCH',
+        data: data,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations', organizationId, 'sports'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/organizations', organizationId, 'sports'] });
       toast({
         title: "Sport updated successfully!",
         description: `Updated ${sport.name} for this organization`,
@@ -116,7 +131,22 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
   });
 
   const handleSubmit = (data: any) => {
-    updateSportMutation.mutate(data);
+    // Prepare submission data based on contact type
+    const submissionData = {
+      ...data,
+      // Map salesperson "none" to undefined
+      assigned_salesperson_id: data.assigned_salesperson_id === "none" ? undefined : data.assigned_salesperson_id,
+    };
+
+    // If using existing contact, include user_id, otherwise omit it
+    if (contactType === "existing" && selectedUser) {
+      submissionData.user_id = selectedUser.id;
+    } else {
+      // Remove user_id for new contacts
+      delete submissionData.user_id;
+    }
+
+    updateSportMutation.mutate(submissionData);
   };
 
   return (
@@ -137,13 +167,14 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
                 value={contactType} 
                 onValueChange={(value: "new" | "existing") => setContactType(value)}
                 className="flex gap-6"
+                data-testid="radio-contact-type"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="new" id="new" className="border-white/40 text-cyan-400" />
+                  <RadioGroupItem value="new" id="new" className="border-white/40 text-cyan-400" data-testid="radio-contact-new" />
                   <Label htmlFor="new" className="text-white cursor-pointer">Edit Current Contact</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="existing" id="existing" className="border-white/40 text-cyan-400" />
+                  <RadioGroupItem value="existing" id="existing" className="border-white/40 text-cyan-400" data-testid="radio-contact-existing" />
                   <Label htmlFor="existing" className="text-white cursor-pointer">Select Existing User</Label>
                 </div>
               </RadioGroup>
@@ -336,13 +367,15 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
                 onClick={onClose}
                 disabled={updateSportMutation.isPending}
                 className="border-white/20 text-white hover:bg-white/10"
+                data-testid="button-cancel"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={updateSportMutation.isPending}
+                disabled={updateSportMutation.isPending || (contactType === "existing" && !selectedUser)}
                 className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                data-testid="button-update-sport"
               >
                 {updateSportMutation.isPending ? (
                   <>
