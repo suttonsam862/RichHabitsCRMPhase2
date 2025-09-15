@@ -70,23 +70,42 @@ async function createTables() {
     await client`CREATE INDEX IF NOT EXISTS idx_salesperson_assignments_organization ON public.salesperson_assignments(organization_id);`;
     await client`CREATE INDEX IF NOT EXISTS idx_salesperson_metrics_salesperson ON public.salesperson_metrics(salesperson_id);`;
 
-    // Insert sample data if users/organizations tables exist
+    // Insert sample data directly into salesperson tables (without users dependency)
     try {
+      // Insert directly into salesperson_profiles
       await client`
-        INSERT INTO public.users (id, email, full_name, role, organization_id, is_active, created_at, updated_at)
-        VALUES ('sample-sales-001', 'john.sales@example.com', 'John Sales', 'sales', 'global', 1, NOW(), NOW())
+        INSERT INTO public.salesperson_profiles (id, user_id, employee_id, commission_rate, territory, performance_tier, is_active, created_at, updated_at)
+        VALUES 
+          ('profile-001', 'sample-sales-001', 'EMP001', 0.05, 'West Coast', 'gold', true, NOW(), NOW()),
+          ('profile-002', 'sample-sales-002', 'EMP002', 0.06, 'East Coast', 'silver', true, NOW(), NOW())
         ON CONFLICT (id) DO NOTHING;
       `;
 
+      // Insert sample assignments
       await client`
-        INSERT INTO public.salesperson_profiles (id, user_id, employee_id, commission_rate, territory, performance_tier, is_active)
-        VALUES ('profile-001', 'sample-sales-001', 'EMP001', 0.05, 'West Coast', 'gold', true)
+        INSERT INTO public.salesperson_assignments (id, salesperson_id, organization_id, territory, commission_rate, is_active, created_at, updated_at)
+        VALUES 
+          ('assignment-001', 'sample-sales-001', 'org-001', 'West Coast', 0.05, true, NOW(), NOW()),
+          ('assignment-002', 'sample-sales-002', 'org-002', 'East Coast', 0.06, true, NOW(), NOW())
         ON CONFLICT (id) DO NOTHING;
       `;
 
-      console.log('✅ Sample data inserted');
+      // Insert sample metrics for current month
+      const currentDate = new Date();
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+      await client`
+        INSERT INTO public.salesperson_metrics (id, salesperson_id, period_start, period_end, total_sales, total_orders, commission_earned, target_sales, created_at, updated_at)
+        VALUES 
+          ('metrics-001', 'sample-sales-001', ${startOfMonth.toISOString().split('T')[0]}, ${endOfMonth.toISOString().split('T')[0]}, 15000.00, 25, 750.00, 20000.00, NOW(), NOW()),
+          ('metrics-002', 'sample-sales-002', ${startOfMonth.toISOString().split('T')[0]}, ${endOfMonth.toISOString().split('T')[0]}, 12500.00, 18, 750.00, 18000.00, NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING;
+      `;
+
+      console.log('✅ Sample salesperson data inserted successfully');
     } catch (error) {
-      console.log('⚠️ Could not insert sample data (users table may not exist)');
+      console.log('⚠️ Could not insert sample data:', error.message);
     }
 
     console.log('✅ Salesperson tables created successfully!');
