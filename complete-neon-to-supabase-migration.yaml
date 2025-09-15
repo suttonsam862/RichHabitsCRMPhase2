@@ -1,0 +1,266 @@
+
+name: "Complete Neon to Supabase Migration"
+description: "Comprehensive plan to remove all Neon database references and ensure 100% Supabase connectivity"
+
+steps:
+  # STEP 1: Environment Variables - CRITICAL FIRST STEP
+  - name: "Update Environment Variables"
+    priority: "CRITICAL - MUST BE DONE FIRST"
+    description: "Update all environment variables to use Supabase instead of Neon"
+    actions:
+      - action: "Update Replit Secrets"
+        details:
+          - "Go to Replit Secrets (lock icon in sidebar)"
+          - "Update DATABASE_URL from: postgresql://neondb_owner:npg_srbNTqzl0A9c@ep-weathered-surf-afmwxm8p.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require"
+          - "Update DATABASE_URL to: postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
+          - "Ensure VITE_SUPABASE_URL is: https://qkampkccsdiebvkcfuby.supabase.co"
+          - "Ensure VITE_SUPABASE_ANON_KEY is set correctly"
+          - "Ensure SUPABASE_SERVICE_ROLE_KEY is set correctly"
+
+  # STEP 2: Remove Neon Package Dependencies
+  - name: "Remove Neon Dependencies"
+    priority: "HIGH"
+    description: "Remove @neondatabase/serverless package completely"
+    files:
+      - file: "package.json"
+        action: "remove_dependency"
+        target: '"@neondatabase/serverless": "^0.10.4",'
+        reason: "Remove Neon database client package"
+
+  # STEP 3: Fix Server Database Connection
+  - name: "Fix Server Database Connection"
+    priority: "CRITICAL"
+    description: "Ensure server/db.ts uses environment variable instead of hardcoded connection"
+    files:
+      - file: "server/db.ts"
+        action: "replace_content"
+        current_content: |
+          const DATABASE_URL = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+        new_content: |
+          const DATABASE_URL = process.env.DATABASE_URL;
+        reason: "Use environment variable instead of hardcoded connection string"
+
+      - file: "server/db.ts"
+        action: "add_validation"
+        content: |
+          if (!DATABASE_URL) {
+            console.error('❌ DATABASE_URL environment variable is not set');
+            throw new Error('DATABASE_URL environment variable is required');
+          }
+        position: "after_database_url_declaration"
+        reason: "Add proper environment variable validation"
+
+      - file: "server/db.ts"
+        action: "update_connection_logic"
+        current_content: |
+          const connectionString = DATABASE_URL.includes('supabase.co')
+            ? DATABASE_URL.replace('postgresql://', 'postgresql://').replace(/\/[^?]+/, '/postgres')
+            : DATABASE_URL;
+        new_content: |
+          const connectionString = DATABASE_URL;
+        reason: "Simplify connection string - no need for conditional logic since we're always using Supabase"
+
+  # STEP 4: Fix Email Template References
+  - name: "Fix Email Template Function Names"
+    priority: "MEDIUM"
+    description: "Rename neonEmailShell to supabaseEmailShell for consistency"
+    files:
+      - file: "server/lib/email.ts"
+        action: "rename_function"
+        from: "neonEmailShell"
+        to: "supabaseEmailShell"
+        reason: "Remove Neon branding from email templates"
+
+      - file: "server/routes/auth/index.ts"
+        action: "update_import"
+        from: "import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, neonEmailShell, actionButton }"
+        to: "import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, supabaseEmailShell, actionButton }"
+        reason: "Update import to use renamed function"
+
+  # STEP 5: Fix Test Files with Hardcoded Connections
+  - name: "Fix Test and Debug Files"
+    priority: "HIGH"
+    description: "Update all test and debug files to use environment variables"
+    files:
+      - file: "test-db-connection.js"
+        action: "replace_hardcoded_connection"
+        current_content: |
+          const connectionString = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+        new_content: |
+          const connectionString = process.env.DATABASE_URL;
+          if (!connectionString) {
+            console.error('❌ DATABASE_URL environment variable is not set');
+            process.exit(1);
+          }
+        reason: "Use environment variable instead of hardcoded connection"
+
+      - file: "create-salesperson-tables.js"
+        action: "replace_hardcoded_connection"
+        current_content: |
+          const connectionString = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+        new_content: |
+          const connectionString = process.env.DATABASE_URL;
+        reason: "Use environment variable instead of hardcoded connection"
+
+      - file: "debug-salesperson-tables.js"
+        action: "replace_hardcoded_connection"
+        current_content: |
+          const connectionString = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+        new_content: |
+          const connectionString = process.env.DATABASE_URL;
+        reason: "Use environment variable instead of hardcoded connection"
+
+  # STEP 6: Fix Sync Script
+  - name: "Fix User Sync Script"
+    priority: "MEDIUM"
+    description: "Update sync-users-to-supabase.js to use correct variable names"
+    files:
+      - file: "sync-users-to-supabase.js"
+        action: "rename_variables"
+        changes:
+          - from: "const neonUrl = process.env.DATABASE_URL;"
+            to: "const supabaseUrl = process.env.DATABASE_URL;"
+          - from: "const neonPool = new pg.Pool({ connectionString: neonUrl });"
+            to: "const supabasePool = new pg.Pool({ connectionString: supabaseUrl });"
+          - from: "const { rows: neonColumns }"
+            to: "const { rows: supabaseColumns }"
+          - from: "neonColumns.length"
+            to: "supabaseColumns.length"
+          - from: "neonColumns.map"
+            to: "supabaseColumns.map"
+          - from: "await neonPool.end();"
+            to: "await supabasePool.end();"
+        reason: "Remove Neon references from variable names"
+
+  # STEP 7: Fix Database Configuration Checks
+  - name: "Fix Database Configuration Validation"
+    priority: "HIGH"
+    description: "Update validation scripts to expect Supabase URLs"
+    files:
+      - file: "verify-database-config.js"
+        action: "update_validation_logic"
+        changes:
+          - description: "Update error messages to be generic instead of Neon-specific"
+            from: "❌ ERROR: Still using Neon database - this must be changed to Supabase"
+            to: "❌ ERROR: DATABASE_URL must point to Supabase database"
+          - description: "Update next steps messaging"
+            from: "if (dbUrl?.includes('neon.tech')) {"
+            to: "if (!dbUrl?.includes('supabase.co') && !dbUrl?.includes('supabase.com')) {"
+        reason: "Make validation generic and Supabase-focused"
+
+  # STEP 8: Clean Up Distribution Files
+  - name: "Clean Distribution Files"
+    priority: "MEDIUM"
+    description: "Remove built files that may contain old references"
+    actions:
+      - action: "delete_file"
+        file: "dist/index.js"
+        reason: "Remove built file with hardcoded Supabase connection - will be rebuilt"
+
+  # STEP 9: Update All Route Handlers
+  - name: "Verify Route Database Connections"
+    priority: "HIGH"
+    description: "Ensure all route handlers use the centralized database connection"
+    files_to_check:
+      - "server/routes/organizations/index.ts"
+      - "server/routes/sales/index.ts"
+      - "server/routes/sales/dashboard.ts"
+      - "server/routes/users/index.ts"
+      - "server/routes/users/admin.ts"
+      - "server/routes/users/comprehensive.ts"
+      - "server/routes/catalog/index.ts"
+      - "server/routes/designers/index.ts"
+      - "server/routes/manufacturers/index.ts"
+      - "server/routes/orders/index.ts"
+    validation: |
+      Ensure all files import database connection from '../../../db' or '../../db' 
+      and do NOT create their own database connections.
+      All should use: import { db } from '../../db';
+
+  # STEP 10: Update Client-Side Configuration
+  - name: "Verify Client Supabase Configuration"
+    priority: "HIGH"
+    description: "Ensure client-side code uses correct Supabase configuration"
+    files:
+      - file: "client/src/lib/supabase.ts"
+        validation: |
+          Ensure it uses:
+          - process.env.VITE_SUPABASE_URL
+          - process.env.VITE_SUPABASE_ANON_KEY
+          And NOT any hardcoded URLs
+
+      - file: "lib/supabase.ts"
+        validation: |
+          Ensure server-side Supabase client uses:
+          - process.env.SUPABASE_URL or process.env.VITE_SUPABASE_URL
+          - process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  # STEP 11: Database Schema Verification
+  - name: "Verify Database Schema Sync"
+    priority: "CRITICAL"
+    description: "Ensure all required tables exist in Supabase"
+    actions:
+      - action: "run_script"
+        command: "npm run db:push"
+        reason: "Push current schema to Supabase database"
+      
+      - action: "run_script"
+        command: "node create-salesperson-tables.js"
+        reason: "Ensure salesperson tables exist in Supabase"
+      
+      - action: "run_script"
+        command: "npm run verify"
+        reason: "Run verification scripts to ensure schema is correct"
+
+  # STEP 12: Clean Up Package Lock
+  - name: "Clean Package Dependencies"
+    priority: "MEDIUM"
+    description: "Remove Neon references from package-lock.json"
+    actions:
+      - action: "run_command"
+        command: "rm package-lock.json && npm install"
+        reason: "Regenerate package-lock.json without Neon dependencies"
+
+# POST-MIGRATION VERIFICATION CHECKLIST
+verification_steps:
+  - name: "Environment Check"
+    command: "node verify-database-config.js"
+    expected: "✅ Using Supabase database"
+  
+  - name: "Database Connection Test"
+    command: "node test-db-connection.js"
+    expected: "✅ Database connection successful"
+  
+  - name: "Server Start Test"
+    command: "npm run dev"
+    expected: "Server starts without DATABASE_URL errors"
+  
+  - name: "Organizations Page Test"
+    action: "Visit /organizations page"
+    expected: "Page loads with data from Supabase"
+  
+  - name: "Sales Dashboard Test"
+    action: "Visit /sales page"
+    expected: "Page loads with salesperson data from Supabase"
+  
+  - name: "Schema Verification"
+    command: "npm run db:schema:dump"
+    expected: "Schema dump shows all tables in Supabase"
+
+# CRITICAL SUCCESS CRITERIA
+success_criteria:
+  - "No references to 'neon' in any active code files"
+  - "All database connections use process.env.DATABASE_URL"
+  - "DATABASE_URL environment variable points to Supabase"
+  - "All pages (organizations, sales, users, etc.) load successfully"
+  - "Database operations work across all features"
+  - "No hardcoded database connection strings in any files"
+
+# ROLLBACK PLAN
+rollback:
+  description: "If migration fails, these are the critical rollback steps"
+  steps:
+    - "Restore DATABASE_URL environment variable to original Neon URL"
+    - "Restore package.json to include @neondatabase/serverless"
+    - "Run npm install to restore dependencies"
+    - "Restart application"
