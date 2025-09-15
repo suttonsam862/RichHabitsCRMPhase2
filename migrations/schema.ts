@@ -1,4 +1,4 @@
-import { pgTable, index, pgPolicy, varchar, text, jsonb, timestamp, boolean, unique, uuid, integer, foreignKey, numeric, bigserial, date, check, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, foreignKey, pgPolicy, uuid, text, integer, timestamp, jsonb, varchar, boolean, numeric, date, bigserial, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const orderItemStatus = pgEnum("order_item_status", ['pending', 'design', 'approved', 'manufacturing', 'shipped', 'done'])
@@ -6,52 +6,107 @@ export const orderStatus = pgEnum("order_status", ['consultation', 'design', 'ma
 export const sizeEnum = pgEnum("size_enum", ['YS', 'YM', 'YL', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'])
 
 
+export const users = pgTable("users", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	email: text().notNull(),
+	passwordHash: text("password_hash"),
+	fullName: text("full_name").notNull(),
+	phone: text(),
+	role: text().default('customer').notNull(),
+	avatarUrl: text("avatar_url"),
+	isActive: integer("is_active").default(1).notNull(),
+	organizationId: uuid("organization_id"),
+	addressLine1: text("address_line1"),
+	addressLine2: text("address_line2"),
+	city: text(),
+	state: text(),
+	postalCode: text("postal_code"),
+	country: text().default('US'),
+	lastLogin: timestamp("last_login", { mode: 'string' }),
+	passwordResetToken: text("password_reset_token"),
+	passwordResetExpires: timestamp("password_reset_expires", { mode: 'string' }),
+	emailVerified: integer("email_verified").default(0),
+	notes: text(),
+	createdBy: uuid("created_by"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+	initialTempPassword: text("initial_temp_password"),
+	subrole: text(),
+	jobTitle: text("job_title"),
+	department: text(),
+	hireDate: timestamp("hire_date", { mode: 'string' }),
+	permissions: jsonb().default({}),
+	pageAccess: jsonb("page_access").default({}),
+}, (table) => [
+	foreignKey({
+			columns: [table.createdBy],
+			foreignColumns: [table.id],
+			name: "users_created_by_fkey"
+		}).onDelete("set null"),
+	pgPolicy("users_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
 export const organizations = pgTable("organizations", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar().primaryKey().notNull(),
 	name: text().notNull(),
 	logoUrl: text("logo_url"),
 	state: text(),
 	address: text(),
 	phone: text(),
 	email: text(),
-	universalDiscounts: jsonb("universal_discounts").default({}).notNull(),
+	universalDiscounts: jsonb("universal_discounts").notNull(),
 	notes: text(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	isBusiness: boolean("is_business").default(false),
+	isBusiness: boolean("is_business"),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	titleCardUrl: text("title_card_url"),
 	brandPrimary: text("brand_primary"),
 	brandSecondary: text("brand_secondary"),
-	status: text().default('active').notNull(),
-	colorPalette: jsonb("color_palette").default([]),
-	tags: text().array().default([""]).notNull(),
-	isArchived: boolean("is_archived").default(false).notNull(),
+	status: text().notNull(),
+	colorPalette: jsonb("color_palette"),
+	tags: text().array().notNull(),
+	isArchived: boolean("is_archived").notNull(),
 	gradientCss: text("gradient_css"),
 	zip: text(),
 	financeEmail: text("finance_email"),
 	taxExemptDocKey: text("tax_exempt_doc_key"),
-	setupComplete: boolean("setup_complete").default(false).notNull(),
+	setupComplete: boolean("setup_complete").notNull(),
 	setupCompletedAt: timestamp("setup_completed_at", { withTimezone: true, mode: 'string' }),
 	tertiaryColor: text("tertiary_color"),
+	city: text(),
+	website: text(),
+	createdBy: uuid("created_by"),
 }, (table) => [
-	index("idx_orgs_archived").using("btree", table.isArchived.asc().nullsLast().op("bool_ops")),
-	index("idx_orgs_name").using("btree", table.name.asc().nullsLast().op("text_ops")),
-	index("idx_orgs_state").using("btree", table.state.asc().nullsLast().op("text_ops")),
-	index("idx_orgs_tags_gin").using("gin", table.tags.asc().nullsLast().op("array_ops")),
-	index("idx_orgs_tertiary_color").using("btree", table.tertiaryColor.asc().nullsLast().op("text_ops")).where(sql`(tertiary_color IS NOT NULL)`),
-	pgPolicy("org_select", { as: "permissive", for: "select", to: ["authenticated"], using: sql`is_org_member((auth.uid())::text, (id)::text)` }),
-	pgPolicy("organizations_update", { as: "permissive", for: "update", to: ["authenticated"] }),
-	pgPolicy("organizations_delete", { as: "permissive", for: "delete", to: ["authenticated"] }),
+	pgPolicy("organizations_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const userRoles = pgTable("user_roles", {
+	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	userId: uuid("user_id"),
+	orgId: varchar("org_id").notNull(),
+	roleId: varchar("role_id").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	organizationId: varchar("organization_id"),
+	assignedBy: varchar("assigned_by"),
+	assignedAt: timestamp("assigned_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "user_roles_user_id_fkey"
+		}).onDelete("cascade"),
+	pgPolicy("user_roles_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
 export const orgSports = pgTable("org_sports", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar().primaryKey().notNull(),
 	organizationId: varchar("organization_id").notNull(),
 	sportId: varchar("sport_id").notNull(),
-	contactName: text("contact_name").notNull(),
-	contactEmail: text("contact_email").notNull(),
+	contactName: text("contact_name"),
+	contactEmail: text("contact_email"),
 	contactPhone: text("contact_phone"),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	createdAt: timestamp("created_at", { mode: 'string' }),
 	contactUserId: uuid("contact_user_id"),
 	shipAddressLine1: text("ship_address_line1"),
 	shipAddressLine2: text("ship_address_line2"),
@@ -59,48 +114,16 @@ export const orgSports = pgTable("org_sports", {
 	shipState: text("ship_state"),
 	shipPostalCode: text("ship_postal_code"),
 	shipCountry: text("ship_country"),
-	isPrimaryContact: integer("is_primary_contact").default(0).notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+	isPrimaryContact: integer("is_primary_contact"),
+	updatedAt: timestamp("updated_at", { mode: 'string' }),
+	assignedSalespersonId: varchar("assigned_salesperson_id"),
+	teamName: text("team_name"),
 }, (table) => [
-	index("idx_org_sports_contact_user").using("btree", table.contactUserId.asc().nullsLast().op("uuid_ops")),
-	unique("org_sports_organization_id_sport_id_key").on(table.organizationId, table.sportId),
-	pgPolicy("org_sports_insert_policy", { as: "permissive", for: "insert", to: ["authenticated"], withCheck: sql`true`  }),
-	pgPolicy("org_sports_update_policy", { as: "permissive", for: "update", to: ["authenticated"] }),
-	pgPolicy("org_sports_insert", { as: "permissive", for: "insert", to: ["authenticated"] }),
-	pgPolicy("org_sports_select", { as: "permissive", for: "select", to: ["authenticated"] }),
-	pgPolicy("org_sports_update", { as: "permissive", for: "update", to: ["authenticated"] }),
-	pgPolicy("org_sports_delete", { as: "permissive", for: "delete", to: ["authenticated"] }),
-]);
-
-export const sports = pgTable("sports", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
-	name: text().notNull(),
-	description: text(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
-});
-
-export const userRoles = pgTable("user_roles", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
-	userId: varchar("user_id"),
-	orgId: varchar("org_id").notNull(),
-	roleId: varchar("role_id").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("idx_user_roles_org_user").using("btree", table.orgId.asc().nullsLast().op("text_ops"), table.userId.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.orgId],
-			foreignColumns: [organizations.id],
-			name: "user_roles_org_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.roleId],
-			foreignColumns: [roles.id],
-			name: "user_roles_role_id_fkey"
-		}).onDelete("cascade"),
+	pgPolicy("org_sports_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
 export const orders = pgTable("orders", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar().primaryKey().notNull(),
 	organizationId: varchar("organization_id").notNull(),
 	orderNumber: text("order_number").notNull(),
 	customerName: text("customer_name").notNull(),
@@ -110,156 +133,18 @@ export const orders = pgTable("orders", {
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 	statusCode: text("status_code"),
+	salespersonId: varchar("salesperson_id"),
+	sportId: varchar("sport_id"),
+	teamName: text("team_name"),
 }, (table) => [
-	index("idx_orders_customer_id").using("btree", table.customerName.asc().nullsLast().op("text_ops")),
-	index("idx_orders_org_id").using("btree", table.organizationId.asc().nullsLast().op("text_ops")),
-	index("idx_orders_organization_id").using("btree", table.organizationId.asc().nullsLast().op("text_ops")),
-	index("idx_orders_status_code").using("btree", table.statusCode.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.statusCode],
-			foreignColumns: [statusOrders.code],
-			name: "orders_status_code_fkey"
-		}),
+	pgPolicy("orders_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
-export const auditLogs = pgTable("audit_logs", {
-	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
-	occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	actor: uuid(),
-	orgId: uuid("org_id"),
-	entity: text(),
-	entityId: uuid("entity_id"),
-	action: text(),
-	before: jsonb(),
-	after: jsonb(),
-});
-
-export const categories = pgTable("categories", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
+export const sports = pgTable("sports", {
+	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
 	name: text().notNull(),
-});
-
-export const accountingInvoices = pgTable("accounting_invoices", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	orderId: uuid("order_id"),
-	qbInvoiceId: text("qb_invoice_id"),
-	subtotal: numeric({ precision: 12, scale:  2 }),
-	tax: numeric({ precision: 12, scale:  2 }),
-	total: numeric({ precision: 12, scale:  2 }),
-	status: text(),
-});
-
-export const customers = pgTable("customers", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	name: text().notNull(),
-	email: text(),
-	phone: text(),
-	addressLine1: text("address_line1"),
-	addressLine2: text("address_line2"),
-	city: text(),
-	state: text(),
-	postalCode: text("postal_code"),
-	country: text(),
-	notes: text(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-});
-
-export const catalogItemImages = pgTable("catalog_item_images", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	catalogItemId: uuid("catalog_item_id").notNull(),
-	url: text().notNull(),
-	position: integer().default(1),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
-
-export const designAssets = pgTable("design_assets", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	orderItemId: uuid("order_item_id"),
-	uploaderId: uuid("uploader_id"),
-	version: integer(),
-	fileUrl: text("file_url"),
-	thumbnailUrl: text("thumbnail_url"),
-	approvedByAdmin: boolean("approved_by_admin").default(false),
-	approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }),
-	signatureFileUrl: text("signature_file_url"),
-	signatureHash: text("signature_hash"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	storageObjectId: uuid("storage_object_id"),
-});
-
-export const accountingPayments = pgTable("accounting_payments", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	orderId: uuid("order_id"),
-	qbPaymentId: text("qb_payment_id"),
-	amount: numeric({ precision: 12, scale:  2 }),
-	date: date(),
-});
-
-export const catalogItems = pgTable("catalog_items", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	name: text().notNull(),
-	sportId: uuid("sport_id"),
-	categoryId: uuid("category_id"),
-	basePrice: numeric("base_price", { precision: 10, scale:  2 }),
-	turnaroundDays: integer("turnaround_days"),
-	preferredManufacturerIds: uuid("preferred_manufacturer_ids").array(),
-	fabric: text(),
-	buildInstructions: text("build_instructions"),
-	moq: integer(),
-	embellishmentsJson: jsonb("embellishments_json"),
-	colorwaysJson: jsonb("colorways_json"),
-	care: text(),
-	imageUrls: text("image_urls").array(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-});
-
-export const commissions = pgTable("commissions", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	orderId: uuid("order_id"),
-	salespersonUserId: uuid("salesperson_user_id"),
-	profitAmount: numeric("profit_amount", { precision: 12, scale:  2 }),
-	rate: numeric({ precision: 5, scale:  4 }),
-	commissionAmount: numeric("commission_amount", { precision: 12, scale:  2 }),
-	status: text(),
-	paidAt: date("paid_at"),
-}, (table) => [
-	check("commissions_rate_0_1", sql`(rate IS NULL) OR ((rate >= (0)::numeric) AND (rate <= (1)::numeric))`),
-]);
-
-export const designJobEvents = pgTable("design_job_events", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	designJobId: uuid("design_job_id").notNull(),
-	eventCode: text("event_code").notNull(),
-	actorUserId: uuid("actor_user_id"),
-	payload: jsonb(),
-	occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
-
-export const designJobs = pgTable("design_jobs", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id").notNull(),
-	orderItemId: uuid("order_item_id").notNull(),
-	title: text(),
-	brief: text(),
-	priority: integer().default(3),
-	statusCode: text("status_code"),
-	assigneeDesignerId: uuid("assignee_designer_id"),
-	createdByUserId: uuid("created_by_user_id"),
-	firstDraftDueAt: timestamp("first_draft_due_at", { withTimezone: true, mode: 'string' }),
-	dueAt: timestamp("due_at", { withTimezone: true, mode: 'string' }),
-	approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }),
-	canceledAt: timestamp("canceled_at", { withTimezone: true, mode: 'string' }),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	description: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
 });
 
 export const orderItems = pgTable("order_items", {
@@ -278,38 +163,88 @@ export const orderItems = pgTable("order_items", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 }, (table) => [
-	index("idx_order_items_order").using("btree", table.orderId.asc().nullsLast().op("uuid_ops")),
-	index("idx_order_items_org").using("btree", table.orgId.asc().nullsLast().op("uuid_ops")),
-	index("idx_order_items_status").using("btree", table.statusCode.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.statusCode],
-			foreignColumns: [statusOrderItems.code],
-			name: "order_items_status_code_fkey"
-		}),
+	pgPolicy("order_items_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
-export const permissions = pgTable("permissions", {
+export const categories = pgTable("categories", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	key: text().notNull(),
-	description: text(),
-}, (table) => [
-	unique("permissions_key_key").on(table.key),
-]);
+	name: text().notNull(),
+});
 
-export const manufacturingWorkOrders = pgTable("manufacturing_work_orders", {
+export const commissions = pgTable("commissions", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id").notNull(),
-	orderId: uuid("order_id").notNull(),
-	manufacturerId: uuid("manufacturer_id").notNull(),
-	statusCode: text("status_code"),
-	poNumber: text("po_number"),
-	plannedStartDate: date("planned_start_date"),
-	plannedDueDate: date("planned_due_date"),
-	actualStartAt: timestamp("actual_start_at", { withTimezone: true, mode: 'string' }),
-	actualEndAt: timestamp("actual_end_at", { withTimezone: true, mode: 'string' }),
-	notes: text(),
+	orgId: uuid("org_id"),
+	orderId: uuid("order_id"),
+	salespersonUserId: uuid("salesperson_user_id"),
+	profitAmount: numeric("profit_amount", { precision: 12, scale:  2 }),
+	rate: numeric({ precision: 5, scale:  4 }),
+	commissionAmount: numeric("commission_amount", { precision: 12, scale:  2 }),
+	status: text(),
+	paidAt: date("paid_at"),
+});
+
+export const accountingInvoices = pgTable("accounting_invoices", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id"),
+	orderId: uuid("order_id"),
+	qbInvoiceId: text("qb_invoice_id"),
+	subtotal: numeric({ precision: 12, scale:  2 }),
+	tax: numeric({ precision: 12, scale:  2 }),
+	total: numeric({ precision: 12, scale:  2 }),
+	status: text(),
+});
+
+export const catalogItemImages = pgTable("catalog_item_images", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	catalogItemId: uuid("catalog_item_id").notNull(),
+	url: text().notNull(),
+	position: integer().default(1),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const catalogItemManufacturers = pgTable("catalog_item_manufacturers", {
+	catalogItemId: uuid("catalog_item_id").notNull(),
+	manufacturerId: uuid("manufacturer_id").notNull(),
+});
+
+export const rolePermissions = pgTable("role_permissions", {
+	roleId: uuid("role_id").notNull(),
+	permissionId: uuid("permission_id").notNull(),
+}, (table) => [
+	pgPolicy("role_permissions_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const auditLogs = pgTable("audit_logs", {
+	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
+	occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	actor: uuid(),
+	orgId: uuid("org_id"),
+	entity: text(),
+	entityId: uuid("entity_id"),
+	action: text(),
+	before: jsonb(),
+	after: jsonb(),
+}, (table) => [
+	pgPolicy("audit_logs_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const accountingPayments = pgTable("accounting_payments", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id"),
+	orderId: uuid("order_id"),
+	qbPaymentId: text("qb_payment_id"),
+	amount: numeric({ precision: 12, scale:  2 }),
+	date: date(),
+});
+
+export const designJobEvents = pgTable("design_job_events", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	designJobId: uuid("design_job_id").notNull(),
+	eventCode: text("event_code").notNull(),
+	actorUserId: uuid("actor_user_id"),
+	payload: jsonb(),
+	occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 });
 
 export const orderEvents = pgTable("order_events", {
@@ -322,13 +257,6 @@ export const orderEvents = pgTable("order_events", {
 	toStatus: text("to_status"),
 	payload: jsonb(),
 	occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
-
-export const designers = pgTable("designers", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	userId: uuid("user_id"),
-	payRatePerDesign: numeric("pay_rate_per_design", { precision: 10, scale:  2 }),
 });
 
 export const productionEvents = pgTable("production_events", {
@@ -378,25 +306,11 @@ export const statusOrderItems = pgTable("status_order_items", {
 	isTerminal: boolean("is_terminal").default(false).notNull(),
 });
 
-export const manufacturers = pgTable("manufacturers", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	orgId: uuid("org_id"),
-	name: text(),
-	specialtiesJson: jsonb("specialties_json"),
-	wireInfoJson: jsonb("wire_info_json"),
-	contactEmail: text("contact_email"),
-	notes: text(),
-});
-
-export const roles = pgTable("roles", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
-	slug: text().notNull(),
-	name: text().notNull(),
-	description: text(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+export const organizationFavorites = pgTable("organization_favorites", {
+	userId: uuid("user_id").notNull(),
+	orgId: varchar("org_id").notNull(),
 }, (table) => [
-	unique("roles_slug_unique").on(table.slug),
-	unique("roles_name_key").on(table.name),
+	pgPolicy("organization_favorites_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
 export const organizationMetrics = pgTable("organization_metrics", {
@@ -413,75 +327,206 @@ export const organizationMetrics = pgTable("organization_metrics", {
 	lastUpdated: timestamp("last_updated", { mode: 'string' }).defaultNow().notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	index("idx_org_metrics_org_id").using("btree", table.organizationId.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.organizationId],
-			foreignColumns: [organizations.id],
-			name: "organization_metrics_organization_id_fkey"
-		}),
+	pgPolicy("organization_metrics_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
-export const users = pgTable("users", {
+export const roles = pgTable("roles", {
 	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
-	email: text().notNull(),
-	passwordHash: text("password_hash"),
-	fullName: text("full_name").notNull(),
+	slug: text().notNull(),
+	name: text().notNull(),
+	description: text(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("roles_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const customers = pgTable("customers", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id"),
+	name: text().notNull(),
+	email: text(),
 	phone: text(),
-	role: text().default('customer').notNull(),
-	avatarUrl: text("avatar_url"),
-	isActive: integer("is_active").default(1).notNull(),
-	organizationId: varchar("organization_id"),
 	addressLine1: text("address_line1"),
 	addressLine2: text("address_line2"),
 	city: text(),
 	state: text(),
 	postalCode: text("postal_code"),
-	country: text().default('US'),
-	lastLogin: timestamp("last_login", { mode: 'string' }),
-	passwordResetToken: text("password_reset_token"),
-	passwordResetExpires: timestamp("password_reset_expires", { mode: 'string' }),
-	emailVerified: integer("email_verified").default(0),
+	country: text(),
 	notes: text(),
-	createdBy: varchar("created_by"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	pgPolicy("customers_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const designJobs = pgTable("design_jobs", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id").notNull(),
+	orderItemId: uuid("order_item_id").notNull(),
+	title: text(),
+	brief: text(),
+	priority: integer().default(3),
+	statusCode: text("status_code"),
+	assigneeDesignerId: uuid("assignee_designer_id"),
+	createdByUserId: uuid("created_by_user_id"),
+	firstDraftDueAt: timestamp("first_draft_due_at", { withTimezone: true, mode: 'string' }),
+	dueAt: timestamp("due_at", { withTimezone: true, mode: 'string' }),
+	approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }),
+	canceledAt: timestamp("canceled_at", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("design_jobs_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const designAssets = pgTable("design_assets", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id"),
+	orderItemId: uuid("order_item_id"),
+	uploaderId: uuid("uploader_id"),
+	version: integer(),
+	fileUrl: text("file_url"),
+	thumbnailUrl: text("thumbnail_url"),
+	approvedByAdmin: boolean("approved_by_admin").default(false),
+	approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }),
+	signatureFileUrl: text("signature_file_url"),
+	signatureHash: text("signature_hash"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	storageObjectId: uuid("storage_object_id"),
+}, (table) => [
+	pgPolicy("design_assets_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const manufacturingWorkOrders = pgTable("manufacturing_work_orders", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id").notNull(),
+	orderId: uuid("order_id").notNull(),
+	manufacturerId: uuid("manufacturer_id").notNull(),
+	statusCode: text("status_code"),
+	poNumber: text("po_number"),
+	plannedStartDate: date("planned_start_date"),
+	plannedDueDate: date("planned_due_date"),
+	actualStartAt: timestamp("actual_start_at", { withTimezone: true, mode: 'string' }),
+	actualEndAt: timestamp("actual_end_at", { withTimezone: true, mode: 'string' }),
+	notes: text(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("manufacturing_work_orders_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const catalogItems = pgTable("catalog_items", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id"),
+	name: text().notNull(),
+	sportId: uuid("sport_id"),
+	categoryId: uuid("category_id"),
+	basePrice: numeric("base_price", { precision: 10, scale:  2 }),
+	turnaroundDays: integer("turnaround_days"),
+	preferredManufacturerIds: uuid("preferred_manufacturer_ids").array(),
+	fabric: text(),
+	buildInstructions: text("build_instructions"),
+	moq: integer(),
+	embellishmentsJson: jsonb("embellishments_json"),
+	colorwaysJson: jsonb("colorways_json"),
+	care: text(),
+	imageUrls: text("image_urls").array(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	pgPolicy("catalog_items_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const designers = pgTable("designers", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id"),
+	userId: uuid("user_id"),
+	payRatePerDesign: numeric("pay_rate_per_design", { precision: 10, scale:  2 }),
+}, (table) => [
+	pgPolicy("designers_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const manufacturers = pgTable("manufacturers", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	orgId: uuid("org_id"),
+	name: text(),
+	specialtiesJson: jsonb("specialties_json"),
+	wireInfoJson: jsonb("wire_info_json"),
+	contactEmail: text("contact_email"),
+	notes: text(),
+}, (table) => [
+	pgPolicy("manufacturers_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
+]);
+
+export const salespersonProfiles = pgTable("salesperson_profiles", {
+	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	userId: uuid("user_id").notNull(),
+	employeeId: text("employee_id"),
+	taxId: text("tax_id"),
+	commissionRate: integer("commission_rate").default(0),
+	territory: text(),
+	hireDate: timestamp("hire_date", { mode: 'string' }),
+	managerId: varchar("manager_id"),
+	performanceTier: text("performance_tier").default('standard'),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	foreignKey({
-			columns: [table.organizationId],
-			foreignColumns: [organizations.id],
-			name: "users_organization_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.createdBy],
-			foreignColumns: [table.id],
-			name: "users_created_by_fkey"
-		}),
-	unique("users_email_key").on(table.email),
+	pgPolicy("salesperson_profiles_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
-export const catalogItemManufacturers = pgTable("catalog_item_manufacturers", {
-	catalogItemId: uuid("catalog_item_id").notNull(),
-	manufacturerId: uuid("manufacturer_id").notNull(),
+export const salespersonAssignments = pgTable("salesperson_assignments", {
+	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	salespersonId: varchar("salesperson_id").notNull(),
+	organizationId: varchar("organization_id").notNull(),
+	sportId: varchar("sport_id").notNull(),
+	teamName: text("team_name").notNull(),
+	assignedBy: varchar("assigned_by"),
+	assignedAt: timestamp("assigned_at", { mode: 'string' }).defaultNow().notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	notes: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	primaryKey({ columns: [table.catalogItemId, table.manufacturerId], name: "catalog_item_manufacturers_pkey"}),
+	pgPolicy("salesperson_assignments_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
-export const rolePermissions = pgTable("role_permissions", {
-	roleId: uuid("role_id").notNull(),
-	permissionId: uuid("permission_id").notNull(),
+export const salespersonMetrics = pgTable("salesperson_metrics", {
+	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
+	salespersonId: varchar("salesperson_id").notNull(),
+	periodStart: timestamp("period_start", { mode: 'string' }).notNull(),
+	periodEnd: timestamp("period_end", { mode: 'string' }).notNull(),
+	totalSales: integer("total_sales").default(0),
+	ordersCount: integer("orders_count").default(0),
+	conversionRate: integer("conversion_rate").default(0),
+	averageDealSize: integer("average_deal_size").default(0),
+	commissionEarned: integer("commission_earned").default(0),
+	activeAssignments: integer("active_assignments").default(0),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	primaryKey({ columns: [table.roleId, table.permissionId], name: "role_permissions_pkey"}),
+	pgPolicy("salesperson_metrics_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
-export const organizationFavorites = pgTable("organization_favorites", {
-	userId: varchar("user_id").notNull(),
-	orgId: varchar("org_id").notNull(),
+export const permissions = pgTable("permissions", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	key: text().notNull(),
+	description: text(),
+	category: text().default('general').notNull(),
+	action: text().default('read').notNull(),
+	resource: text(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 }, (table) => [
-	index("idx_org_favorites_user").using("btree", table.userId.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.orgId],
-			foreignColumns: [organizations.id],
-			name: "organization_favorites_org_id_fkey"
-		}).onDelete("cascade"),
-	primaryKey({ columns: [table.userId, table.orgId], name: "organization_favorites_pkey"}),
+	pgPolicy("permissions_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
+
+export const permissionTemplates = pgTable("permission_templates", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	templateType: varchar("template_type", { length: 50 }).default('custom'),
+	permissions: jsonb().default({}),
+	pageAccess: jsonb("page_access").default({}),
+	isActive: boolean("is_active").default(true),
+	createdBy: uuid("created_by"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
+});

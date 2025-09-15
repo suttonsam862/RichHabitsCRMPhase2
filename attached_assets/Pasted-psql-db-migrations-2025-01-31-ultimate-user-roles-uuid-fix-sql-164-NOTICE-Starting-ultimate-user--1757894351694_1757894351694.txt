@@ -1,0 +1,108 @@
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Starting ultimate user_roles.user_id UUID conversion
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Backed up valid data to temporary table
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: user_roles_allow_alls on table user_roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_insert_policys on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_update_policys on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_inserts on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_selects on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_updates on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_sports_deletes on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: org_selects on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: organizations_updates on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: organizations_deletes on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Dropped policy: users_authenticated_accesss on table userss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table user_roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table orderss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table order_itemss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table userss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table salesperson_profiless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table salesperson_assignmentss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table salesperson_metricss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table organization_favoritess
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table organization_metricss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table permissionss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table role_permissionss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table audit_logss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table customerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table design_jobss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table design_assetss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table manufacturing_work_orderss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table catalog_itemss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table designerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Disabled RLS on table manufacturerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Successfully converted user_roles.user_id to UUID
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Restored data from backup
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table user_roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table org_sportss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table organizationss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table orderss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table order_itemss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table userss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table salesperson_profiless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table salesperson_assignmentss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table salesperson_metricss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table organization_favoritess
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table organization_metricss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table roless
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table permissionss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table role_permissionss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table audit_logss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table customerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table design_jobss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table design_assetss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table manufacturing_work_orderss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table catalog_itemss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table designerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Re-enabled RLS with permissive policy for table manufacturerss
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Recreated user_roles -> users FK constraint
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Cleaned up temporary backup table
+psql:db/migrations/2025_01_31_ultimate_user_roles_uuid_fix.sql:164: NOTICE:  Ultimate user_roles UUID conversion completed successfully
+DO
+NOTIFY
