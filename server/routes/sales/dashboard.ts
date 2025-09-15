@@ -31,44 +31,94 @@ router.get('/dashboard', async (req, res) => {
       });
     }
 
-    // Get overview metrics with safe queries - using public schema explicitly
-    const [totalSalespeopleResult] = await db.execute(sql`
-      SELECT COUNT(*) as count 
-      FROM public.salesperson_profiles 
-      WHERE is_active = true
-    `);
+    // Get overview metrics with safe queries - try both schema approaches
+    let totalSalespeopleResult, activeAssignmentsResult, ordersResult, topPerformersResult;
 
-    const [activeAssignmentsResult] = await db.execute(sql`
-      SELECT COUNT(*) as count 
-      FROM public.salesperson_assignments 
-      WHERE is_active = true
-    `);
+    try {
+      // First try with explicit public schema
+      [totalSalespeopleResult] = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM public.salesperson_profiles 
+        WHERE is_active = true
+      `);
+    } catch (publicError) {
+      console.log('❌ Public schema failed, trying without schema prefix:', publicError.message);
+      // Try without schema prefix
+      [totalSalespeopleResult] = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM salesperson_profiles 
+        WHERE is_active = true
+      `);
+    }
 
-    const [ordersResult] = await db.execute(sql`
-      SELECT 
-        COUNT(*) as total_orders,
-        COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
-      FROM public.orders 
-      WHERE created_at >= NOW() - INTERVAL '${period} days'
-    `);
+    try {
+      [activeAssignmentsResult] = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM public.salesperson_assignments 
+        WHERE is_active = true
+      `);
+    } catch (publicError) {
+      [activeAssignmentsResult] = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM salesperson_assignments 
+        WHERE is_active = true
+      `);
+    }
+
+    try {
+      [ordersResult] = await db.execute(sql`
+        SELECT 
+          COUNT(*) as total_orders,
+          COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
+        FROM public.orders 
+        WHERE created_at >= NOW() - INTERVAL '${period} days'
+      `);
+    } catch (publicError) {
+      [ordersResult] = await db.execute(sql`
+        SELECT 
+          COUNT(*) as total_orders,
+          COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
+        FROM orders 
+        WHERE created_at >= NOW() - INTERVAL '${period} days'
+      `);
+    }
 
     // Get top performers
-    const topPerformersResult = await db.execute(sql`
-      SELECT 
-        u.id as salesperson_id,
-        u.full_name,
-        COALESCE(COUNT(o.id), 0) as orders_count,
-        COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
-        COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * 0.05, 0) as commission_earned
-      FROM public.users u
-      INNER JOIN public.salesperson_profiles sp ON u.id = sp.user_id
-      LEFT JOIN public.orders o ON u.id = o.salesperson_id 
-        AND o.created_at >= NOW() - INTERVAL '${period} days'
-      WHERE sp.is_active = true
-      GROUP BY u.id, u.full_name
-      ORDER BY total_sales DESC, orders_count DESC
-      LIMIT 10
-    `);
+    try {
+      topPerformersResult = await db.execute(sql`
+        SELECT 
+          u.id as salesperson_id,
+          u.full_name,
+          COALESCE(COUNT(o.id), 0) as orders_count,
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * 0.05, 0) as commission_earned
+        FROM public.users u
+        INNER JOIN public.salesperson_profiles sp ON u.id = sp.user_id
+        LEFT JOIN public.orders o ON u.id = o.salesperson_id 
+          AND o.created_at >= NOW() - INTERVAL '${period} days'
+        WHERE sp.is_active = true
+        GROUP BY u.id, u.full_name
+        ORDER BY total_sales DESC, orders_count DESC
+        LIMIT 10
+      `);
+    } catch (publicError) {
+      topPerformersResult = await db.execute(sql`
+        SELECT 
+          u.id as salesperson_id,
+          u.full_name,
+          COALESCE(COUNT(o.id), 0) as orders_count,
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * 0.05, 0) as commission_earned
+        FROM users u
+        INNER JOIN salesperson_profiles sp ON u.id = sp.user_id
+        LEFT JOIN orders o ON u.id = o.salesperson_id 
+          AND o.created_at >= NOW() - INTERVAL '${period} days'
+        WHERE sp.is_active = true
+        GROUP BY u.id, u.full_name
+        ORDER BY total_sales DESC, orders_count DESC
+        LIMIT 10
+      `);
+    }
 
     const overview = {
       total_salespeople: parseInt(totalSalespeopleResult[0]?.count || '0'),
