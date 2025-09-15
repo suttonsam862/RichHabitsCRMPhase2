@@ -40,4 +40,23 @@ r.post('/rls/selftest', async (req: any, res) => {
   }
 });
 
+// GET /api/v1/admin/schema/tables - list database tables
+r.get('/tables', async (req: any, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .order('table_name');
+    
+    if (error) {
+      return sendErr(res, 'BAD_REQUEST', 'Failed to list tables', error, 500);
+    }
+    
+    return sendOk(res, { tables: data?.map(t => t.table_name) || [] });
+  } catch (err: any) {
+    return sendErr(res, 'INTERNAL_ERROR', 'Schema tables error', err.message, 500);
+  }
+});
+
 export default r;
