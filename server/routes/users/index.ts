@@ -294,6 +294,13 @@ router.post('/',
     const validatedData = req.body;
 
     try {
+      // Log the data being sent for debugging
+      console.log('Creating user with data:', {
+        email: validatedData.email,
+        phone: validatedData.phone,
+        fullName: validatedData.fullName
+      });
+
       // Create user using Supabase Auth
       const { data: newUser, error } = await supabaseAdmin.auth.admin.createUser({
         email: validatedData.email,
@@ -301,14 +308,16 @@ router.post('/',
         user_metadata: {
           full_name: validatedData.fullName || validatedData.email.split('@')[0],
           preferences: {}
-        }
+        },
+        email_confirm: true // Auto-confirm email for admin-created users
       });
 
       if (error) {
+        console.error('Supabase user creation error:', error);
         if (error.message.includes('already registered')) {
           return HttpErrors.conflict(res, 'User with this email already exists');
         }
-        return sendErr(res, 'CREATE_ERROR', error.message, undefined, 400);
+        return sendErr(res, 'CREATE_ERROR', error.message, error, 400);
       }
 
       const createdUser = {

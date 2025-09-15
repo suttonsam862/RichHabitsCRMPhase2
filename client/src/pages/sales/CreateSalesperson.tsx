@@ -59,18 +59,31 @@ export default function CreateSalesperson() {
         phone: data.phone
       });
 
+      if (!userResponse.success) {
+        const errorMsg = userResponse.error?.message || 'Failed to create user';
+        console.error('User creation failed:', userResponse);
+        throw new Error(errorMsg);
+      }
+
       // Then create their profile
-      if (userResponse.success && userResponse.data) {
+      if (userResponse.data) {
         const profileResponse = await api.post(`/api/v1/sales/salespeople/${userResponse.data.id}/profile`, {
           commission_rate: data.commission_rate || 0,
           territory: data.territory,
           hire_date: data.hire_date,
           performance_tier: data.performance_tier,
         });
+        
+        if (!profileResponse.success) {
+          const errorMsg = profileResponse.error?.message || 'Failed to create salesperson profile';
+          console.error('Profile creation failed:', profileResponse);
+          throw new Error(errorMsg);
+        }
+        
         return { user: userResponse.data, profile: profileResponse.data };
       }
 
-      throw new Error('Failed to create user');
+      throw new Error('No user data returned from creation');
     },
     onSuccess: (data) => {
       toast({ 
@@ -81,9 +94,11 @@ export default function CreateSalesperson() {
       navigate('/sales');
     },
     onError: (error: any) => {
+      console.error('Salesperson creation error:', error);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || "Please try again.";
       toast({ 
         title: "Failed to create salesperson", 
-        description: error?.message || "Please try again.",
+        description: errorMessage,
         variant: "destructive" 
       });
     }
