@@ -1,0 +1,59 @@
+Sales dashboard error: PostgresError: relation "salesperson_profiles" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:794:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:480:6)
+    at Socket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '46',
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+[00:10:52.556] INFO (25768): GET 304 796ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "afp3jdi7"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 304
+    ms: 796
+[00:10:52.582] INFO (25768): GET 304 828ms /api/v1/users/enhanced?type=staff
+    rid: "hkrnlfux"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff"
+    status: 304
+    ms: 828
+[00:10:52.692] ERROR (25768): GET 500 962ms /api/v1/sales/dashboard?period=30
+    rid: "dntatfo4"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 500
+    ms: 962
+[00:10:53.399] INFO (25768): GET 304 50ms /src/pages/sales/CreateSalesperson.tsx
+    rid: "w3dxktl9"
+    method: "GET"
+    path: "/src/pages/sales/CreateSalesperson.tsx"
+    status: 304
+    ms: 50
+[00:10:53.453] INFO (25768): GET 304 0ms /src/constants/us-states.ts
+    rid: "5g0ogcaw"
+    method: "GET"
+    path: "/src/constants/us-states.ts"
+    status: 304
+    ms: 0
+[00:10:53.453] INFO (25768): GET 304 0ms /src/components/ui/form.tsx
+    rid: "4nkp7qg3"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 304
+    ms: 0
+[00:11:09.539] WARN (25768): POST 400 406ms /api/v1/users
+    rid: "lryodhbw"
+    method: "POST"
+    path: "/api/v1/users"
+    status: 400
+    ms: 406
