@@ -19,6 +19,10 @@ export function AuthProvider({children}:{children:any}){
     sb!.auth.getSession().then(({data})=> {
       setUser(data.session?.user ? { id:data.session.user.id, email:data.session.user.email } : undefined);
       setLoading(false); // Done checking session
+    }).catch((error) => {
+      console.error('Error getting session:', error);
+      setUser(undefined);
+      setLoading(false);
     });
     
     // Listen for auth state changes

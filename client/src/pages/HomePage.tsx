@@ -3,13 +3,35 @@ import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Users, FileText, ShoppingCart, Package, BarChart3, Settings, LogOut, TrendingUp, Palette, Factory, BookOpen } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { PageShell } from "@/components/ui/page-shell";
+
 
 export function HomePage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const [users, orgs] = await Promise.all([
+        api.get('/users'),
+        api.get('/organizations')
+      ]);
+      return {
+        users: users.data?.length || 0,
+        organizations: orgs.data?.length || 0,
+        orders: 0, // Placeholder
+        revenue: 0 // Placeholder
+      };
+    },
+    enabled: !!user && !loading // Only run query if user is authenticated
+  });
+
 
   const navigationCards = [
     {
