@@ -1,0 +1,27 @@
+BEGIN
+psql:fix_salesperson_tables_final.sql:20: NOTICE:  Parent tables verified - proceeding with salesperson table creation
+DO
+psql:fix_salesperson_tables_final.sql:23: NOTICE:  table "salesperson_metrics" does not exist, skipping
+DROP TABLE
+psql:fix_salesperson_tables_final.sql:24: NOTICE:  table "salesperson_assignments" does not exist, skipping
+DROP TABLE
+psql:fix_salesperson_tables_final.sql:25: NOTICE:  table "salesperson_profiles" does not exist, skipping
+DROP TABLE
+psql:fix_salesperson_tables_final.sql:45: ERROR:  foreign key constraint "salesperson_profiles_user_id_fkey" cannot be implemented
+DETAIL:  Key columns "user_id" and "id" are of incompatible types: character varying and uuid.
+psql:fix_salesperson_tables_final.sql:66: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:84: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:87: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:88: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:89: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:90: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:91: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:92: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:93: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:113: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:118: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:131: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:136: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:150: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:fix_salesperson_tables_final.sql:171: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK

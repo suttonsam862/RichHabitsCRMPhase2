@@ -1,0 +1,33 @@
+./server/lib/env.ts:  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+./server/lib/env.ts:    console.log(`✓ DATABASE_URL: ${parsedEnv.DATABASE_URL.substring(0, 20)}***`);
+./server/db.ts:const DATABASE_URL = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+./server/db.ts:const connectionString = DATABASE_URL.includes('supabase.co')
+./server/db.ts:  ? DATABASE_URL.replace('postgresql://', 'postgresql://').replace(/\/[^?]+/, '/postgres')
+./server/db.ts:  : DATABASE_URL;
+./drizzle.config.ts:if (!process.env.DATABASE_URL) {
+./drizzle.config.ts:  throw new Error("DATABASE_URL, ensure the database is provisioned");
+./drizzle.config.ts:    url: process.env.DATABASE_URL!,
+./scripts/debug-drizzle.js:const connectionString = process.env.DATABASE_URL;
+./scripts/debug-sql.js:const connectionString = process.env.DATABASE_URL;
+./scripts/preflight.js:  'DATABASE_URL',
+./scripts/preflight.js:  const dbUrl = process.env.DATABASE_URL;
+./scripts/preflight.js:  log(`Invalid DATABASE_URL format: ${e.message}`, 'error');
+./scripts/backup.js:const DATABASE_URL = process.env.DATABASE_URL;
+./scripts/backup.js:if (!DATABASE_URL) {
+./scripts/backup.js:  console.error(chalk.red('❌ DATABASE_URL environment variable not set'));
+./scripts/backup.js:  const url = new URL(DATABASE_URL);
+./scripts/backup.js:console.log(chalk.cyan(`psql $DATABASE_URL < ${backupFile}`));
+./scripts/db/schema-dump.ts:  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+./scripts/db/reload-postgrest.ts:  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+./dist/index.js:  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+./dist/index.js:    console.log(`\u2713 DATABASE_URL: ${parsedEnv.DATABASE_URL.substring(0, 20)}***`);
+./dist/index.js:var DATABASE_URL = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+./dist/index.js:console.log("\u{1F50C} Forcing connection to Supabase:", DATABASE_URL.replace(/:[^:@]*@/, ":***@"));
+./dist/index.js:var client = postgres(DATABASE_URL, { prepare: false });
+./verify-database-connection.js:console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET (starts with ' + process.env.DATABASE_URL.substring(0, 20) + '...)' : 'NOT SET');
+./verify-database-connection.js:// Test Drizzle/pg connection (DATABASE_URL)
+./verify-database-connection.js:console.log('\n3. Testing Drizzle/pg Connection (DATABASE_URL):');
+./verify-database-connection.js:  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+./verify-database-connection.js:  console.log('Columns from DATABASE_URL:', result.rows.map(r => r.column_name));
+./verify-database-connection.js:const databaseUrl = process.env.DATABASE_URL || '';
+./sync-users-to-supabase.js:const neonUrl = process.env.DATABASE_URL;

@@ -1,0 +1,107 @@
+🔍 Debugging salesperson tables...
+📋 Current schema: public
+📂 Available schemas: [
+  'auth',               'extensions',
+  'graphql',            'graphql_public',
+  'information_schema', 'pg_catalog',
+  'pg_temp_10',         'pg_temp_11',
+  'pg_temp_12',         'pg_temp_13',
+  'pg_temp_14',         'pg_temp_15',
+  'pg_temp_8',          'pg_temp_9',
+  'pg_toast',           'pg_toast_temp_10',
+  'pg_toast_temp_11',   'pg_toast_temp_12',
+  'pg_toast_temp_13',   'pg_toast_temp_14',
+  'pg_toast_temp_15',   'pg_toast_temp_8',
+  'pg_toast_temp_9',    'pgbouncer',
+  'public',             'realtime',
+  'storage',            'supabase_migrations',
+  'vault'
+]
+📊 Salesperson tables found: Result(3) [
+  { schemaname: 'public', tablename: 'salesperson_assignments' },
+  { schemaname: 'public', tablename: 'salesperson_metrics' },
+  { schemaname: 'public', tablename: 'salesperson_profiles' }
+]
+🏢 Public schema salesperson tables: [
+  'salesperson_profiles',
+  'salesperson_assignments',
+  'salesperson_metrics'
+]
+✅ Table existence check: Result(3) [
+  { table_name: 'salesperson_assignments', table_schema: 'public' },
+  { table_name: 'salesperson_metrics', table_schema: 'public' },
+  { table_name: 'salesperson_profiles', table_schema: 'public' }
+]
+
+🔍 Testing access to salesperson_profiles...
+✅ public.salesperson_profiles: 2 rows
+
+🔍 Testing access to salesperson_assignments...
+✅ public.salesperson_assignments: 2 rows
+
+🔍 Testing access to salesperson_metrics...
+✅ public.salesperson_metrics: 2 rows
+
+📋 Checking table structures...
+🏗️ salesperson_profiles columns: Result(12) [
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'id',
+    data_type: 'character varying'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'user_id',
+    data_type: 'character varying'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'employee_id',
+    data_type: 'character varying'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'tax_id',
+    data_type: 'character varying'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'commission_rate',
+    data_type: 'numeric'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'territory',
+    data_type: 'character varying'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'hire_date',
+    data_type: 'date'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'manager_id',
+    data_type: 'character varying'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'performance_tier',
+    data_type: 'character varying'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'is_active',
+    data_type: 'boolean'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'created_at',
+    data_type: 'timestamp without time zone'
+  },
+  {
+    table_name: 'salesperson_profiles',
+    column_name: 'updated_at',
+    data_type: 'timestamp without time zone'
+  }
+]

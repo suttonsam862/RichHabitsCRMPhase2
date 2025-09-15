@@ -1,0 +1,35 @@
+DROP TABLE
+DROP TABLE
+DROP TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+DO
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+psql:fix_salesperson_tables.sql:115: ERROR:  null value in column "is_active" of relation "users" violates not-null constraint
+DETAIL:  Failing row contains (sample-sales-001, john.sales@example.com, null, John Sales, null, sales, null, null, global, null, null, null, null, null, null, null, null, null, null, null, null, 2025-09-15 00:42:37.455148, 2025-09-15 00:42:37.455148, null, null, null, null, null, null, null).
+CONTEXT:  SQL statement "INSERT INTO public.users (id, email, full_name, role, organization_id, created_at, updated_at)
+        VALUES ('sample-sales-001', 'john.sales@example.com', 'John Sales', 'sales', 'global', NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING"
+PL/pgSQL function inline_code_block line 5 at SQL statement
+psql:fix_salesperson_tables.sql:130: ERROR:  null value in column "status" of relation "organizations" violates not-null constraint
+DETAIL:  Failing row contains (sample-org-001, Sample Organization, null, null, null, null, null, {}, null, 2025-09-15 00:42:37.471042, null, 2025-09-15 00:42:37.471042+00, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null).
+CONTEXT:  SQL statement "INSERT INTO public.organizations (id, name, created_at, updated_at)
+        VALUES ('sample-org-001', 'Sample Organization', NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING"
+PL/pgSQL function inline_code_block line 4 at SQL statement
+DO
+psql:fix_salesperson_tables.sql:145: ERROR:  role "postgres" does not exist
+psql:fix_salesperson_tables.sql:146: ERROR:  role "postgres" does not exist
+psql:fix_salesperson_tables.sql:147: ERROR:  role "postgres" does not exist
+psql:fix_salesperson_tables.sql:156: NOTICE:  Tables created successfully!
+psql:fix_salesperson_tables.sql:156: NOTICE:  salesperson_profiles: 0 rows
+psql:fix_salesperson_tables.sql:156: NOTICE:  salesperson_assignments: 0 rows
+psql:fix_salesperson_tables.sql:156: NOTICE:  salesperson_metrics: 0 rows
+DO
