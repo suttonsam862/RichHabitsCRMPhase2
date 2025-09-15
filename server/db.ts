@@ -18,5 +18,8 @@ console.log('🔌 Database connection string:', connectionString.replace(/:\/\/[
 console.log('🔍 Is Supabase?', connectionString.includes('supabase.co'));
 console.log('🔍 Is Neon?', connectionString.includes('neon.tech'));
 
-const client = postgres(connectionString, { max: 20 });
+const client = postgres(connectionString, { 
+  max: 20, 
+  ssl: 'require'
+});
 export const db = drizzle(client, { schema });
