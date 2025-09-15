@@ -71,7 +71,7 @@ router.get('/dashboard', async (req, res) => {
           COUNT(*) as total_orders,
           COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
         FROM public.orders 
-        WHERE created_at >= NOW() - INTERVAL '${period} days'
+        WHERE created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
       `);
     } catch (publicError) {
       [ordersResult] = await db.execute(sql`
@@ -79,7 +79,7 @@ router.get('/dashboard', async (req, res) => {
           COUNT(*) as total_orders,
           COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
         FROM orders 
-        WHERE created_at >= NOW() - INTERVAL '${period} days'
+        WHERE created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
       `);
     }
 
@@ -95,7 +95,7 @@ router.get('/dashboard', async (req, res) => {
         FROM public.users u
         INNER JOIN public.salesperson_profiles sp ON u.id = sp.user_id
         LEFT JOIN public.orders o ON u.id = o.salesperson_id 
-          AND o.created_at >= NOW() - INTERVAL '${period} days'
+          AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
         WHERE sp.is_active = true
         GROUP BY u.id, u.full_name
         ORDER BY total_sales DESC, orders_count DESC
@@ -112,7 +112,7 @@ router.get('/dashboard', async (req, res) => {
         FROM users u
         INNER JOIN salesperson_profiles sp ON u.id = sp.user_id
         LEFT JOIN orders o ON u.id = o.salesperson_id 
-          AND o.created_at >= NOW() - INTERVAL '${period} days'
+          AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
         WHERE sp.is_active = true
         GROUP BY u.id, u.full_name
         ORDER BY total_sales DESC, orders_count DESC
