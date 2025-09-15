@@ -1,5 +1,4 @@
 
-#!/usr/bin/env node
 /**
  * Ensure Database Setup Script
  * This script ensures all necessary extensions, tables, and configurations are in place
