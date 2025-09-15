@@ -127,51 +127,58 @@ async function generateEmployeeId() {
   return employeeId;
 }
 
-router.post("/salespeople/:id/profile", requireAuth, asyncHandler(async (req, res) => {
+// Create a new salesperson profile
+router.post('/:id/profile', asyncHandler(async (req, res) => {
   const { id } = req.params;
   const profileData = req.body;
 
-  // Check if profile exists
-  const [existing] = await db
-    .select()
-    .from(salespersonProfiles)
-    .where(eq(salespersonProfiles.userId, id));
+  // Check if profile already exists using raw SQL for reliability
+  const existingResult = await db.execute(sql`
+    SELECT * FROM salesperson_profiles WHERE user_id = ${id} LIMIT 1
+  `);
 
-  if (existing) {
-    // Update existing profile (keep existing employee_id if present)
-    const [updated] = await db
-      .update(salespersonProfiles)
-      .set({
-        commissionRate: profileData.commission_rate ? Math.round(profileData.commission_rate * 100) : existing.commissionRate,
-        territory: profileData.territory || existing.territory,
-        hireDate: profileData.hire_date || existing.hireDate,
-        performanceTier: profileData.performance_tier || existing.performanceTier,
-        updatedAt: new Date()
-      })
-      .where(eq(salespersonProfiles.userId, id))
-      .returning();
+  if (existingResult.length > 0) {
+    // Update existing profile
+    const updated = await db.execute(sql`
+      UPDATE salesperson_profiles 
+      SET 
+        commission_rate = ${profileData.commission_rate || 0.05},
+        territory = ${profileData.territory ? JSON.stringify(profileData.territory) : null},
+        hire_date = ${profileData.hire_date || null},
+        performance_tier = ${profileData.performance_tier || 'standard'},
+        updated_at = NOW()
+      WHERE user_id = ${id}
+      RETURNING *
+    `);
 
-    res.json(updated);
+    res.json(updated[0]);
   } else {
-    // Create new profile with auto-generated employee_id
-    const employeeId = await generateEmployeeId();
+    // Generate employee ID
+    const employeeIdResult = await db.execute(sql`
+      SELECT 'EMP-' || LPAD((SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 FROM salesperson_profiles WHERE employee_id LIKE 'EMP-%'), 4, '0') as employee_id
+    `);
+    const employeeId = employeeIdResult[0]?.employee_id || 'EMP-0001';
 
-    const [created] = await db
-      .insert(salespersonProfiles)
-      .values({
-        id: randomUUID(),
-        userId: id,
-        employeeId: employeeId,
-        commissionRate: profileData.commission_rate ? Math.round(profileData.commission_rate * 100) : 0,
-        territory: profileData.territory || [],
-        hireDate: profileData.hire_date ? new Date(profileData.hire_date) : null,
-        performanceTier: profileData.performance_tier || 'standard',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
+    // Create new profile
+    const created = await db.execute(sql`
+      INSERT INTO salesperson_profiles (
+        id, user_id, employee_id, commission_rate, territory, hire_date, performance_tier, is_active, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid()::varchar,
+        ${id},
+        ${employeeId},
+        ${profileData.commission_rate || 0.05},
+        ${profileData.territory ? JSON.stringify(profileData.territory) : null},
+        ${profileData.hire_date || null},
+        ${profileData.performance_tier || 'standard'},
+        true,
+        NOW(),
+        NOW()
+      )
+      RETURNING *
+    `);
 
-    res.json(created);
+    res.json(created[0]);
   }
 }));
 
