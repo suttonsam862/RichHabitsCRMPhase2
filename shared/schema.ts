@@ -436,20 +436,6 @@ export const users = pgTable("users", {
         pageAccess: jsonb("page_access"),
 });
 
-export const salespersonAssignments = pgTable("salesperson_assignments", {
-        id: varchar({ length: 255 }).primaryKey().notNull(),
-        salespersonId: varchar("salesperson_id", { length: 255 }).notNull(),
-        organizationId: varchar("organization_id", { length: 255 }).notNull(),
-        territory: varchar({ length: 255 }),
-        commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }).default('0.05'),
-        isActive: boolean("is_active").default(true),
-        assignedAt: timestamp("assigned_at", { mode: 'string' }).defaultNow(),
-        assignedBy: varchar("assigned_by", { length: 255 }),
-        notes: text(),
-        createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
-        updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
-});
-
 export const salespersonProfiles = pgTable("salesperson_profiles", {
         id: varchar({ length: 255 }).primaryKey().notNull(),
         userId: varchar("user_id", { length: 255 }).notNull(),
@@ -461,6 +447,20 @@ export const salespersonProfiles = pgTable("salesperson_profiles", {
         managerId: varchar("manager_id", { length: 255 }),
         performanceTier: varchar("performance_tier", { length: 50 }).default('standard'),
         isActive: boolean("is_active").default(true),
+        createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
+});
+
+export const salespersonAssignments = pgTable("salesperson_assignments", {
+        id: varchar({ length: 255 }).primaryKey().notNull(),
+        salespersonId: varchar("salesperson_id", { length: 255 }).notNull(),
+        organizationId: varchar("organization_id", { length: 255 }).notNull(),
+        territory: varchar({ length: 255 }),
+        commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }).default('0.05'),
+        isActive: boolean("is_active").default(true),
+        assignedAt: timestamp("assigned_at", { mode: 'string' }).defaultNow(),
+        assignedBy: varchar("assigned_by", { length: 255 }),
+        notes: text(),
         createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
         updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });

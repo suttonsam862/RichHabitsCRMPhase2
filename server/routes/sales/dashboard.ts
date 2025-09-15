@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { db } from '../../db.js';
 import { sql, eq } from 'drizzle-orm';
-import { users, salespersonProfiles, salespersonAssignments, orders } from '../../../shared/schema.js';
 
 const router = Router();
 
@@ -10,16 +9,16 @@ router.get('/dashboard', async (req, res) => {
   try {
     const period = parseInt(req.query.period as string) || 30;
 
-    // Get overview metrics with safe queries
+    // Get overview metrics with safe queries - using public schema explicitly
     const [totalSalespeopleResult] = await db.execute(sql`
       SELECT COUNT(*) as count 
-      FROM salesperson_profiles 
+      FROM public.salesperson_profiles 
       WHERE is_active = true
     `);
 
     const [activeAssignmentsResult] = await db.execute(sql`
       SELECT COUNT(*) as count 
-      FROM salesperson_assignments 
+      FROM public.salesperson_assignments 
       WHERE is_active = true
     `);
 
@@ -27,7 +26,7 @@ router.get('/dashboard', async (req, res) => {
       SELECT 
         COUNT(*) as total_orders,
         COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
-      FROM orders 
+      FROM public.orders 
       WHERE created_at >= NOW() - INTERVAL '${period} days'
     `);
 
@@ -39,9 +38,9 @@ router.get('/dashboard', async (req, res) => {
         COALESCE(COUNT(o.id), 0) as orders_count,
         COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
         COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * 0.05, 0) as commission_earned
-      FROM users u
-      INNER JOIN salesperson_profiles sp ON u.id = sp.user_id
-      LEFT JOIN orders o ON u.id = o.salesperson_id 
+      FROM public.users u
+      INNER JOIN public.salesperson_profiles sp ON u.id = sp.user_id
+      LEFT JOIN public.orders o ON u.id = o.salesperson_id 
         AND o.created_at >= NOW() - INTERVAL '${period} days'
       WHERE sp.is_active = true
       GROUP BY u.id, u.full_name

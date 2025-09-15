@@ -13,6 +13,10 @@ import designerRoutes from './designers/index';
 import manufacturerRoutes from './manufacturers/index';
 // Removed uploadRoutes import - deprecated in favor of objects endpoint
 import { brandingRouter } from './files/branding.js';
+import adminConfig from './admin/config.js';
+import adminDiagnostics from './admin/diagnostics.js';
+import adminRls from './admin/rls.js';
+import adminSchema from './admin/schema.js';
 
 const router = Router();
 
@@ -31,6 +35,10 @@ router.use('/designers', designerRoutes);
 router.use('/manufacturers', manufacturerRoutes);
 router.use('/permission-templates', permissionTemplatesRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
+router.use('/admin/config', adminConfig);
+router.use('/admin/diagnostics', adminDiagnostics);
+router.use('/admin/rls', adminRls);
+router.use('/admin/schema', adminSchema);
 
 // Object storage routes - using ObjectStorageService implementation below
 

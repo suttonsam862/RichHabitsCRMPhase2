@@ -1,6 +1,6 @@
 
 import { db } from '../server/db.js';
-import { users, salespersonProfiles, salespersonAssignments, orders } from '../shared/schema.js';
+import { sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 async function seedSalesData() {
@@ -38,58 +38,56 @@ async function seedSalesData() {
       }
     ];
 
-    // Insert salespeople
+    // Insert salespeople using raw SQL
     for (const person of salespeople) {
-      await db.insert(users).values(person).onConflictDoNothing();
+      await db.execute(sql`
+        INSERT INTO public.users (id, email, full_name, role, is_active, created_at, updated_at)
+        VALUES (${person.id}, ${person.email}, ${person.fullName}, ${person.role}, ${person.isActive}, ${person.createdAt}, ${person.updatedAt})
+        ON CONFLICT (id) DO NOTHING
+      `);
       console.log(`✅ Created salesperson: ${person.fullName}`);
     }
 
-    // Create salesperson profiles
+    // Create salesperson profiles using raw SQL
     for (const person of salespeople) {
-      await db.insert(salespersonProfiles).values({
-        id: randomUUID(),
-        userId: person.id,
-        employeeId: `EMP-${Math.floor(Math.random() * 1000)}`,
-        commissionRate: '0.05',
-        territory: ['West Coast', 'East Coast', 'Midwest'][Math.floor(Math.random() * 3)],
-        performanceTier: ['bronze', 'silver', 'gold'][Math.floor(Math.random() * 3)],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }).onConflictDoNothing();
+      const profileId = randomUUID();
+      const employeeId = `EMP-${Math.floor(Math.random() * 1000)}`;
+      const territory = ['West Coast', 'East Coast', 'Midwest'][Math.floor(Math.random() * 3)];
+      const performanceTier = ['bronze', 'silver', 'gold'][Math.floor(Math.random() * 3)];
+      
+      await db.execute(sql`
+        INSERT INTO public.salesperson_profiles (id, user_id, employee_id, commission_rate, territory, performance_tier, is_active, created_at, updated_at)
+        VALUES (${profileId}, ${person.id}, ${employeeId}, 0.05, ${territory}, ${performanceTier}, true, NOW(), NOW())
+        ON CONFLICT (user_id) DO NOTHING
+      `);
       console.log(`✅ Created profile for: ${person.fullName}`);
     }
 
-    // Create some sample assignments
+    // Create some sample assignments using raw SQL
     for (const person of salespeople) {
-      await db.insert(salespersonAssignments).values({
-        id: randomUUID(),
-        salespersonId: person.id,
-        organizationId: randomUUID(),
-        territory: 'Sample Territory',
-        commissionRate: '0.05',
-        isActive: true,
-        assignedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }).onConflictDoNothing();
+      const assignmentId = randomUUID();
+      const orgId = randomUUID();
+      
+      await db.execute(sql`
+        INSERT INTO public.salesperson_assignments (id, salesperson_id, organization_id, territory, commission_rate, is_active, assigned_at, created_at, updated_at)
+        VALUES (${assignmentId}, ${person.id}, ${orgId}, 'Sample Territory', 0.05, true, NOW(), NOW(), NOW())
+        ON CONFLICT DO NOTHING
+      `);
       console.log(`✅ Created assignment for: ${person.fullName}`);
     }
 
-    // Create some sample orders
+    // Create some sample orders using raw SQL
     for (let i = 0; i < 10; i++) {
       const randomSalesperson = salespeople[Math.floor(Math.random() * salespeople.length)];
-      await db.insert(orders).values({
-        id: randomUUID(),
-        organizationId: randomUUID(),
-        orderNumber: `ORD-${Math.floor(Math.random() * 10000)}`,
-        customerName: `Customer ${i + 1}`,
-        totalAmount: (Math.random() * 1000 + 100).toFixed(2),
-        statusCode: 'confirmed',
-        salespersonId: randomSalesperson.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }).onConflictDoNothing();
+      const orderId = randomUUID();
+      const orderNumber = `ORD-${Math.floor(Math.random() * 10000)}`;
+      const totalAmount = (Math.random() * 1000 + 100).toFixed(2);
+      
+      await db.execute(sql`
+        INSERT INTO public.orders (id, organization_id, order_number, customer_name, total_amount, status_code, salesperson_id, created_at, updated_at)
+        VALUES (${orderId}, ${randomUUID()}, ${orderNumber}, ${'Customer ' + (i + 1)}, ${totalAmount}, 'confirmed', ${randomSalesperson.id}, NOW(), NOW())
+        ON CONFLICT DO NOTHING
+      `);
     }
     console.log(`✅ Created 10 sample orders`);
 
