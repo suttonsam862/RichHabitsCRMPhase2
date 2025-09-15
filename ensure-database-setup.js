@@ -7,7 +7,7 @@
 import postgres from 'postgres';
 import { config } from 'dotenv';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import * as schema from './shared/schema.js';
+import * as schema from './shared/schema.ts';
 
 config();
 
