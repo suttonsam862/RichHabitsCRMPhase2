@@ -2,8 +2,9 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
 import postgres from 'postgres';
 
-const connectionString = process.env.DATABASE_URL;
-console.log('Testing connection to:', connectionString ? connectionString.replace(/:\/\/[^:]*:[^@]*@/, '://***:***@') : 'NO DATABASE_URL');
+// Use the same connection string as the server
+const connectionString = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+console.log('Testing connection to:', connectionString.replace(/:\/\/[^:]*:[^@]*@/, '://***:***@'));
 
 const client = postgres(connectionString, { 
   max: 20, 
