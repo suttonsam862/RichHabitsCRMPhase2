@@ -19,10 +19,14 @@ async function main() {
   }).select('id').single();
   if (orgIns.error) throw new Error(`Insert organizations failed: ${orgIns.error.message}`);
 
+  // Get a valid sport ID first
+  const sportsQuery = await sb.from('sports').select('id').limit(1).single();
+  if (sportsQuery.error) throw new Error(`No sports found: ${sportsQuery.error.message}`);
+
   // Insert org_sports row
   const sportIns = await sb.from('org_sports').insert({
     organization_id: orgIns.data!.id, 
-    sport_id: '26c98c39-f204-40f3-a5ec-b0dbd040b01c', // wrestling sport ID
+    sport_id: sportsQuery.data.id,
     contact_name: 'Test Contact',
     contact_email: 'test@example.com',
     contact_user_id: null
