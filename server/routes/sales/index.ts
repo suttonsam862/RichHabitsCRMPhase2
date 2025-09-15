@@ -127,8 +127,8 @@ async function generateEmployeeId() {
   return employeeId;
 }
 
-// Create a new salesperson profile
-router.post('/:id/profile', asyncHandler(async (req, res) => {
+// Create a new salesperson profile  
+router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
   const { id } = req.params;
   const profileData = req.body;
 

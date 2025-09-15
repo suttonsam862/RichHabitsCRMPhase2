@@ -307,7 +307,8 @@ router.post('/',
         phone: validatedData.phone,
         user_metadata: {
           full_name: validatedData.fullName || validatedData.email.split('@')[0],
-          preferences: {}
+          preferences: {},
+          role: 'sales' // Set role for salespeople
         },
         email_confirm: true // Auto-confirm email for admin-created users
       });
@@ -318,6 +319,34 @@ router.post('/',
           return HttpErrors.conflict(res, 'User with this email already exists');
         }
         return sendErr(res, 'CREATE_ERROR', error.message, error, 400);
+      }
+
+      // Also create user record in our database for consistency
+      try {
+        const userDbRecord = await db.execute(sql`
+          INSERT INTO users (id, email, full_name, phone, role, organization_id, is_active, created_at, updated_at)
+          VALUES (
+            ${newUser.user?.id},
+            ${newUser.user?.email}, 
+            ${newUser.user?.user_metadata?.full_name || validatedData.email.split('@')[0]},
+            ${newUser.user?.phone || null},
+            'sales',
+            'global',
+            true,
+            NOW(),
+            NOW()
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            email = EXCLUDED.email,
+            full_name = EXCLUDED.full_name,
+            phone = EXCLUDED.phone,
+            updated_at = NOW()
+          RETURNING *
+        `);
+        console.log('Database user record created/updated:', userDbRecord[0]?.id);
+      } catch (dbError) {
+        console.error('Warning: Could not create database user record:', dbError);
+        // Continue anyway since Supabase Auth user was created successfully
       }
 
       const createdUser = {
