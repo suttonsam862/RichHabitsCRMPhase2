@@ -1,0 +1,277 @@
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Starting comprehensive UUID conversion for all tables
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: users_dev_accesss on table userss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table userss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: organizations_dev_accesss on table organizationss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table organizationss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: user_roles_dev_accesss on table user_roless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table user_roless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: org_sports_dev_accesss on table org_sportss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table org_sportss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: orders_dev_accesss on table orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: order_items_dev_accesss on table order_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table order_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: salesperson_profiles_dev_accesss on table salesperson_profiless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table salesperson_profiless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: salesperson_assignments_dev_accesss on table salesperson_assignmentss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table salesperson_assignmentss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: salesperson_metrics_dev_accesss on table salesperson_metricss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table salesperson_metricss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: organization_favorites_dev_accesss on table organization_favoritess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table organization_favoritess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: organization_metrics_dev_accesss on table organization_metricss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table organization_metricss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: roles_dev_accesss on table roless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table roless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: permissions_dev_accesss on table permissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table permissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: role_permissions_dev_accesss on table role_permissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table role_permissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: audit_logs_dev_accesss on table audit_logss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table audit_logss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: customers_dev_accesss on table customerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table customerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: design_jobs_dev_accesss on table design_jobss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table design_jobss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: design_assets_dev_accesss on table design_assetss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table design_assetss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: manufacturing_work_orders_dev_accesss on table manufacturing_work_orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table manufacturing_work_orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: catalog_items_dev_accesss on table catalog_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table catalog_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: designers_dev_accesss on table designerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table designerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Dropped policy: manufacturers_dev_accesss on table manufacturerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table manufacturerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table permission_templatess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table sportss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table categoriess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table commissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table accounting_invoicess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table catalog_item_imagess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table catalog_item_manufacturerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table design_job_eventss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table order_eventss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table production_eventss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table salespeoples
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table status_design_jobss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table order_item_sizess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table status_work_orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table status_orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Disabled RLS on table status_order_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing accounting_invoices.qb_invoice_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in accounting_invoices.qb_invoice_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted accounting_invoices.qb_invoice_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing orders.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in orders.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted orders.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing orders.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in orders.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted orders.organization_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing orders.salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in orders.salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted orders.salesperson_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing orders.sport_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in orders.sport_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted orders.sport_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing org_sports.assigned_salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in org_sports.assigned_salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted org_sports.assigned_salesperson_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing org_sports.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in org_sports.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted org_sports.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing org_sports.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in org_sports.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted org_sports.organization_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing org_sports.sport_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in org_sports.sport_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted org_sports.sport_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing organization_favorites.org_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in organization_favorites.org_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted organization_favorites.org_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing organization_metrics.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in organization_metrics.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Failed to convert organization_metrics.id: default for column "id" cannot be cast automatically to type uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing organization_metrics.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Failed to convert organization_metrics.organization_id: null value in column "organization_id" of relation "organization_metrics" violates not-null constraint
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing organizations.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in organizations.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted organizations.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing roles.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in roles.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted roles.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_assignments.assigned_by
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_assignments.assigned_by
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_assignments.assigned_by to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_assignments.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_assignments.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_assignments.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_assignments.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_assignments.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_assignments.organization_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_assignments.salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_assignments.salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_assignments.salesperson_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_assignments.sport_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_assignments.sport_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_assignments.sport_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_metrics.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_metrics.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_metrics.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_metrics.salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_metrics.salesperson_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_metrics.salesperson_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_profiles.employee_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_profiles.employee_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_profiles.employee_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_profiles.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_profiles.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_profiles.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_profiles.manager_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_profiles.manager_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_profiles.manager_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing salesperson_profiles.tax_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in salesperson_profiles.tax_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted salesperson_profiles.tax_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing sports.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in sports.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted sports.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing user_roles.assigned_by
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in user_roles.assigned_by
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted user_roles.assigned_by to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing user_roles.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in user_roles.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted user_roles.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing user_roles.org_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in user_roles.org_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted user_roles.org_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing user_roles.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in user_roles.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted user_roles.organization_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing users.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in users.id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted users.id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Processing users.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Cleaned invalid UUIDs in users.organization_id
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Successfully converted users.organization_id to uuid
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table userss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table organizationss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table user_roless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table org_sportss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table order_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table salesperson_profiless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table salesperson_assignmentss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table salesperson_metricss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table organization_favoritess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table organization_metricss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table roless
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table permissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table role_permissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table audit_logss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table customerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table design_jobss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table design_assetss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table manufacturing_work_orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table catalog_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table designerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table manufacturerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table permission_templatess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table sportss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table categoriess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table commissionss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table accounting_invoicess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table catalog_item_imagess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table catalog_item_manufacturerss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table design_job_eventss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table order_eventss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table production_eventss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table salespeoples
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table status_design_jobss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table order_item_sizess
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table status_work_orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table status_orderss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: WARNING:  ignoring specified roles other than PUBLIC
+HINT:  All roles are members of the PUBLIC role.
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Re-enabled RLS with permissive policy for table status_order_itemss
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Recreated users.created_by FK constraint
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Recreated user_roles.user_id FK constraint
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Recreated organizations.created_by FK constraint
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Recreated salesperson_profiles.user_id FK constraint
+psql:db/migrations/2025_01_31_comprehensive_uuid_conversion.sql:201: NOTICE:  Comprehensive UUID conversion completed successfully
+DO
+NOTIFY
