@@ -1,0 +1,90 @@
+Sales dashboard error: TypeError: db.with(...).select(...).from(...).crossJoin is not a function
+    at <anonymous> (/home/runner/workspace/server/routes/sales/dashboard.ts:50:8)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/home/runner/workspace/node_modules/express/lib/router/index.js:175:3)
+    at router (/home/runner/workspace/node_modules/express/lib/router/index.js:47:12)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/home/runner/workspace/node_modules/express/lib/router/index.js:175:3)
+    at router (/home/runner/workspace/node_modules/express/lib/router/index.js:47:12)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/home/runner/workspace/node_modules/express/lib/router/index.js:175:3)
+    at router (/home/runner/workspace/node_modules/express/lib/router/index.js:47:12)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at file:///home/runner/workspace/node_modules/express-rate-limit/dist/index.mjs:835:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async file:///home/runner/workspace/node_modules/express-rate-limit/dist/index.mjs:718:5
+[00:02:22.729] ERROR (24025): GET 500 7ms /api/v1/sales/dashboard?period=30
+    rid: "tsin71sb"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 500
+    ms: 7
+[00:02:23.007] INFO (24025): GET 304 260ms /api/v1/sports
+    rid: "slkb69nr"
+    method: "GET"
+    path: "/api/v1/sports"
+    status: 304
+    ms: 260
+[00:02:23.060] INFO (24025): organizations.list ok
+    rid: "oxet4ijq"
+    count: 16
+[00:02:23.061] INFO (24025): GET 200 332ms /api/v1/organizations
+    rid: "oxet4ijq"
+    method: "GET"
+    path: "/api/v1/organizations"
+    status: 200
+    ms: 332
+[00:02:23.576] INFO (24025): GET 304 845ms /api/v1/users/enhanced?type=staff
+    rid: "hoy4m4pc"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff"
+    status: 304
+    ms: 845
+[00:02:24.097] INFO (24025): GET 304 1345ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "3spa8c6k"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 304
+    ms: 1345
+[00:02:24.961] INFO (24025): GET 304 83ms /src/pages/sales/CreateSalesperson.tsx
+    rid: "gx6vasyv"
+    method: "GET"
+    path: "/src/pages/sales/CreateSalesperson.tsx"
+    status: 304
+    ms: 83
+[00:02:25.023] INFO (24025): GET 304 0ms /src/constants/us-states.ts
+    rid: "ketio0sq"
+    method: "GET"
+    path: "/src/constants/us-states.ts"
+    status: 304
+    ms: 0
+[00:02:25.030] INFO (24025): GET 304 8ms /src/components/ui/form.tsx
+    rid: "637vhr0g"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 304
+    ms: 8
+[00:02:38.390] WARN (24025): POST 400 444ms /api/v1/users
+    rid: "it3tq4u8"
+    method: "POST"
+    path: "/api/v1/users"
+    status: 400
+    ms: 444
