@@ -1,7 +1,25 @@
 
 import postgres from 'postgres';
+import { config } from 'dotenv';
 
-const connectionString = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+// Load environment variables
+config();
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
+
+// Verify we're using Supabase
+if (!connectionString.includes('supabase.co') && !connectionString.includes('supabase.com')) {
+  console.error('❌ DATABASE_URL must point to Supabase database');
+  console.error('Current URL:', connectionString.replace(/:[^:@]*@/, ':***@'));
+  process.exit(1);
+}
+
+console.log('✅ Using Supabase connection:', connectionString.replace(/:[^:@]*@/, ':***@'));
 
 const client = postgres(connectionString, { 
   max: 20, 
@@ -55,18 +73,10 @@ async function debugTables() {
         console.log(`\n🔍 Testing access to ${table}...`);
         
         // Try public schema first
-        const publicCount = await client`SELECT COUNT(*) as count FROM public.${client(table)}`;
-        console.log(`✅ public.${table}: ${publicCount[0]?.count} rows`);
-      } catch (publicError) {
-        console.log(`❌ public.${table} failed:`, publicError.message);
-        
-        try {
-          // Try without schema prefix
-          const count = await client`SELECT COUNT(*) as count FROM ${client(table)}`;
-          console.log(`✅ ${table} (no schema): ${count[0]?.count} rows`);
-        } catch (noSchemaError) {
-          console.log(`❌ ${table} (no schema) failed:`, noSchemaError.message);
-        }
+        const publicCount = await client`SELECT COUNT(*) as count FROM ${client(table)}`;
+        console.log(`✅ ${table}: ${publicCount[0]?.count} rows`);
+      } catch (error) {
+        console.log(`❌ ${table} failed:`, error.message);
       }
     }
 

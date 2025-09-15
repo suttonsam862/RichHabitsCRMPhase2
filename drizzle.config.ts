@@ -1,15 +1,18 @@
 import { defineConfig } from "drizzle-kit";
+import { env } from './server/lib/env.js';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
+// Ensure we're using Supabase
+if (!env.DATABASE_URL?.includes('supabase.co') && !env.DATABASE_URL?.includes('supabase.com')) {
+  throw new Error('DATABASE_URL must point to Supabase database');
 }
 
 export default defineConfig({
-  out: "./migrations",
-  schema: "./shared/schema.ts",
-  dialect: "postgresql",
+  schema: './shared/schema.ts',
+  out: './migrations',
+  dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: env.DATABASE_URL,
   },
-  schemaFilter: ["public"],
+  verbose: true,
+  strict: true,
 });

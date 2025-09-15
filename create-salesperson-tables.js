@@ -1,7 +1,23 @@
 
 import postgres from 'postgres';
 
-const connectionString = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+// Load environment variables
+import { config } from 'dotenv';
+config();
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
+
+// Verify we're using Supabase
+if (!connectionString.includes('supabase.co') && !connectionString.includes('supabase.com')) {
+  console.error('❌ DATABASE_URL must point to Supabase database');
+  console.error('Current URL:', connectionString.replace(/:[^:@]*@/, ':***@'));
+  process.exit(1);
+}
 
 const client = postgres(connectionString, { 
   max: 20, 
