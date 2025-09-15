@@ -9,6 +9,28 @@ router.get('/dashboard', async (req, res) => {
   try {
     const period = parseInt(req.query.period as string) || 30;
 
+    // Debug: Check if tables exist first
+    console.log('🔍 Checking database connection and table existence...');
+    
+    try {
+      const tableCheckResult = await db.execute(sql`
+        SELECT table_name FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name IN ('salesperson_profiles', 'salesperson_assignments', 'salesperson_metrics')
+      `);
+      console.log('📊 Available salesperson tables:', tableCheckResult.map((r: any) => r.table_name));
+    } catch (tableError) {
+      console.error('❌ Table check failed:', tableError);
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'DASHBOARD_ERROR',
+          message: 'Database connection issue',
+          details: tableError.message
+        }
+      });
+    }
+
     // Get overview metrics with safe queries - using public schema explicitly
     const [totalSalespeopleResult] = await db.execute(sql`
       SELECT COUNT(*) as count 
