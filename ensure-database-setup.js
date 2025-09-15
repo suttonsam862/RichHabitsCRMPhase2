@@ -1,3 +1,4 @@
+
 #!/usr/bin/env node
 /**
  * Ensure Database Setup Script
@@ -6,8 +7,6 @@
 
 import postgres from 'postgres';
 import { config } from 'dotenv';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import * as schema from './shared/schema.ts';
 
 config();
 
@@ -32,8 +31,6 @@ const client = postgres(connectionString, {
     application_name: 'database-setup'
   }
 });
-
-const db = drizzle(client, { schema });
 
 async function setupDatabase() {
   try {
@@ -66,6 +63,7 @@ async function setupDatabase() {
           ('Sales', 'sales', 'Sales team member', '{"sales": true, "orders": true}'::jsonb, true),
           ('Designer', 'design', 'Design team member', '{"design": true}'::jsonb, true),
           ('Customer', 'customer', 'Regular customer', '{"orders.view.own": true}'::jsonb, true)
+          ON CONFLICT (slug) DO NOTHING
         `;
         console.log('✅ Default roles seeded');
       } else {
