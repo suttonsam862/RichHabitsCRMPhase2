@@ -9,10 +9,16 @@ config({ path: resolve(process.cwd(), '.env'), override: true });
 
 // Create connection string for the database - should always be Supabase
 const connectionString = process.env.DATABASE_URL;
-console.log('🔌 Database connection string:', connectionString?.replace(/:[^:@]*@/, ':***@'));
+
+if (!connectionString) {
+  console.error('❌ ERROR: DATABASE_URL environment variable is not set');
+  throw new Error('DATABASE_URL environment variable is required');
+}
+
+console.log('🔌 Database connection string:', connectionString.replace(/:[^:@]*@/, ':***@'));
 
 // Verify we're using Supabase
-const isSupabase = connectionString?.includes('supabase.co') || connectionString?.includes('supabase.com');
+const isSupabase = connectionString.includes('supabase.co') || connectionString.includes('supabase.com');
 console.log('🔍 Is Supabase?', isSupabase);
 
 if (!isSupabase) {

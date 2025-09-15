@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { sendOk, sendErr } from '../../lib/http';
 import { supabaseAdmin } from '../../lib/supabase';
-import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, neonEmailShell, actionButton } from '../../lib/email';
+import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, supabaseEmailShell, actionButton } from '../../lib/email';
 import { requireAuth } from '../../middleware/auth';
 const r = Router();
 
@@ -14,7 +14,7 @@ r.post('/reset-request', async (req, res) => {
     const redirectTo = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'') + '/reset-password';
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type:'recovery', email, options:{ redirectTo } });
     if (error || !data?.properties?.action_link) return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate link', undefined, 400);
-    const html = neonEmailShell(
+    const html = supabaseEmailShell(
       'Reset your password',
       `<p style="opacity:.8">Click the button below to set a new password. This link will expire soon.</p>
        ${actionButton(data.properties.action_link,'Set new password')}
@@ -38,7 +38,7 @@ r.post('/register', async (req, res) => {
       options:{ data:{ full_name: fullName, desired_role: role, portfolio_key: portfolioKey || null }, redirectTo }
     });
     if (error || !data?.properties?.action_link) return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate confirmation link', undefined, 400);
-    const html = neonEmailShell(
+    const html = supabaseEmailShell(
       'Confirm your email',
       `<p style="opacity:.8">Welcome to Rich Habits. Please confirm your email to activate your account.</p>
        ${actionButton(data.properties.action_link,'Confirm email')}

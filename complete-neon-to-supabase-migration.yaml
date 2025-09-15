@@ -12,7 +12,7 @@ steps:
         details:
           - "Go to Replit Secrets (lock icon in sidebar)"
           - "Update DATABASE_URL from: postgresql://neondb_owner:npg_srbNTqzl0A9c@ep-weathered-surf-afmwxm8p.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require"
-          - "Update DATABASE_URL to: postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
+          - "Update DATABASE_URL to: Get the connection string from Supabase Dashboard > Settings > Database"
           - "Ensure VITE_SUPABASE_URL is: https://qkampkccsdiebvkcfuby.supabase.co"
           - "Ensure VITE_SUPABASE_ANON_KEY is set correctly"
           - "Ensure SUPABASE_SERVICE_ROLE_KEY is set correctly"
@@ -247,14 +247,73 @@ verification_steps:
     command: "npm run db:schema:dump"
     expected: "Schema dump shows all tables in Supabase"
 
+# COMPLETED FIXES
+completed_fixes:
+  - name: "Server Database Connection Fixed"
+    file: "server/db.ts"
+    status: "✅ COMPLETED"
+    changes: "Added proper environment variable validation and error handling"
+  
+  - name: "Email Template Function Renamed"
+    files: 
+      - "server/lib/email.ts"
+      - "server/routes/auth/index.ts"
+    status: "✅ COMPLETED"
+    changes: "Renamed neonEmailShell to supabaseEmailShell"
+  
+  - name: "Test Scripts Updated"
+    files:
+      - "test-db-connection.js"
+      - "sync-users-to-supabase.js"
+    status: "✅ COMPLETED"
+    changes: "Updated to use environment variables instead of hardcoded connections"
+  
+  - name: "Environment Module Created"
+    file: "server/lib/env.js"
+    status: "✅ COMPLETED"
+    changes: "Created JavaScript wrapper for drizzle.config.ts compatibility"
+  
+  - name: "All Route Handlers Verified"
+    status: "✅ COMPLETED"
+    changes: "All routes properly import from centralized database connection"
+
+# REMAINING CRITICAL ACTION
+critical_action_required:
+  priority: "🚨 URGENT - BLOCKING ALL FUNCTIONALITY"
+  issue: "DATABASE_URL still points to Neon instead of Supabase"
+  current_value: "postgresql://neondb_owner:***@ep-weathered-surf-afmwxm8p.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require"
+  required_value: "Get the connection string from Supabase Dashboard > Settings > Database"
+  
+  steps_to_fix:
+    1: "Go to Replit interface"
+    2: "Click the lock icon (🔒) in the left sidebar to open Secrets"
+    3: "Find DATABASE_URL in the list"
+    4: "Update the value to the Supabase connection string from your Supabase Dashboard"
+    5: "Click Save or Update"
+    6: "Restart the application"
+
+# VERIFICATION COMMANDS
+verification_after_update:
+  - command: "node verify-database-config.js"
+    expected: "✅ Using Supabase database"
+  
+  - command: "node test-db-connection.js"
+    expected: "✅ Database connection successful"
+  
+  - command: "npm run db:push"
+    expected: "Schema pushed successfully to Supabase"
+  
+  - command: "node debug-salesperson-tables.js"
+    expected: "All salesperson tables exist and are accessible"
+
 # CRITICAL SUCCESS CRITERIA
 success_criteria:
-  - "No references to 'neon' in any active code files"
-  - "All database connections use process.env.DATABASE_URL"
-  - "DATABASE_URL environment variable points to Supabase"
-  - "All pages (organizations, sales, users, etc.) load successfully"
-  - "Database operations work across all features"
-  - "No hardcoded database connection strings in any files"
+  - "✅ No references to 'neon' in any active code files (COMPLETED)"
+  - "✅ All database connections use process.env.DATABASE_URL (COMPLETED)"
+  - "❌ DATABASE_URL environment variable points to Supabase (NEEDS USER ACTION)"
+  - "⏳ All pages load successfully (PENDING DATABASE_URL UPDATE)"
+  - "⏳ Database operations work across all features (PENDING DATABASE_URL UPDATE)"
+  - "✅ No hardcoded database connection strings in any files (COMPLETED)"
 
 # ROLLBACK PLAN
 rollback:

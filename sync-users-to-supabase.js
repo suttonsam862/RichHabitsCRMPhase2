@@ -2,9 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import pg from 'pg';
 import 'dotenv/config';
 
-const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const neonUrl = process.env.DATABASE_URL;
+const supabaseDbUrl = process.env.DATABASE_URL;
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
   auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
@@ -16,17 +16,17 @@ async function syncUsersTableToSupabase() {
 
     // Step 1: Get the complete users table structure from Neon
     console.log('1. Getting users table structure from Neon database...');
-    const neonPool = new pg.Pool({ connectionString: neonUrl });
+    const supabasePool = new pg.Pool({ connectionString: supabaseDbUrl });
     
-    const { rows: neonColumns } = await neonPool.query(`
+    const { rows: supabaseColumns } = await supabasePool.query(`
       SELECT column_name, data_type, is_nullable, column_default 
       FROM information_schema.columns 
       WHERE table_name = 'users' AND table_schema = 'public' 
       ORDER BY ordinal_position
     `);
     
-    console.log('✅ Neon users table has', neonColumns.length, 'columns');
-    console.log('Columns:', neonColumns.map(c => c.column_name).join(', '));
+    console.log('✅ Neon users table has', supabaseColumns.length, 'columns');
+    console.log('Columns:', supabaseColumns.map(c => c.column_name).join(', '));
 
     // Step 2: Check if users table exists in Supabase
     console.log('\n2. Checking users table in Supabase...');
@@ -46,7 +46,7 @@ async function syncUsersTableToSupabase() {
       let createTableSQL = 'CREATE TABLE public.users (\n';
       const columnDefs = [];
       
-      for (const col of neonColumns) {
+      for (const col of supabaseColumns) {
         let def = `  ${col.column_name} `;
         
         // Map PostgreSQL types appropriately
@@ -122,7 +122,7 @@ async function syncUsersTableToSupabase() {
         
         console.log('Existing columns in Supabase:', existingColumns);
         
-        const neonColumnNames = neonColumns.map(c => c.column_name);
+        const neonColumnNames = supabaseColumns.map(c => c.column_name);
         const missingColumns = neonColumnNames.filter(col => !existingColumns.includes(col));
         
         console.log('\n4. Missing columns in Supabase:', missingColumns);
@@ -131,7 +131,7 @@ async function syncUsersTableToSupabase() {
           // Generate ALTER TABLE statements for missing columns
           let alterSQL = '';
           for (const colName of missingColumns) {
-            const colDef = neonColumns.find(c => c.column_name === colName);
+            const colDef = supabaseColumns.find(c => c.column_name === colName);
             if (colDef) {
               alterSQL += `ALTER TABLE public.users ADD COLUMN ${colName} `;
               
@@ -169,7 +169,7 @@ async function syncUsersTableToSupabase() {
       }
     }
     
-    await neonPool.end();
+    await supabasePool.end();
     
   } catch (error) {
     console.error('Script error:', error);

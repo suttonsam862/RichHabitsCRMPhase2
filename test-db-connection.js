@@ -1,9 +1,17 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
 import postgres from 'postgres';
+import { config } from 'dotenv';
+
+// Load environment variables
+config();
 
 // Use the same connection string as the server
-const connectionString = "postgresql://postgres.qkampkccsdiebvkcfuby:Arlodog2013!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 console.log('Testing connection to:', connectionString.replace(/:\/\/[^:]*:[^@]*@/, '://***:***@'));
 
 const client = postgres(connectionString, { 

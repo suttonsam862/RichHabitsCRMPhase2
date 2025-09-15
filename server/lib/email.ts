@@ -22,7 +22,7 @@ export async function sendBrandedEmail(to:string, subject:string, html:string){
   await sg.send({ to, from:{ email: FROM!, name: NAME }, subject, html });
 }
 
-export function neonEmailShell(title:string, bodyHtml:string){
+export function supabaseEmailShell(title:string, bodyHtml:string){
   return `
     <div style="background:#0A0B0E;color:#fff;padding:32px;font-family:Inter,system-ui,-apple-system,sans-serif">
       <div style="max-width:560px;margin:auto;border-radius:18px;padding:24px;background:rgba(255,255,255,0.04);
