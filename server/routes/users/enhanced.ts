@@ -1,12 +1,11 @@
+
 import express from 'express';
 import { z } from 'zod';
 import { db } from '../../db';
 import { users } from '../../../shared/schema';
 import { sendSuccess, sendErr, sendCreated } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
-import { ROLE_DEFAULTS, hasPermission, ACTION_PERMISSIONS, PAGE_ACCESS } from '../../lib/permissions';
-import { randomBytes } from 'crypto';
-import { supabaseAdmin } from '../../lib/supabaseAdmin';
+import { supabaseAdmin } from '../../lib/supabase';
 import { eq, like, or, and, count, desc, sql } from 'drizzle-orm';
 
 const router = express.Router();
@@ -27,7 +26,7 @@ const createUserSchema = z.object({
   sendWelcomeEmail: z.boolean().default(true)
 });
 
-// Update user schema with enhanced fields  
+// Update user schema with enhanced fields
 const updateUserSchema = z.object({
   fullName: z.string().optional(),
   phone: z.string().optional(),
@@ -52,7 +51,6 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     const searchTerm = search || q || '';
 
     // Check if user has permission to view users
-    // For now, allow all authenticated users - will be enhanced with proper permission checks
     const requestingUserId = req.user?.id;
     if (!requestingUserId) {
       return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
@@ -62,63 +60,89 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt((pageSize || limit) as string) || 20));
     const offset = (pageNum - 1) * limitNum;
 
-    // Build query using Drizzle ORM
-    let whereConditions = [];
+    // Get users from Supabase Auth instead of our database table
+    const { data: authUsers, error } = await supabaseAdmin.auth.admin.listUsers({
+      page: pageNum,
+      perPage: limitNum
+    });
+
+    if (error) {
+      console.error('Error fetching users from Supabase Auth:', error);
+      return sendErr(res, 'INTERNAL_ERROR', 'Failed to fetch users', undefined, 500);
+    }
+
+    const results = authUsers?.users || [];
+    const total = authUsers?.total || 0;
+
+    // Filter out test/mock users based on email patterns
+    const isTestUser = (email: string | undefined) => {
+      if (!email) return false;
+      const testPatterns = [
+        /test/i,
+        /mock/i,
+        /demo/i,
+        /fake/i,
+        /example\.com$/i,
+        /test\.com$/i,
+        /mock\.com$/i,
+        /tempmail/i,
+        /10minutemail/i,
+        /throwaway/i,
+        /placeholder/i
+      ];
+      return testPatterns.some(pattern => pattern.test(email));
+    };
+
+    let filteredResults = results.filter(user => !isTestUser(user.email));
+
+    // Apply search filter if provided
+    if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
+      const searchLower = searchTerm.trim().toLowerCase();
+      filteredResults = filteredResults.filter(user => 
+        user.email?.toLowerCase().includes(searchLower) ||
+        user.user_metadata?.full_name?.toLowerCase().includes(searchLower)
+      );
+    }
 
     // Apply type filter
-    if (type === 'staff') {
-      whereConditions.push(or(
-        eq(users.role, 'admin'),
-        eq(users.role, 'sales'),
-        eq(users.role, 'designer'),
-        eq(users.role, 'manufacturing')
-      ));
-    } else if (type === 'customers') {
-      whereConditions.push(or(
-        eq(users.role, 'customer'),
-        eq(users.role, 'contact')
-      ));
+    if (type && type !== 'all') {
+      const userRole = (user: any) => user.user_metadata?.role || 'customer';
+      
+      if (type === 'staff') {
+        filteredResults = filteredResults.filter(user => 
+          ['admin', 'sales', 'designer', 'manufacturing'].includes(userRole(user))
+        );
+      } else if (type === 'customer') {
+        filteredResults = filteredResults.filter(user => userRole(user) === 'customer');
+      }
     }
-    // If type === 'all', don't add any role filter - show all users
-
-    // Apply search filter
-    if (searchTerm && typeof searchTerm === 'string') {
-      whereConditions.push(or(
-        like(users.fullName, `%${searchTerm}%`),
-        like(users.email, `%${searchTerm}%`)
-      ));
-    }
-
-    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
-
-    // Execute query with Drizzle ORM
-    const usersQuery = db.select().from(users)
-      .where(whereClause)
-      .orderBy(desc(users.createdAt))
-      .limit(limitNum)
-      .offset(offset);
-
-    const totalQuery = db.select({ count: count() }).from(users)
-      .where(whereClause);
-
-    const [usersResult, totalResult] = await Promise.all([
-      usersQuery,
-      totalQuery
-    ]);
-
-    const totalCount = totalResult[0]?.count || 0;
 
     // Transform users to include address object structure
-    const transformedUsers = (usersResult || []).map(user => ({
-      ...user,
+    const transformedUsers = filteredResults.map(user => ({
+      id: user.id,
+      email: user.email,
+      fullName: user.user_metadata?.full_name || null,
+      phone: user.phone,
+      role: user.user_metadata?.role || 'customer',
+      organizationId: user.user_metadata?.organization_id || null,
+      organizationName: null, // Would need separate lookup
+      isActive: !user.banned_until,
+      jobTitle: user.user_metadata?.job_title || null,
+      department: user.user_metadata?.department || null,
+      avatarUrl: user.user_metadata?.avatar_url || null,
       address: {
-        line1: user.addressLine1 || '',
-        line2: user.addressLine2 || '',
-        city: user.city || '',
-        state: user.state || '',
-        postalCode: user.postalCode || '',
-        country: user.country || 'US'
-      }
+        line1: user.user_metadata?.address?.line1 || '',
+        line2: user.user_metadata?.address?.line2 || '',
+        city: user.user_metadata?.address?.city || '',
+        state: user.user_metadata?.address?.state || '',
+        postalCode: user.user_metadata?.address?.postalCode || '',
+        country: user.user_metadata?.address?.country || 'US'
+      },
+      lastLogin: user.last_sign_in_at,
+      emailVerified: !!user.email_confirmed_at,
+      notes: user.user_metadata?.notes || null,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at
     }));
 
     return sendSuccess(res, {
@@ -126,13 +150,13 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: totalCount,
-        pages: Math.ceil(totalCount / limitNum)
+        total: filteredResults.length,
+        pages: Math.ceil(filteredResults.length / limitNum)
       }
     });
 
   } catch (error) {
-    console.error('Error in users list:', error);
+    console.error('Error in enhanced users list:', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
   }
 });
@@ -148,353 +172,44 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
       return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
     }
 
-    const userResult = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const { data: user, error } = await supabaseAdmin.auth.admin.getUserById(id);
 
-    if (!userResult || userResult.length === 0) {
+    if (error || !user) {
       return sendErr(res, 'NOT_FOUND', 'User not found', undefined, 404);
     }
 
-    const user = userResult[0];
-
-    // Transform user to include address object structure
     const transformedUser = {
-      ...user,
+      id: user.user.id,
+      email: user.user.email,
+      fullName: user.user.user_metadata?.full_name || null,
+      phone: user.user.phone,
+      role: user.user.user_metadata?.role || 'customer',
+      organizationId: user.user.user_metadata?.organization_id || null,
+      organizationName: null,
+      isActive: !user.user.banned_until,
+      jobTitle: user.user.user_metadata?.job_title || null,
+      department: user.user.user_metadata?.department || null,
+      avatarUrl: user.user.user_metadata?.avatar_url || null,
       address: {
-        line1: user.addressLine1 || '',
-        line2: user.addressLine2 || '',
-        city: user.city || '',
-        state: user.state || '',
-        postalCode: user.postalCode || '',
-        country: user.country || 'US'
-      }
+        line1: user.user.user_metadata?.address?.line1 || '',
+        line2: user.user.user_metadata?.address?.line2 || '',
+        city: user.user.user_metadata?.address?.city || '',
+        state: user.user.user_metadata?.address?.state || '',
+        postalCode: user.user.user_metadata?.address?.postalCode || '',
+        country: user.user.user_metadata?.address?.country || 'US'
+      },
+      lastLogin: user.user.last_sign_in_at,
+      emailVerified: !!user.user.email_confirmed_at,
+      notes: user.user.user_metadata?.notes || null,
+      createdAt: user.user.created_at,
+      updatedAt: user.user.updated_at
     };
 
     return sendSuccess(res, transformedUser);
-
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('Error fetching enhanced user:', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
   }
 });
 
-// Create new user with enhanced permissions
-router.post('/', requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    // Check permissions - for now allow all authenticated users
-    const requestingUserId = req.user?.id;
-    if (!requestingUserId) {
-      return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
-    }
-
-    const validatedData = createUserSchema.parse(req.body);
-
-    // Generate temporary password for staff users
-    const tempPassword = randomBytes(12).toString('base64').replace(/[/+=]/g, '').substring(0, 12);
-
-    // Determine default permissions based on role
-    const roleDefaults = ROLE_DEFAULTS[validatedData.role.toUpperCase() as keyof typeof ROLE_DEFAULTS];
-    const defaultPermissions = validatedData.permissions || roleDefaults?.permissions || {};
-    const defaultPageAccess = validatedData.pageAccess || {};
-
-    // Create user in Supabase Auth
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: validatedData.email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: validatedData.fullName,
-        role: validatedData.role,
-        subrole: validatedData.subrole || null,
-        job_title: validatedData.jobTitle || null,
-        department: validatedData.department || null,
-        permissions: defaultPermissions,
-        page_access: defaultPageAccess
-      }
-    });
-
-    if (authError) {
-      console.error('Auth user creation error:', authError);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to create user authentication', authError, 500);
-    }
-
-    // Create user record in our users table using Drizzle ORM
-    const userData = {
-      id: authUser.user.id,
-      email: validatedData.email,
-      fullName: validatedData.fullName,
-      phone: validatedData.phone || null,
-      role: validatedData.role,
-      subrole: validatedData.subrole || null,
-      organizationId: validatedData.organizationId || null,
-      jobTitle: validatedData.jobTitle || null,
-      department: validatedData.department || null,
-      hireDate: validatedData.hireDate || null,
-      permissions: defaultPermissions,
-      pageAccess: defaultPageAccess,
-      isActive: 1,
-      emailVerified: 1,
-      createdBy: req.user?.id,
-      initialTempPassword: validatedData.role !== 'customer' ? tempPassword : null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    const [user] = await db.insert(users).values([userData]).returning();
-
-    if (!user) {
-      console.error('User table creation failed - no user returned');
-      // Clean up auth user if table insert fails
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to create user record', undefined, 500);
-    }
-
-    return sendCreated(res, {
-      ...user,
-      temporaryPassword: validatedData.role !== 'customer' ? tempPassword : undefined
-    });
-
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return sendErr(res, 'VALIDATION_ERROR', 'Invalid user data', error.errors, 400);
-    }
-
-    console.error('Error creating user:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
-  }
-});
-
-// Update user with enhanced permissions
-router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check permissions - for now allow all authenticated users
-    const requestingUserId = req.user?.id;
-    if (!requestingUserId) {
-      return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
-    }
-
-    const validatedData = updateUserSchema.parse(req.body);
-
-    // Build update object for Drizzle ORM with camelCase properties
-    const updateData: Partial<typeof users.$inferInsert> = {};
-    if (validatedData.fullName) updateData.fullName = validatedData.fullName;
-    if (validatedData.phone !== undefined) updateData.phone = validatedData.phone;
-    if (validatedData.role) updateData.role = validatedData.role;
-    if (validatedData.subrole !== undefined) updateData.subrole = validatedData.subrole;
-    if (validatedData.organizationId !== undefined) updateData.organizationId = validatedData.organizationId;
-    if (validatedData.jobTitle !== undefined) updateData.jobTitle = validatedData.jobTitle;
-    if (validatedData.department !== undefined) updateData.department = validatedData.department;
-    if (validatedData.hireDate !== undefined) {
-      updateData.hireDate = validatedData.hireDate || null;
-    }
-    if (validatedData.permissions) updateData.permissions = validatedData.permissions;
-    if (validatedData.pageAccess) updateData.pageAccess = validatedData.pageAccess;
-    if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive ? 1 : 0;
-    if (validatedData.avatarUrl !== undefined) updateData.avatarUrl = validatedData.avatarUrl;
-
-    updateData.updatedAt = new Date().toISOString();
-
-    // Update user record using Drizzle ORM
-    const [user] = await db.update(users)
-      .set(updateData)
-      .where(eq(users.id, id))
-      .returning();
-
-    if (!user) {
-      return sendErr(res, 'NOT_FOUND', 'User not found', undefined, 404);
-    }
-
-    // Also update auth user metadata if needed
-    if (validatedData.fullName || validatedData.role || validatedData.subrole || validatedData.permissions || validatedData.pageAccess) {
-      const metadata: any = {};
-      if (validatedData.fullName) metadata.full_name = validatedData.fullName;
-      if (validatedData.role) metadata.role = validatedData.role;
-      if (validatedData.subrole !== undefined) metadata.subrole = validatedData.subrole;
-      if (validatedData.permissions) metadata.permissions = validatedData.permissions;
-      if (validatedData.pageAccess) metadata.page_access = validatedData.pageAccess;
-
-      await supabaseAdmin.auth.admin.updateUserById(id, {
-        user_metadata: metadata
-      });
-    }
-
-    return sendSuccess(res, user);
-
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return sendErr(res, 'VALIDATION_ERROR', 'Invalid update data', error.errors, 400);
-    }
-
-    console.error('Error updating user:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
-  }
-});
-
-// Reset user password (staff only)
-router.post('/:id/reset-password', requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check permissions - for now allow all authenticated users
-    const requestingUserId = req.user?.id;
-    if (!requestingUserId) {
-      return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
-    }
-
-    // Generate new temporary password
-    const newPassword = randomBytes(12).toString('base64').replace(/[/+=]/g, '').substring(0, 12);
-
-    // Update password in Supabase Auth
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
-      password: newPassword
-    });
-
-    if (error) {
-      console.error('Error resetting password:', error);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to reset password', error, 500);
-    }
-
-    return sendSuccess(res, {
-      message: 'Password reset successfully',
-      temporaryPassword: newPassword
-    });
-
-  } catch (error) {
-    console.error('Error in password reset:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
-  }
-});
-
-// Get user permissions and page access
-router.get('/:id/permissions', requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check permissions - for now allow all authenticated users
-    const requestingUserId = req.user?.id;
-    if (!requestingUserId) {
-      return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
-    }
-
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .select('permissions, page_access, role, subrole')
-      .eq('id', id)
-      .single();
-
-    if (error || !user) {
-      return sendErr(res, 'NOT_FOUND', 'User not found', error, 404);
-    }
-
-    return sendSuccess(res, {
-      permissions: user.permissions || {},
-      pageAccess: user.page_access || {},
-      role: user.role,
-      subrole: user.subrole
-    });
-
-  } catch (error) {
-    console.error('Error fetching user permissions:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
-  }
-});
-
-// Update user permissions
-router.patch('/:id/permissions', requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { permissions, pageAccess } = req.body;
-
-    // Check permissions - for now allow all authenticated users
-    const requestingUserId = req.user?.id;
-    if (!requestingUserId) {
-      return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
-    }
-
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    };
-
-    if (permissions && typeof permissions === 'object') {
-      updateData.permissions = permissions;
-    }
-
-    if (pageAccess && typeof pageAccess === 'object') {
-      updateData.page_access = pageAccess;
-    }
-
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .update(updateData)
-      .eq('id', id)
-      .select('permissions, page_access')
-      .single();
-
-    if (error) {
-      console.error('Error updating user permissions:', error);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to update permissions', error, 500);
-    }
-
-    if (!user) {
-      return sendErr(res, 'NOT_FOUND', 'User not found', undefined, 404);
-    }
-
-    // Also update auth metadata
-    await supabaseAdmin.auth.admin.updateUserById(id, {
-      user_metadata: {
-        permissions: user.permissions,
-        page_access: user.page_access
-      }
-    });
-
-    return sendSuccess(res, {
-      permissions: user.permissions || {},
-      pageAccess: user.page_access || {}
-    });
-
-  } catch (error) {
-    console.error('Error updating permissions:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
-  }
-});
-
-// Deactivate user
-router.patch('/:id/deactivate', requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check permissions - for now allow all authenticated users
-    const requestingUserId = req.user?.id;
-    if (!requestingUserId) {
-      return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
-    }
-
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .update({ 
-        is_active: 0,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error deactivating user:', error);
-      return sendErr(res, 'DATABASE_ERROR', 'Failed to deactivate user', error, 500);
-    }
-
-    if (!user) {
-      return sendErr(res, 'NOT_FOUND', 'User not found', undefined, 404);
-    }
-
-    return sendSuccess(res, user);
-
-  } catch (error) {
-    console.error('Error in user deactivation:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', error, 500);
-  }
-});
-
-export default router;
+export { router as enhancedUsersRouter };
