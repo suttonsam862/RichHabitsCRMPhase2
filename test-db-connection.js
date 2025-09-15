@@ -1,7 +1,7 @@
 
-const { drizzle } = require('drizzle-orm/postgres-js');
-const { sql } = require('drizzle-orm');
-const postgres = require('postgres');
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { sql } from 'drizzle-orm';
+import postgres from 'postgres';
 
 const connectionString = process.env.DATABASE_URL;
 console.log('Testing connection to:', connectionString ? connectionString.replace(/:\/\/[^:]*:[^@]*@/, '://***:***@') : 'NO DATABASE_URL');
