@@ -45,7 +45,7 @@ export default function SportsManagement() {
       console.error('Failed to add sport:', result);
       toast({ 
         title: "Error", 
-        description: result.error || "Failed to add sport",
+        description: typeof result.error === 'string' ? result.error : result.error?.message || "Failed to add sport",
         variant: "destructive" 
       });
     }

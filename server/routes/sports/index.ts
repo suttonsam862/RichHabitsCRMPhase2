@@ -12,6 +12,16 @@ const createSportSchema = z.object({
   name: z.string().min(2).max(50)
 });
 
+// Helper function to generate slug from name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
+    .trim();
+}
+
 const updateSportSchema = z.object({
   name: z.string().min(2).max(50)
 });
@@ -22,7 +32,7 @@ r.get('/', async (req: any, res) => {
   
   const { data, error } = await sb
     .from('sports')
-    .select('id, name')
+    .select('id, name, slug')
     .order('name');
     
   if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
@@ -42,7 +52,10 @@ r.post('/', async (req: any, res) => {
   const sb = supabaseAdmin;
   const { data, error } = await sb
     .from('sports')
-    .insert([{ name: parse.data.name }])
+    .insert([{ 
+      name: parse.data.name,
+      slug: generateSlug(parse.data.name)
+    }])
     .select()
     .single();
     
