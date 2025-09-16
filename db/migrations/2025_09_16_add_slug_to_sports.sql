@@ -28,7 +28,16 @@ WHERE slug IS NULL OR slug = '';
 -- Make slug NOT NULL after populating
 ALTER TABLE sports ALTER COLUMN slug SET NOT NULL;
 
--- Add unique constraint on slug
-ALTER TABLE sports ADD CONSTRAINT IF NOT EXISTS sports_slug_unique UNIQUE (slug);
+-- Add unique constraint on slug (only if it doesn't exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'sports_slug_unique' 
+        AND table_name = 'sports'
+    ) THEN
+        ALTER TABLE sports ADD CONSTRAINT sports_slug_unique UNIQUE (slug);
+    END IF;
+END $$;
 
 COMMIT;
