@@ -11,13 +11,18 @@ export function AuthProvider({children}:{children:any}){
   useEffect(()=>{ 
     if (!isSupabaseAvailable()) {
       console.warn('Supabase not configured - authentication disabled');
+      setUser(undefined);
       setLoading(false);
       return;
     }
     
     // Check for existing session on mount
     sb!.auth.getSession().then(({data})=> {
-      setUser(data.session?.user ? { id:data.session.user.id, email:data.session.user.email } : undefined);
+      if (data.session?.user) {
+        setUser({ id: data.session.user.id, email: data.session.user.email });
+      } else {
+        setUser(undefined);
+      }
       setLoading(false); // Done checking session
     }).catch((error) => {
       console.error('Error getting session:', error);
@@ -26,8 +31,12 @@ export function AuthProvider({children}:{children:any}){
     });
     
     // Listen for auth state changes
-    const { data: sub } = sb!.auth.onAuthStateChange((_e,s)=> {
-      setUser(s?.user ? { id:s.user.id, email:s.user.email } : undefined);
+    const { data: sub } = sb!.auth.onAuthStateChange((_e, session)=> {
+      if (session?.user) {
+        setUser({ id: session.user.id, email: session.user.email });
+      } else {
+        setUser(undefined);
+      }
       setLoading(false);
     });
     

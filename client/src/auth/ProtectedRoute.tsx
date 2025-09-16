@@ -1,11 +1,11 @@
-import { Navigate, Outlet } from 'react-router-dom'; 
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Loader2 } from 'lucide-react';
 
-export default function ProtectedRoute(){ 
-  const { user, loading } = useAuth(); 
-  
+export default function ProtectedRoute(){
+  const { user, loading } = useAuth();
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -16,10 +16,10 @@ export default function ProtectedRoute(){
       </div>
     );
   }
-  
+
   return user ? (
     <AppLayout>
       <Outlet/>
     </AppLayout>
-  ) : <Navigate to="/login" replace/>; 
+  ) : <Navigate to="/login" replace/>;
 }
