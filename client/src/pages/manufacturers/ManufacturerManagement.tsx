@@ -191,8 +191,8 @@ export function ManufacturerManagement() {
       postalCode: '',
       country: '',
       specialties: [],
-      minimumOrderQuantity: '',
-      leadTimeDays: '',
+      minimumOrderQuantity: undefined,
+      leadTimeDays: undefined,
       isActive: true
     }
   });
@@ -211,8 +211,8 @@ export function ManufacturerManagement() {
       postalCode: '',
       country: '',
       specialties: [],
-      minimumOrderQuantity: '',
-      leadTimeDays: '',
+      minimumOrderQuantity: undefined,
+      leadTimeDays: undefined,
       isActive: true
     }
   });
@@ -431,8 +431,8 @@ export function ManufacturerManagement() {
                                 postalCode: manufacturer.postalCode || '',
                                 country: manufacturer.country || '',
                                 specialties: manufacturer.specialties || [],
-                                minimumOrderQuantity: manufacturer.minimumOrderQuantity || '',
-                                leadTimeDays: manufacturer.leadTimeDays || '',
+                                minimumOrderQuantity: manufacturer.minimumOrderQuantity || undefined,
+                                leadTimeDays: manufacturer.leadTimeDays || undefined,
                                 isActive: manufacturer.isActive ?? true
                               });
                               setIsEditDialogOpen(true);
@@ -654,8 +654,8 @@ export function ManufacturerManagement() {
                               {...field} 
                               type="number" 
                               placeholder="e.g., 50"
-                              value={field.value || ''}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
+                              value={field.value?.toString() || ''}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                               data-testid="input-min-order"
                             />
                           </FormControl>
@@ -676,8 +676,8 @@ export function ManufacturerManagement() {
                               {...field} 
                               type="number" 
                               placeholder="e.g., 14"
-                              value={field.value || ''}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
+                              value={field.value?.toString() || ''}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                               data-testid="input-lead-time"
                             />
                           </FormControl>
@@ -912,8 +912,8 @@ export function ManufacturerManagement() {
                               <Input 
                                 {...field} 
                                 type="number"
-                                value={field.value || ''}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
+                                value={field.value?.toString() || ''}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                                 data-testid="input-edit-min-order"
                               />
                             </FormControl>
@@ -932,8 +932,8 @@ export function ManufacturerManagement() {
                               <Input 
                                 {...field} 
                                 type="number"
-                                value={field.value || ''}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : '')}
+                                value={field.value?.toString() || ''}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                                 data-testid="input-edit-lead-time"
                               />
                             </FormControl>
