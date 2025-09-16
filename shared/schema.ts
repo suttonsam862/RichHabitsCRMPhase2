@@ -290,8 +290,8 @@ export const orders = pgTable("orders", {
 
 export const organizationFavorites = pgTable("organization_favorites", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        userId: uuid("user_id").notNull(),
-        organizationId: uuid("organization_id").notNull(),
+        userId: uuid("user_id").notNull(), // FK to users.id (varchar) - type mismatch!
+        organizationId: uuid("organization_id").notNull(), // FK to organizations.id (varchar) - type mismatch!
         createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
 
@@ -396,9 +396,9 @@ export const statusWorkOrders = pgTable("status_work_orders", {
 });
 
 export const userRoles = pgTable("user_roles", {
-        userId: uuid("user_id").notNull(),
+        userId: uuid("user_id").notNull(), // FK to users.id (varchar) - type mismatch!
         roleId: uuid("role_id").notNull(),
-        orgId: uuid("org_id"), // Organization-scoped roles
+        orgId: uuid("org_id"), // FK to organizations.id (varchar) - type mismatch!
         assignedAt: timestamp("assigned_at", { withTimezone: true, mode: 'string' }).defaultNow(),
         assignedBy: uuid("assigned_by"),
 });
@@ -406,8 +406,8 @@ export const userRoles = pgTable("user_roles", {
 // Organization membership table for proper access control
 export const organizationMemberships = pgTable("organization_memberships", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        userId: uuid("user_id").notNull(),
-        organizationId: uuid("organization_id").notNull(),
+        userId: uuid("user_id").notNull(), // FK to users.id (varchar) - type mismatch!
+        organizationId: uuid("organization_id").notNull(), // FK to organizations.id (varchar) - type mismatch!
         role: varchar({ length: 50 }).notNull().default('member'), // owner, admin, member, readonly
         isActive: boolean("is_active").notNull().default(true),
         joinedAt: timestamp("joined_at", { withTimezone: true, mode: 'string' }).defaultNow(),

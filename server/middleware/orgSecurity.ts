@@ -83,15 +83,15 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
         return sendErr(res, 'BAD_REQUEST', 'Organization ID is required', undefined, 400);
       }
 
-      // Validate organization ID format (UUID)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(orgId)) {
+      // Note: organization.id is varchar, may not always be UUID format
+      // Remove strict UUID validation to allow non-UUID varchar IDs
+      if (!orgId || orgId.trim() === '') {
         logSecurityEvent(req, 'ORG_ACCESS_INVALID_ID', { 
           orgId, 
           path: req.path,
           requestId 
         });
-        return sendErr(res, 'BAD_REQUEST', 'Invalid organization ID format', undefined, 400);
+        return sendErr(res, 'BAD_REQUEST', 'Invalid organization ID', undefined, 400);
       }
 
       const user = req.user;
@@ -233,11 +233,13 @@ export async function addUserToOrganization(
   invitedBy?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Handle varchar primary keys to uuid foreign keys
+    // IDs may be varchar containing UUID values, cast them properly
     await db.execute(sql`
       INSERT INTO organization_memberships 
       (user_id, organization_id, role, invited_by) 
       VALUES 
-      (${userId}::uuid, ${organizationId}::uuid, ${role}, ${invitedBy ? `${invitedBy}::uuid` : null})
+      (${userId}::uuid, ${organizationId}::uuid, ${role}, ${invitedBy ? sql`${invitedBy}::uuid` : sql`NULL`})
       ON CONFLICT (user_id, organization_id) 
       DO UPDATE SET 
         role = EXCLUDED.role,
