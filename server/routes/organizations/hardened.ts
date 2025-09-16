@@ -1337,11 +1337,13 @@ router.get('/:id/summary', requireAuth, requireOrgReadonly(), async (req, res) =
     const { data: orgSportsData, count: sportsCount, error: sportsError } = await supabaseAdmin
       .from('org_sports')
       .select(`
+        id,
+        organization_id,
         sport_id,
-        team_name,
         contact_name,
         contact_email,
         contact_phone,
+        team_name,
         created_at,
         updated_at
       `, { count: 'exact' })
@@ -1445,7 +1447,12 @@ router.get('/:id/sports', requireAuth, requireOrgReadonly(), async (req: any, re
       }));
     }
 
-    return sendOk(res, sports);
+    logger.info({ orgId, count: sports.length }, 'Successfully fetched organization sports');
+
+    return res.json({
+      success: true,
+      data: sports || []
+    });
 
   } catch (error: any) {
     logSbError(req, 'orgs.sports.list.catch', error);
@@ -1453,90 +1460,93 @@ router.get('/:id/sports', requireAuth, requireOrgReadonly(), async (req: any, re
   }
 });
 
-// POST endpoint to save sports - simplified version
-const SportsSchema = z.object({
-  sports: z.array(z.object({
-    sport_id: z.string().optional(),
-    sportId: z.string().optional(), // Support both camelCase and snake_case
-    team_name: z.string().optional(),
-    teamName: z.string().optional(), // Support both camelCase and snake_case
-    contact_name: z.string().min(1),
-    contact_email: z.string().email(),
-    contact_phone: z.string().optional(),
-    assigned_salesperson_id: z.string().optional()
-  }).refine(data => data.sport_id || data.sportId, {
-    message: "Either sport_id or sportId is required"
-  }).refine(data => data.team_name || data.teamName, {
-    message: "Either team_name or teamName is required"
-  }))
-});
-
-router.post('/:id/sports', requireAuth, requireOrgAdmin(), async (req: any, res) => {
+// POST endpoint to add sports to an organization
+router.post('/:id/sports', requireAuth, requireOrgAdmin(), async (req, res) => {
   try {
     const { id: organizationId } = req.params;
-    const parseResult = SportsSchema.safeParse(req.body);
+    const { sports } = req.body;
 
-    if (!parseResult.success) {
-      logger.error({ organizationId, error: parseResult.error }, 'Sports validation failed');
+    if (!Array.isArray(sports) || sports.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
-        details: parseResult.error.flatten()
+        error: 'Sports array is required and cannot be empty'
       });
     }
 
-    const { sports } = parseResult.data;
-    logger.info({ organizationId, count: sports.length }, 'Processing sports creation');
-
-    // Prepare org_sports records with conditional assigned_salesperson_id
-    const orgSportsData = sports.map(sport => {
-      const baseRecord: any = {
-        id: randomUUID(), // Generate UUID for primary key
-        organization_id: organizationId,
-        sport_id: sport.sport_id || sport.sportId, // Handle both formats
-        team_name: sport.team_name || sport.teamName || 'Main Team', // Handle both formats
-        contact_name: sport.contact_name,
-        contact_email: sport.contact_email,
-        contact_phone: sport.contact_phone || null,
-        is_primary_contact: 1, // Add required field
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      // Only include assigned_salesperson_id if provided to avoid schema issues
-      if (sport.assigned_salesperson_id) {
-        baseRecord.assigned_salesperson_id = sport.assigned_salesperson_id;
+    // Validate each sport object
+    for (const sport of sports) {
+      if (!sport.sport_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'Each sport must have a sport_id'
+        });
       }
-
-      return baseRecord;
-    });
-
-    // Use upsert to handle duplicates atomically
-    const { data: insertedSports, error: insertError } = await supabaseAdmin
-      .from('org_sports')
-      .upsert(orgSportsData, {
-        onConflict: 'organization_id,sport_id'
-      })
-      .select();
-
-    if (insertError) {
-      logger.error({ organizationId, error: insertError }, 'Failed to insert sports');
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to save sports data',
-        details: insertError.message
-      });
     }
 
-    logger.info({ 
-      organizationId, 
-      count: insertedSports?.length || 0,
-      sports: sports.map(s => s.sport_id)
-    }, 'Successfully saved sports');
+    // Transform and insert sports with proper conflict handling
+    const sportsToInsert = sports.map(sport => ({
+      organization_id: organizationId,
+      sport_id: sport.sport_id,
+      contact_name: sport.contact_name || null,
+      contact_email: sport.contact_email || null,
+      contact_phone: sport.contact_phone || null,
+      team_name: sport.team_name || 'Main Team',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+
+    // Insert sports one by one to handle conflicts properly
+    const insertedSports = [];
+    for (const sportData of sportsToInsert) {
+      const { data: existingSport } = await supabaseAdmin
+        .from('org_sports')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('sport_id', sportData.sport_id)
+        .single();
+
+      if (existingSport) {
+        // Update existing sport
+        const { data: updatedSport, error: updateError } = await supabaseAdmin
+          .from('org_sports')
+          .update({
+            contact_name: sportData.contact_name,
+            contact_email: sportData.contact_email,
+            contact_phone: sportData.contact_phone,
+            team_name: sportData.team_name,
+            updated_at: sportData.updated_at
+          })
+          .eq('organization_id', organizationId)
+          .eq('sport_id', sportData.sport_id)
+          .select()
+          .single();
+
+        if (updateError) {
+          logger.error({ organizationId, sportId: sportData.sport_id, error: updateError }, 'Failed to update sport');
+          continue;
+        }
+        insertedSports.push(updatedSport);
+      } else {
+        // Insert new sport
+        const { data: newSport, error: insertError } = await supabaseAdmin
+          .from('org_sports')
+          .insert(sportData)
+          .select()
+          .single();
+
+        if (insertError) {
+          logger.error({ organizationId, sportId: sportData.sport_id, error: insertError }, 'Failed to insert sport');
+          continue;
+        }
+        insertedSports.push(newSport);
+      }
+    }
+
+    logger.info({ organizationId, count: insertedSports.length }, 'Successfully saved sports');
 
     return res.json({
       success: true,
-      message: `Successfully processed ${sports.length} sport${sports.length > 1 ? 's' : ''} to ${organizationId}`,
+      message: `Successfully processed ${insertedSports.length} sport${insertedSports.length > 1 ? 's' : ''} for organization ${organizationId}`,
       data: insertedSports
     });
 
