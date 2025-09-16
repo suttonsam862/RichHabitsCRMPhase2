@@ -19,20 +19,20 @@ async function testWithAuth() {
     
     console.log('Testing organizations endpoint with proper authentication...');
     
-    // Option 1: Sign in with existing user (replace with real credentials)
+    // Try to sign in with the existing admin user from recreate-admin.ts
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: 'test@example.com', // Replace with actual test user email
-      password: 'password123'    // Replace with actual password
+      email: 'samsutton@rich-habits.com',
+      password: 'Arlodog2010!'
     });
 
     if (authError) {
       console.log('Auth failed:', authError.message);
-      console.log('Creating test user...');
+      console.log('Creating test user with valid email format...');
       
-      // Option 2: Create test user if sign-in fails
+      // Option 2: Create test user if sign-in fails (using proper email format)
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: 'test@example.com',
-        password: 'password123'
+        email: 'testuser@rich-habits.com', // Use valid domain format
+        password: 'TestPassword123!'
       });
       
       if (signUpError) {
