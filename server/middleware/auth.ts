@@ -52,8 +52,8 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
           role,
           organization_id::text,
           COALESCE(is_super_admin, false) as is_super_admin,
-          raw_user_meta_data,
-          user_metadata,
+          COALESCE(raw_user_meta_data, '{}'::jsonb) as raw_user_meta_data,
+          COALESCE(user_metadata, '{}'::jsonb) as user_metadata,
           created_at,
           updated_at
         FROM users 

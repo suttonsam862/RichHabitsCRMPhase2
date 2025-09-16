@@ -29,12 +29,12 @@ const updateSportSchema = z.object({
 /* ---------- List all sports ---------- */
 r.get('/', async (req: any, res) => {
   const sb = supabaseAdmin;
-  
+
   const { data, error } = await sb
     .from('sports')
     .select('id, name, slug')
     .order('name');
-    
+
   if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
   return sendOk(res, data || []);
 });
@@ -42,13 +42,13 @@ r.get('/', async (req: any, res) => {
 /* ---------- Create sport ---------- */
 r.post('/', async (req: any, res) => {
   console.log('Creating sport with body:', req.body);
-  
+
   const parse = createSportSchema.safeParse(req.body);
   if (!parse.success) {
     console.log('Validation failed:', parse.error.flatten());
     return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
   }
-  
+
   const sb = supabaseAdmin;
   const { data, error } = await sb
     .from('sports')
@@ -58,7 +58,7 @@ r.post('/', async (req: any, res) => {
     }])
     .select()
     .single();
-    
+
   if (error) {
     console.log('Database error:', error);
     return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
@@ -70,7 +70,7 @@ r.post('/', async (req: any, res) => {
 r.patch('/:id', async (req: any, res) => {
   const parse = updateSportSchema.safeParse(req.body);
   if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
-  
+
   const sb = supabaseAdmin;
   const { data, error } = await sb
     .from('sports')
@@ -78,7 +78,7 @@ r.patch('/:id', async (req: any, res) => {
     .eq('id', req.params.id)
     .select()
     .single();
-    
+
   if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
   return sendOk(res, data);
 });
@@ -90,7 +90,7 @@ r.delete('/:id', async (req: any, res) => {
     .from('sports')
     .delete()
     .eq('id', req.params.id);
-    
+
   if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
   return sendNoContent(res);
 });
