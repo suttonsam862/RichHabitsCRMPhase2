@@ -275,7 +275,9 @@ export default function SetupWizard() {
         city: contactInfo.city || undefined,
         state: contactInfo.state || undefined,
         zip: contactInfo.zipCode || undefined,
-        complete: true
+        complete: true,
+        setup_complete: true,
+        setup_completed_at: new Date().toISOString()
       };
       
       const setupResult = await api.post(`/api/v1/organizations/${id}/setup`, setupPayload);

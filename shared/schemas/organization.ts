@@ -59,6 +59,12 @@ export const OrgBase = z.object({
     z.number().min(0, "Discount value must be non-negative").max(100, "Discount cannot exceed 100%")
   ).default({}).catch({}),
   
+  // Setup completion fields
+  setup_complete: z.boolean().default(false),
+  setup_completed_at: z.string().datetime().optional().nullable(),
+  finance_email: z.string().email("Invalid finance email format").optional().nullable(),
+  tax_exempt_doc_key: z.string().optional().nullable(),
+  
   // Optional user_id for role assignment
   user_id: z.string().uuid("Invalid user ID format").optional()
 });

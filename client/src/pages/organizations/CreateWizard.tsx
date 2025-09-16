@@ -64,7 +64,8 @@ export default function CreateWizard(){
       emailDomain: emailDomain || undefined,
       billingEmail: billingEmail || undefined,
       tags: tags.split(',').map(s=>s.trim()).filter(Boolean),
-      sports: [] // Remove sports creation from this step
+      sports: [], // Remove sports creation from this step
+      setupComplete: false // Explicitly set setup as incomplete
     };
     
     const r = await api.post('/api/v1/organizations', payload);

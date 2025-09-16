@@ -103,7 +103,9 @@ function mapFieldsToDbColumns(data: CreateOrganizationRequest) {
     universal_discounts: data.universalDiscounts || {},
     logo_url: data.logoUrl || null,
     status: 'active',
-    is_archived: false
+    is_archived: false,
+    // Setup completion status is managed separately during the setup process
+    // and should not be defaulted here for initial creation.
   };
 
   return dbPayload;
@@ -1656,7 +1658,7 @@ router.delete('/:id/sports/:sportId', async (req, res) => {
 });
 
 // UNIFIED: Organization logo upload URL endpoint  
-router.post('/upload-url', async (req: any, res) => {
+router.post('/objects/upload-url', async (req: any, res) => {
   try {
     logger.info('Generating unified upload URL for organization logo');
 

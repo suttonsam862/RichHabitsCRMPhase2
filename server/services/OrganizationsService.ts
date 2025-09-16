@@ -185,8 +185,10 @@ export class OrganizationsService {
       isBusiness: org.is_business || false,
       isArchived: org.is_archived || false,
       tags: tags, // Use the potentially modified tags array
-      setupComplete: org.setup_complete || false,
-      setupCompletedAt: org.setup_completed_at,
+      setupComplete: org.setup_complete !== undefined ? org.setup_complete : false,
+      setupCompletedAt: org.setup_completed_at || null,
+      financeEmail: org.finance_email || null,
+      taxExemptDocKey: org.tax_exempt_doc_key || null,
       createdAt: org.created_at,
       updatedAt: org.updated_at
     };
