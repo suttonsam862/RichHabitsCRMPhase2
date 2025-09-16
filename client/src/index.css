@@ -1,9 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Import Universal UI Laws - THESE CANNOT BE OVERRIDDEN */
 @import './styles/ui-laws.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Coolvetica Font - Commented out until font file is available
 @font-face {
