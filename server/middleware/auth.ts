@@ -31,7 +31,7 @@ export interface AuthedRequest extends Request {
 /**
  * Middleware to require authentication for protected routes
  */
-export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+async function authMiddleware(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers['authorization'];
 
@@ -53,7 +53,7 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
 
     // Fetch complete user data from database if available
     let userData = null;
-    
+
     if (db) {
       try {
         const userQuery = await db.execute(sql`
@@ -93,23 +93,15 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
 
     next();
   } catch (error) {
-    console.error('Authentication middleware error:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      path: req.path,
-      method: req.method
-    });
-    
-    logSecurityEvent(req, 'AUTH_ERROR', { 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      path: req.path 
-    });
-    
-    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', {
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, 500);
+    console.error('Authentication middleware error:', error);
+    logSecurityEvent(req, 'AUTH_ERROR', { error: error instanceof Error ? error.message : 'Unknown error' });
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', undefined, 500);
   }
-}
+};
+
+// Export the middleware function
+export const requireAuth = authMiddleware;
+
 
 /**
  * Optional auth middleware - attaches user if token is present but doesn't require it
