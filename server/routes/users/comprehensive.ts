@@ -290,7 +290,19 @@ router.post('/', requireAuth, async (req, res) => {
 
     const userData = parseResult.data;
 
-    // Check for duplicate email
+    // Check for duplicate email in Supabase Auth first
+    const { data: authUsers, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
+    if (authListError) {
+      logger.error({ error: authListError }, 'Failed to check existing auth users');
+      return sendErr(res, 'AUTH_ERROR', 'Failed to validate user uniqueness', undefined, 500);
+    }
+
+    const existingAuthUser = authUsers?.users?.find(user => user.email === userData.email);
+    if (existingAuthUser) {
+      return sendErr(res, 'CONFLICT', 'User with this email already exists in auth system', undefined, 409);
+    }
+
+    // Check for duplicate in database
     const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -301,8 +313,28 @@ router.post('/', requireAuth, async (req, res) => {
       return sendErr(res, 'CONFLICT', 'User with this email already exists', undefined, 409);
     }
 
-    // Prepare user data for insertion
+    // Generate UUID for the user
+    const userId = randomUUID();
+
+    // Create Supabase Auth user first
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password || generateRandomPassword(),
+      email_confirm: true,
+      user_metadata: {
+        full_name: userData.full_name,
+        phone: userData.phone
+      }
+    });
+
+    if (authError) {
+      logger.error({ error: authError, email: userData.email }, 'Failed to create auth user');
+      return sendErr(res, 'AUTH_ERROR', 'Failed to create authentication user', authError, 500);
+    }
+
+    // Prepare user data for insertion with the auth user's ID
     const insertData = {
+      id: authUser.user?.id || userId, // Use auth user ID or fallback to generated UUID
       email: userData.email,
       full_name: userData.full_name,
       phone: userData.phone || null,
@@ -310,7 +342,7 @@ router.post('/', requireAuth, async (req, res) => {
       organization_id: userData.organization_id || null,
       password_hash: userData.password ? await hashPassword(userData.password) : null,
       is_active: 1,
-      email_verified: 0,
+      email_verified: 1, // Auth user is email confirmed
       address_line1: userData.address_line1 || null,
       address_line2: userData.address_line2 || null,
       city: userData.city || null,

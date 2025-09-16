@@ -1,4 +1,3 @@
-
 -- Fix organizations table ID generation
 -- This migration ensures the organizations table has proper UUID defaults
 
@@ -6,10 +5,10 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Ensure the organizations table has proper UUID generation
--- Only modify if the column doesn't already have a default
+-- Only modify if the column doesn't already have a default value
 DO $$
 BEGIN
-  -- Check if the id column has a default value
+  -- Check if the id column has a default value and is varchar type
   IF NOT EXISTS (
     SELECT 1 
     FROM information_schema.columns 
@@ -18,8 +17,8 @@ BEGIN
       AND column_name = 'id' 
       AND column_default IS NOT NULL
   ) THEN
-    -- Add UUID default generation
-    ALTER TABLE public.organizations ALTER COLUMN id SET DEFAULT uuid_generate_v4();
+    -- Add UUID default generation for varchar field
+    ALTER TABLE public.organizations ALTER COLUMN id SET DEFAULT gen_random_uuid()::varchar;
   END IF;
 END$$;
 

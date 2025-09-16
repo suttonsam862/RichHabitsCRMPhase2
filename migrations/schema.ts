@@ -441,7 +441,13 @@ export const designers = pgTable("designers", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	orgId: uuid("org_id"),
 	userId: uuid("user_id"),
-	payRatePerDesign: numeric("pay_rate_per_design", { precision: 10, scale:  2 }),
+	specializations: text().array(), // Missing from schema but used in route
+	portfolioUrl: text("portfolio_url"),
+	hourlyRate: numeric("hourly_rate", { precision: 10, scale: 2 }),
+	payRatePerDesign: numeric("pay_rate_per_design", { precision: 10, scale: 2 }),
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 }, (table) => [
 	pgPolicy("designers_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
@@ -449,25 +455,37 @@ export const designers = pgTable("designers", {
 export const manufacturers = pgTable("manufacturers", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	orgId: uuid("org_id"),
-	name: text(),
-	specialtiesJson: jsonb("specialties_json"),
-	wireInfoJson: jsonb("wire_info_json"),
+	name: text().notNull(), // Made required to match route validation
 	contactEmail: text("contact_email"),
+	contactPhone: text("contact_phone"),
+	addressLine1: text("address_line1"),
+	addressLine2: text("address_line2"),
+	city: text(),
+	state: text(),
+	postalCode: text("postal_code"),
+	country: text(),
+	specialties: text().array(), // Changed from specialtiesJson to match route
+	minimumOrderQuantity: integer("minimum_order_quantity"),
+	leadTimeDays: integer("lead_time_days"),
+	isActive: boolean("is_active").default(true).notNull(),
 	notes: text(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 }, (table) => [
 	pgPolicy("manufacturers_dev_access", { as: "permissive", for: "all", to: ["public"], using: sql`true`, withCheck: sql`true`  }),
 ]);
 
 export const salespersonProfiles = pgTable("salesperson_profiles", {
-	id: varchar().default(gen_random_uuid()).primaryKey().notNull(),
-	userId: uuid("user_id").notNull(),
+	id: varchar().default(sql`gen_random_uuid()::varchar`).primaryKey().notNull(),
+	userId: varchar("user_id").notNull(), // Changed to match database varchar type
 	employeeId: text("employee_id"),
 	taxId: text("tax_id"),
-	commissionRate: integer("commission_rate").default(0),
+	commissionRate: numeric("commission_rate", { precision: 5, scale: 4 }).default('0.05'), // Fixed to match migration
 	territory: text(),
 	hireDate: timestamp("hire_date", { mode: 'string' }),
 	managerId: varchar("manager_id"),
 	performanceTier: text("performance_tier").default('standard'),
+	isActive: boolean("is_active").default(true).notNull(), // Missing field
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
