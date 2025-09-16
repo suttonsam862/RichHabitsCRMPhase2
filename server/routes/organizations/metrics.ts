@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
 import { logSbError } from '../../lib/dbLog.js';
+import { requireAuth } from '../../middleware/auth';
+import { requireOrgReadonly, requireOrgAdmin } from '../../middleware/orgSecurity';
 
 const router = Router();
 
 // GET organization metrics/KPIs
-router.get('/:id/metrics', async (req, res) => {
+router.get('/:id/metrics', requireAuth, requireOrgReadonly(), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -83,7 +85,7 @@ router.get('/:id/metrics', async (req, res) => {
 });
 
 // Update organization metrics (for future admin functionality)
-router.post('/:id/metrics', async (req, res) => {
+router.post('/:id/metrics', requireAuth, requireOrgAdmin(), async (req, res) => {
   try {
     const { id } = req.params;
     const metricsData = req.body;

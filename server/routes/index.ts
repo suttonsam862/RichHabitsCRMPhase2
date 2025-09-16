@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { requireAuth } from '../middleware/auth';
+import { requireOrgAdmin } from '../middleware/orgSecurity';
 import authRoutes from './auth';
 import { usersRouter } from './users';
 import adminUsersRouter from './users/admin';
@@ -50,7 +52,8 @@ router.use('/admin/schema', adminSchema);
 
 // Object storage routes - using ObjectStorageService implementation below
 
-router.post('/objects/upload', async (req: any, res) => {
+// SECURITY: This route handles organizationId from req.body - now properly secured
+router.post('/objects/upload', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const { fileName, organizationId } = req.body || {};
 
@@ -101,8 +104,12 @@ router.post('/objects/upload', async (req: any, res) => {
   }
 });
 
-// Debug route to list files in storage
-router.get('/debug/storage-files', async (req, res) => {
+// Debug route to list files in storage - secured for admin only
+router.get('/debug/storage-files', requireAuth, async (req: any, res) => {
+  // SECURITY: Only super-admins can access storage files listing
+  if (!req.user?.is_super_admin) {
+    return res.status(403).json({ error: 'Super admin access required' });
+  }
   try {
     const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
     const { data, error } = await supabaseAdmin.storage
@@ -117,37 +124,68 @@ router.get('/debug/storage-files', async (req, res) => {
   }
 });
 
-// Public objects serving from Supabase storage
-router.get('/public-objects/:filePath(*)', async (req, res) => {
+// SECURED: Organization logo/branding serving - requires authentication and org access
+router.get('/public-objects/:filePath(*)', requireAuth, async (req: any, res) => {
   try {
-    const filePath = req.params.filePath;
-    console.log('DEBUG: Requested file path:', filePath);
+    const filePath = req.params.filePath as string;
+    const user = req.user;
 
+    if (!user?.id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // SECURITY: Validate file path - only allow organization branding files
+    if (!filePath.startsWith('org/') || !filePath.includes('/branding/')) {
+      console.error('SECURITY: Blocked unauthorized file access attempt:', filePath, 'user:', user.id);
+      return res.status(403).json({ error: 'Access denied - invalid file path' });
+    }
+
+    // Extract organization ID from path: org/{org-id}/branding/filename
+    const pathParts = filePath.split('/');
+    if (pathParts.length < 4 || pathParts[0] !== 'org' || pathParts[2] !== 'branding') {
+      console.error('SECURITY: Invalid organization file path structure:', filePath);
+      return res.status(403).json({ error: 'Access denied - invalid file structure' });
+    }
+
+    const organizationId = pathParts[1];
+
+    // SECURITY: Verify user has access to this organization
+    const { supabaseForUser } = await import('../lib/supabase.js');
+    const userClient = supabaseForUser(req.headers.authorization?.split(' ')[1] || '');
+    
+    const { data: orgAccess, error: accessError } = await userClient
+      .from('organizations')
+      .select('id')
+      .eq('id', organizationId)
+      .single();
+
+    if (accessError || !orgAccess) {
+      console.error('SECURITY: User attempted unauthorized org file access:', {
+        userId: user.id,
+        orgId: organizationId,
+        filePath: filePath,
+        error: accessError?.message
+      });
+      return res.status(403).json({ error: 'Access denied - organization not accessible' });
+    }
+
+    // Now serve the file with proper authorization
     const { supabaseAdmin } = await import('../lib/supabaseAdmin.js');
-    console.log('DEBUG: Supabase admin client loaded');
-
-    // Try to create a signed URL instead of public URL for better access control
     const { data, error } = await supabaseAdmin.storage
       .from('app')
       .createSignedUrl(filePath, 3600); // 1 hour expiry
 
-    console.log('DEBUG: Signed URL data:', data, 'error:', error);
-
     if (error || !data?.signedUrl) {
-      console.error('Failed to create signed URL for:', filePath, 'Error:', error);
-      return res.status(404).json({ error: 'File not found', details: error?.message });
+      console.error('Failed to create signed URL for authorized request:', filePath, 'Error:', error);
+      return res.status(404).json({ error: 'File not found' });
     }
-
-    console.log('DEBUG: Fetching from signed URL:', data.signedUrl);
 
     // Fetch the file from Supabase and stream it to the client
     const fetch = (await import('node-fetch')).default;
     const fileResponse = await fetch(data.signedUrl);
 
-    console.log('DEBUG: Fetch response status:', fileResponse.status, 'for path:', filePath);
-
     if (!fileResponse.ok) {
-      console.error('File fetch failed:', fileResponse.status, filePath, 'URL:', data.signedUrl);
+      console.error('File fetch failed for authorized request:', fileResponse.status, filePath);
       return res.status(404).json({ error: 'File not found' });
     }
 
@@ -158,12 +196,17 @@ router.get('/public-objects/:filePath(*)', async (req, res) => {
       'Access-Control-Allow-Origin': '*',
     });
 
-    console.log('DEBUG: Streaming file to response');
-
     // Stream the file to the response
     fileResponse.body?.pipe(res);
-  } catch (error) {
-    console.error('Error serving public object:', error);
+    
+    console.log('SECURITY: Authorized file access granted:', {
+      userId: user.id,
+      orgId: organizationId,
+      filePath: filePath
+    });
+
+  } catch (error: any) {
+    console.error('Error serving secured object:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

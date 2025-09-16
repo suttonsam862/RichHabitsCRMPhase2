@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../../db";
 import { 
@@ -38,7 +38,7 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
     .from(users)
     .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId))
     .leftJoin(salespersonAssignments, eq(users.id, salespersonAssignments.salespersonId))
-    .where(eq(users.role, 'sales'))
+    .where(or(eq(users.role, 'sales'), eq(users.role, 'staff')))
     .groupBy(users.id, salespersonProfiles.id);
 
   res.json(salespeople);

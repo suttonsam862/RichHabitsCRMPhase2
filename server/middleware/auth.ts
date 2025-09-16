@@ -2,11 +2,19 @@ import { Request, Response, NextFunction } from 'express';
 import { supabaseForUser } from '../lib/supabase';
 import { sendErr } from '../lib/http';
 import { logSecurityEvent } from '../lib/log';
+import { db } from '../db';
+import { sql } from 'drizzle-orm';
 
 export interface AuthedRequest extends Request {
   user?: {
     id: string;
     email?: string;
+    full_name?: string;
+    role?: string;
+    organization_id?: string;
+    is_super_admin?: boolean;
+    raw_user_meta_data?: any;
+    user_metadata?: any;
   };
 }
 
@@ -33,11 +41,30 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
       return sendErr(res, 'UNAUTHORIZED', 'Invalid or expired token', undefined, 401);
     }
     
-    // Attach user to request
-    req.user = {
-      id: user.id,
-      email: user.email ?? undefined
-    };
+    // Fetch complete user data from database
+    try {
+      const [dbUser] = await db.execute(sql`
+        SELECT id, email, full_name, role, organization_id, is_super_admin
+        FROM users 
+        WHERE id = ${user.id}::uuid
+        LIMIT 1
+      `);
+      
+      // Attach user to request with database data
+      req.user = {
+        id: user.id,
+        email: user.email ?? undefined,
+        full_name: dbUser?.full_name,
+        role: dbUser?.role,
+        organization_id: dbUser?.organization_id,
+        is_super_admin: dbUser?.is_super_admin,
+        user_metadata: user.user_metadata
+      };
+    } catch (dbError) {
+      console.error('Failed to fetch user data from database:', dbError);
+      logSecurityEvent(req, 'AUTH_DB_ERROR', { error: dbError instanceof Error ? dbError.message : 'Unknown error' });
+      return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', undefined, 500);
+    }
     
     next();
   } catch (error) {
@@ -73,6 +100,66 @@ export async function optionalAuth(req: AuthedRequest, res: Response, next: Next
     // Don't fail on optional auth errors, just continue without user
     next();
   }
+}
+
+/**
+ * @deprecated This middleware has critical security vulnerabilities. 
+ * Use requireOrgRole() from server/middleware/orgSecurity.ts instead.
+ * 
+ * This legacy function is kept only for backward compatibility during migration.
+ * It will be removed once all routes are updated to use the secure middleware.
+ */
+export function requireOrgAccess(req: AuthedRequest, res: Response, next: NextFunction) {
+  console.warn('[SECURITY] Using deprecated requireOrgAccess middleware. Migrate to orgSecurity middleware.');
+  
+  const orgId = req.params.id || req.params.organizationId;
+  
+  if (!orgId) {
+    return sendErr(res, 'BAD_REQUEST', 'Organization ID is required', undefined, 400);
+  }
+  
+  const user = req.user;
+  if (!user) {
+    return sendErr(res, 'UNAUTHORIZED', 'User not authenticated', undefined, 401);
+  }
+  
+  // Check if user has access to this organization
+  db.execute(sql`
+    SELECT o.id, o.created_by, u.organization_id, u.is_super_admin, u.role
+    FROM organizations o
+    LEFT JOIN users u ON u.id = ${user.id}::uuid
+    WHERE o.id = ${orgId}
+    LIMIT 1
+  `)
+  .then(([result]) => {
+    if (!result) {
+      logSecurityEvent(req, 'ORG_ACCESS_DENIED', { orgId, userId: user.id, reason: 'org_not_found' });
+      return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
+    }
+    
+    const hasAccess = 
+      result.is_super_admin ||                           // Super admin access
+      result.created_by === user.id ||                   // Created by user
+      result.organization_id === orgId ||                // User belongs to org
+      user.role === 'admin';                            // Admin role
+    
+    if (!hasAccess) {
+      logSecurityEvent(req, 'ORG_ACCESS_DENIED', { 
+        orgId, 
+        userId: user.id, 
+        reason: 'insufficient_permissions',
+        userRole: user.role,
+        userOrgId: user.organization_id
+      });
+      return sendErr(res, 'FORBIDDEN', 'Access denied to this organization', undefined, 403);
+    }
+    
+    next();
+  })
+  .catch(error => {
+    logSecurityEvent(req, 'ORG_ACCESS_ERROR', { orgId, userId: user.id, error: error.message });
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Error checking organization access', undefined, 500);
+  });
 }
 
 // Export alias for backward compatibility

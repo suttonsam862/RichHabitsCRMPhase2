@@ -119,7 +119,7 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
       id: user.id,
       email: user.email,
       phone: user.phone,
-      fullName: user.user_metadata?.full_name || null,
+      fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
       avatarUrl: user.user_metadata?.avatar_url || null,
       isActive: true,
       preferences: user.user_metadata?.preferences || {},
@@ -298,10 +298,17 @@ router.post('/',
     const requestedRole = validatedData.role || 'customer';
     
     if (['admin', 'staff'].includes(requestedRole)) {
-      // Check if requesting user has admin privileges
-      // For now, assume users with 'admin' role in metadata can assign elevated roles
-      const userRole = requestingUser?.user_metadata?.role;
-      if (userRole !== 'admin') {
+      // Check if requesting user has admin privileges using database role
+      const hasAdminRole = requestingUser?.is_super_admin || 
+                           requestingUser?.role === 'admin';
+      
+      if (!hasAdminRole) {
+        logSecurityEvent(req, 'ROLE_ASSIGNMENT_DENIED', { 
+          requestingUserId: requestingUser?.id, 
+          requestingUserRole: requestingUser?.role,
+          requestedRole,
+          reason: 'insufficient_privileges'
+        });
         return sendErr(res, 'FORBIDDEN', 'Only administrators can assign admin or staff roles', undefined, 403);
       }
     }

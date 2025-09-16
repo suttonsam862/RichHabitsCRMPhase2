@@ -68,10 +68,24 @@ export class OrganizationsService {
   }, req?: any): Promise<{ success: boolean; data?: OrganizationData[]; count?: number; error?: string; details?: any }> {
 
     try {
-      // Build query with hardened column selection
+      // SECURITY FIX: Use user-scoped client to respect RLS policies
+      // Extract token from request authorization header
+      const token = req?.headers?.authorization?.split(' ')[1];
+      if (!token) {
+        return {
+          success: false,
+          error: 'Authentication required for organization access'
+        };
+      }
+
+      // Import user-scoped supabase client
+      const { supabaseForUser } = await import('../lib/supabase.js');
+      const userClient = supabaseForUser(token);
+
+      // Build query with hardened column selection - using USER CLIENT for RLS
       const columnsList = ALL_COLUMNS.join(', ');
 
-      let query = supabaseAdmin
+      let query = userClient
         .from('organizations')
         .select(columnsList);
 

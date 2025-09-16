@@ -9,6 +9,7 @@ import fs from 'fs';
 import { supabaseForUser } from '../../lib/supabase.js';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../../middleware/auth';
+import { requireOrgMember, requireOrgAdmin, requireOrgOwner, requireOrgReadonly } from '../../middleware/orgSecurity';
 
 const router = Router();
 
@@ -201,7 +202,7 @@ function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: s
 }
 
 // GET route to list organizations - HARDENED IMPLEMENTATION
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     // Import the hardened service
     const { OrganizationsService } = await import('../../services/OrganizationsService.js');
@@ -252,7 +253,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET route to fetch single organization by ID - HARDENED IMPLEMENTATION
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, requireOrgReadonly(), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -453,7 +454,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // DELETE route to delete an organization - HARDENED IMPLEMENTATION
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, requireOrgOwner(), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -557,7 +558,7 @@ router.delete('/:id', async (req, res) => {
 // SETUP ROUTES - Team setup functionality
 
 // GET setup data
-router.get('/:id/setup', async (req: any, res) => {
+router.get('/:id/setup', requireAuth, requireOrgReadonly(), async (req: any, res) => {
   try {
     // Use admin privileges for setup operations to bypass RLS restrictions
     const sb = supabaseAdmin;
@@ -622,7 +623,7 @@ router.get('/:id/setup', async (req: any, res) => {
 });
 
 // POST setup save (all essential fields)
-router.post('/:id/setup', async (req: any, res) => {
+router.post('/:id/setup', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const sb = supabaseAdmin;
     const orgId = req.params.id;
@@ -710,7 +711,7 @@ router.post('/:id/setup', async (req: any, res) => {
 });
 
 // PATCH endpoint to update individual sport
-router.patch('/:id/sports/:sportId', async (req: any, res) => {
+router.patch('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const sb = supabaseAdmin;
     const { id: orgId, sportId } = req.params;
@@ -858,7 +859,7 @@ const AddressSchema = z.object({
   ship_country: z.string().min(2)
 });
 
-router.post('/:id/sports/:sportId/address', requireAuth, async (req: any, res) => {
+router.post('/:id/sports/:sportId/address', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const parse = AddressSchema.safeParse(req.body);
     if (!parse.success) return sendErr(res, 'VALIDATION_ERROR', 'Invalid address', parse.error.flatten(), 400);
@@ -895,7 +896,7 @@ function safeName(n: string) {
   return n.includes('..') || n.startsWith('/') || n.includes('\\') ? '' : n.replace(/[^a-zA-Z0-9._-]/g, '_'); 
 }
 
-router.post('/:id/logo/sign', requireAuth, async (req: any, res) => {
+router.post('/:id/logo/sign', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const { fileName } = req.body || {};
     if (!fileName) return sendErr(res, 'VALIDATION_ERROR', 'fileName required', undefined, 400);
@@ -918,7 +919,7 @@ router.post('/:id/logo/sign', requireAuth, async (req: any, res) => {
   }
 });
 
-router.post('/:id/logo/apply', requireAuth, async (req: any, res) => {
+router.post('/:id/logo/apply', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const { key } = req.body || {};
     if (!key) return sendErr(res, 'VALIDATION_ERROR', 'key required', undefined, 400);
@@ -942,7 +943,7 @@ router.post('/:id/logo/apply', requireAuth, async (req: any, res) => {
   }
 });
 
-router.post('/:id/tax/sign', requireAuth, async (req: any, res) => {
+router.post('/:id/tax/sign', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const { fileName } = req.body || {};
     if (!fileName) return sendErr(res, 'VALIDATION_ERROR', 'fileName required', undefined, 400);
@@ -965,7 +966,7 @@ router.post('/:id/tax/sign', requireAuth, async (req: any, res) => {
   }
 });
 
-router.post('/:id/tax/apply', requireAuth, async (req: any, res) => {
+router.post('/:id/tax/apply', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const { key } = req.body || {};
     if (!key) return sendErr(res, 'VALIDATION_ERROR', 'key required', undefined, 400);
@@ -1008,7 +1009,7 @@ const UpdateOrganizationSchema = z.object({
   logoUrl: z.string().optional()
 });
 
-router.patch('/:id', async (req: any, res) => {
+router.patch('/:id', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const { id } = req.params;
 
@@ -1166,7 +1167,7 @@ router.patch('/:id', async (req: any, res) => {
  * 4. Always-working SVG placeholder fallback
  * 5. Try-catch wrapper with ultimate fallback
  */
-router.get('/:id/logo', async (req, res) => {
+router.get('/:id/logo', requireAuth, requireOrgReadonly(), async (req, res) => {
   // CONSTANTS - DO NOT CHANGE THESE VALUES
   const STORAGE_BUCKET = 'app';
   const CACHE_TTL_SUCCESS = 300; // 5 minutes for faster updates
@@ -1296,7 +1297,7 @@ function servePlaceholder(res: any, letter: string, cacheSeconds: number): void 
 // KPI metrics endpoints
 
 // GET organization summary for quick view dialog
-router.get('/:id/summary', async (req, res) => {
+router.get('/:id/summary', requireAuth, requireOrgReadonly(), async (req, res) => {
   try {
     const { id } = req.params;
     const { type } = req.query;
@@ -1403,7 +1404,7 @@ router.get('/:id/summary', async (req, res) => {
 
 
 /* ---------- Get organization sports ---------- */
-router.get('/:id/sports', async (req: any, res) => {
+router.get('/:id/sports', requireAuth, requireOrgReadonly(), async (req: any, res) => {
   const orgId = req.params.id;
   const sb = supabaseAdmin;
 
@@ -1470,7 +1471,7 @@ const SportsSchema = z.object({
   }))
 });
 
-router.post('/:id/sports', requireAuth, async (req: any, res) => {
+router.post('/:id/sports', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
     const { id: organizationId } = req.params;
     const parseResult = SportsSchema.safeParse(req.body);
@@ -1556,7 +1557,7 @@ const UpdateOrgSportSchema = z.object({
   contact_phone: z.string().optional()
 });
 
-router.patch('/:id/sports/:sportId', async (req, res) => {
+router.patch('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req, res) => {
   try {
     const { id: organizationId, sportId } = req.params;
     const parseResult = UpdateOrgSportSchema.safeParse(req.body);
@@ -1619,7 +1620,7 @@ router.patch('/:id/sports/:sportId', async (req, res) => {
 });
 
 // DELETE endpoint to remove a specific organization sport
-router.delete('/:id/sports/:sportId', async (req, res) => {
+router.delete('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req, res) => {
   try {
     const { id: organizationId, sportId } = req.params;
 
@@ -1752,15 +1753,33 @@ router.post('/objects/upload', requireAuth, async (req: any, res) => {
   }
 });
 
-// Object storage upload route for organization assets
-router.post('/upload-url', async (req: any, res) => {
+// SECURED: Object storage upload route for organization assets
+router.post('/upload-url', requireAuth, async (req: any, res) => {
   try {
-    console.log('Upload URL route called');
+    const user = req.user;
+    if (!user?.id) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
 
-    // Generate a unique object key for upload
-    const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    console.log('SECURITY: Upload URL route called by user:', user.id);
 
-    // Create signed upload URL  
+    // SECURITY: Generate organization-scoped object key 
+    // Only allow authenticated users to upload to their accessible organizations
+    const userOrgId = user.organization_id;
+    if (!userOrgId) {
+      return res.status(403).json({
+        success: false,
+        error: 'User must be associated with an organization to upload files'
+      });
+    }
+
+    // Generate a secure object key scoped to user's organization
+    const objectKey = `org/${userOrgId}/uploads/${Date.now()}-${Math.random().toString(36).substring(2)}`;
+
+    // Create signed upload URL using user-scoped path
     const { data, error } = await supabaseAdmin.storage
       .from('app')
       .createSignedUploadUrl(objectKey, {
@@ -1768,7 +1787,7 @@ router.post('/upload-url', async (req: any, res) => {
       });
 
     if (error || !data?.signedUrl) {
-      console.error('Supabase storage error:', error);
+      console.error('Supabase storage error for user', user.id, ':', error);
       return res.status(400).json({
         success: false,
         error: 'Failed to create upload URL',
@@ -1776,7 +1795,7 @@ router.post('/upload-url', async (req: any, res) => {
       });
     }
 
-    console.log('Upload URL created successfully:', data.signedUrl);
+    console.log('SECURITY: Upload URL created successfully for user:', user.id, 'org:', userOrgId);
     return res.json({
       success: true,
       uploadURL: data.signedUrl,

@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { requireAuth } from '../../middleware/auth';
+import { requireOrgReadonly, requireOrgAdmin } from '../../middleware/orgSecurity';
 import { createAssetUploadUrl, getAssetDownloadUrl, deleteAsset, listOrgAssets, migrateStorageKeyToUrl } from '../../lib/unified-storage.js';
 import { supabaseAdmin } from '../../lib/supabase.js';
 import { createRequestLogger } from '../../lib/log.js';
@@ -20,7 +22,7 @@ const UpdateLogoSchema = z.object({
  * POST /organizations/:id/assets/upload
  * Unified asset upload endpoint
  */
-router.post('/:id/assets/upload', async (req, res) => {
+router.post('/:id/assets/upload', requireAuth, requireOrgAdmin(), async (req, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -63,7 +65,7 @@ router.post('/:id/assets/upload', async (req, res) => {
  * GET /organizations/:id/assets/:filename
  * Serve organization assets with proper fallbacks
  */
-router.get('/:id/assets/:filename', async (req, res) => {
+router.get('/:id/assets/:filename', requireAuth, requireOrgReadonly(), async (req, res) => {
   const orgId = req.params.id;
   const filename = req.params.filename;
   const storageKey = `org/${orgId}/branding/${filename}`;
@@ -89,7 +91,7 @@ router.get('/:id/assets/:filename', async (req, res) => {
  * GET /organizations/:id/assets
  * List all assets for an organization
  */
-router.get('/:id/assets', async (req, res) => {
+router.get('/:id/assets', requireAuth, requireOrgReadonly(), async (req, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -118,7 +120,7 @@ router.get('/:id/assets', async (req, res) => {
  * DELETE /organizations/:id/assets/:filename
  * Delete an organization asset
  */
-router.delete('/:id/assets/:filename', async (req, res) => {
+router.delete('/:id/assets/:filename', requireAuth, requireOrgAdmin(), async (req, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   const filename = req.params.filename;
@@ -147,7 +149,7 @@ router.delete('/:id/assets/:filename', async (req, res) => {
  * Update organization logo URL in database
  * This replaces the old "apply" endpoints
  */
-router.post('/:id/logo/update', async (req, res) => {
+router.post('/:id/logo/update', requireAuth, requireOrgAdmin(), async (req, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -196,7 +198,7 @@ router.post('/:id/logo/update', async (req, res) => {
  * GET /organizations/:id/logo
  * Serve organization logo with robust fallbacks
  */
-router.get('/:id/logo', async (req, res) => {
+router.get('/:id/logo', requireAuth, requireOrgReadonly(), async (req, res) => {
   const orgId = req.params.id;
   const CACHE_TTL = 300; // 5 minutes
   

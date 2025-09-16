@@ -1,8 +1,7 @@
 // Schema updated to match actual database structure on 2025-09-11
 // Aligned with business database - removed auth enums, added real business tables
 
-import { pgTable, foreignKey, pgEnum, uuid, varchar, text, timestamp, boolean, integer, jsonb, decimal, date, bigint } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { pgTable, uuid, varchar, text, timestamp, boolean, integer, jsonb, decimal, date, bigint } from "drizzle-orm/pg-core";
 
 // Business Tables
 
@@ -399,8 +398,22 @@ export const statusWorkOrders = pgTable("status_work_orders", {
 export const userRoles = pgTable("user_roles", {
         userId: uuid("user_id").notNull(),
         roleId: uuid("role_id").notNull(),
+        orgId: uuid("org_id"), // Organization-scoped roles
         assignedAt: timestamp("assigned_at", { withTimezone: true, mode: 'string' }).defaultNow(),
         assignedBy: uuid("assigned_by"),
+});
+
+// Organization membership table for proper access control
+export const organizationMemberships = pgTable("organization_memberships", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        userId: uuid("user_id").notNull(),
+        organizationId: uuid("organization_id").notNull(),
+        role: varchar({ length: 50 }).notNull().default('member'), // owner, admin, member, readonly
+        isActive: boolean("is_active").notNull().default(true),
+        joinedAt: timestamp("joined_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+        invitedBy: uuid("invited_by"),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
 
 export const users = pgTable("users", {
