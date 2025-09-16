@@ -61,6 +61,19 @@ async function testWithAuth() {
     const result = await response.json();
     console.log('Status:', response.status);
     console.log('Response:', JSON.stringify(result, null, 2));
+    
+    if (result.success === false) {
+      console.log('Authentication test failed. Let\'s check if the server is running properly...');
+      
+      // Test health endpoint
+      try {
+        const healthResponse = await fetch('http://localhost:5000/api/health');
+        const healthResult = await healthResponse.json();
+        console.log('Health check result:', healthResult);
+      } catch (healthError) {
+        console.log('Health check failed:', healthError.message);
+      }
+    }
 
     // Sign out
     await supabase.auth.signOut();

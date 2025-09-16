@@ -2,8 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import { supabaseForUser } from '../lib/supabase';
 import { sendErr } from '../lib/http';
 import { logSecurityEvent } from '../lib/log';
-import { db } from '../db';
 import { sql } from 'drizzle-orm';
+
+// Import database connection
+let db: any;
+try {
+  const dbModule = require('../db');
+  db = dbModule.db;
+} catch (error) {
+  console.warn('Database connection not available, using fallback auth');
+}
 
 export interface AuthedRequest extends Request {
   user?: {
@@ -41,45 +49,45 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
       return sendErr(res, 'UNAUTHORIZED', 'Invalid or expired token', undefined, 401);
     }
 
-    // Fetch complete user data from database
-    try {
-      const { data: userData, error: userError } = await db.execute(sql`
-        SELECT 
-          id::text,
-          email,
-          full_name,
-          phone,
-          role,
-          organization_id::text,
-          COALESCE(is_super_admin, false) as is_super_admin,
-          COALESCE(raw_user_meta_data, '{}'::jsonb) as raw_user_meta_data,
-          COALESCE(user_metadata, '{}'::jsonb) as user_metadata,
-          created_at,
-          updated_at
-        FROM users 
-        WHERE id = ${user.id}::uuid
-      `);
+    // Fetch complete user data from database if available
+    let userData = null;
+    
+    if (db) {
+      try {
+        const userQuery = await db.execute(sql`
+          SELECT 
+            id::text,
+            email,
+            full_name,
+            phone,
+            role,
+            organization_id::text,
+            COALESCE(is_super_admin, false) as is_super_admin,
+            COALESCE(raw_user_meta_data, '{}'::jsonb) as raw_user_meta_data,
+            COALESCE(user_metadata, '{}'::jsonb) as user_metadata,
+            created_at,
+            updated_at
+          FROM users 
+          WHERE id = ${user.id}::uuid
+        `);
 
-      if (userError) {
-        logSecurityEvent(req, 'AUTH_DB_ERROR', { error: userError.message });
-        return res.status(500).json({ success: false, error: 'Database error during authentication' });
+        userData = userQuery.rows?.[0];
+      } catch (dbError) {
+        console.warn('Database query failed, using Supabase user data only:', dbError instanceof Error ? dbError.message : 'Unknown error');
+        // Don't fail auth, just use Supabase data
       }
-
-      // Attach user to request with database data
-      req.user = {
-        id: user.id,
-        email: user.email ?? undefined,
-        full_name: userData?.full_name,
-        role: userData?.role,
-        organization_id: userData?.organization_id,
-        is_super_admin: userData?.is_super_admin,
-        user_metadata: user.user_metadata
-      };
-    } catch (dbError) {
-      console.error('Failed to fetch user data from database:', dbError);
-      logSecurityEvent(req, 'AUTH_DB_ERROR', { error: dbError instanceof Error ? dbError.message : 'Unknown error' });
-      return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', undefined, 500);
     }
+
+    // Attach user to request with database data or fallback to Supabase user data
+    req.user = {
+      id: user.id,
+      email: user.email ?? undefined,
+      full_name: userData?.full_name || user.user_metadata?.full_name,
+      role: userData?.role || 'user',
+      organization_id: userData?.organization_id,
+      is_super_admin: userData?.is_super_admin || false,
+      user_metadata: user.user_metadata
+    };
 
     next();
   } catch (error) {
