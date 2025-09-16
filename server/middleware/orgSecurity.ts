@@ -123,11 +123,11 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
           o.id as org_exists
         FROM organizations o
         LEFT JOIN organization_memberships om ON (
-          om.organization_id = o.id AND 
-          om.user_id = ${user.id}::uuid AND 
+          om.organization_id::text = o.id::text AND 
+          om.user_id::text = ${user.id}::text AND 
           om.is_active = true
         )
-        WHERE o.id = ${orgId}::uuid
+        WHERE o.id::text = ${orgId}::text
         LIMIT 1
       `);
 

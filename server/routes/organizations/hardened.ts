@@ -10,6 +10,7 @@ import { supabaseForUser } from '../../lib/supabase.js';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../../middleware/auth';
 import { requireOrgMember, requireOrgAdmin, requireOrgOwner, requireOrgReadonly } from '../../middleware/orgSecurity';
+import { sql } from '@vercel/postgres'; // Assuming sql tagged template literal is from @vercel/postgres
 
 const router = Router();
 
