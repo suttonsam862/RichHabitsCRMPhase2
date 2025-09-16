@@ -35,14 +35,14 @@ const SalesManagement = lazy(() => import('@/pages/sales/SalesManagement').then(
 const CreateSalesperson = lazy(() => import('@/pages/sales/CreateSalesperson').then(m => ({ default: m.default })));
 const SalespersonDetails = lazy(() => import('@/pages/sales/SalespersonDetails').then(m => ({ default: m.default })));
 const EditSalesperson = lazy(() => import('@/pages/sales/EditSalesperson').then(m => ({ default: m.default })));
-const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage').then(m => ({ default: m.QuotesPage })));
-const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
-const OrganizedSettingsPage = lazy(() => import('@/pages/settings/OrganizedSettingsPage').then(m => ({ default: m.default })));
-const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator').then(m => ({ default: m.default })));
-const QuoteHistory = lazy(() => import('@/pages/QuoteHistory').then(m => ({ default: m.default })));
-const CatalogManagement = lazy(() => import('@/pages/catalog/CatalogManagement').then(m => ({ default: m.CatalogManagement })));
-const DesignerManagement = lazy(() => import('@/pages/designers/DesignerManagement').then(m => ({ default: m.DesignerManagement })));
-const ManufacturerManagement = lazy(() => import('@/pages/manufacturers/ManufacturerManagement').then(m => ({ default: m.ManufacturerManagement })));
+const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage'));
+const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
+const OrganizedSettingsPage = lazy(() => import('@/pages/settings/OrganizedSettingsPage'));
+const QuoteGenerator = lazy(() => import('@/pages/QuoteGenerator'));
+const QuoteHistory = lazy(() => import('@/pages/QuoteHistory'));
+const CatalogManagement = lazy(() => import('@/pages/catalog/CatalogManagement'));
+const DesignerManagement = lazy(() => import('@/pages/designers/DesignerManagement'));
+const ManufacturerManagement = lazy(() => import('@/pages/manufacturers/ManufacturerManagement'));
 
 // Loading component for lazy loaded pages
 function PageLoader() {

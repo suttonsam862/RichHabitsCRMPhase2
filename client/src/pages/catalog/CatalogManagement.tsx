@@ -623,3 +623,5 @@ export function CatalogManagement() {
     </div>
   );
 }
+
+export default CatalogManagement;

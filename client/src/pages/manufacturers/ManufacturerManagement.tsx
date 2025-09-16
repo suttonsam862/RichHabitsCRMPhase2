@@ -981,3 +981,5 @@ export function ManufacturerManagement() {
     </div>
   );
 }
+
+export default ManufacturerManagement;
