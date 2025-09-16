@@ -2,7 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { db } from '../../db';
 import { performanceTiers } from '../../../shared/schema';
-import { eq, like, and, desc } from 'drizzle-orm';
+import { eq, like, and, desc, sql } from 'drizzle-orm';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr } from '../../lib/http';
 
@@ -56,7 +56,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       .offset(offset);
 
     // Get total count for pagination
-    const countQuery = db.select({ count: performanceTiers.id }).from(performanceTiers);
+    const countQuery = db.select({ count: sql`count(*)` }).from(performanceTiers);
     const [{ count }] = await (conditions.length > 0
       ? countQuery.where(and(...conditions))
       : countQuery
@@ -173,7 +173,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
 
     const updatePayload = {
       ...updateData,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date()
     };
 
     // Convert commission multiplier to string for decimal storage
@@ -236,7 +236,7 @@ router.post('/:id/toggle', requireAuth, async (req: AuthedRequest, res) => {
     const [updatedTier] = await db.update(performanceTiers)
       .set({
         isActive: !existingTier.isActive,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(performanceTiers.id, id))
       .returning();
@@ -263,22 +263,25 @@ router.post('/reorder', requireAuth, async (req: AuthedRequest, res) => {
 
     const { tierIds } = validation.data;
 
-    // Update sort order for each tier
-    const updates = tierIds.map(async (tierId, index) => {
-      return db.update(performanceTiers)
-        .set({
-          sortOrder: index,
-          updatedAt: new Date().toISOString()
-        })
-        .where(eq(performanceTiers.id, tierId));
+    // Use transaction to ensure atomicity
+    const updatedTiers = await db.transaction(async (tx) => {
+      // Update sort order for each tier
+      const updates = tierIds.map(async (tierId, index) => {
+        return tx.update(performanceTiers)
+          .set({
+            sortOrder: index,
+            updatedAt: new Date()
+          })
+          .where(eq(performanceTiers.id, tierId));
+      });
+
+      await Promise.all(updates);
+
+      // Return updated tiers in new order
+      return tx.select()
+        .from(performanceTiers)
+        .orderBy(performanceTiers.sortOrder);
     });
-
-    await Promise.all(updates);
-
-    // Return updated tiers in new order
-    const updatedTiers = await db.select()
-      .from(performanceTiers)
-      .orderBy(performanceTiers.sortOrder);
 
     return sendOk(res, updatedTiers);
   } catch (error) {

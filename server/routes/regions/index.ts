@@ -2,7 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { db } from '../../db';
 import { systemRegions } from '../../../shared/schema';
-import { eq, like, and, desc } from 'drizzle-orm';
+import { eq, like, and, desc, sql } from 'drizzle-orm';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr } from '../../lib/http';
 
@@ -59,7 +59,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       .offset(offset);
 
     // Get total count for pagination  
-    const countQuery = db.select({ count: systemRegions.id }).from(systemRegions);
+    const countQuery = db.select({ count: sql`count(*)` }).from(systemRegions);
     const [{ count }] = await (conditions.length > 0
       ? countQuery.where(and(...conditions))
       : countQuery
@@ -175,7 +175,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
     const [updatedRegion] = await db.update(systemRegions)
       .set({
         ...updateData,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(systemRegions.id, id))
       .returning();
@@ -230,7 +230,7 @@ router.post('/:id/toggle', requireAuth, async (req: AuthedRequest, res) => {
     const [updatedRegion] = await db.update(systemRegions)
       .set({
         isActive: !existingRegion.isActive,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(systemRegions.id, id))
       .returning();

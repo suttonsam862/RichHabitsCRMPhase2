@@ -2,7 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { db } from '../../db';
 import { systemSettings } from '../../../shared/schema';
-import { eq, like, and } from 'drizzle-orm';
+import { eq, like, and, sql } from 'drizzle-orm';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr } from '../../lib/http';
 
@@ -61,7 +61,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       .offset(offset);
 
     // Get total count for pagination
-    const countQuery = db.select({ count: systemSettings.id }).from(systemSettings);
+    const countQuery = db.select({ count: sql`count(*)` }).from(systemSettings);
     const [{ count }] = await (conditions.length > 0
       ? countQuery.where(and(...conditions))
       : countQuery
@@ -96,27 +96,6 @@ router.get('/categories', requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
-// GET /api/v1/system-settings/:id - Get single system setting
-router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const { id } = req.params;
-
-    const [setting] = await db.select()
-      .from(systemSettings)
-      .where(eq(systemSettings.id, id))
-      .limit(1);
-
-    if (!setting) {
-      return sendErr(res, 'NOT_FOUND', 'System setting not found', undefined, 404);
-    }
-
-    return sendOk(res, setting);
-  } catch (error) {
-    console.error('Error fetching system setting:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Failed to fetch system setting', undefined, 500);
-  }
-});
-
 // GET /api/v1/system-settings/by-key/:category/:key - Get setting by category and key
 router.get('/by-key/:category/:key', requireAuth, async (req: AuthedRequest, res) => {
   try {
@@ -138,6 +117,27 @@ router.get('/by-key/:category/:key', requireAuth, async (req: AuthedRequest, res
     return sendOk(res, setting);
   } catch (error) {
     console.error('Error fetching system setting by key:', error);
+    return sendErr(res, 'INTERNAL_ERROR', 'Failed to fetch system setting', undefined, 500);
+  }
+});
+
+// GET /api/v1/system-settings/:id - Get single system setting
+router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const [setting] = await db.select()
+      .from(systemSettings)
+      .where(eq(systemSettings.id, id))
+      .limit(1);
+
+    if (!setting) {
+      return sendErr(res, 'NOT_FOUND', 'System setting not found', undefined, 404);
+    }
+
+    return sendOk(res, setting);
+  } catch (error) {
+    console.error('Error fetching system setting:', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Failed to fetch system setting', undefined, 500);
   }
 });
@@ -226,7 +226,7 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
     const [updatedSetting] = await db.update(systemSettings)
       .set({
         ...updateData,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(systemSettings.id, id))
       .returning();
@@ -302,7 +302,7 @@ router.post('/bulk', requireAuth, async (req: AuthedRequest, res) => {
           .set({
             value: setting.value,
             dataType: setting.dataType,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date()
           })
           .where(eq(systemSettings.id, existing.id))
           .returning();

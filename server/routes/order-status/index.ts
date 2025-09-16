@@ -153,19 +153,22 @@ router.post('/orders/reorder', requireAuth, async (req: AuthedRequest, res) => {
 
     const { statusCodes } = validation.data;
 
-    // Update sort order for each status
-    const updates = statusCodes.map(async (statusCode, index) => {
-      return db.update(statusOrders)
-        .set({ sortOrder: index })
-        .where(eq(statusOrders.code, statusCode));
+    // Use transaction to ensure atomicity
+    const updatedStatuses = await db.transaction(async (tx) => {
+      // Update sort order for each status
+      const updates = statusCodes.map(async (statusCode, index) => {
+        return tx.update(statusOrders)
+          .set({ sortOrder: index })
+          .where(eq(statusOrders.code, statusCode));
+      });
+
+      await Promise.all(updates);
+
+      // Return updated statuses in new order
+      return tx.select()
+        .from(statusOrders)
+        .orderBy(statusOrders.sortOrder);
     });
-
-    await Promise.all(updates);
-
-    // Return updated statuses in new order
-    const updatedStatuses = await db.select()
-      .from(statusOrders)
-      .orderBy(statusOrders.sortOrder);
 
     return sendOk(res, updatedStatuses);
   } catch (error) {
@@ -189,19 +192,22 @@ router.post('/order-items/reorder', requireAuth, async (req: AuthedRequest, res)
 
     const { statusCodes } = validation.data;
 
-    // Update sort order for each status
-    const updates = statusCodes.map(async (statusCode, index) => {
-      return db.update(statusOrderItems)
-        .set({ sortOrder: index })
-        .where(eq(statusOrderItems.code, statusCode));
+    // Use transaction to ensure atomicity
+    const updatedStatuses = await db.transaction(async (tx) => {
+      // Update sort order for each status
+      const updates = statusCodes.map(async (statusCode, index) => {
+        return tx.update(statusOrderItems)
+          .set({ sortOrder: index })
+          .where(eq(statusOrderItems.code, statusCode));
+      });
+
+      await Promise.all(updates);
+
+      // Return updated statuses in new order
+      return tx.select()
+        .from(statusOrderItems)
+        .orderBy(statusOrderItems.sortOrder);
     });
-
-    await Promise.all(updates);
-
-    // Return updated statuses in new order
-    const updatedStatuses = await db.select()
-      .from(statusOrderItems)
-      .orderBy(statusOrderItems.sortOrder);
 
     return sendOk(res, updatedStatuses);
   } catch (error) {
