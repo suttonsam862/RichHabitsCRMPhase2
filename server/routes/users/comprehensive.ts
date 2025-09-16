@@ -1,11 +1,12 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { z } from 'zod';
 import { supabaseAdmin, createUser, deleteUser } from '../../lib/supabaseAdmin.js';
 import { logger } from '../../lib/log.js';
 import { logSbError } from '../../lib/dbLog.js';
 import { sendOk, sendErr } from '../../lib/http.js';
-import { requireAuth } from '../../middleware/auth.js';
+import { requireAuth, AuthedRequest } from '../../middleware/auth.js';
 import { randomUUID } from 'crypto';
+import { generateRandomPassword } from '../../lib/uuid-generator.js';
 
 const router = Router();
 
@@ -49,7 +50,7 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 // Statistics endpoint MUST come before /:id route to avoid conflicts
-router.get('/__stats', requireAuth, async (req, res) => {
+router.get('/__stats', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const { data: users, error: usersError } = await supabaseAdmin
       .from('users')
@@ -92,7 +93,7 @@ router.get('/__stats', requireAuth, async (req, res) => {
 });
 
 // List users with filtering and pagination
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const {
       page = '1',
@@ -210,7 +211,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // Get user by ID
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -280,7 +281,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // Create new user
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const parseResult = CreateUserSchema.safeParse(req.body);
 
@@ -406,7 +407,8 @@ router.post('/', requireAuth, async (req, res) => {
     };
 
     logger.info(`Created new user: ${newUser.email}`);
-    return sendOk(res, mappedUser, undefined, 201);
+    res.status(201);
+    return sendOk(res, mappedUser);
 
   } catch (error: any) {
     logSbError(req, 'users.create.route', error);
@@ -415,7 +417,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // Update user
-router.patch('/:id', requireAuth, async (req, res) => {
+router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const parseResult = UpdateUserSchema.safeParse(req.body);
@@ -534,7 +536,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
 });
 
 // Delete user
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
   try {
     const { id } = req.params;
 

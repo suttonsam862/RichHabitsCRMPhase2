@@ -57,10 +57,10 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
           created_at,
           updated_at
         FROM users 
-        WHERE id = ${user.id}::uuid
+        WHERE id = ${user.id}
       `);
 
-      const userRecord = userData.rows[0];
+      const userRecord = userData[0];
       
       if (!userRecord) {
         logSecurityEvent(req, 'AUTH_USER_NOT_FOUND', { userId: user.id });
@@ -71,10 +71,10 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
       req.user = {
         id: user.id,
         email: user.email ?? undefined,
-        full_name: userRecord.full_name,
-        role: userRecord.role,
-        organization_id: userRecord.organization_id,
-        is_super_admin: userRecord.is_super_admin,
+        full_name: userRecord.full_name as string | undefined,
+        role: userRecord.role as string | undefined,
+        organization_id: userRecord.organization_id as string | undefined,
+        is_super_admin: userRecord.is_super_admin as boolean | undefined,
         user_metadata: user.user_metadata
       };
     } catch (dbError) {
