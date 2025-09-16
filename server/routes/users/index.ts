@@ -332,7 +332,7 @@ router.post('/',
             ${newUser.user?.phone || null},
             'sales',
             'global',
-            true,
+            1,
             NOW(),
             NOW()
           )
