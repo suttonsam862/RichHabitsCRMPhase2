@@ -1,0 +1,76 @@
+[19:11:53.402] WARN (13778): Security event
+    rid: "k0u1vj2z"
+    event: "AUTH_MISSING_TOKEN"
+    details: {
+      "path": "/"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.1.39"
+[19:11:53.403] WARN (13778): GET 401 1ms /api/v1/system-settings
+    rid: "k0u1vj2z"
+    method: "GET"
+    path: "/api/v1/system-settings"
+    status: 401
+    ms: 1
+[19:11:53.403] WARN (13778): Security event
+    rid: "x8sy33cg"
+    event: "AUTH_MISSING_TOKEN"
+    details: {
+      "path": "/categories"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.3.65"
+[19:11:53.403] WARN (13778): GET 401 1ms /api/v1/system-settings/categories
+    rid: "x8sy33cg"
+    method: "GET"
+    path: "/api/v1/system-settings/categories"
+    status: 401
+    ms: 1
+[19:12:01.215] WARN (13778): Security event
+    rid: "no7kupbe"
+    event: "AUTH_MISSING_TOKEN"
+    details: {
+      "path": "/"
+    }
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ip: "10.82.3.65"
+[19:12:01.216] WARN (13778): GET 401 1ms /api/v1/users/comprehensive
+    rid: "no7kupbe"
+    method: "GET"
+    path: "/api/v1/users/comprehensive"
+    status: 401
+    ms: 1
+[19:12:01.503] ERROR (13778): 🔴 Supabase error
+    rid: "5u8yhxb6"
+    ctx: "permission-templates.list"
+    code: "42703"
+    message: "column permission_templates.description does not exist"
+    details: {
+      "code": "42703",
+      "details": null,
+      "hint": null,
+      "message": "column permission_templates.description does not exist"
+    }
+[19:12:01.503] WARN (13778): GET 400 276ms /api/v1/permission-templates
+    rid: "5u8yhxb6"
+    method: "GET"
+    path: "/api/v1/permission-templates"
+    status: 400
+    ms: 276
+[19:12:01.766] ERROR (13778): 🔴 Supabase error
+    rid: "bsx8kyz0"
+    ctx: "permission-templates.get"
+    code: "42703"
+    message: "column permission_templates.description does not exist"
+    details: {
+      "code": "42703",
+      "details": null,
+      "hint": null,
+      "message": "column permission_templates.description does not exist"
+    }
+[19:12:01.766] WARN (13778): GET 400 546ms /api/v1/permission-templates/available-permissions
+    rid: "bsx8kyz0"
+    method: "GET"
+    path: "/api/v1/permission-templates/available-permissions"
+    status: 400
+    ms: 546
