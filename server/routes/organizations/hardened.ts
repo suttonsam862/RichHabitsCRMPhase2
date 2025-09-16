@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { supabaseForUser } from '../../lib/supabase.js';
 import { randomUUID } from 'crypto';
+import { requireAuth } from '../../middleware/auth';
 
 const router = Router();
 
@@ -289,7 +290,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     // Validate input schema
     const validation = CreateOrganizationSchema.safeParse(req.body);
@@ -857,7 +858,7 @@ const AddressSchema = z.object({
   ship_country: z.string().min(2)
 });
 
-router.post('/:id/sports/:sportId/address', async (req: any, res) => {
+router.post('/:id/sports/:sportId/address', requireAuth, async (req: any, res) => {
   try {
     const parse = AddressSchema.safeParse(req.body);
     if (!parse.success) return sendErr(res, 'VALIDATION_ERROR', 'Invalid address', parse.error.flatten(), 400);
@@ -894,7 +895,7 @@ function safeName(n: string) {
   return n.includes('..') || n.startsWith('/') || n.includes('\\') ? '' : n.replace(/[^a-zA-Z0-9._-]/g, '_'); 
 }
 
-router.post('/:id/logo/sign', async (req: any, res) => {
+router.post('/:id/logo/sign', requireAuth, async (req: any, res) => {
   try {
     const { fileName } = req.body || {};
     if (!fileName) return sendErr(res, 'VALIDATION_ERROR', 'fileName required', undefined, 400);
@@ -917,7 +918,7 @@ router.post('/:id/logo/sign', async (req: any, res) => {
   }
 });
 
-router.post('/:id/logo/apply', async (req: any, res) => {
+router.post('/:id/logo/apply', requireAuth, async (req: any, res) => {
   try {
     const { key } = req.body || {};
     if (!key) return sendErr(res, 'VALIDATION_ERROR', 'key required', undefined, 400);
@@ -941,7 +942,7 @@ router.post('/:id/logo/apply', async (req: any, res) => {
   }
 });
 
-router.post('/:id/tax/sign', async (req: any, res) => {
+router.post('/:id/tax/sign', requireAuth, async (req: any, res) => {
   try {
     const { fileName } = req.body || {};
     if (!fileName) return sendErr(res, 'VALIDATION_ERROR', 'fileName required', undefined, 400);
@@ -964,7 +965,7 @@ router.post('/:id/tax/sign', async (req: any, res) => {
   }
 });
 
-router.post('/:id/tax/apply', async (req: any, res) => {
+router.post('/:id/tax/apply', requireAuth, async (req: any, res) => {
   try {
     const { key } = req.body || {};
     if (!key) return sendErr(res, 'VALIDATION_ERROR', 'key required', undefined, 400);
@@ -1454,16 +1455,22 @@ router.get('/:id/sports', async (req: any, res) => {
 // POST endpoint to save sports - simplified version
 const SportsSchema = z.object({
   sports: z.array(z.object({
-    sport_id: z.string(),
+    sport_id: z.string().optional(),
+    sportId: z.string().optional(), // Support both camelCase and snake_case
     team_name: z.string().optional(),
+    teamName: z.string().optional(), // Support both camelCase and snake_case
     contact_name: z.string().min(1),
     contact_email: z.string().email(),
     contact_phone: z.string().optional(),
     assigned_salesperson_id: z.string().optional()
+  }).refine(data => data.sport_id || data.sportId, {
+    message: "Either sport_id or sportId is required"
+  }).refine(data => data.team_name || data.teamName, {
+    message: "Either team_name or teamName is required"
   }))
 });
 
-router.post('/:id/sports', async (req: any, res) => {
+router.post('/:id/sports', requireAuth, async (req: any, res) => {
   try {
     const { id: organizationId } = req.params;
     const parseResult = SportsSchema.safeParse(req.body);
@@ -1483,9 +1490,10 @@ router.post('/:id/sports', async (req: any, res) => {
     // Prepare org_sports records with conditional assigned_salesperson_id
     const orgSportsData = sports.map(sport => {
       const baseRecord: any = {
+        id: randomUUID(), // Generate UUID for primary key
         organization_id: organizationId,
-        sport_id: sport.sport_id,
-        team_name: sport.team_name || 'Main Team', // Add required team_name field
+        sport_id: sport.sport_id || sport.sportId, // Handle both formats
+        team_name: sport.team_name || sport.teamName || 'Main Team', // Handle both formats
         contact_name: sport.contact_name,
         contact_email: sport.contact_email,
         contact_phone: sport.contact_phone || null,
@@ -1658,7 +1666,7 @@ router.delete('/:id/sports/:sportId', async (req, res) => {
 });
 
 // UNIFIED: Organization logo upload URL endpoint  
-router.post('/objects/upload-url', async (req: any, res) => {
+router.post('/objects/upload-url', requireAuth, async (req: any, res) => {
   try {
     logger.info('Generating unified upload URL for organization logo');
 
@@ -1709,7 +1717,7 @@ router.post('/objects/upload-url', async (req: any, res) => {
 
 
 // Object storage routes for general uploads
-router.post('/objects/upload', async (req: any, res) => {
+router.post('/objects/upload', requireAuth, async (req: any, res) => {
   try {
     // Generate a unique object key for upload
     const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}`;

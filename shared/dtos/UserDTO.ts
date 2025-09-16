@@ -25,6 +25,7 @@ export const CreateUserDTO = UserDTO.omit({
   isActive: true,
 }).extend({
   fullName: z.string().min(1, "Full name is required"),
+  role: z.enum(['admin', 'staff', 'contact', 'customer']).optional().default('customer'),
 });
 
 export const UpdateUserDTO = CreateUserDTO.partial();

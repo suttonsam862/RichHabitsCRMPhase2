@@ -292,13 +292,29 @@ router.post('/',
   validateRequest({ body: CreateUserDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
     const validatedData = req.body;
+    
+    // Role-based authorization: only admins can assign admin/staff roles
+    const requestingUser = req.user;
+    const requestedRole = validatedData.role || 'customer';
+    
+    if (['admin', 'staff'].includes(requestedRole)) {
+      // Check if requesting user has admin privileges
+      // For now, assume users with 'admin' role in metadata can assign elevated roles
+      const userRole = requestingUser?.user_metadata?.role;
+      if (userRole !== 'admin') {
+        return sendErr(res, 'FORBIDDEN', 'Only administrators can assign admin or staff roles', undefined, 403);
+      }
+    }
 
+    let createdSupabaseUser = null;
+    
     try {
       // Log the data being sent for debugging
       console.log('Creating user with data:', {
         email: validatedData.email,
         phone: validatedData.phone,
-        fullName: validatedData.fullName
+        fullName: validatedData.fullName,
+        role: validatedData.role
       });
 
       // Create user using Supabase Auth
@@ -308,7 +324,7 @@ router.post('/',
         user_metadata: {
           full_name: validatedData.fullName || validatedData.email.split('@')[0],
           preferences: {},
-          role: 'sales' // Set role for salespeople
+          role: validatedData.role || 'customer' // Use provided role or default to customer
         },
         email_confirm: true // Auto-confirm email for admin-created users
       });
@@ -321,7 +337,9 @@ router.post('/',
         return sendErr(res, 'CREATE_ERROR', error.message, error, 400);
       }
 
-      // Also create user record in our database for consistency
+      createdSupabaseUser = newUser.user;
+
+      // Create user record in our database - if this fails, cleanup Supabase user
       try {
         const userDbRecord = await db.execute(sql`
           INSERT INTO users (id, email, full_name, phone, role, organization_id, is_active, created_at, updated_at)
@@ -330,7 +348,7 @@ router.post('/',
             ${newUser.user?.email}, 
             ${newUser.user?.user_metadata?.full_name || validatedData.email.split('@')[0]},
             ${newUser.user?.phone || null},
-            'sales',
+            ${validatedData.role || 'customer'},
             'global',
             1,
             NOW(),
@@ -340,13 +358,23 @@ router.post('/',
             email = EXCLUDED.email,
             full_name = EXCLUDED.full_name,
             phone = EXCLUDED.phone,
+            role = EXCLUDED.role,
             updated_at = NOW()
           RETURNING *
         `);
         console.log('Database user record created/updated:', userDbRecord[0]?.id);
       } catch (dbError) {
-        console.error('Warning: Could not create database user record:', dbError);
-        // Continue anyway since Supabase Auth user was created successfully
+        console.error('Database insert failed, cleaning up Supabase user:', dbError);
+        
+        // Cleanup: Delete the created Supabase user to prevent orphaned data
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(newUser.user?.id);
+          console.log('Successfully cleaned up orphaned Supabase user');
+        } catch (cleanupError) {
+          console.error('Failed to cleanup Supabase user:', cleanupError);
+        }
+        
+        return sendErr(res, 'DATABASE_ERROR', 'Failed to create user database record', dbError, 500);
       }
 
       const createdUser = {
@@ -355,6 +383,7 @@ router.post('/',
         phone: newUser.user?.phone,
         fullName: newUser.user?.user_metadata?.full_name,
         isActive: true,
+        role: validatedData.role || 'customer',
         preferences: newUser.user?.user_metadata?.preferences || {},
         createdAt: newUser.user?.created_at,
         updatedAt: newUser.user?.updated_at
@@ -362,6 +391,15 @@ router.post('/',
       res.status(201);
       sendOk(res, createdUser);
     } catch (error) {
+      // If any unexpected error occurs and we created a Supabase user, try to clean it up
+      if (createdSupabaseUser) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(createdSupabaseUser.id);
+          console.log('Cleaned up Supabase user after unexpected error');
+        } catch (cleanupError) {
+          console.error('Failed to cleanup Supabase user after error:', cleanupError);
+        }
+      }
       handleDatabaseError(res, error, 'create user');
     }
   })

@@ -229,9 +229,7 @@ export default function UsersManagement() {
         email: formData.email,
         fullName: formData.fullName,
         phone: formData.phone || undefined,
-        jobTitle: formData.jobTitle || undefined // Include jobTitle in creation payload
-        // Note: Standard users endpoint only supports basic fields (email, phone, fullName)
-        // Extended fields like address, role, notes are not supported in this endpoint
+        role: formData.role || 'customer' // Include role in creation payload
       };
 
       const response = await api.post('/api/v1/users', userData);
