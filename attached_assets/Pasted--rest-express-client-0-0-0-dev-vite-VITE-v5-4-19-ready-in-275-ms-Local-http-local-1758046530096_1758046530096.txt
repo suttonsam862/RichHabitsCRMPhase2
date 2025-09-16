@@ -1,0 +1,51 @@
+> rest-express-client@0.0.0 dev
+> vite
+
+
+  VITE v5.4.19  ready in 275 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+Error: The following dependencies are imported but could not be resolved:
+
+  @/components/ui/toaster (imported by /home/runner/workspace/client/src/App.tsx)
+  @/components/ui/tooltip (imported by /home/runner/workspace/client/src/App.tsx)
+  @/components/DevOverlay (imported by /home/runner/workspace/client/src/App.tsx)
+  @/auth/AuthProvider (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/components/ErrorBoundary (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/auth/ProtectedRoute (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/auth/LoginPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/auth/RegisterPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/auth/ResetPasswordPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/auth/AuthConfirmedPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/HomePage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/List (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/CreateWizard (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/components/NotFound (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/SimplifiedSetup (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/ViewPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/EditPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/SportsPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/AddSportsPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/organizations/KPIPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/users/UsersManagement (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/users/UserDetailsPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/users/ComprehensiveUserEditForm (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/sales/SalesManagement (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/sales/CreateSalesperson (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/sales/SalespersonDetails (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/sales/EditSalesperson (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/quotes/QuotesPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/settings/SettingsPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/settings/OrganizedSettingsPage (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/QuoteGenerator (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/QuoteHistory (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/catalog/CatalogManagement (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/designers/DesignerManagement (imported by /home/runner/workspace/client/src/routes.tsx)
+  @/pages/manufacturers/ManufacturerManagement (imported by /home/runner/workspace/client/src/routes.tsx)
+
+Are they installed?
+    at file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:50669:15
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:50174:26
