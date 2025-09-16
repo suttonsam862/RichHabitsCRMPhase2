@@ -2,18 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { supabaseForUser } from '../lib/supabase';
 import { sendErr } from '../lib/http';
 import { logSecurityEvent } from '../lib/log';
+import { db } from '../db';
 import { sql } from 'drizzle-orm';
-
-// Import database connection safely
-let db: any = null;
-try {
-  // Use dynamic import to safely load database
-  const { db: dbConnection } = require('../db');
-  db = dbConnection;
-  console.log('Database connection loaded successfully for auth middleware');
-} catch (error) {
-  console.warn('Database connection not available, using fallback auth:', error instanceof Error ? error.message : 'Unknown error');
-}
 
 export interface AuthedRequest extends Request {
   user?: {
@@ -31,7 +21,7 @@ export interface AuthedRequest extends Request {
 /**
  * Middleware to require authentication for protected routes
  */
-async function authMiddleware(req: AuthedRequest, res: Response, next: NextFunction) {
+export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers['authorization'];
 
@@ -51,57 +41,54 @@ async function authMiddleware(req: AuthedRequest, res: Response, next: NextFunct
       return sendErr(res, 'UNAUTHORIZED', 'Invalid or expired token', undefined, 401);
     }
 
-    // Fetch complete user data from database if available
-    let userData = null;
+    // Fetch complete user data from database
+    try {
+      const userData = await db.execute(sql`
+        SELECT 
+          id::text,
+          email,
+          full_name,
+          phone,
+          role,
+          organization_id::text,
+          COALESCE(is_super_admin, false) as is_super_admin,
+          COALESCE(raw_user_meta_data, '{}'::jsonb) as raw_user_meta_data,
+          COALESCE(user_metadata, '{}'::jsonb) as user_metadata,
+          created_at,
+          updated_at
+        FROM users 
+        WHERE id = ${user.id}::uuid
+      `);
 
-    if (db) {
-      try {
-        const userQuery = await db.execute(sql`
-          SELECT 
-            id::text,
-            email,
-            full_name,
-            phone,
-            role,
-            organization_id::text,
-            COALESCE(is_super_admin, false) as is_super_admin,
-            COALESCE(raw_user_meta_data, '{}'::jsonb) as raw_user_meta_data,
-            COALESCE(user_metadata, '{}'::jsonb) as user_metadata,
-            created_at,
-            updated_at
-          FROM users 
-          WHERE id = ${user.id}::uuid
-        `);
-
-        userData = userQuery.rows?.[0];
-      } catch (dbError) {
-        console.warn('Database query failed, using Supabase user data only:', dbError instanceof Error ? dbError.message : 'Unknown error');
-        // Don't fail auth, just use Supabase data
+      const userRecord = userData.rows[0];
+      
+      if (!userRecord) {
+        logSecurityEvent(req, 'AUTH_USER_NOT_FOUND', { userId: user.id });
+        return res.status(401).json({ success: false, error: 'User not found in database' });
       }
-    }
 
-    // Attach user to request with database data or fallback to Supabase user data
-    req.user = {
-      id: user.id,
-      email: user.email ?? undefined,
-      full_name: userData?.full_name || user.user_metadata?.full_name,
-      role: userData?.role || 'user',
-      organization_id: userData?.organization_id,
-      is_super_admin: userData?.is_super_admin || false,
-      user_metadata: user.user_metadata
-    };
+      // Attach user to request with database data
+      req.user = {
+        id: user.id,
+        email: user.email ?? undefined,
+        full_name: userRecord.full_name,
+        role: userRecord.role,
+        organization_id: userRecord.organization_id,
+        is_super_admin: userRecord.is_super_admin,
+        user_metadata: user.user_metadata
+      };
+    } catch (dbError) {
+      console.error('Failed to fetch user data from database:', dbError);
+      logSecurityEvent(req, 'AUTH_DB_ERROR', { error: dbError instanceof Error ? dbError.message : 'Unknown error' });
+      return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', undefined, 500);
+    }
 
     next();
   } catch (error) {
-    console.error('Authentication middleware error:', error);
     logSecurityEvent(req, 'AUTH_ERROR', { error: error instanceof Error ? error.message : 'Unknown error' });
-    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', undefined, 500);
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication error', undefined, 500);
   }
-};
-
-// Export the middleware function
-export const requireAuth = authMiddleware;
-
+}
 
 /**
  * Optional auth middleware - attaches user if token is present but doesn't require it
