@@ -42,7 +42,6 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       .select(`
         id,
         name,
-        description,
         template_type,
         permissions,
         page_access,
@@ -121,7 +120,6 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res) => {
       .select(`
         id,
         name,
-        description,
         template_type,
         permissions,
         page_access,
@@ -186,7 +184,6 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
       .select(`
         id,
         name,
-        description,
         template_type,
         permissions,
         page_access,
@@ -209,7 +206,7 @@ router.post('/', requireAuth, async (req: AuthedRequest, res) => {
     if (error instanceof z.ZodError) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid template data', error.errors, 400);
     }
-    
+
     logSbError(req, 'permission-templates.create.route', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Failed to create permission template', error.message, 500);
   }
@@ -220,7 +217,7 @@ router.put('/:id', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
     const requestingUserId = req.user?.id;
-    
+
     if (!requestingUserId) {
       return sendErr(res, 'UNAUTHORIZED', 'Authentication required', undefined, 401);
     }
@@ -270,7 +267,6 @@ router.put('/:id', requireAuth, async (req: AuthedRequest, res) => {
       .select(`
         id,
         name,
-        description,
         template_type,
         permissions,
         page_access,
@@ -293,7 +289,7 @@ router.put('/:id', requireAuth, async (req: AuthedRequest, res) => {
     if (error instanceof z.ZodError) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid template data', error.errors, 400);
     }
-    
+
     logSbError(req, 'permission-templates.update.route', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Failed to update permission template', error.message, 500);
   }
