@@ -12,7 +12,37 @@ const router = express.Router();
 const createSystemSettingSchema = z.object({
   category: z.string().min(1).max(50),
   key: z.string().min(1).max(100),
-  value: z.any(),
+  value: z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.record(z.any())
+  ]).refine((val, ctx) => {
+    const dataType = ctx.parent?.dataType;
+    if (dataType === 'number') {
+      const num = typeof val === 'string' ? parseFloat(val) : val;
+      if (typeof num !== 'number' || isNaN(num)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Value must be a valid number for number data type'
+        });
+        return false;
+      }
+    } else if (dataType === 'json') {
+      if (typeof val === 'string') {
+        try {
+          JSON.parse(val);
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Value must be valid JSON for json data type'
+          });
+          return false;
+        }
+      }
+    }
+    return true;
+  }, 'Invalid value for data type'),
   dataType: z.enum(['string', 'number', 'boolean', 'json']).default('string'),
   description: z.string().optional(),
   isActive: z.boolean().default(true)
@@ -327,6 +357,36 @@ router.post('/bulk', requireAuth, async (req: AuthedRequest, res) => {
   } catch (error) {
     console.error('Error bulk updating system settings:', error);
     return sendErr(res, 'INTERNAL_ERROR', 'Failed to bulk update system settings', undefined, 500);
+  }
+});
+
+// POST /api/v1/system-settings/:id/toggle - Toggle setting active status
+router.post('/:id/toggle', requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if setting exists
+    const [existingSetting] = await db.select()
+      .from(systemSettings)
+      .where(eq(systemSettings.id, id))
+      .limit(1);
+
+    if (!existingSetting) {
+      return sendErr(res, 'NOT_FOUND', 'System setting not found', undefined, 404);
+    }
+
+    const [updatedSetting] = await db.update(systemSettings)
+      .set({
+        isActive: !existingSetting.isActive,
+        updatedAt: new Date()
+      })
+      .where(eq(systemSettings.id, id))
+      .returning();
+
+    return sendOk(res, updatedSetting);
+  } catch (error) {
+    console.error('Error toggling system setting status:', error);
+    return sendErr(res, 'INTERNAL_ERROR', 'Failed to toggle system setting status', undefined, 500);
   }
 });
 
