@@ -3,7 +3,7 @@ import authRoutes from './auth';
 import { usersRouter } from './users';
 import adminUsersRouter from './users/admin';
 import { comprehensiveUsersRouter } from './users/comprehensive';
-import enhancedUsersRouter from './users/enhanced';
+import { enhancedUsersRouter } from './users/enhanced';
 import organizationsRoutes from './organizations/index.js';
 import sportsRoutes from './sports/index';
 import salesRoutes from './sales/index';
