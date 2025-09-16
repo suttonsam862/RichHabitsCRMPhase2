@@ -141,7 +141,7 @@ export default function UsersManagement() {
 
       const response = await api.get(`/api/v1/users/enhanced?${params}`);
 
-      if (response.success) {
+      if (response.success && response.data) {
         let userData = response.data?.users || response.data || [];
 
         // Apply client-side filtering since endpoint doesn't support these filters yet
@@ -156,14 +156,19 @@ export default function UsersManagement() {
         setUsers(userData);
         setTotalUsers(userData.length);
       } else {
+        console.error('API Response Error:', response);
         throw new Error(response.error?.message || 'Failed to load users');
       }
     } catch (error: any) {
+      console.error('Load users error:', error);
       toast({
         title: "Error",
-        description: error.message || 'Failed to load users',
+        description: error.message || 'Failed to load users. Please check your authentication.',
         variant: "destructive"
       });
+      // Set empty state on error
+      setUsers([]);
+      setTotalUsers(0);
     } finally {
       setLoading(false);
     }
@@ -174,7 +179,7 @@ export default function UsersManagement() {
     try {
       // Calculate basic stats from user list using consistent endpoint
       const response = await api.get('/api/v1/users/enhanced?type=all&pageSize=1000'); // Explicitly request all users
-      if (response.success) {
+      if (response.success && response.data) {
         const users = response.data?.users || response.data || [];
         const totalUsers = users.length;
         const activeUsers = users.filter((u: any) => u.isActive).length;
