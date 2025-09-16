@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash, Search, Palette, DollarSign, Globe, User, CheckCircle, XCircle } from 'lucide-react';
+import { sb } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -83,14 +84,23 @@ export function DesignerManagement() {
 
   // Fetch users (for creating new designers)
   const { data: users = [] } = useQuery({
-    queryKey: ['/api/v1/users'],
+    queryKey: ['/api/v1/users/enhanced'],
     queryFn: async () => {
-      const response = await fetch('/api/v1/users', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      let headers: Record<string, string> = {};
+      
+      if (sb) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+      }
+      
+      const response = await fetch('/api/v1/users/enhanced?type=all&pageSize=100', {
+        headers: headers
       });
       if (!response.ok) return [];
       const result = await response.json();
-      return result.data || result || [];
+      return result.data?.users || result.data || result || [];
     }
   });
 
