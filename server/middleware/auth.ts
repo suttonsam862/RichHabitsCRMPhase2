@@ -24,40 +24,55 @@ export interface AuthedRequest extends Request {
 export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers['authorization'];
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       logSecurityEvent(req, 'AUTH_MISSING_TOKEN', { path: req.path });
       return sendErr(res, 'UNAUTHORIZED', 'Missing authorization header', undefined, 401);
     }
-    
+
     const token = authHeader.slice('Bearer '.length);
-    
+
     // Verify token with Supabase
     const sb = supabaseForUser(token);
     const { data: { user }, error } = await sb.auth.getUser();
-    
+
     if (error || !user) {
       logSecurityEvent(req, 'AUTH_INVALID_TOKEN', { path: req.path, error: error?.message });
       return sendErr(res, 'UNAUTHORIZED', 'Invalid or expired token', undefined, 401);
     }
-    
+
     // Fetch complete user data from database
     try {
-      const [dbUser] = await db.execute(sql`
-        SELECT id, email, full_name, role, organization_id, is_super_admin
+      const { data: userData, error: userError } = await db.execute(sql`
+        SELECT 
+          id::text,
+          email,
+          full_name,
+          phone,
+          role,
+          organization_id::text,
+          COALESCE(is_super_admin, false) as is_super_admin,
+          raw_user_meta_data,
+          user_metadata,
+          created_at,
+          updated_at
         FROM users 
         WHERE id = ${user.id}::uuid
-        LIMIT 1
       `);
-      
+
+      if (userError) {
+        logSecurityEvent(req, 'AUTH_DB_ERROR', { error: userError.message });
+        return res.status(500).json({ success: false, error: 'Database error during authentication' });
+      }
+
       // Attach user to request with database data
       req.user = {
         id: user.id,
         email: user.email ?? undefined,
-        full_name: dbUser?.full_name,
-        role: dbUser?.role,
-        organization_id: dbUser?.organization_id,
-        is_super_admin: dbUser?.is_super_admin,
+        full_name: userData?.full_name,
+        role: userData?.role,
+        organization_id: userData?.organization_id,
+        is_super_admin: userData?.is_super_admin,
         user_metadata: user.user_metadata
       };
     } catch (dbError) {
@@ -65,7 +80,7 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
       logSecurityEvent(req, 'AUTH_DB_ERROR', { error: dbError instanceof Error ? dbError.message : 'Unknown error' });
       return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', undefined, 500);
     }
-    
+
     next();
   } catch (error) {
     logSecurityEvent(req, 'AUTH_ERROR', { error: error instanceof Error ? error.message : 'Unknown error' });
@@ -79,22 +94,22 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
 export async function optionalAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers['authorization'];
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return next();
     }
-    
+
     const token = authHeader.slice('Bearer '.length);
     const sb = supabaseForUser(token);
     const { data: { user } } = await sb.auth.getUser();
-    
+
     if (user) {
       req.user = {
         id: user.id,
         email: user.email ?? undefined
       };
     }
-    
+
     next();
   } catch (error) {
     // Don't fail on optional auth errors, just continue without user
@@ -111,18 +126,18 @@ export async function optionalAuth(req: AuthedRequest, res: Response, next: Next
  */
 export function requireOrgAccess(req: AuthedRequest, res: Response, next: NextFunction) {
   console.warn('[SECURITY] Using deprecated requireOrgAccess middleware. Migrate to orgSecurity middleware.');
-  
+
   const orgId = req.params.id || req.params.organizationId;
-  
+
   if (!orgId) {
     return sendErr(res, 'BAD_REQUEST', 'Organization ID is required', undefined, 400);
   }
-  
+
   const user = req.user;
   if (!user) {
     return sendErr(res, 'UNAUTHORIZED', 'User not authenticated', undefined, 401);
   }
-  
+
   // Check if user has access to this organization
   db.execute(sql`
     SELECT o.id, o.created_by, u.organization_id, u.is_super_admin, u.role
@@ -136,13 +151,13 @@ export function requireOrgAccess(req: AuthedRequest, res: Response, next: NextFu
       logSecurityEvent(req, 'ORG_ACCESS_DENIED', { orgId, userId: user.id, reason: 'org_not_found' });
       return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
     }
-    
+
     const hasAccess = 
       result.is_super_admin ||                           // Super admin access
       result.created_by === user.id ||                   // Created by user
       result.organization_id === orgId ||                // User belongs to org
       user.role === 'admin';                            // Admin role
-    
+
     if (!hasAccess) {
       logSecurityEvent(req, 'ORG_ACCESS_DENIED', { 
         orgId, 
@@ -153,7 +168,7 @@ export function requireOrgAccess(req: AuthedRequest, res: Response, next: NextFu
       });
       return sendErr(res, 'FORBIDDEN', 'Access denied to this organization', undefined, 403);
     }
-    
+
     next();
   })
   .catch(error => {
