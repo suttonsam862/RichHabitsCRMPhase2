@@ -478,4 +478,54 @@ export const salespersonMetrics = pgTable("salesperson_metrics", {
         updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
+// Settings Management Tables
+
+export const systemRegions = pgTable("system_regions", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        name: varchar({ length: 100 }).notNull(),
+        code: varchar({ length: 10 }).notNull(),
+        country: varchar({ length: 100 }).default('US'),
+        isActive: boolean("is_active").default(true),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const performanceTiers = pgTable("performance_tiers", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        name: varchar({ length: 100 }).notNull(),
+        slug: varchar({ length: 100 }).notNull(),
+        description: text(),
+        commissionMultiplier: decimal("commission_multiplier", { precision: 3, scale: 2 }).default('1.00'),
+        isActive: boolean("is_active").default(true),
+        sortOrder: integer("sort_order").default(0),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const systemSettings = pgTable("system_settings", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        category: varchar({ length: 50 }).notNull(),
+        key: varchar({ length: 100 }).notNull(),
+        value: jsonb(),
+        dataType: varchar("data_type", { length: 20 }).default('string'),
+        description: text(),
+        isActive: boolean("is_active").default(true),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const orderStatusConfigs = pgTable("order_status_configs", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        statusCode: varchar("status_code", { length: 50 }).notNull(),
+        displayName: varchar("display_name", { length: 100 }).notNull(),
+        description: text(),
+        color: varchar({ length: 7 }).default('#3B82F6'),
+        sortOrder: integer("sort_order").default(0),
+        isActive: boolean("is_active").default(true),
+        isTerminal: boolean("is_terminal").default(false),
+        allowedTransitions: text("allowed_transitions").array(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
 // All tables are already exported above where they are defined
