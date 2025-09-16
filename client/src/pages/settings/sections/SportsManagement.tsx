@@ -33,11 +33,21 @@ export default function SportsManagement() {
   async function addSport() {
     if (!newSportName.trim()) return;
     
+    console.log('Adding sport:', { name: newSportName.trim() });
     const result = await api.post('/api/v1/sports', { name: newSportName.trim() });
+    console.log('Add sport result:', result);
+    
     if (result.success) {
       toast({ title: "Success", description: "Sport added successfully" });
       setNewSportName('');
       loadSports();
+    } else {
+      console.error('Failed to add sport:', result);
+      toast({ 
+        title: "Error", 
+        description: result.error || "Failed to add sport",
+        variant: "destructive" 
+      });
     }
   }
 

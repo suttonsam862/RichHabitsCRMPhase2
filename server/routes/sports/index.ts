@@ -31,8 +31,13 @@ r.get('/', async (req: any, res) => {
 
 /* ---------- Create sport ---------- */
 r.post('/', async (req: any, res) => {
+  console.log('Creating sport with body:', req.body);
+  
   const parse = createSportSchema.safeParse(req.body);
-  if (!parse.success) return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
+  if (!parse.success) {
+    console.log('Validation failed:', parse.error.flatten());
+    return sendErr(res, 'BAD_REQUEST', 'Invalid sport data', parse.error.flatten(), 400);
+  }
   
   const sb = supabaseAdmin;
   const { data, error } = await sb
@@ -41,7 +46,10 @@ r.post('/', async (req: any, res) => {
     .select()
     .single();
     
-  if (error) return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  if (error) {
+    console.log('Database error:', error);
+    return sendErr(res, 'BAD_REQUEST', error.message, undefined, 400);
+  }
   return sendCreated(res, data);
 });
 
