@@ -138,6 +138,74 @@ router.patch('/order-items/:code', requireAuth, async (req: AuthedRequest, res) 
   }
 });
 
+// PATCH /api/v1/order-status/design-jobs/:code - Update design job status
+router.patch('/design-jobs/:code', requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const { code } = req.params;
+    const validation = updateOrderStatusSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Invalid status data', validation.error.errors, 400);
+    }
+
+    const updateData = validation.data;
+
+    // Check if status exists
+    const [existingStatus] = await db.select()
+      .from(statusDesignJobs)
+      .where(eq(statusDesignJobs.code, code))
+      .limit(1);
+
+    if (!existingStatus) {
+      return sendErr(res, 'NOT_FOUND', 'Design job status not found', undefined, 404);
+    }
+
+    const [updatedStatus] = await db.update(statusDesignJobs)
+      .set(updateData)
+      .where(eq(statusDesignJobs.code, code))
+      .returning();
+
+    return sendOk(res, updatedStatus);
+  } catch (error) {
+    console.error('Error updating design job status:', error);
+    return sendErr(res, 'INTERNAL_ERROR', 'Failed to update design job status', undefined, 500);
+  }
+});
+
+// PATCH /api/v1/order-status/work-orders/:code - Update work order status
+router.patch('/work-orders/:code', requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const { code } = req.params;
+    const validation = updateOrderStatusSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Invalid status data', validation.error.errors, 400);
+    }
+
+    const updateData = validation.data;
+
+    // Check if status exists
+    const [existingStatus] = await db.select()
+      .from(statusWorkOrders)
+      .where(eq(statusWorkOrders.code, code))
+      .limit(1);
+
+    if (!existingStatus) {
+      return sendErr(res, 'NOT_FOUND', 'Work order status not found', undefined, 404);
+    }
+
+    const [updatedStatus] = await db.update(statusWorkOrders)
+      .set(updateData)
+      .where(eq(statusWorkOrders.code, code))
+      .returning();
+
+    return sendOk(res, updatedStatus);
+  } catch (error) {
+    console.error('Error updating work order status:', error);
+    return sendErr(res, 'INTERNAL_ERROR', 'Failed to update work order status', undefined, 500);
+  }
+});
+
 // POST /api/v1/order-status/orders/reorder - Reorder order statuses
 router.post('/orders/reorder', requireAuth, async (req: AuthedRequest, res) => {
   try {
