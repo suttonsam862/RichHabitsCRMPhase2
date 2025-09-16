@@ -1,0 +1,58 @@
+✅ Database connection test successful
+[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+4  |  
+5  |  /* Import Universal UI Laws - THESE CANNOT BE OVERRIDDEN */
+6  |  @import './styles/ui-laws.css';
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7  |  
+8  |  /* Coolvetica Font - Commented out until font file is available
+Error:   Failed to scan for dependencies from entries:
+  /home/runner/workspace/client/index.html
+
+  ✘ [ERROR] Multiple exports with the same name "Toaster"
+
+    client/src/components/ui/toaster.tsx:44:16:
+      44 │ export function Toaster() {
+         ╵                 ~~~~~~~
+
+  The name "Toaster" was originally exported here:
+
+    client/src/components/ui/toaster.tsx:11:16:
+      11 │ export function Toaster() {
+         ╵                 ~~~~~~~
+
+
+✘ [ERROR] The symbol "Toaster" has already been declared
+
+    client/src/components/ui/toaster.tsx:44:16:
+      44 │ export function Toaster() {
+         ╵                 ~~~~~~~
+
+  The symbol "Toaster" was originally declared here:
+
+    client/src/components/ui/toaster.tsx:11:16:
+      11 │ export function Toaster() {
+         ╵                 ~~~~~~~
+
+  Duplicate top-level function declarations are not allowed in an ECMAScript module. This file is considered to be an ECMAScript module because of the "export" keyword here:
+
+    client/src/components/ui/toaster.tsx:44:0:
+      44 │ export function Toaster() {
+         ╵ ~~~~~~
+
+
+    at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+    at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:945:25
+    at runOnEndCallbacks (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1315:45)
+    at buildResponseToResult (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:943:7)
+    at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:955:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:954:54)
+    at handleRequest (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:647:17)
+    at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:672:7)
+    at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
