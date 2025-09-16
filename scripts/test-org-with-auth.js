@@ -68,10 +68,25 @@ async function testWithAuth() {
       // Test health endpoint
       try {
         const healthResponse = await fetch('http://localhost:5000/api/health');
-        const healthResult = await healthResponse.json();
-        console.log('Health check result:', healthResult);
+        if (!healthResponse.ok) {
+          console.log('Health endpoint returned status:', healthResponse.status);
+          const text = await healthResponse.text();
+          console.log('Health response text:', text.substring(0, 200));
+        } else {
+          const healthResult = await healthResponse.json();
+          console.log('Health check result:', healthResult);
+        }
       } catch (healthError) {
         console.log('Health check failed:', healthError.message);
+        
+        // Also try the alternative health endpoint
+        try {
+          const altHealthResponse = await fetch('http://localhost:5000/healthz');
+          const altResult = await altHealthResponse.json();
+          console.log('Alternative health check (/healthz):', altResult);
+        } catch (altError) {
+          console.log('Alternative health check also failed:', altError.message);
+        }
       }
     }
 

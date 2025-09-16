@@ -38,3 +38,19 @@ const client = postgres(connectionString, {
 
 // Create drizzle instance
 export const db = drizzle(client, { schema });
+
+// Test database connection
+async function testConnection() {
+  try {
+    await client`SELECT 1 as test`;
+    console.log('✅ Database connection test successful');
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  }
+}
+
+// Test connection on startup
+testConnection().catch(error => {
+  console.error('Failed to establish database connection:', error);
+});

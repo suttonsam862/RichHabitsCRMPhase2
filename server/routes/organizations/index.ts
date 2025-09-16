@@ -15,4 +15,9 @@ router.use("/", assetsRouter);
 // Use hardened implementation for all other organization routes
 router.use("/", hardenedRouter);
 
+// GET /api/v1/organizations - List organizations with search/filter capabilities
+router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+  console.log('Organizations GET route called with user:', req.user ? { id: req.user.id, email: req.user.email } : 'No user');
+});
+
 export default router;

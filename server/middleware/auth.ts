@@ -4,13 +4,15 @@ import { sendErr } from '../lib/http';
 import { logSecurityEvent } from '../lib/log';
 import { sql } from 'drizzle-orm';
 
-// Import database connection
-let db: any;
+// Import database connection safely
+let db: any = null;
 try {
-  const dbModule = require('../db');
-  db = dbModule.db;
+  // Use dynamic import to safely load database
+  const { db: dbConnection } = require('../db');
+  db = dbConnection;
+  console.log('Database connection loaded successfully for auth middleware');
 } catch (error) {
-  console.warn('Database connection not available, using fallback auth');
+  console.warn('Database connection not available, using fallback auth:', error instanceof Error ? error.message : 'Unknown error');
 }
 
 export interface AuthedRequest extends Request {
@@ -91,8 +93,21 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
 
     next();
   } catch (error) {
-    logSecurityEvent(req, 'AUTH_ERROR', { error: error instanceof Error ? error.message : 'Unknown error' });
-    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication error', undefined, 500);
+    console.error('Authentication middleware error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      path: req.path,
+      method: req.method
+    });
+    
+    logSecurityEvent(req, 'AUTH_ERROR', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      path: req.path 
+    });
+    
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Authentication system error', {
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
   }
 }
 

@@ -96,6 +96,20 @@ app.get('/healthz', (req, res) => {
   });
 });
 
+// Additional health endpoint at /api/health for compatibility
+app.get('/api/health', (req, res) => {
+  const uptime = process.uptime();
+  res.status(200).json({
+    success: true,
+    data: {
+      status: 'ok',
+      version: process.env.npm_package_version || '1.0.0',
+      uptimeSec: Math.floor(uptime),
+      timestamp: new Date().toISOString()
+    }
+  });
+});
+
 // Metrics endpoint (basic stub)
 app.get('/metrics', (req, res) => {
   const memoryUsage = process.memoryUsage();
