@@ -1,0 +1,35 @@
+The above error occurred in the <div> component:
+
+    at div
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-FGZE7U2Y.js?v=c428c4bd:42:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/@radix-ui_react-toast.js?v=f804f01b:535:13
+    at _c11 (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/toast.tsx:163:13)
+    at div
+    at li
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-FGZE7U2Y.js?v=c428c4bd:42:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-FOOG35MY.js?v=c428c4bd:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-FOOG35MY.js?v=c428c4bd:56:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-FGZE7U2Y.js?v=c428c4bd:42:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-6H5OOIFB.js?v=c428c4bd:61:7
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-FOOG35MY.js?v=c428c4bd:79:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-FOOG35MY.js?v=c428c4bd:56:13
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-DT6AMNRD.js?v=c428c4bd:51:15
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-35FNGKJY.js?v=c428c4bd:38:15)
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/@radix-ui_react-toast.js?v=f804f01b:327:7
+    at Presence (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-LQZQQQMG.js?v=c428c4bd:24:11)
+    at https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/@radix-ui_react-toast.js?v=f804f01b:275:13
+    at _c3 (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/toast.tsx:62:41)
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-35FNGKJY.js?v=c428c4bd:38:15)
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-35FNGKJY.js?v=c428c4bd:38:15)
+    at CollectionProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-DT6AMNRD.js?v=c428c4bd:29:13)
+    at ToastProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/@radix-ui_react-toast.js?v=f804f01b:55:5)
+    at Toaster (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/src/components/ui/toaster.tsx:29:22)
+    at Provider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/chunk-35FNGKJY.js?v=c428c4bd:38:15)
+    at TooltipProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=f0a919d6:61:5)
+    at QueryClientProvider (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=753d6df5:2805:3)
+    at _a (https://0e183b5d-fd72-4281-89b6-3ac943f4348a-00-8n5v8x9bjh7k.spock.replit.dev/node_modules/.vite/deps/react-helmet-async.js?v=21e6dcee:624:5)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Objects are not valid as a React child (found: object with keys {code, message, rid}). If you meant to render a collection of children, use an array instead.
