@@ -233,13 +233,54 @@ export async function addUserToOrganization(
   invitedBy?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Handle varchar primary keys to uuid foreign keys
-    // IDs may be varchar containing UUID values, cast them properly
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    // Validate userId is UUID format (required for user_id foreign key)
+    if (!uuidRegex.test(userId)) {
+      return { 
+        success: false, 
+        error: 'User ID must be a valid UUID' 
+      };
+    }
+    
+    // Validate invitedBy if provided
+    if (invitedBy && !uuidRegex.test(invitedBy)) {
+      return { 
+        success: false, 
+        error: 'Invited by ID must be a valid UUID' 
+      };
+    }
+    
+    // First, verify the organization exists and get its canonical ID
+    const orgResult = await db.execute(sql`
+      SELECT id FROM organizations 
+      WHERE id::text = ${organizationId}::text 
+      LIMIT 1
+    `);
+    
+    if (!orgResult || orgResult.length === 0) {
+      return { 
+        success: false, 
+        error: 'Organization not found' 
+      };
+    }
+    
+    const canonicalOrgId = orgResult[0].id;
+    
+    // Check if the canonical org ID is UUID-formatted
+    if (!uuidRegex.test(canonicalOrgId)) {
+      return { 
+        success: false, 
+        error: 'Cannot create membership for non-UUID organization ID with current schema' 
+      };
+    }
+    
+    // Now safe to cast since we validated UUID format
     await db.execute(sql`
       INSERT INTO organization_memberships 
       (user_id, organization_id, role, invited_by) 
       VALUES 
-      (${userId}::uuid, ${organizationId}::uuid, ${role}, ${invitedBy ? sql`${invitedBy}::uuid` : sql`NULL`})
+      (${userId}::uuid, ${canonicalOrgId}::uuid, ${role}, ${invitedBy ? sql`${invitedBy}::uuid` : sql`NULL`})
       ON CONFLICT (user_id, organization_id) 
       DO UPDATE SET 
         role = EXCLUDED.role,
@@ -261,11 +302,23 @@ export async function addUserToOrganization(
  */
 export async function getUserOrgRole(userId: string, organizationId: string): Promise<OrgRole | null> {
   try {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    // Validate userId for performance (use uuid comparison for indexes)
+    if (!uuidRegex.test(userId)) {
+      return null; // Invalid user ID format
+    }
+    
+    // Use text comparison for org via join to handle varchar/uuid mismatches
+    // Keep user_id as uuid for better index usage
     const result = await db.execute(sql`
-      SELECT role FROM organization_memberships 
-      WHERE user_id = ${userId}::uuid 
-      AND organization_id = ${organizationId}::uuid 
-      AND is_active = true
+      SELECT om.role 
+      FROM organization_memberships om
+      JOIN organizations o ON om.organization_id::text = o.id::text
+      WHERE o.id::text = ${organizationId}::text
+      AND om.user_id = ${userId}::uuid
+      AND om.is_active = true
+      LIMIT 1
     `);
     
     return result[0]?.role as OrgRole || null;
