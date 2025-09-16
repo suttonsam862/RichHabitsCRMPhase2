@@ -27,7 +27,7 @@ export const accountingPayments = pgTable("accounting_payments", {
 });
 
 export const auditLogs = pgTable("audit_logs", {
-        id: bigint({ mode: "number" }).primaryKey().notNull(),
+        id: bigint({ mode: "number" }).primaryKey(),
         occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }),
         actor: uuid(),
         orgId: uuid("org_id"),
@@ -514,18 +514,5 @@ export const systemSettings = pgTable("system_settings", {
         updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 });
 
-export const orderStatusConfigs = pgTable("order_status_configs", {
-        id: uuid().defaultRandom().primaryKey().notNull(),
-        statusCode: varchar("status_code", { length: 50 }).notNull(),
-        displayName: varchar("display_name", { length: 100 }).notNull(),
-        description: text(),
-        color: varchar({ length: 7 }).default('#3B82F6'),
-        sortOrder: integer("sort_order").default(0),
-        isActive: boolean("is_active").default(true),
-        isTerminal: boolean("is_terminal").default(false),
-        allowedTransitions: text("allowed_transitions").array(),
-        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
 
 // All tables are already exported above where they are defined
