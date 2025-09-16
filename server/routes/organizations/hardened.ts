@@ -318,6 +318,10 @@ router.post('/', async (req, res) => {
     // Map frontend fields to database columns
     const dbPayload = mapFieldsToDbColumns(validatedData);
 
+    // Generate UUID for the organization
+    const orgId = randomUUID();
+    dbPayload.id = orgId; // Explicitly set the ID
+
     // Create organization
     const { data: orgData, error: orgError } = await supabaseAdmin
       .from('organizations')
@@ -1487,12 +1491,12 @@ router.post('/:id/sports', async (req: any, res) => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
+
       // Only include assigned_salesperson_id if provided to avoid schema issues
       if (sport.assigned_salesperson_id) {
         baseRecord.assigned_salesperson_id = sport.assigned_salesperson_id;
       }
-      
+
       return baseRecord;
     });
 
@@ -1652,7 +1656,7 @@ router.delete('/:id/sports/:sportId', async (req, res) => {
 });
 
 // UNIFIED: Organization logo upload URL endpoint  
-router.post('/upload-url', async (req, res) => {
+router.post('/upload-url', async (req: any, res) => {
   try {
     logger.info('Generating unified upload URL for organization logo');
 

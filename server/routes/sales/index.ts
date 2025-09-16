@@ -310,4 +310,25 @@ router.patch("/assignments/:assignmentId/toggle", requireAuth, asyncHandler(asyn
   res.json(updated);
 }));
 
+// POST /api/v1/organizations - Create a new organization
+router.post("/organizations", requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+  const organizationData = req.body;
+
+  // Generate a UUID for the organization ID
+  const organizationId = randomUUID();
+
+  // Insert the new organization with the generated ID
+  const [createdOrganization] = await db
+    .insert(organizations)
+    .values([{
+      id: organizationId, // Explicitly set the generated UUID
+      ...organizationData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }])
+    .returning();
+
+  res.status(201).json(createdOrganization);
+}));
+
 export default router;

@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
+import { supabaseAdmin, createUser, deleteUser } from '../../lib/supabaseAdmin.js';
 import { logger } from '../../lib/log.js';
 import { logSbError } from '../../lib/dbLog.js';
 import { sendOk, sendErr } from '../../lib/http.js';
 import { requireAuth } from '../../middleware/auth.js';
+import { randomUUID } from 'crypto';
 
 const router = Router();
 
@@ -282,7 +283,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 router.post('/', requireAuth, async (req, res) => {
   try {
     const parseResult = CreateUserSchema.safeParse(req.body);
-    
+
     if (!parseResult.success) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid user data', parseResult.error.flatten(), 400);
     }
@@ -386,7 +387,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const parseResult = UpdateUserSchema.safeParse(req.body);
-    
+
     if (!parseResult.success) {
       return sendErr(res, 'VALIDATION_ERROR', 'Invalid update data', parseResult.error.flatten(), 400);
     }
