@@ -83,11 +83,30 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
     .orderBy(desc(salespersonMetrics.periodStart))
     .limit(12);
 
-  res.json({
-    ...salesperson,
-    assignments,
-    metrics
-  });
+  // Structure the response to match frontend expectations
+  const response = {
+    data: {
+      id: salesperson.users.id,
+      full_name: salesperson.users.fullName,
+      email: salesperson.users.email,
+      phone: salesperson.users.phone,
+      organization_id: salesperson.users.organizationId,
+      profile: salesperson.salesperson_profiles ? {
+        id: salesperson.salesperson_profiles.id,
+        user_id: salesperson.salesperson_profiles.userId,
+        employee_id: salesperson.salesperson_profiles.employeeId,
+        commission_rate: salesperson.salesperson_profiles.commissionRate ? parseInt(salesperson.salesperson_profiles.commissionRate) : 0,
+        territory: salesperson.salesperson_profiles.territory,
+        hire_date: salesperson.salesperson_profiles.hireDate,
+        performance_tier: salesperson.salesperson_profiles.performanceTier,
+        profile_photo_url: null // Add if needed later
+      } : null,
+      assignments,
+      metrics
+    }
+  };
+
+  res.json(response);
 }));
 
 // Create or update salesperson profile
@@ -155,11 +174,12 @@ router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
     `);
 
     if (existingResult.length > 0) {
-      // Update existing profile
+      // Update existing profile - convert commission rate from percentage to decimal
+      const commissionDecimal = profileData.commission_rate ? (profileData.commission_rate / 100) : 0.05;
       const updated = await db.execute(sql`
         UPDATE salesperson_profiles 
         SET 
-          commission_rate = ${profileData.commission_rate || 0.05},
+          commission_rate = ${commissionDecimal},
           territory = ${profileData.territory || null},
           hire_date = ${profileData.hire_date || null},
           performance_tier = ${profileData.performance_tier || 'standard'},
@@ -182,7 +202,8 @@ router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
       const nextId = maxIdResult[0]?.next_id || 1;
       const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
 
-      // Create new profile
+      // Create new profile - convert commission rate from percentage to decimal
+      const commissionDecimal = profileData.commission_rate ? (profileData.commission_rate / 100) : 0.05;
       const created = await db.execute(sql`
         INSERT INTO salesperson_profiles (
           id, user_id, employee_id, commission_rate, territory, hire_date, performance_tier, is_active, created_at, updated_at
@@ -190,7 +211,7 @@ router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
           gen_random_uuid(),
           ${id},
           ${employeeId},
-          ${profileData.commission_rate || 0.05},
+          ${commissionDecimal},
           ${profileData.territory || null},
           ${profileData.hire_date || null},
           ${profileData.performance_tier || 'standard'},
