@@ -9,6 +9,8 @@ import { sql, eq, and, ilike, desc, inArray } from 'drizzle-orm';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { logDatabaseOperation } from '../../lib/log';
+import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
+import { idempotent } from '../../lib/idempotency';
 
 const router = express.Router();
 
@@ -149,14 +151,11 @@ router.get('/', asyncHandler(async (req: AuthedRequest, res) => {
     q = '',
     orgId,
     statusCode,
-    customerId,
-    page = '1',
-    pageSize = '20'
+    customerId
   } = req.query;
 
-  const pageNum = parseInt(page as string) || 1;
-  const pageSizeNum = parseInt(pageSize as string) || 20;
-  const offset = (pageNum - 1) * pageSizeNum;
+  // Use standard pagination params
+  const paginationParams = parsePaginationParams(req.query);
 
   try {
     // Build where conditions
@@ -205,8 +204,8 @@ router.get('/', asyncHandler(async (req: AuthedRequest, res) => {
       .leftJoin(organizations, eq(orders.orgId, organizations.id))
       .where(whereClause)
       .orderBy(desc(orders.createdAt))
-      .limit(pageSizeNum)
-      .offset(offset);
+      .limit(paginationParams.limit)
+      .offset(paginationParams.offset);
 
     // Map database rows to DTOs with nested entities
     const data = results.map(row => ({
@@ -215,7 +214,8 @@ router.get('/', asyncHandler(async (req: AuthedRequest, res) => {
       organization: row.organization ? { id: row.organization.id, name: row.organization.name } : null
     }));
 
-    sendOk(res, data, total);
+    // Send paginated response with X-Total-Count header
+    sendPaginatedResponse(res, data, total, paginationParams);
   } catch (error) {
     handleDatabaseError(res, error, 'list orders');
   }
@@ -261,8 +261,9 @@ router.get('/:id', asyncHandler(async (req: AuthedRequest, res) => {
   }
 }));
 
-// Create order
+// Create order (with idempotency support)
 router.post('/',
+  idempotent(), // Add idempotency support
   validateRequest({ body: CreateOrderDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
     const validatedData = req.body;
