@@ -163,41 +163,17 @@ export default function CreateSalesperson() {
         throw new Error('Selected user not found');
       }
 
-      // First, ensure user exists in local database
-      console.log('🔍 Ensuring user exists in local database...');
-      let userResponse;
+      console.log('🔍 Adding sales access to existing user...');
       
-      // Try to get user first
-      const getUserResponse = await api.get(`/api/v1/users/${data.user_id}`);
-      
-      if (!getUserResponse.success) {
-        // User doesn't exist in local DB, create them first
-        console.log('📋 Creating user in local database...');
-        const createUserResponse = await api.post('/api/v1/users', {
-          email: selectedUser.email,
-          fullName: selectedUser.fullName,
-          phone: selectedUser.phone,
-          role: 'staff', // Keep their existing role
-          subrole: 'salesperson' // Add sales subrole
-        });
+      // Update user's metadata to add sales subrole
+      const userResponse = await api.patch(`/api/v1/users/${data.user_id}`, {
+        subrole: 'salesperson' // Add stackable sales role
+      });
 
-        if (!createUserResponse.success) {
-          const errorMsg = createUserResponse.error?.message || 'Failed to create user in local database';
-          console.error('User creation failed:', createUserResponse);
-          throw new Error(errorMsg);
-        }
-        userResponse = createUserResponse;
-      } else {
-        // User exists, update their subrole
-        userResponse = await api.patch(`/api/v1/users/${data.user_id}`, {
-          subrole: 'salesperson' // Add stackable sales role
-        });
-
-        if (!userResponse.success) {
-          const errorMsg = userResponse.error?.message || 'Failed to update user role';
-          console.error('User role update failed:', userResponse);
-          throw new Error(errorMsg);
-        }
+      if (!userResponse.success) {
+        const errorMsg = userResponse.error?.message || 'Failed to update user role';
+        console.error('User role update failed:', userResponse);
+        throw new Error(errorMsg);
       }
 
       // Then create their salesperson profile

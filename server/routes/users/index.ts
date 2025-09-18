@@ -66,24 +66,16 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
 
   const pageNum = parseInt(page as string) || 1;
   const pageSizeNum = parseInt(pageSize as string) || 20;
-  const offset = (pageNum - 1) * pageSizeNum;
 
   try {
-    // Build where conditions
-    const conditions = [];
-
-    // Use Supabase Auth to get users instead of custom table
-    const { data: authUsers, error } = await supabaseAdmin.auth.admin.listUsers({
-      page: pageNum,
-      perPage: pageSizeNum
-    });
+    // Get ALL users from Supabase Auth (pagination is limited, so we get all and filter client-side)
+    const { data: authUsers, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
       return sendErr(res, 'INTERNAL_ERROR', 'Failed to fetch users', undefined, 500);
     }
 
     const results = authUsers?.users || [];
-    const total = authUsers?.total || 0;
 
     // Filter out test/mock users based on email patterns
     const isTestUser = (email: string | undefined) => {
@@ -104,39 +96,45 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
       return testPatterns.some(pattern => pattern.test(email));
     };
 
-    const realUsers = results.filter(user => !isTestUser(user.email));
+    let filteredResults = results.filter(user => !isTestUser(user.email));
 
     // Filter by search query if provided
-    let filteredResults = realUsers;
     if (q && typeof q === 'string' && q.trim()) {
       const searchTerm = q.trim().toLowerCase();
-      filteredResults = realUsers.filter(user =>
+      filteredResults = filteredResults.filter(user =>
         user.email?.toLowerCase().includes(searchTerm) ||
         user.user_metadata?.full_name?.toLowerCase().includes(searchTerm)
       );
     }
 
+    // Apply pagination after filtering
+    const total = filteredResults.length;
+    const offset = (pageNum - 1) * pageSizeNum;
+    const paginatedResults = filteredResults.slice(offset, offset + pageSizeNum);
+
     // Map Supabase auth users to DTOs
-    const data = filteredResults.map(user => ({
+    const data = paginatedResults.map(user => ({
       id: user.id,
       email: user.email,
       phone: user.phone,
       fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
       avatarUrl: user.user_metadata?.avatar_url || null,
-      isActive: true,
+      role: user.user_metadata?.role || 'customer',
+      subrole: user.user_metadata?.subrole || null,
+      isActive: !user.banned_until,
       preferences: user.user_metadata?.preferences || {},
-      createdAt: user.user.created_at,
-      updatedAt: user.user.updated_at,
-      lastLogin: user.user.last_sign_in_at,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      lastLogin: user.last_sign_in_at,
     }));
 
-    sendOk(res, data, filteredResults.length);
+    sendOk(res, data, total);
   } catch (error) {
     handleDatabaseError(res, error, 'list users');
   }
 }));
 
-// Get user by ID with roles
+// Get user by ID
 router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
@@ -153,26 +151,16 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
       phone: user.user.phone,
       fullName: user.user.user_metadata?.full_name || null,
       avatarUrl: user.user.user_metadata?.avatar_url || null,
-      isActive: true, // Simplified since banned_until not reliably available
+      role: user.user.user_metadata?.role || 'customer',
+      subrole: user.user.user_metadata?.subrole || null,
+      isActive: !user.user.banned_until,
       preferences: user.user.user_metadata?.preferences || {},
       createdAt: user.user.created_at,
       updatedAt: user.user.updated_at,
       lastLogin: user.user.last_sign_in_at,
     };
 
-    // Get user roles
-    const rolesResult = await db.execute(sql`
-      SELECT r.id, r.name, r.slug, ur.org_id
-      FROM user_roles ur
-      JOIN roles r ON ur.role_id = r.id
-      WHERE ur.user_id = ${id}
-    `);
-
-    const mappedUser = {
-      ...userData,
-      roles: rolesResult || []
-    };
-    sendOk(res, mappedUser);
+    sendOk(res, userData);
   } catch (error) {
     handleDatabaseError(res, error, 'fetch user');
   }
@@ -288,7 +276,7 @@ router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, 
   }
 }));
 
-// Create user
+// Create user - only in Supabase Auth
 router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
     const validatedData = req.body;
@@ -297,15 +285,14 @@ router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
     const requestingUser = req.user;
     const requestedRole = validatedData.role || 'customer';
 
-    if (['admin', 'staff'].includes(requestedRole)) {
-      // Check if requesting user has admin privileges using database role
-      const hasAdminRole = requestingUser?.is_super_admin ||
-        requestingUser?.role === 'admin';
+    if (['admin', 'staff', 'sales'].includes(requestedRole)) {
+      // Basic role check (simplified since we're not using local DB)
+      const hasAdminRole = requestingUser?.is_super_admin || 
+        requestingUser?.user_metadata?.role === 'admin';
 
       if (!hasAdminRole) {
         logSecurityEvent(req, 'ROLE_ASSIGNMENT_DENIED', {
           requestingUserId: requestingUser?.id,
-          requestingUserRole: requestingUser?.role,
           requestedRole,
           reason: 'insufficient_privileges'
         });
@@ -313,10 +300,7 @@ router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
       }
     }
 
-    let createdSupabaseUser = null;
-
     try {
-      // Log the data being sent for debugging
       console.log('Creating user with data:', {
         email: validatedData.email,
         phone: validatedData.phone,
@@ -324,155 +308,54 @@ router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
         role: validatedData.role
       });
 
-      // Create user using Supabase Auth, or get existing user if they already exist
-      let newUser, error;
-      
-      // First try to create the user
+      // Create user using Supabase Auth
       const createResult = await supabaseAdmin.auth.admin.createUser({
         email: validatedData.email,
         phone: validatedData.phone,
         user_metadata: {
           full_name: validatedData.fullName || validatedData.email.split('@')[0],
-          preferences: {},
-          role: validatedData.role || 'customer'
+          role: validatedData.role || 'customer',
+          subrole: validatedData.subrole || null,
+          preferences: {}
         },
         email_confirm: true
       });
 
-      if (createResult.error && createResult.error.message.includes('already registered')) {
-        // User already exists in Supabase Auth, try to get them
-        console.log('User already exists in Supabase Auth, fetching existing user...');
-        const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-        
-        if (listError) {
-          return sendErr(res, 'CREATE_ERROR', 'Failed to fetch existing user', listError, 400);
+      if (createResult.error) {
+        if (createResult.error.message.includes('already registered')) {
+          return sendErr(res, 'CONFLICT', 'User with this email already exists', undefined, 409);
         }
-        
-        const existingUser = users.users.find(u => u.email === validatedData.email);
-        if (!existingUser) {
-          return sendErr(res, 'CREATE_ERROR', 'User exists but could not be found', null, 400);
-        }
-        
-        newUser = { user: existingUser };
-        error = null;
-      } else {
-        newUser = createResult.data;
-        error = createResult.error;
+        console.error('Supabase user creation error:', createResult.error);
+        return sendErr(res, 'CREATE_ERROR', createResult.error.message, createResult.error, 400);
       }
 
-      if (error) {
-        console.error('Supabase user creation error:', error);
-        return sendErr(res, 'CREATE_ERROR', error.message, error, 400);
-      }
-
-      createdSupabaseUser = newUser.user;
-
-      // Create user record in our database - if this fails, cleanup Supabase user
-      try {
-        const userDbRecord = await db.execute(sql`
-          INSERT INTO users (id, email, full_name, phone, role, organization_id, is_active, created_at, updated_at)
-          VALUES (
-            ${newUser.user?.id},
-            ${newUser.user?.email},
-            ${newUser.user?.user_metadata?.full_name || validatedData.email.split('@')[0]},
-            ${newUser.user?.phone || null},
-            ${validatedData.role || 'customer'},
-            'global',
-            1,
-            NOW(),
-            NOW()
-          )
-          ON CONFLICT (id) DO UPDATE SET
-            email = EXCLUDED.email,
-            full_name = EXCLUDED.full_name,
-            phone = EXCLUDED.phone,
-            role = EXCLUDED.role,
-            updated_at = NOW()
-          RETURNING *
-        `);
-        console.log('Database user record created/updated:', userDbRecord[0]?.id);
-
-        // If this is a sales user, automatically create salesperson profile
-        const isSalesUser = validatedData.role === 'sales' || validatedData.subrole === 'salesperson';
-        if (isSalesUser) {
-          try {
-            console.log(`📋 Auto-creating salesperson profile for new sales user: ${validatedData.fullName}`);
-
-            // Generate sequential employee ID
-            const maxIdResult = await db.execute(sql`
-              SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
-              FROM salesperson_profiles
-              WHERE employee_id ~ '^EMP-[0-9]+$'
-            `);
-            const nextId = maxIdResult[0]?.next_id || 1;
-            const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
-
-            await db.execute(sql`
-              INSERT INTO salesperson_profiles (
-                id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
-              ) VALUES (
-                gen_random_uuid(),
-                ${newUser.user?.id},
-                ${employeeId},
-                0.05,
-                'standard',
-                true,
-                NOW(),
-                NOW()
-              )
-              ON CONFLICT (user_id) DO NOTHING
-            `);
-
-            console.log(`✅ Created salesperson profile with employee ID ${employeeId}`);
-          } catch (profileError) {
-            console.error(`⚠️ Failed to create salesperson profile for ${validatedData.fullName}:`, profileError);
-            // Don't fail the whole request if profile creation fails
-          }
-        }
-
-      } catch (dbError) {
-        console.error('Database insert failed, cleaning up Supabase user:', dbError);
-
-        // Cleanup: Delete the created Supabase user to prevent orphaned data
-        try {
-          await supabaseAdmin.auth.admin.deleteUser(newUser.user?.id);
-          console.log('Successfully cleaned up orphaned Supabase user');
-        } catch (cleanupError) {
-          console.error('Failed to cleanup Supabase user:', cleanupError);
-        }
-
-        return sendErr(res, 'DATABASE_ERROR', 'Failed to create user database record', dbError, 500);
+      const newUser = createResult.data?.user;
+      if (!newUser) {
+        return sendErr(res, 'CREATE_ERROR', 'Failed to create user', undefined, 500);
       }
 
       const createdUser = {
-        id: newUser.user?.id,
-        email: newUser.user?.email,
-        phone: newUser.user?.phone,
-        fullName: newUser.user?.user_metadata?.full_name,
+        id: newUser.id,
+        email: newUser.email,
+        phone: newUser.phone,
+        fullName: newUser.user_metadata?.full_name,
+        role: newUser.user_metadata?.role || 'customer',
+        subrole: newUser.user_metadata?.subrole || null,
         isActive: true,
-        role: validatedData.role || 'customer',
-        preferences: newUser.user?.user_metadata?.preferences || {},
-        createdAt: newUser.user?.created_at,
-        updatedAt: newUser.user?.updated_at
+        preferences: newUser.user_metadata?.preferences || {},
+        createdAt: newUser.created_at,
+        updatedAt: newUser.updated_at
       };
+
       res.status(201);
       sendOk(res, createdUser);
     } catch (error) {
-      // If any unexpected error occurs and we created a Supabase user, try to clean it up
-      if (createdSupabaseUser) {
-        try {
-          await supabaseAdmin.auth.admin.deleteUser(createdSupabaseUser.id);
-          console.log('Cleaned up Supabase user after unexpected error');
-        } catch (cleanupError) {
-          console.error('Failed to cleanup Supabase user after error:', cleanupError);
-        }
-      }
       handleDatabaseError(res, error, 'create user');
     }
   })
 );
 
-// Update user
+// Update user - only in Supabase Auth
 router.patch('/:id',
   validateRequest({ body: UpdateUserDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
@@ -480,13 +363,10 @@ router.patch('/:id',
     const updateData = req.body;
 
     try {
-      // Check if user exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, id));
-
-      if (!existingUser) {
+      // Check if user exists in Supabase Auth
+      const { data: existingUser, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(id);
+      
+      if (fetchError || !existingUser) {
         return res.status(404).json({
           success: false,
           error: {
@@ -496,25 +376,60 @@ router.patch('/:id',
         });
       }
 
-      // Update user
-      const [updatedUser] = await db
-        .update(users)
-        .set({
-          ...updateData,
-          updatedAt: new Date().toISOString()
-        })
-        .where(eq(users.id, id))
-        .returning();
+      // Prepare update payload for Supabase Auth
+      const updatePayload: any = {};
+      
+      // Map fields to Supabase Auth format
+      if (updateData.fullName !== undefined) {
+        updatePayload.user_metadata = {
+          ...existingUser.user.user_metadata,
+          full_name: updateData.fullName
+        };
+      }
+      
+      if (updateData.phone !== undefined) {
+        updatePayload.phone = updateData.phone;
+      }
+      
+      if (updateData.role !== undefined) {
+        updatePayload.user_metadata = {
+          ...updatePayload.user_metadata || existingUser.user.user_metadata,
+          role: updateData.role
+        };
+      }
 
-      console.log(`✅ Updated user: ${updatedUser.fullName} (${updatedUser.id})`);
+      if (updateData.subrole !== undefined) {
+        updatePayload.user_metadata = {
+          ...updatePayload.user_metadata || existingUser.user.user_metadata,
+          subrole: updateData.subrole
+        };
+      }
 
-      // Note: Salesperson profiles should be created explicitly through the sales route
-      // This prevents automatic profile creation when roles change
-      // Users with sales access should be managed through /sales/salespeople endpoints
+      // Update user in Supabase Auth
+      const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(id, updatePayload);
+
+      if (updateError) {
+        return sendErr(res, 'UPDATE_ERROR', updateError.message, undefined, 400);
+      }
+
+      console.log(`✅ Updated user: ${updatedUser.user?.user_metadata?.full_name} (${updatedUser.user?.id})`);
+
+      const responseData = {
+        id: updatedUser.user?.id,
+        email: updatedUser.user?.email,
+        phone: updatedUser.user?.phone,
+        fullName: updatedUser.user?.user_metadata?.full_name,
+        role: updatedUser.user?.user_metadata?.role,
+        subrole: updatedUser.user?.user_metadata?.subrole,
+        isActive: !updatedUser.user?.banned_until,
+        preferences: updatedUser.user?.user_metadata?.preferences || {},
+        createdAt: updatedUser.user?.created_at,
+        updatedAt: updatedUser.user?.updated_at
+      };
 
       res.json({
         success: true,
-        data: updatedUser
+        data: responseData
       });
     } catch (error) {
       handleDatabaseError(res, error, 'update user');

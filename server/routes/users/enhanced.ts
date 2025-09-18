@@ -110,7 +110,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       
       if (type === 'staff') {
         filteredResults = filteredResults.filter(user => 
-          ['admin', 'sales', 'designer', 'manufacturing'].includes(userRole(user))
+          ['admin', 'sales', 'designer', 'manufacturing', 'staff'].includes(userRole(user))
         );
       } else if (type === 'customer') {
         filteredResults = filteredResults.filter(user => userRole(user) === 'customer');
