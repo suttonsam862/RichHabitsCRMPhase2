@@ -1,0 +1,431 @@
+guide:
+title: "Rich Habits CRM Phase 2 – End‑to‑End Remediation Playbook"
+version: "1.0"
+source_document: "Topline Risk Brief.pdf"
+source_citation: ":contentReference[oaicite:1]{index=1}"
+audience: ["Replit Agent", "Engineering", "Security", "Platform/DBA", "Frontend"]
+objectives:
+  - Close critical security gaps (privilege escalation, misconfigured RLS, exposed endpoints, plaintext secrets).
+  - Restore strict multi‑tenant data isolation and schema consistency.
+  - Raise API quality bar: validation, pagination, idempotency, timeouts, error handling.
+  - Improve frontend accessibility, UX resilience, and performance.
+  - Establish production‑grade observability with SLOs and actionable alerts.
+constraints_and_context:
+  hosting: "Monorepo; SPA (React 18) → Express (Node) → Supabase (Postgres/Auth/Storage)"
+  authN: "Supabase JWT on each request; backend currently uses service role (bypasses RLS)."
+  rate_limits:
+    general_api: "200 requests / 15 min / IP"
+    auth_endpoints: "10 requests / min / IP"
+  request_size_limits:
+    express_json_limit: "2 MB"
+  logging_metrics:
+    logging: "Pino; request ID (rid) per request"
+    metrics: "GET /metrics exposes basic Node metrics; GET /healthz reports uptime"
+  known_risks_topline:
+    - id: R-ADMIN-OPEN
+      summary: "Unprotected admin user creation endpoint allows creation of admin accounts without auth."
+      impact: "Full system compromise (admin access)."
+      likelihood: "High"
+      severity: "Critical"
+    - id: R-RLS-PERMS
+      summary: "Overly permissive or missing RLS policies; some tables effectively allow ALL for authenticated role."
+      impact: "Cross‑tenant data exposure & tampering."
+      likelihood: "Medium"
+      severity: "High"
+    - id: R-SECRETS
+      summary: "Database credentials found in plaintext in code; service role key usage everywhere."
+      impact: "Complete DB compromise if leaked."
+      likelihood: "High"
+      severity: "Critical"
+    - id: R-SCHEMA-DRIFT
+      summary: "UUID vs VARCHAR mismatches (e.g., organizations.id), migration drift; type casts defeating indexes."
+      impact: "Runtime errors, poor performance, broken joins."
+      likelihood: "High"
+      severity: "High"
+    - id: R-VALIDATION-PAGINATION
+      summary: "Many endpoints lack schema validation and pagination; several are stubs."
+      impact: "DoS via unbounded queries; data quality risks."
+      likelihood: "Medium"
+      severity: "High"
+    - id: R-FILE-ENDPOINTS
+      summary: "Public debug/storage endpoints and a public 'public-objects' stream without auth/path validation."
+      impact: "Leak of private files if object key is known/guessed."
+      likelihood: "Medium"
+      severity: "High"
+    - id: R-MIGRATIONS-DESTRUCTIVE
+      summary: "Destructive DROP/CREATE migrations in repo."
+      impact: "Data loss if run on non‑empty envs."
+      likelihood: "Low→Medium"
+      severity: "High"
+    - id: R-A11Y-UX
+      summary: "Clickable divs (no keyboard access), uncertain focus management, borderline contrast."
+      impact: "Non‑compliance with WCAG; poor UX."
+      likelihood: "High"
+      severity: "Medium"
+    - id: R-OBS
+      summary: "No Sentry; shallow /metrics; lack of alerts/SLOs."
+      impact: "Slow incident detection/response."
+      likelihood: "High"
+      severity: "Medium"
+
+execution:
+  mode: "Plan_then_Build"
+  rules:
+    - "Start with Phase 0 emergency hardening before any other work."
+    - "Batch changes; keep patches small and reversible."
+    - "For any DB or security setting, document before/after and add tests."
+    - "Never rotate or delete secrets silently; produce a checklist for human approval."
+    - "After each merge: run tests, update CHANGELOG, verify SLO dashboards."
+
+system_map:
+  browser_spa:
+    stack: ["React 18", "TypeScript", "TanStack Query", "React Router", "Tailwind", "Radix/shadcn"]
+    role: "Calls Express API via HTTPS; caches client‑side; no background jobs."
+  express_api:
+    stack: ["Node.js", "Express", "Drizzle ORM", "Supabase JS Admin"]
+    security: ["Bearer JWT auth", "Org role middleware (requireOrgRole etc.)"]
+    logging: ["Pino", "request ID", "security event logs"]
+    metrics: ["/metrics", "/healthz"]
+  database_supabase:
+    components: ["Postgres (RLS, functions, triggers)", "Auth (JWT)", "Storage (buckets, signed URLs)"]
+    note: "Backend uses service role → bypasses RLS; RLS still must be locked as second line of defense."
+  integrations:
+    email: "SendGrid (transactional)"
+    optional: "OpenAI API (future)"
+  storage:
+    buckets: ["app"]
+    flows: ["createSignedUploadUrl", "createSignedUrl", "signed PUT/GET"]
+
+phases:
+  - name: "Phase 0 – Emergency Hardening (Same Day)"
+    goals: ["Close active compromise vectors", "Contain data‑exposure risks"]
+    steps:
+      - id: SEC-1
+        title: "Disable/guard POST /api/v1/auth/admin/create-user"
+        actions:
+          - "In production builds, unregister route or wrap with `requireAuth` + `requireSystemAdmin()`."
+          - "Add kill‑switch: if NODE_ENV=production and !ALLOW_ADMIN_SEED, return 403."
+        acceptance:
+          - "Unauthenticated request returns 401/403."
+          - "Non‑admin user returns 403."
+          - "Audit logs show attempted access."
+      - id: SEC-2
+        title: "Remove or harden public file endpoints"
+        routes:
+          block_immediately: [ "GET /api/v1/files/public-objects/:filePath*", "GET /api/v1/debug/storage-files",
+                               "POST /api/v1/objects/upload (deprecated)" ]
+        replacement:
+          - "Introduce auth‑protected, org‑checked file fetch: verify requester’s membership to file’s org before issuing signed URL."
+        acceptance:
+          - "Public access attempts return 404/403; no signed URL created."
+      - id: SEC-3
+        title: "Rotate exposed secrets and enforce env usage"
+        actions:
+          - "Rotate Postgres password/key in Supabase; update DATABASE_URL only via env."
+          - "Search codebase for committed secrets; remove and add pre‑commit/CI secret scan."
+        acceptance:
+          - "No plaintext secrets in repo; app boots with envs only."
+      - id: SEC-4
+        title: "CORS/Helmet/HSTS review"
+        actions:
+          - "Set ORIGINS to exact production domains; expose X-Total-Count; allow Idempotency-Key if used."
+          - "Ensure Helmet in prod (CSP on; HSTS enabled)."
+        acceptance: ["CORS preflight passes from prod UI", "Security headers present in responses"]
+      - id: SEC-5
+        title: "Rate limit confirmation"
+        actions:
+          - "Ensure global 200/15min and 10/min auth limits enforced; exclude OPTIONS if needed."
+        acceptance: ["Hitting limits returns structured RATE_LIMIT_EXCEEDED JSON"]
+
+  - name: "Phase 1 – RLS & Authorization (Data Isolation)"
+    goals: ["Lock DB at tenant boundary", "Unify role model"]
+    steps:
+      - id: RLS-1
+        title: "Drop permissive policies; add membership‑based policies"
+        sql_examples:
+          organizations_policies: |
+            -- Drop permissive policy(s) first
+            DROP POLICY IF EXISTS org_full_access ON public.organizations;
+            -- SELECT only for active members
+            CREATE POLICY org_select ON public.organizations
+            FOR SELECT TO authenticated
+            USING (EXISTS (SELECT 1 FROM public.organization_memberships m
+                           WHERE m.organization_id = id
+                             AND m.user_id = auth.uid()
+                             AND m.is_active));
+            -- UPDATE/DELETE only for admins/owners
+            CREATE POLICY org_update ON public.organizations
+            FOR UPDATE TO authenticated
+            USING (public.is_org_admin(auth.uid(), id))
+            WITH CHECK (public.is_org_admin(auth.uid(), id));
+            CREATE POLICY org_delete ON public.organizations
+            FOR DELETE TO authenticated
+            USING (public.is_org_owner(auth.uid(), id));
+          orders_customers_catalog: |
+            -- Pattern: gate by org_id via membership join
+            CREATE POLICY orders_select ON public.orders
+            FOR SELECT TO authenticated
+            USING (EXISTS (SELECT 1 FROM public.organization_memberships m
+                           WHERE m.organization_id = orders.org_id
+                             AND m.user_id = auth.uid()
+                             AND m.is_active));
+            -- Similar INSERT/UPDATE with admin checks as appropriate.
+        acceptance:
+          - "User JWT cannot read/modify other orgs via Supabase client."
+          - "Backend (service role) unaffected functionally."
+      - id: RLS-2
+        title: "Align membership/roles model"
+        actions:
+          - "Decide canonical source: organization_memberships for org‑scoped roles; keep user_roles for global."
+          - "Backfill membership rows for all existing users/orgs."
+        acceptance: ["No missing memberships; middleware no longer needs type casts"]
+
+  - name: "Phase 2 – Schema Consistency & Performance"
+    goals: ["Fix UUID/text drift", "Restore indexability", "Harden FKs"]
+    steps:
+      - id: DB-1
+        title: "Normalize UUID types (organizations.id and FKs)"
+        actions:
+          - "ALTER columns to UUID USING casts; generate UUIDs for any non‑UUID leftovers via temp mapping."
+        acceptance: ["Drizzle schema matches DB; no ::text casts in queries/middleware"]
+      - id: DB-2
+        title: "Add critical indexes"
+        sql_examples: |
+          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_memberships_org_user
+            ON public.organization_memberships(organization_id, user_id);
+          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_customers_org ON public.customers(org_id);
+          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_org_sports_org ON public.org_sports(org_id);
+          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_org ON public.audit_logs(org_id);
+          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_actor ON public.audit_logs(actor);
+        acceptance: ["EXPLAIN shows index usage on membership check & list endpoints"]
+      - id: DB-3
+        title: "FK on‑delete rules"
+        actions:
+          - "CASCADE for subordinate entities (e.g., order_items→orders)."
+          - "SET NULL for optional cross‑schema refs (e.g., org_sports.contact_user_id)."
+        acceptance: ["No orphaned rows after delete flows"]
+      - id: DB-4
+        title: "Migration hygiene"
+        actions:
+          - "Replace DROP/CREATE patterns with ALTER or online migrations; mark dangerous scripts as dev‑only."
+        acceptance: ["Applying migrations on staging with seed data preserves records"]
+
+  - name: "Phase 3 – API Quality (Validation, Pagination, Idempotency, Timeouts)"
+    goals: ["Predictable, safe endpoints with consistent envelopes"]
+    steps:
+      - id: API-1
+        title: "Add Zod (or equivalent) schemas to all mutating endpoints and querystrings"
+        targets: ["organizations (PATCH/POST)", "orders", "catalog", "manufacturing", "auth/admin/create-user (if retained)"]
+        acceptance: ["Invalid inputs → 400 with structured 'VALIDATION_ERROR' details"]
+      - id: API-2
+        title: "Standard pagination"
+        design:
+          style: "limit/offset with max 100; expose X-Total-Count"
+          query_params: { limit: "1..100 (default 50)", page: ">=1 (default 1)" }
+        acceptance: ["Collections never return >100 items; header includes total count"]
+      - id: API-3
+        title: "Idempotency for critical POSTs"
+        design:
+          header: "Idempotency-Key"
+          table: "idempotency_keys(id text pk, user_id uuid, first_used timestamptz, response jsonb null)"
+        acceptance: ["Duplicate key → 409 or cached response; no dup records"]
+      - id: API-4
+        title: "Timeouts & retries"
+        actions:
+          - "Set global request timeout (e.g., 30–60s)."
+          - "AbortController for external fetches (Supabase storage, SendGrid)."
+        acceptance: ["Hung upstream calls terminate with 504; logs indicate timeout"]
+      - id: API-5
+        title: "Unify error handler"
+        actions:
+          - "Remove duplicate middleware; keep single error handler logging rid + structured JSON."
+        acceptance: ["Exactly one error log per exception; consistent JSON envelope"]
+      - id: API-6
+        title: "Role‑gating domain routers"
+        actions:
+          - "requireRole('sales'|'design'|'manufacturing'|'admin') on respective routers."
+        acceptance: ["Non‑role user gets 403 on domain endpoints"]
+
+  - name: "Phase 4 – Storage/File Safety"
+    steps:
+      - id: STOR-1
+        title: "Authz‑guarded signed URL issuance"
+        actions:
+          - "Compute objectKey with org scoping; verify membership before createSignedUrl."
+        acceptance: ["Only org members can fetch org‑scoped objects"]
+      - id: STOR-2
+        title: "Lifecycle and size governance"
+        actions:
+          - "Add basic lifecycle rules (cleanup old logos/versions); monitor bucket usage."
+        acceptance: ["No unbounded growth; regular cleanup job documented"]
+
+  - name: "Phase 5 – Frontend Accessibility & UX Resilience"
+    steps:
+      - id: FE-1
+        title: "Replace clickable <div> with <button>/<a>; add keyboard handlers"
+        acceptance: ["Organization cards reachable by Tab; Enter/Space activates"]
+      - id: FE-2
+        title: "Focus management & skip link"
+        actions:
+          - "Add <main id='main' tabIndex='-1'> and focus on route change."
+          - "Provide 'Skip to content' link."
+        acceptance: ["After navigation, focus lands on main content; Axe/Lighthouse pass"]
+      - id: FE-3
+        title: "Contrast & motion"
+        actions:
+          - "Adjust badges/text to meet WCAG AA; respect prefers‑reduced‑motion."
+        acceptance: ["No color‑contrast violations in audits"]
+      - id: FE-4
+        title: "Loading/Empty/Error states"
+        acceptance: ["All list pages show spinner, friendly empty state, and retry on error"]
+      - id: FE-5
+        title: "Responsiveness & large lists"
+        actions:
+          - "Paginate or virtualize large tables; avoid heavy effects on large sets."
+        acceptance: ["Smooth scroll & interaction on data‑heavy screens"]
+      - id: FE-6
+        title: "i18n scaffold (optional, future‑proof)"
+        acceptance: ["Strings centralized; English default preserved"]
+      - id: FE-7
+        title: "Confirm dialogs for destructive actions"
+        acceptance: ["Deletes require explicit confirmation; E2E coverage present"]
+
+  - name: "Phase 6 – Observability & SLOs"
+    steps:
+      - id: OBS-1
+        title: "Integrate Sentry (backend & frontend)"
+        acceptance: ["Unhandled exceptions appear in Sentry with user/rid context"]
+      - id: OBS-2
+        title: "Prometheus metrics expansion"
+        metrics:
+          - "request_count{method,route,status}"
+          - "request_duration_seconds histogram"
+          - "db_query_duration (where feasible)"
+        acceptance: ["Dashboards show p50/p95 latency and error rate per route"]
+      - id: OBS-3
+        title: "Define SLOs & alerts"
+        slos:
+          availability: "≥99.9%"
+          latency_p95: "≤500 ms for read APIs; ≤1s for write"
+          error_rate: "<1% over 5 min windows"
+        alerts:
+          - "Healthz failure → page"
+          - "Error rate >5% over 5m → warn"
+          - "Latency p95 >1s over 10m → warn"
+      - id: OBS-4
+        title: "DB‑aware healthz"
+        acceptance: ["/healthz includes a lightweight DB ping result"]
+
+  - name: "Phase 7 – Security Posture Tightening"
+    steps:
+      - id: SEC-6
+        title: "Password policy & MFA (where applicable)"
+        actions:
+          - "Enforce stronger password schema at register/admin flows."
+          - "Plan MFA for high‑privilege accounts."
+        acceptance: ["Weak passwords blocked; MFA plan documented"]
+      - id: SEC-7
+        title: "CSRF, COOP/COEP review (future)"
+        note: "JWT in headers keeps CSRF low; review if cookies introduced."
+
+  - name: "Phase 8 – Tests & CI"
+    steps:
+      - id: TEST-1
+        title: "Unit tests for validation, role gates, error handler"
+      - id: TEST-2
+        title: "Integration tests for RLS with user JWT"
+      - id: TEST-3
+        title: "Contract tests for pagination, idempotency, rate limits"
+      - id: TEST-4
+        title: "E2E happy paths: register→verify→create org→add teams→update status"
+      - id: TEST-5
+        title: "Performance smoke: membership check, list endpoints"
+
+  - name: "Phase 9 – Rollout & Verification"
+    steps:
+      - id: ROLL-1
+        title: "Staging rehearsal of migrations (UUID, indexes, policies)"
+      - id: ROLL-2
+        title: "Feature flags / env gates for risky routes"
+      - id: ROLL-3
+        title: "Deploy order: Phase 0 hotfixes → DB policies/indexes → API → Frontend → Observability"
+      - id: ROLL-4
+        title: "Post‑deploy checklist"
+        checks:
+          - "Cannot create admin via public endpoint"
+          - "User JWT blocked from cross‑org table reads"
+          - "Paginated endpoints cap results and return X-Total-Count"
+          - "Sentry events visible; dashboards live"
+          - "Key UX flows pass Axe/Lighthouse"
+      - id: ROLL-5
+        title: "Comms & runbooks"
+        actions:
+          - "ChangeLog notes; on‑call runbook for rollbacks; RLS policy cheatsheet"
+
+endpoint_catalogue_snapshot:
+  notes: "JSON envelopes {success, data, error, message}; many domain endpoints are stubs; apply API quality phase to all."
+  public:
+    - { method: "GET", path: "/api/v1/healthz", desc: "Uptime/timestamp" }
+    - { method: "GET", path: "/api/v1/metrics", desc: "Basic Node metrics" }
+    - { method: "POST", path: "/api/v1/auth/reset-request", validation: "email format", rate_limit: "10/min/IP" }
+    - { method: "POST", path: "/api/v1/auth/register", validation: "required fields; role allowlist", rate_limit: "10/min/IP" }
+    - { method: "POST", path: "/api/v1/auth/admin/create-user", status: "CRITICAL – disable in prod" }
+    - { method: "GET", path: "/api/v1/files/public-objects/:filePath*", status: "CRITICAL – remove/guard" }
+    - { method: "POST", path: "/api/v1/objects/upload (deprecated)", status: "CRITICAL – remove/guard" }
+    - { method: "GET", path: "/api/v1/debug/storage-files", status: "CRITICAL – remove/guard" }
+  org_scoped_examples:
+    organizations:
+      - { method: "GET", path: "/api/v1/organizations", auth: "Bearer", validation: "add pagination", note: "list user’s orgs" }
+      - { method: "GET", path: "/api/v1/organizations/:id", auth: "Bearer + membership", validation: "UUID param" }
+      - { method: "POST", path: "/api/v1/organizations", auth: "Bearer", validation: "Zod schema" }
+      - { method: "PATCH", path: "/api/v1/organizations/:id", auth: "Org admin", validation: "Partial Zod schema" }
+      - { method: "DELETE", path: "/api/v1/organizations/:id", auth: "Org owner" }
+      - { method: "GET", path: "/api/v1/organizations/:id/summary", auth: "member", note: "calls org_summary()" }
+      - { method: "GET", path: "/api/v1/organizations/:id/sports", auth: "member" }
+      - { method: "POST", path: "/api/v1/organizations/:id/sports", auth: "admin", validation: "bulk Zod array" }
+      - { method: "PATCH", path: "/api/v1/organizations/:id/sports/:sportId", auth: "admin", validation: "Zod" }
+      - { method: "DELETE", path: "/api/v1/organizations/:id/sports/:sportId", auth: "admin" }
+      - { method: "POST", path: "/api/v1/organizations/:id/logo/sign", auth: "admin", validation: "fileName" }
+      - { method: "POST", path: "/api/v1/organizations/:id/logo/apply", auth: "admin", validation: "key present" }
+      - { method: "GET", path: "/api/v1/organizations/:id/logo", auth: "member", note: "streams via signed URL (Cache-Control 5m)" }
+      - { method: "POST", path: "/api/v1/organizations/:id/tax/sign", auth: "admin" }
+      - { method: "POST", path: "/api/v1/organizations/:id/tax/apply", auth: "admin" }
+    sales:
+      - { method: "GET", path: "/api/v1/sales", auth: "Bearer", status: "stub → add requireRole('sales'|'admin')" }
+      - { method: "POST", path: "/api/v1/sales", auth: "Bearer", validation: "basic; expand", status: "stub" }
+      - { method: "PATCH", path: "/api/v1/sales/:id", auth: "sales admin?", status: "stub" }
+      - { method: "DELETE", path: "/api/v1/sales/:id", auth: "sales admin?", status: "stub" }
+      - { method: "GET", path: "/api/v1/sales/analytics/dashboard", auth: "sales role", status: "stub" }
+    orders:
+      - { method: "GET", path: "/api/v1/orders", auth: "member", status: "stub → add pagination" }
+      - { method: "POST", path: "/api/v1/orders", auth: "member", validation: "schema exists", status: "stub" }
+      - { method: "PATCH", path: "/api/v1/orders/:id/status", auth: "member", validation: "Zod enum", status: "implemented" }
+      - { method: "GET", path: "/api/v1/orders/:id", auth: "member", status: "stub" }
+      - { method: "POST", path: "/api/v1/orders/:id/cancel", auth: "member", status: "stub" }
+    catalog:
+      - { method: "GET", path: "/api/v1/catalog", auth: "member", status: "stub → pagination" }
+      - { method: "GET", path: "/api/v1/catalog/:id", auth: "member", status: "stub" }
+      - { method: "POST", path: "/api/v1/catalog", auth: "member", validation: "schema exists", status: "stub" }
+      - { method: "PUT", path: "/api/v1/catalog/:id", auth: "member", validation: "schema exists", status: "stub" }
+      - { method: "PATCH", path: "/api/v1/catalog/:id/status", auth: "member", validation: "Zod; implemented" }
+      - { method: "POST", path: "/api/v1/catalog/:id/images", auth: "member", status: "stub" }
+      - { method: "GET", path: "/api/v1/catalog/:id/variants", auth: "member", status: "stub" }
+      - { method: "POST", path: "/api/v1/catalog/:id/variants", auth: "member", validation: "Zod; implemented" }
+    manufacturing:
+      - { method: "GET", path: "/api/v1/manufacturing/po", auth: "mfg role", status: "stub" }
+      - { method: "GET", path: "/api/v1/manufacturing/po/:id", auth: "mfg role", status: "stub" }
+      - { method: "POST", path: "/api/v1/manufacturing/po", auth: "mfg role", validation: "exists; stub" }
+      - { method: "PUT", path: "/api/v1/manufacturing/po/:id", auth: "mfg role", validation: "exists; stub" }
+      - { method: "PATCH", path: "/api/v1/manufacturing/po/:id/milestones/:mId", auth: "mfg role", status: "implemented" }
+      - { method: "PATCH", path: "/api/v1/manufacturing/po/:id/status", auth: "mfg role", status: "implemented" }
+      - { method: "GET", path: "/api/v1/manufacturing/analytics/dashboard", auth: "mfg role", status: "stub" }
+      - { method: "GET", path: "/api/v1/manufacturing/vendors/performance", auth: "mfg role", status: "stub" }
+
+deliverables:
+  - "Locked‑down security posture (admin route removed/guarded; file endpoints secured; rotated secrets)."
+  - "RLS policies for core tables; membership‑driven access."
+  - "UUID‑consistent schema; indexes on hot paths; sane FKs."
+  - "API validation, pagination, idempotency, timeouts; unified error format."
+  - "Frontend accessibility passes Axe/Lighthouse; resilient states."
+  - "Sentry + Prometheus dashboards; SLOs + alerts active."
+  - "Test suites (unit/integration/E2E); rollout runbooks."
