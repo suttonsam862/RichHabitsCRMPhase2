@@ -238,7 +238,7 @@ router.patch('/salespeople/:id/profile', asyncHandler(async (req, res) => {
     `);
 
     if (existingResult.length > 0) {
-      // Update existing profile
+      // Update existing profile - commission_rate comes as percentage, convert to decimal
       const commissionDecimal = profileData.commission_rate ? (profileData.commission_rate / 100) : 0.05;
       const territory = Array.isArray(profileData.territory) ? JSON.stringify(profileData.territory) : profileData.territory;
       
@@ -259,7 +259,7 @@ router.patch('/salespeople/:id/profile', asyncHandler(async (req, res) => {
         data: updated[0]
       });
     } else {
-      // Create new profile
+      // Create new profile - commission_rate comes as percentage, convert to decimal
       const maxIdResult = await db.execute(sql`
         SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
         FROM salesperson_profiles 
@@ -489,6 +489,63 @@ router.patch("/assignments/:assignmentId/toggle", requireAuth, asyncHandler(asyn
     .returning();
 
   res.json(updated);
+}));
+
+// Delete salesperson
+router.delete('/salespeople/:id', requireAuth, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // First verify the user exists
+    const userResult = await db.execute(sql`
+      SELECT id, full_name FROM users WHERE id = ${id} LIMIT 1
+    `);
+
+    if (userResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'Salesperson not found'
+        }
+      });
+    }
+
+    // Delete salesperson profile first (due to foreign key constraints)
+    await db.execute(sql`
+      DELETE FROM salesperson_profiles WHERE user_id = ${id}
+    `);
+
+    // Delete salesperson assignments
+    await db.execute(sql`
+      DELETE FROM salesperson_assignments WHERE salesperson_id = ${id}
+    `);
+
+    // Delete salesperson metrics
+    await db.execute(sql`
+      DELETE FROM salesperson_metrics WHERE salesperson_id = ${id}
+    `);
+
+    // Finally delete the user
+    await db.execute(sql`
+      DELETE FROM users WHERE id = ${id}
+    `);
+
+    res.json({
+      success: true,
+      message: 'Salesperson deleted successfully'
+    });
+  } catch (error) {
+    console.error('Salesperson deletion error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'DELETION_ERROR',
+        message: 'Failed to delete salesperson',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
 }));
 
 // POST /api/v1/organizations - Create a new organization

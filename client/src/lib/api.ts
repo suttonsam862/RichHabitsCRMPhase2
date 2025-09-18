@@ -14,18 +14,18 @@ export const api = {
   async get(url:string, options: { timeout?: number } = {}){
     const start = performance.now();
     const h = await authHeaders();
-    
+
     // Add timeout support
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), options.timeout || 30000);
-    
+
     try {
       const r = await fetch(url, { 
         headers: { ...h }, 
         signal: controller.signal 
       });
       clearTimeout(timeoutId);
-      
+
       const ms = Math.round(performance.now()-start);
       const j = await r.json().catch(()=> ({}));
       if(!r.ok){
