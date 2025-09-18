@@ -1,0 +1,81 @@
+03:29:00.930] INFO (807): GET 200 2ms /node_modules/.vite/deps/chunk-JS5KG6Y2.js?v=c80356bf
+    rid: "mobis9fl"
+    method: "GET"
+    path: "/node_modules/.vite/deps/chunk-JS5KG6Y2.js?v=c80356bf"
+    status: 200
+    ms: 2
+🔍 Checking database connection and table existence...
+📊 Available salesperson tables: [
+  'salesperson_assignments',
+  'salesperson_metrics',
+  'salesperson_profiles'
+]
+[03:29:01.345] INFO (807): GET 304 298ms /api/v1/sales/dashboard?period=30
+    rid: "ypcgchc7"
+    method: "GET"
+    path: "/api/v1/sales/dashboard?period=30"
+    status: 304
+    ms: 298
+[03:29:01.585] INFO (807): organizations.list ok
+    rid: "44x6jnjk"
+    count: 1
+[03:29:01.585] INFO (807): GET 304 563ms /api/v1/organizations
+    rid: "44x6jnjk"
+    method: "GET"
+    path: "/api/v1/organizations"
+    status: 304
+    ms: 563
+[03:29:02.234] INFO (807): GET 304 1198ms /api/v1/users/enhanced?type=staff
+    rid: "sgtsbl9j"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff"
+    status: 304
+    ms: 1198
+[03:29:02.249] INFO (807): GET 304 1205ms /api/v1/users/enhanced?type=staff&pageSize=100
+    rid: "4taicmep"
+    method: "GET"
+    path: "/api/v1/users/enhanced?type=staff&pageSize=100"
+    status: 304
+    ms: 1205
+[03:29:02.310] INFO (807): GET 304 1268ms /api/v1/sports
+    rid: "6skrbo94"
+    method: "GET"
+    path: "/api/v1/sports"
+    status: 304
+    ms: 1268
+[03:29:05.967] INFO (807): GET 200 79ms /src/pages/sales/EditSalesperson.tsx
+    rid: "92qwxyek"
+    method: "GET"
+    path: "/src/pages/sales/EditSalesperson.tsx"
+    status: 200
+    ms: 79
+[03:29:06.114] INFO (807): GET 304 0ms /src/constants/us-states.ts
+    rid: "azoq3zd1"
+    method: "GET"
+    path: "/src/constants/us-states.ts"
+    status: 304
+    ms: 0
+[03:29:06.114] INFO (807): GET 200 1ms /src/components/ui/avatar.tsx
+    rid: "dbq9uqv6"
+    method: "GET"
+    path: "/src/components/ui/avatar.tsx"
+    status: 200
+    ms: 1
+[03:29:06.115] INFO (807): GET 200 2ms /src/components/ui/form.tsx
+    rid: "ono6pchp"
+    method: "GET"
+    path: "/src/components/ui/form.tsx"
+    status: 200
+    ms: 2
+[03:29:06.246] INFO (807): GET 200 1ms /node_modules/.vite/deps/@radix-ui_react-avatar.js?v=9d2d02b6
+    rid: "60yn9yz2"
+    method: "GET"
+    path: "/node_modules/.vite/deps/@radix-ui_react-avatar.js?v=9d2d02b6"
+    status: 200
+    ms: 1
+[03:29:06.708] WARN (807): GET 404 383ms /api/v1/sales/salespeople/7a4b5bf1-e1c9-48af-ae9e-de91d8e2469a
+    rid: "rfhrug4n"
+    method: "GET"
+    path: "/api/v1/sales/salespeople/7a4b5bf1-e1c9-48af-ae9e-de91d8e2469a"
+    status: 404
+    ms: 383
