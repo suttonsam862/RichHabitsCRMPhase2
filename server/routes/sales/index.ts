@@ -160,6 +160,42 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
   res.json(salespeople);
 }));
 
+// Get all assignments across all salespeople
+router.get("/assignments", requireAuth, asyncHandler(async (req, res) => {
+  console.log('🔍 Fetching all salesperson assignments');
+
+  try {
+    // Get all assignments with organization and salesperson details
+    const assignments = await db
+      .select({
+        id: salespersonAssignments.id,
+        salesperson_id: salespersonAssignments.salespersonId,
+        organization_id: salespersonAssignments.organizationId,
+        sport_id: sql<string>`NULL`.as('sport_id'), // Placeholder until schema is updated
+        team_name: sql<string>`NULL`.as('team_name'), // Placeholder until schema is updated
+        is_active: salespersonAssignments.isActive,
+        assigned_at: salespersonAssignments.assignedAt,
+        notes: salespersonAssignments.notes,
+        organization_name: organizations.name,
+        sport_name: sql<string>`NULL`.as('sport_name'), // Placeholder until schema is updated
+        salesperson_name: users.fullName
+      })
+      .from(salespersonAssignments)
+      .leftJoin(organizations, eq(salespersonAssignments.organizationId, organizations.id))
+      .leftJoin(users, eq(salespersonAssignments.salespersonId, users.id))
+      .orderBy(salespersonAssignments.assignedAt);
+
+    console.log(`📋 Found ${assignments.length} assignments`);
+    res.json(assignments);
+  } catch (error) {
+    console.error('❌ Error fetching assignments:', error);
+    res.status(500).json({ 
+      error: "Failed to fetch assignments",
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}));
+
 // Get salesperson details with assignments and metrics
 router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;

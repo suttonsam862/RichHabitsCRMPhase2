@@ -87,6 +87,7 @@ interface SalespersonProfile {
 
 interface Assignment {
   id: string;
+  salesperson_id: string;
   organization_id: string;
   sport_id: string;
   team_name: string;
@@ -216,6 +217,17 @@ export default function SalesManagement() {
       return response; // Server returns direct data, not wrapped in .data
     },
     enabled: !!selectedSalesperson
+  });
+
+  // Query for all assignments across all salespeople
+  const { data: allAssignments, isLoading: assignmentsLoading } = useQuery<Assignment[]>({
+    queryKey: ['/api/v1/sales/assignments'],
+    queryFn: async () => {
+      const response = await api.get('/api/v1/sales/assignments');
+      return response; // Server returns direct data, not wrapped in .data
+    },
+    refetchInterval: 30000,
+    staleTime: 25000
   });
 
   // Query for organizations and sports for assignment dropdowns
@@ -584,14 +596,19 @@ export default function SalesManagement() {
                 <CardHeader>
                   <CardTitle>Team Assignments</CardTitle>
                   <CardDescription>
-                    Manage salesperson assignments to organization teams
+                    All salesperson assignments to organization teams
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {salespersonDetails && (
+                  {assignmentsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>Salesperson</TableHead>
                           <TableHead>Organization</TableHead>
                           <TableHead>Sport</TableHead>
                           <TableHead>Team</TableHead>
@@ -601,8 +618,11 @@ export default function SalesManagement() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {salespersonDetails.assignments.map((assignment) => (
+                        {(allAssignments || []).map((assignment) => (
                           <TableRow key={assignment.id}>
+                            <TableCell className="font-medium">
+                              {salespeopleArray.find(p => p.id === assignment.salesperson_id)?.full_name || 'Unknown'}
+                            </TableCell>
                             <TableCell>{assignment.organization_name}</TableCell>
                             <TableCell>{assignment.sport_name}</TableCell>
                             <TableCell>{assignment.team_name}</TableCell>
