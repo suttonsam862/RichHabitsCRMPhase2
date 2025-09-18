@@ -59,7 +59,7 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Salesperson not found" });
   }
 
-  // Get assignments with organization and sport details
+  // Get assignments with organization details (remove sport_name for now since assignments table doesn't have sport_id)
   const assignments = await db
     .select({
       id: salespersonAssignments.id,
@@ -68,7 +68,8 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
       assigned_at: salespersonAssignments.assignedAt,
       notes: salespersonAssignments.notes,
       organization_name: organizations.name,
-      sport_name: sports.name,
+      sport_name: sql<string>`NULL`.as('sport_name'), // Placeholder until schema is updated
+      team_name: sql<string>`NULL`.as('team_name'), // Placeholder until schema is updated
     })
     .from(salespersonAssignments)
     .leftJoin(organizations, eq(salespersonAssignments.organizationId, organizations.id))
@@ -218,7 +219,7 @@ router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
   }
 }));
 
-// Assign salesperson to team
+// Assign salesperson to organization
 const assignmentSchema = z.object({
   organizationId: z.string(),
   territory: z.string().optional(),
@@ -254,8 +255,7 @@ router.post("/salespeople/:id/assignments", requireAuth, asyncHandler(async (req
     }])
     .returning();
 
-  // Note: orgSports assignment would need sportId and teamName from request
-  // This is handled separately as salespersonAssignments only tracks org-level assignments
+  // Assignment created at organization level only
 
   res.json(assignment);
 }));
