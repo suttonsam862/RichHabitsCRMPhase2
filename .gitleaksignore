@@ -1,0 +1,22 @@
+# Gitleaks ignore file for false positives
+# Add any paths or patterns that trigger false positives but are actually safe
+
+# Example configurations and documentation
+docs/SECRET_ROTATION_GUIDE.md
+*.example
+*.sample
+
+# Test files with mock credentials
+**/*test*/**/*mock*
+**/*spec*/**/*mock*
+
+# Node modules (should be in .gitignore anyway)
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment example files
+.env.example
+.env.sample
