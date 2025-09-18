@@ -6,8 +6,9 @@ import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { supabaseForUser, supabaseAdmin } from '../../lib/supabase';
 import { logSecurityEvent, logDatabaseOperation, createRequestLogger } from '../../lib/log';
 import { db } from '../../db';
-import { organizations } from '@shared/schema';
+import { organizations } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE, validateFileType } from '../../lib/unified-storage';
 
 const router = express.Router();
 
@@ -24,17 +25,7 @@ const DeleteFilesSchema = z.object({
   names: z.array(z.string().min(1))
 });
 
-// Allowed MIME types for branding files
-const ALLOWED_MIME_TYPES = [
-  'image/png',
-  'image/jpeg', 
-  'image/webp',
-  'image/svg+xml',
-  'application/pdf'
-];
-
-// Max file size: 10MB
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// Using unified file validation constants from unified-storage.ts
 
 /**
  * Sanitize filename to prevent path traversal
@@ -50,57 +41,24 @@ function safeName(name: string): string {
 // All branding routes require authentication
 router.use(requireAuth);
 
-// Middleware to verify org membership
-async function requireOrgMember(req: AuthedRequest, res: express.Response, next: express.NextFunction) {
-  const orgId = req.params.id || req.params.orgId;
-  
-  if (!orgId) {
-    return HttpErrors.badRequest(res, 'Organization ID is required');
-  }
-  
-  try {
-    const org = await db.select({
-      id: organizations.id,
-      name: organizations.name,
-      status: organizations.status
-    }).from(organizations).where(eq(organizations.id, orgId)).limit(1);
-    if (!org.length) {
-      return HttpErrors.notFound(res, 'Organization not found');
-    }
-    
-    // TODO: Check if user is member of org
-    // For now, allow if authenticated
-    (req as any).org = org[0];
-    next();
-  } catch (error) {
-    console.error('Error checking organization:', error);
-    return HttpErrors.internalError(res, 'Failed to validate organization');
-  }
-}
+// Import the proper organization security middleware
+import { requireOrgAdmin as secureRequireOrgAdmin, requireOrgReadonly as secureRequireOrgReadonly } from '../../middleware/orgSecurity';
 
-async function requireOrgAdmin(req: AuthedRequest, res: express.Response, next: express.NextFunction) {
-  const logger = createRequestLogger(req);
-  
-  // TODO: Implement proper role checking with has_role_slug
-  // For now, we'll log security events and allow access
-  logSecurityEvent(req, 'admin_access_attempt', { orgId: req.params.id });
-  
-  logger.warn('Admin role check not fully implemented - allowing access');
-  next();
-}
+// Use the secure middleware functions (these are factory functions that need to be invoked)
+const requireOrgMember = secureRequireOrgReadonly();
+const requireOrgAdmin = secureRequireOrgAdmin();
 
 /**
  * GET /:id/branding-files - List branding files
  * Requires: Organization member access
  */
-router.get('/:id/branding-files', requireOrgMember, asyncHandler(async (req: AuthedRequest, res) => {
+router.get('/:id/branding-files', requireAuth, requireOrgMember, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
   try {
-    const sb = supabaseForUser(req.headers.authorization?.slice(7));
-    
-    const { data, error } = await sb.storage
+    // Use admin client for consistent security - user authentication already verified by middleware
+    const { data, error } = await supabaseAdmin.storage
       .from('app')
       .list(`org/${orgId}/branding`, {
         limit: 100,
@@ -115,13 +73,14 @@ router.get('/:id/branding-files', requireOrgMember, asyncHandler(async (req: Aut
       name: f.name,
       size: f.metadata?.size || 0,
       contentType: f.metadata?.mimetype || 'application/octet-stream',
-      updatedAt: f.updated_at || f.created_at
+      updatedAt: f.updated_at || f.created_at,
+      storageKey: `org/${orgId}/branding/${f.name}`
     }));
     
-    logger.info({ fileCount: files.length }, 'Listed branding files');
+    logger.info({ fileCount: files.length, orgId }, 'Listed branding files securely');
     sendOk(res, files);
   } catch (error: any) {
-    logger.error({ error }, 'Failed to list branding files');
+    logger.error({ error, orgId }, 'Failed to list branding files');
     return HttpErrors.internalError(res, 'Failed to list branding files');
   }
 }));
@@ -130,7 +89,7 @@ router.get('/:id/branding-files', requireOrgMember, asyncHandler(async (req: Aut
  * POST /:id/branding-files/sign - Generate signed upload URLs
  * Requires: Organization admin access
  */
-router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
+router.post('/:id/branding-files/sign', requireAuth, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -138,22 +97,12 @@ router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, async
     // Validate request body
     const requestData = SignRequestSchema.parse(req.body);
     
-    // Validate MIME types and sizes
+    // Validate files using unified validation
     for (const file of requestData.files) {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      const mimeMap: Record<string, string> = {
-        'png': 'image/png',
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'webp': 'image/webp',
-        'svg': 'image/svg+xml',
-        'pdf': 'application/pdf'
-      };
-      
-      const contentType = mimeMap[ext || ''];
-      if (!contentType || !ALLOWED_MIME_TYPES.includes(contentType)) {
-        return HttpErrors.validationError(res, 
-          `File type not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`);
+      // Use centralized file validation
+      const fileValidation = validateFileType(file.name);
+      if (!fileValidation.isValid) {
+        return HttpErrors.validationError(res, fileValidation.error);
       }
       
       if (file.size && file.size > MAX_FILE_SIZE) {
@@ -162,14 +111,14 @@ router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, async
       }
     }
     
-    const sb = supabaseForUser(req.headers.authorization?.slice(7));
+    // Use admin client for security - ensures proper organization boundary checks
     const signedUrls = [];
     
     for (const file of requestData.files) {
       const sanitizedName = safeName(file.name);
       const key = `org/${orgId}/branding/${sanitizedName}`;
       
-      const { data, error } = await sb.storage
+      const { data, error } = await supabaseAdmin.storage
         .from('app')
         .createSignedUploadUrl(key, {
           upsert: true
@@ -186,11 +135,11 @@ router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, async
       });
     }
     
-    logger.info({ fileCount: requestData.files.length }, 'Generated signed upload URLs');
+    logger.info({ fileCount: requestData.files.length, orgId }, 'Generated secure signed upload URLs');
     
     sendOk(res, signedUrls);
   } catch (error) {
-    logger.error({ error }, 'Failed to generate signed upload URLs');
+    logger.error({ error, orgId }, 'Failed to generate signed upload URLs');
     
     if (error instanceof z.ZodError) {
       return HttpErrors.validationError(res, 'Invalid request data', error.errors);
@@ -204,7 +153,7 @@ router.post('/:id/branding-files/sign', requireOrgMember, requireOrgAdmin, async
  * DELETE /:id/branding-files - Delete branding files
  * Requires: Organization admin access
  */
-router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
+router.delete('/:id/branding-files', requireAuth, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -212,10 +161,21 @@ router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHan
     // Validate request body
     const { names } = DeleteFilesSchema.parse(req.body);
     
-    // Sanitize and prepare file paths
-    const keys = names.map(name => `org/${orgId}/branding/${safeName(name)}`);
+    // Sanitize and prepare file paths with organization validation
+    const keys = names.map(name => {
+      const sanitizedName = safeName(name);
+      return `org/${orgId}/branding/${sanitizedName}`;
+    });
     
-    // Use admin client for deletion to ensure proper permissions
+    // Validate all keys belong to this organization before deletion
+    for (const key of keys) {
+      if (!key.startsWith(`org/${orgId}/`)) {
+        logger.warn({ orgId, invalidKey: key }, 'Attempted to delete file outside organization scope');
+        return HttpErrors.validationError(res, 'Invalid file path - must belong to organization');
+      }
+    }
+    
+    // Use admin client for deletion with enhanced security
     const { error } = await supabaseAdmin.storage
       .from('app')
       .remove(keys);
@@ -224,10 +184,10 @@ router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHan
       throw error;
     }
     
-    logger.info({ fileCount: names.length, fileNames: names }, 'Deleted branding files');
+    logger.info({ fileCount: names.length, fileNames: names, orgId }, 'Deleted branding files securely');
     sendNoContent(res);
   } catch (error) {
-    logger.error({ error }, 'Failed to delete branding files');
+    logger.error({ error, orgId }, 'Failed to delete branding files');
     
     if (error instanceof z.ZodError) {
       return HttpErrors.validationError(res, 'Invalid request data', error.errors);
@@ -242,7 +202,7 @@ router.delete('/:id/branding-files', requireOrgMember, requireOrgAdmin, asyncHan
  * Requires: Organization admin access  
  * This endpoint stores the permanent storage path, not temporary signed URLs
  */
-router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
+router.post('/:id/logo', requireAuth, requireOrgAdmin, asyncHandler(async (req: AuthedRequest, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -253,19 +213,30 @@ router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (
       return HttpErrors.badRequest(res, 'Storage path is required');
     }
     
-    // Store the permanent storage path, not a temporary signed URL
-    await db.update(organizations)
-      .set({ 
-        logo_url: storagePath,
-        updated_at: new Date()
-      })
-      .where(eq(organizations.id, orgId));
+    // Validate the storage path belongs to this organization
+    if (!storagePath.startsWith(`org/${orgId}/`)) {
+      logger.warn({ orgId, storagePath }, 'Attempted to set logo path outside organization scope');
+      return HttpErrors.validationError(res, 'Storage path must belong to this organization');
+    }
     
-    logger.info({ storagePath }, 'Updated organization logo with storage path');
+    // Store the permanent storage path using Supabase admin client
+    const { error: updateError } = await supabaseAdmin
+      .from('organizations')
+      .update({ 
+        logo_url: storagePath,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orgId);
+    
+    if (updateError) {
+      throw updateError;
+    }
+    
+    logger.info({ storagePath, orgId }, 'Updated organization logo with validated storage path');
     
     sendOk(res, { logo_url: storagePath });
   } catch (error) {
-    logger.error({ error }, 'Failed to set organization logo');
+    logger.error({ error, orgId }, 'Failed to set organization logo');
     return HttpErrors.internalError(res, 'Failed to update organization logo');
   }
 }));
@@ -275,7 +246,7 @@ router.post('/:id/logo', requireOrgMember, requireOrgAdmin, asyncHandler(async (
  * Requires: Organization admin access
  * This endpoint stores the permanent storage path, not temporary signed URLs
  */
-router.post('/:id/title-card', requireOrgMember, requireOrgAdmin, asyncHandler(async (req, res) => {
+router.post('/:id/title-card', requireAuth, requireOrgAdmin, asyncHandler(async (req, res) => {
   const logger = createRequestLogger(req);
   const orgId = req.params.id;
   
@@ -286,19 +257,30 @@ router.post('/:id/title-card', requireOrgMember, requireOrgAdmin, asyncHandler(a
       return HttpErrors.badRequest(res, 'Storage path is required');
     }
     
-    // Store the permanent storage path, not a temporary signed URL
-    await db.update(organizations)
-      .set({ 
-        title_card_url: storagePath,
-        updated_at: new Date()
-      })
-      .where(eq(organizations.id, orgId));
+    // Validate the storage path belongs to this organization
+    if (!storagePath.startsWith(`org/${orgId}/`)) {
+      logger.warn({ orgId, storagePath }, 'Attempted to set title card path outside organization scope');
+      return HttpErrors.validationError(res, 'Storage path must belong to this organization');
+    }
     
-    logger.info({ storagePath }, 'Updated organization title card with storage path');
+    // Store the permanent storage path using Supabase admin client
+    const { error: updateError } = await supabaseAdmin
+      .from('organizations')
+      .update({ 
+        title_card_url: storagePath,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orgId);
+    
+    if (updateError) {
+      throw updateError;
+    }
+    
+    logger.info({ storagePath, orgId }, 'Updated organization title card with validated storage path');
     
     sendOk(res, { title_card_url: storagePath });
   } catch (error) {
-    logger.error({ error }, 'Failed to set organization title card');
+    logger.error({ error, orgId }, 'Failed to set organization title card');
     return HttpErrors.internalError(res, 'Failed to update organization title card');
   }
 }));

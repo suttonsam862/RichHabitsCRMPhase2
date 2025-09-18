@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from './lib/unified-storage';
 
 // Initialize Supabase client with service role for storage operations
 const supabaseUrl = process.env.SUPABASE_URL!;
@@ -13,17 +14,17 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole, {
   }
 });
 
-// Configure multer for file upload
+// Configure multer for file upload using unified constants
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: MAX_FILE_SIZE, // Use unified 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error(`Only these file types are allowed: ${ALLOWED_MIME_TYPES.join(', ')}`));
     }
   },
 });
@@ -36,9 +37,9 @@ export async function ensureBucketExists() {
   
   if (!bucketExists) {
     const { error } = await supabaseAdmin.storage.createBucket(BUCKET_NAME, {
-      public: true,
-      allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'],
-      fileSizeLimit: 5242880, // 5MB
+      public: false, // SECURITY FIX: Use private bucket
+      allowedMimeTypes: ALLOWED_MIME_TYPES, // Use unified mime types
+      fileSizeLimit: MAX_FILE_SIZE, // Use unified 10MB limit
     });
     
     if (error) {
