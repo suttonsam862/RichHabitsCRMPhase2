@@ -22,6 +22,55 @@ const router = Router();
 // Mount dashboard routes
 router.use('/', dashboardRouter);
 
+// Helper function to ensure salesperson profile exists
+async function ensureSalespersonProfile(userId: string, userFullName: string = 'Unknown User') {
+  try {
+    // Check if profile already exists
+    const [existingProfile] = await db
+      .select()
+      .from(salespersonProfiles)
+      .where(eq(salespersonProfiles.userId, userId));
+
+    if (!existingProfile) {
+      console.log(`📋 Creating required salesperson profile for ${userFullName} (${userId})`);
+      
+      // Generate sequential employee ID
+      const maxIdResult = await db.execute(sql`
+        SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
+        FROM salesperson_profiles 
+        WHERE employee_id ~ '^EMP-[0-9]+$'
+      `);
+      const nextId = maxIdResult[0]?.next_id || 1;
+      const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
+
+      const [newProfile] = await db.execute(sql`
+        INSERT INTO salesperson_profiles (
+          id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(),
+          ${userId},
+          ${employeeId},
+          0.05,
+          'standard',
+          true,
+          NOW(),
+          NOW()
+        )
+        ON CONFLICT (user_id) DO NOTHING
+        RETURNING *
+      `);
+
+      console.log(`✅ Created salesperson profile with employee ID ${employeeId}`);
+      return newProfile;
+    }
+    
+    return existingProfile;
+  } catch (error) {
+    console.error(`❌ Failed to ensure salesperson profile for ${userFullName}:`, error);
+    throw error;
+  }
+}
+
 // Get all salespeople with their profiles and metrics
 router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
   // First, get all users with sales roles
@@ -42,7 +91,7 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
 
   console.log(`🔍 Found ${salesUsers.length} users with sales roles`);
 
-  // Create missing salesperson profiles automatically
+  // Create missing salesperson profiles automatically for any sales users
   for (const user of salesUsers) {
     const [existingProfile] = await db
       .select()
@@ -50,7 +99,7 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
       .where(eq(salespersonProfiles.userId, user.id));
 
     if (!existingProfile) {
-      console.log(`📋 Creating salesperson profile for ${user.full_name} (${user.id})`);
+      console.log(`📋 Auto-creating salesperson profile for ${user.full_name} (${user.id})`);
       
       // Generate sequential employee ID
       const maxIdResult = await db.execute(sql`
@@ -61,21 +110,26 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
       const nextId = maxIdResult[0]?.next_id || 1;
       const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
 
-      await db.execute(sql`
-        INSERT INTO salesperson_profiles (
-          id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
-        ) VALUES (
-          gen_random_uuid(),
-          ${user.id},
-          ${employeeId},
-          0.05,
-          'standard',
-          true,
-          NOW(),
-          NOW()
-        )
-        ON CONFLICT (user_id) DO NOTHING
-      `);
+      try {
+        await db.execute(sql`
+          INSERT INTO salesperson_profiles (
+            id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(),
+            ${user.id},
+            ${employeeId},
+            0.05,
+            'standard',
+            true,
+            NOW(),
+            NOW()
+          )
+          ON CONFLICT (user_id) DO NOTHING
+        `);
+        console.log(`✅ Successfully created profile for ${user.full_name} with employee ID ${employeeId}`);
+      } catch (error) {
+        console.error(`❌ Failed to create profile for ${user.full_name}:`, error);
+      }
     }
   }
 

@@ -10,6 +10,8 @@ import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { supabaseAdmin } from '../../lib/supabase';
 import { logDatabaseOperation, logSecurityEvent } from '../../lib/log';
 import { z } from 'zod';
+import { users, salespersonProfiles } from "../../../shared/schema.js";
+import { randomUUID } from "crypto";
 
 const router = express.Router();
 
@@ -108,7 +110,7 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
     let filteredResults = realUsers;
     if (q && typeof q === 'string' && q.trim()) {
       const searchTerm = q.trim().toLowerCase();
-      filteredResults = realUsers.filter(user => 
+      filteredResults = realUsers.filter(user =>
         user.email?.toLowerCase().includes(searchTerm) ||
         user.user_metadata?.full_name?.toLowerCase().includes(searchTerm)
       );
@@ -123,9 +125,9 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
       avatarUrl: user.user_metadata?.avatar_url || null,
       isActive: true,
       preferences: user.user_metadata?.preferences || {},
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
-      lastLogin: user.last_sign_in_at,
+      createdAt: user.user.created_at,
+      updatedAt: user.user.updated_at,
+      lastLogin: user.user.last_sign_in_at,
     }));
 
     sendOk(res, data, filteredResults.length);
@@ -228,10 +230,10 @@ router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedR
 
     // Only return masked version (first 3 chars)
     const maskedPassword = password.substring(0, 3) + '*'.repeat(9);
-    sendOk(res, { 
-      success: true, 
+    sendOk(res, {
+      success: true,
       message: 'Password reset successfully',
-      maskedPassword 
+      maskedPassword
     });
   } catch (error) {
     handleDatabaseError(res, error, 'reset user password');
@@ -273,7 +275,7 @@ router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, 
       } else {
         // Remove role
         await db.execute(sql`
-          DELETE FROM user_roles 
+          DELETE FROM user_roles
           WHERE user_id = ${id} AND org_id = ${roleChange.orgId} AND role_id = ${roleId}
         `);
       }
@@ -287,24 +289,22 @@ router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, 
 }));
 
 // Create user
-router.post('/',
-  requireAuth,
-  validateRequest({ body: CreateUserDTO }),
+router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
     const validatedData = req.body;
-    
+
     // Role-based authorization: only admins can assign admin/staff roles
     const requestingUser = req.user;
     const requestedRole = validatedData.role || 'customer';
-    
+
     if (['admin', 'staff'].includes(requestedRole)) {
       // Check if requesting user has admin privileges using database role
-      const hasAdminRole = requestingUser?.is_super_admin || 
-                           requestingUser?.role === 'admin';
-      
+      const hasAdminRole = requestingUser?.is_super_admin ||
+        requestingUser?.role === 'admin';
+
       if (!hasAdminRole) {
-        logSecurityEvent(req, 'ROLE_ASSIGNMENT_DENIED', { 
-          requestingUserId: requestingUser?.id, 
+        logSecurityEvent(req, 'ROLE_ASSIGNMENT_DENIED', {
+          requestingUserId: requestingUser?.id,
           requestingUserRole: requestingUser?.role,
           requestedRole,
           reason: 'insufficient_privileges'
@@ -314,7 +314,7 @@ router.post('/',
     }
 
     let createdSupabaseUser = null;
-    
+
     try {
       // Log the data being sent for debugging
       console.log('Creating user with data:', {
@@ -352,7 +352,7 @@ router.post('/',
           INSERT INTO users (id, email, full_name, phone, role, organization_id, is_active, created_at, updated_at)
           VALUES (
             ${newUser.user?.id},
-            ${newUser.user?.email}, 
+            ${newUser.user?.email},
             ${newUser.user?.user_metadata?.full_name || validatedData.email.split('@')[0]},
             ${newUser.user?.phone || null},
             ${validatedData.role || 'customer'},
@@ -370,9 +370,48 @@ router.post('/',
           RETURNING *
         `);
         console.log('Database user record created/updated:', userDbRecord[0]?.id);
+
+        // If this is a sales user, automatically create salesperson profile
+        const isSalesUser = validatedData.role === 'sales' || validatedData.subrole === 'salesperson';
+        if (isSalesUser) {
+          try {
+            console.log(`📋 Auto-creating salesperson profile for new sales user: ${validatedData.fullName}`);
+
+            // Generate sequential employee ID
+            const maxIdResult = await db.execute(sql`
+              SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
+              FROM salesperson_profiles
+              WHERE employee_id ~ '^EMP-[0-9]+$'
+            `);
+            const nextId = maxIdResult[0]?.next_id || 1;
+            const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
+
+            await db.execute(sql`
+              INSERT INTO salesperson_profiles (
+                id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
+              ) VALUES (
+                gen_random_uuid(),
+                ${newUser.user?.id},
+                ${employeeId},
+                0.05,
+                'standard',
+                true,
+                NOW(),
+                NOW()
+              )
+              ON CONFLICT (user_id) DO NOTHING
+            `);
+
+            console.log(`✅ Created salesperson profile with employee ID ${employeeId}`);
+          } catch (profileError) {
+            console.error(`⚠️ Failed to create salesperson profile for ${validatedData.fullName}:`, profileError);
+            // Don't fail the whole request if profile creation fails
+          }
+        }
+
       } catch (dbError) {
         console.error('Database insert failed, cleaning up Supabase user:', dbError);
-        
+
         // Cleanup: Delete the created Supabase user to prevent orphaned data
         try {
           await supabaseAdmin.auth.admin.deleteUser(newUser.user?.id);
@@ -380,7 +419,7 @@ router.post('/',
         } catch (cleanupError) {
           console.error('Failed to cleanup Supabase user:', cleanupError);
         }
-        
+
         return sendErr(res, 'DATABASE_ERROR', 'Failed to create user database record', dbError, 500);
       }
 
@@ -415,43 +454,90 @@ router.post('/',
 // Update user
 router.patch('/:id',
   validateRequest({ body: UpdateUserDTO }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
     try {
-      // Update user using Supabase Auth
-      const updatePayload: any = {};
-      if (updateData.phone) updatePayload.phone = updateData.phone;
-      if (updateData.fullName || updateData.avatarUrl || updateData.preferences) {
-        updatePayload.user_metadata = {
-          full_name: updateData.fullName,
-          avatar_url: updateData.avatarUrl,
-          preferences: updateData.preferences
-        };
+      // Check if user exists
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id));
+
+      if (!existingUser) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: 'User not found'
+          }
+        });
       }
 
-      const { data: updatedUser, error } = await supabaseAdmin.auth.admin.updateUserById(id, updatePayload);
+      // Update user
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          ...updateData,
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(users.id, id))
+        .returning();
 
-      if (error) {
-        if (error.message.includes('not found')) {
-          return HttpErrors.notFound(res, 'User not found');
+      console.log(`✅ Updated user: ${updatedUser.fullName} (${updatedUser.id})`);
+
+      // Check if user was changed to sales role and needs a profile
+      const wasSalesUser = existingUser.role === 'sales' || existingUser.subrole === 'salesperson';
+      const isSalesUser = updatedUser.role === 'sales' || updatedUser.subrole === 'salesperson';
+
+      if (!wasSalesUser && isSalesUser) {
+        try {
+          console.log(`📋 User role changed to sales, creating salesperson profile for: ${updatedUser.fullName}`);
+
+          // Check if profile already exists (shouldn't, but safety check)
+          const [existingProfile] = await db
+            .select()
+            .from(salespersonProfiles)
+            .where(eq(salespersonProfiles.userId, updatedUser.id));
+
+          if (!existingProfile) {
+            // Generate sequential employee ID
+            const maxIdResult = await db.execute(sql`
+              SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
+              FROM salesperson_profiles
+              WHERE employee_id ~ '^EMP-[0-9]+$'
+            `);
+            const nextId = maxIdResult[0]?.next_id || 1;
+            const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
+
+            await db.execute(sql`
+              INSERT INTO salesperson_profiles (
+                id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
+              ) VALUES (
+                gen_random_uuid(),
+                ${updatedUser.id},
+                ${employeeId},
+                0.05,
+                'standard',
+                true,
+                NOW(),
+                NOW()
+              )
+            `);
+
+            console.log(`✅ Created salesperson profile with employee ID ${employeeId}`);
+          }
+        } catch (profileError) {
+          console.error(`⚠️ Failed to create salesperson profile for ${updatedUser.fullName}:`, profileError);
+          // Don't fail the whole request if profile creation fails
         }
-        return sendErr(res, 'UPDATE_ERROR', error.message, undefined, 400);
       }
 
-      const mappedResult = {
-        id: updatedUser.user?.id,
-        email: updatedUser.user?.email,
-        phone: updatedUser.user?.phone,
-        fullName: updatedUser.user?.user_metadata?.full_name,
-        avatarUrl: updatedUser.user?.user_metadata?.avatar_url,
-        isActive: true,
-        preferences: updatedUser.user?.user_metadata?.preferences || {},
-        createdAt: updatedUser.user?.created_at,
-        updatedAt: updatedUser.user?.updated_at
-      };
-      sendOk(res, mappedResult);
+      res.json({
+        success: true,
+        data: updatedUser
+      });
     } catch (error) {
       handleDatabaseError(res, error, 'update user');
     }
