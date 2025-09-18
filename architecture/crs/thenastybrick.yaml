@@ -1,0 +1,2084 @@
+guide:
+phases:
+- name: "Phase 10: Install Order System Foundation"
+steps:
+- code: "ORD-1"
+title: "Define Orders & Order Items Schema"
+description: "Create and align the database schema for orders and order_items, ensuring all necessary fields, types, and constraints are in place."
+details: |
+# Create/Update Orders Table: Define an orders table with a UUID primary key and fields linking it to existing entities:
+# - id: UUID primary key (use gen_random_uuid() as default for new rows).
+# - org_id: UUID (foreign key to organizations.id) – associates order with an organization (required).
+# - sport_id: UUID (foreign key to sports.id) – optional link to a sport/team within the org.
+# - customer_id: UUID (foreign key to customers.id) – link to the customer who placed the order (required, ensure a customer entry exists or create one on the fly).
+# - salesperson_id: UUID – link to the sales representative handling the order (likely a user id of a Sales role, or an entry in a salespeople table; choose one approach and apply consistently).
+# - code: Text unique identifier for the order (e.g. order number). Use a human-friendly format like ORD-YYYYMMDD-XXXX. Enforce uniqueness at DB level to support idempotency.
+# - customer_contact_name, customer_contact_email, customer_contact_phone: Text fields to snapshot the customer's contact info at time of order. These get populated from the customers record but stored for historical consistency.
+# - status_code: Text status of the order (e.g. 'draft', 'design', 'manufacturing', etc). Remove any old enum type; use a text field constrained by a lookup table status_orders
+GitHub
+. Provide a DEFAULT (likely 'draft' for new orders).
+# - total_amount: Numeric(10,2) – total order price (populate via calculation of item prices).
+# - revenue_estimate: Numeric(10,2) – optional field for anticipated revenue/profit from this order (to be used in analytics; initialize to 0 or sum of item prices as needed).
+# - due_date: Date – promised delivery date (optional).
+# - notes: Text – free-form notes about the order.
+# - Timestamps created_at, updated_at: default to NOW() on insert, update updated_at on modifications.
+#
+# Apply constraints:
+# - Primary key on id. Unique index on code (order number).
+# - Foreign keys: org_id → organizations(id), sport_id → sports(id), customer_id → customers(id), salesperson_id → either users(id) or a dedicated salespeople(id) (based on design; if using a separate salespeople table, ensure it’s linked to users).
+# All foreign keys should use UUID type on both sides to avoid casting issues. (If current organizations.id or others are text, migrate them to UUID as well to match
+GitHub
+GitHub
+.)
+# - Set ON DELETE SET NULL or CASCADE appropriately. For example, if a customer is deleted, perhaps set customer_id to NULL (to retain order history but remove link). However, for organization deletion, orders should probably cascade delete or be archived (this is less common, as org deletion is rare).
+#
+# Create/Update Order Items Table: Define an order_items table for line items:
+# - id: UUID primary key (with default gen_random_uuid()).
+# - org_id: UUID (foreign key to organizations.id) – store org for quick RLS checks (redundant but convenient).
+# - order_id: UUID (foreign key to orders.id ON DELETE CASCADE) – parent order reference.
+# - product_id: UUID – reference to the product or catalog item being ordered (likely to catalog_items.id).
+# - variant_id: UUID – reference to a product variant if applicable (if product has variants like size/color as separate entries; if not, this can be null or omitted).
+# - name_snapshot: Text – store the product name (and possibly variant) at time of order. (This is a denormalization to keep historical data in case product names change.)
+# - sku_snapshot: Text – store the product SKU or variant identifier at time of order (for reference).
+# - price_snapshot: Numeric(10,2) – unit price of the item at order time (to lock in pricing).
+# - quantity: Integer – quantity of this item ordered.
+# - status_code: Text – status of this specific item (will use status_order_items lookup codes, e.g. 'pending_design', 'manufacturing', 'shipped', etc). Default to 'pending_design' (meaning waiting for design to start)
+GitHub
+.
+# - designer_id: UUID – if a specific designer (from designers table) is assigned to this item’s design.
+# - manufacturer_id: UUID – if production of this item is assigned to a specific manufacturer (from manufacturers table, for external vendors).
+# - pantone_json: JSONB – any color codes or design-specific data (e.g. Pantone colors chosen for this item’s design).
+# - build_overrides_text: Text – any special instructions or overrides for manufacturing (e.g. "use alternate stitching on logo").
+# - Timestamps created_at, updated_at: default as in orders.
+#
+# Constraints:
+# - Foreign keys: order_id → orders(id) (ON DELETE CASCADE so that deleting an order removes its items)
+GitHub
+, product_id → catalog_items(id), designer_id → designers(id), manufacturer_id → manufacturers(id) (with SET NULL on delete of those linked records, since you might not want to cascade delete an order item if a manufacturer entry is removed).
+# - Consider composite uniqueness on (order_id, product_id, maybe variant_id and some key) if you want to prevent duplicate identical line items. This is optional; sometimes multiple lines can reference same product with different customization.
+# - If using separate table for item sizes (see below), ensure relation with cascade.
+#
+# Size Breakdown (Optional): If the business needs item sizes, include an order_item_sizes table:
+# - Columns: id (UUID PK), order_item_id (UUID FK to order_items.id ON DELETE CASCADE), size_code (Text, e.g. 'S', 'M', 'L'), quantity (Integer).
+# - This allows each order item to have multiple size quantities (commonly needed for uniform orders). The system will sum these for the item’s total quantity.
+#
+# Apply Indexes:
+# - On orders(org_id), orders(customer_id), orders(status_code) for efficient filtering
+GitHub
+.
+# - On order_items(order_id) and order_items(status_code) (and maybe order_items(product_id) if often querying by product).
+# - Name indexes with a consistent convention (e.g., idx_orders_org_id, idx_order_items_order_id, etc.)
+GitHub
+.
+#
+# Align Types: If any existing tables use TEXT for IDs (e.g. earlier stub might have orders.id or users.id as varchar/text
+GitHub
+), migrate them to UUID properly:
+# - Perform an ALTER TYPE using USING uuid-column::uuid or recreate columns if needed, so that no casting is required in queries. After this, places in code using drizzle schema should use uuid() instead of varchar() for those fields to match (e.g., change id: uuid().primaryKey() vs the old varchar().primaryKey() in shared/schema.ts)
+GitHub
+GitHub
+.
+# - Example: ALTER TABLE public.orders ALTER COLUMN id SET DATA TYPE uuid USING id::uuid; (and similarly for org_id, etc, then set DEFAULT gen_random_uuid()).
+#
+# By the end of this step, the database has the core orders and order_items tables (and related lookups) ready, fully normalized and constrained.
+result: "Database schema updated: 'orders' and 'order_items' tables (plus related lookups) are defined with UUID keys, all necessary columns, constraints, and indexes. No UUID/Text type mismatches remain."
+- code: "ORD-2"
+title: "Implement Row-Level Security (RLS) for Orders"
+description: "Enable and configure row-level security on orders and related tables to enforce organization-based data isolation."
+details: |
+# Enable RLS: Turn on Postgres RLS for orders and order_items (and any new tables like purchase_orders, etc). This might have been partially done in earlier migrations (double-check if RLS was already enabled for orders)
+GitHub
+.
+# Example SQL to ensure: ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY; ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY; (and do the same for new tables like design_jobs, work_orders, etc as they are added).
+#
+# Define Policies:
+# - Select/Read Policy: Only members of the order’s organization can read the order or its items.
+# - Leverage helper functions created earlier, e.g. public.is_org_member(uid, org_id)
+GitHub
+GitHub
+ to check membership, or join through user_roles.
+# - Policy example for orders:
+# sql # CREATE POLICY "org_members_can_select_orders" ON public.orders # FOR SELECT USING ( public.is_org_member(auth.uid(), org_id) ); #
+# This assumes auth.uid() (Supabase) provides the user ID and that function returns true if the user has any role in that org.
+# - Similarly for order_items:
+# sql # CREATE POLICY "org_members_can_select_order_items" ON public.order_items # FOR SELECT USING ( public.is_org_member(auth.uid(), org_id) ); #
+# - These ensure cross-org data is siloed.
+# - Insert Policy: Allow inserts if the user is a member of the org and (for order_items) also ensure they can only insert items for orders in their org. This can be done by check conditions:
+# - Orders insert: (public.is_org_member(auth.uid(), org_id)) as the USING and WITH CHECK (so that the inserted org_id must belong to one of the user’s orgs).
+# - Order_items insert: need to ensure both the item’s org_id and the parent order’s org_id match the user. Since org_id in order_items should mirror its order, ensure consistency via either a trigger or in the insert logic (the application can fill it). For RLS, a check like (public.is_org_member(auth.uid(), org_id)) suffices if org_id is correctly set.
+# - Update Policy: Allow updates by org members, possibly with additional constraints:
+# - You might want finer control, e.g., only certain roles can update certain fields. Initially, keep it broad (org members can update), then rely on application logic for role-specific restrictions.
+# - Policy: FOR UPDATE USING (public.is_org_member(auth.uid(), org_id)).
+# - WITH CHECK should ensure the row stays in their org (i.e., new.org_id = old.org_id to prevent moving orders between orgs).
+# - Delete Policy: Probably allow deletes only to org members (or even further restrict to admins). A safe default:
+# - FOR DELETE USING (public.is_org_member(auth.uid(), org_id)).
+# - In the application, we might additionally check role before actually deleting, but RLS ensures someone from another org can't delete.
+#
+# Customer Role Consideration: The above policies treat all org members equally. However, a user with role 'customer' (external client) who is a member of the org might have access through is_org_member. If using a customer portal, we likely:
+# - Add an extra condition for read: if user is role 'customer', restrict to only orders where that user is the customer. This requires linking orders to the user account (perhaps via orders.customer_id -> customers.id -> customers.user_id if we store a user reference in customers).
+# - Alternatively, create a separate policy for customer users, e.g.:
+# sql # CREATE POLICY "customer_can_select_own_order" ON public.orders # FOR SELECT USING ( # (EXISTS (SELECT 1 FROM public.customers c # JOIN public.user_roles ur ON ur.user_id = auth.uid() AND ur.role_id = (SELECT id FROM public.roles WHERE slug='customer') # WHERE c.id = customer_id AND c.org_id = org_id AND c.email = auth.email)) # OR public.is_org_member(auth.uid(), org_id) # ); #
+# This example assumes if the auth user’s email matches the customer email on the order (or some linking mechanism), then allow. In practice, better to have an explicit link.
+# - For simplicity, document that external customers must be handled carefully; possibly have them not in user_roles but a separate auth flow. Given time, proceed with basic org-level RLS and handle customer-specific filtering in application code (e.g., the API endpoint could ensure if role=customer, only return orders with that user's email).
+#
+# Testing RLS:
+# - After implementing, test with different users (in psql or via Supabase):
+# * An admin user of OrgA should see OrgA’s orders, not OrgB’s.
+# * A salesperson of OrgA similarly sees only OrgA’s orders.
+# * Try a user who is not in any org (should see none).
+# * Ensure that attempts to insert an order with an org_id different from the user’s org via API are blocked (RLS or a check constraint will reject).
+#
+# By the end, every query on orders and related tables will automatically be restricted to the appropriate organization scope, providing a secure multi-tenant environment.
+result: "Row-Level Security is enabled on orders and related tables. Policies are in place so only users belonging to an order’s organization can read or modify it (with special consideration for external customers as needed)."
+- name: "Phase 11: Implement Full Order Lifecycle (API & Logic)"
+steps:
+- code: "ORD-3"
+title: "Complete Order CRUD API Endpoints"
+description: "Develop all order API endpoints (list, retrieve, create, update, delete, cancel) with validation and business logic, connecting to the database schema."
+details: |
+# List Orders (GET /api/orders): Implement fetching of orders with filtering, sorting, and pagination.
+# - Require authentication (route is behind requireAuth middleware, already in place)
+GitHub
+.
+# - Parse query parameters:
+# * orgId (UUID of organization – in multi-org context, the client may specify or it could be derived from the logged-in user's current org context; ensure the user has access to it).
+# * statusCode (filter by order status).
+# * customerId (filter by a specific customer).
+# * q (search string to match against order code, customer name or email).
+# * page and pageSize for pagination.
+# - Use the Drizzle ORM to build the query:
+# * Start from orders table, apply .where() conditions based on provided filters. Conditions as in stub:
+# - if orgId provided, eq(orders.orgId, orgId)
+GitHub
+.
+# - if statusCode provided, filter by that
+GitHub
+.
+# - if customerId provided, filter (this implies orders table has a customerId field now).
+# - if q provided, use ILIKE on order code or customer name/email
+GitHub
+. (The stub used a raw SQL fragment because Drizzle might not support ILIKE easily – continue with that approach).
+# * Join with related tables for data if needed. The stub did not join in the list query, but consider:
+# - It might be useful to join customers to get customer name for display, or simply select fields in the query directly since orders now stores customer_contact_name etc.
+# - Possibly join organizations to ensure the user has access (though RLS covers it) and to get org name if needed (not strictly necessary in list).
+# * Select relevant fields to return (could use ...orders to get all, but maybe exclude sensitive ones if any).
+# - Implement sorting (if needed, e.g., by created_at descending for recent orders).
+# - Execute query with limit & offset for pagination. The stub calculates total count separately
+GitHub
+:
+# * Do a .count() query for total results matching filters (for pagination metadata).
+# - Return result as JSON. Follow the standard response format, e.g.:
+# json # { "data": [ {<order fields>}, ... ], "pagination": { "page": 1, "pageSize": 20, "total": 57 } } #
+# (The architecture docs indicate using a sendOk or similar response helper).
+# - This endpoint should automatically respect RLS (only returning org-specific orders). Still, double-check that either the query includes orgId from user's session or rely on RLS if using system auth context.
+#
+# Get Order by ID (GET /api/orders/:id): Return a single order with all its details.
+# - Query the orders table for the given id. The stub does:
+# ts # db.select({ order: orders, customer: customers, organization: organizations }) # .from(orders) # .leftJoin(customers, eq(orders.customerId, customers.id)) # .leftJoin(organizations, eq(orders.orgId, organizations.id)) # .where(eq(orders.id, id)) #
+
+GitHub
+
+# This fetches the order and joins customer and organization info.
+# - After getting the order, fetch its items:
+# ts # const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id)); #
+
+GitHub
+
+# - Use mapping helpers to convert DB format to DTO format:
+# * The stub uses orderDbRowToDto(result[0].order) and similar for items
+GitHub
+. Update those mappers to account for new fields (like include customerContactEmail, etc).
+# - Attach related info:
+# * The stub attaches a short customer object with id and name, and organization with id and name
+GitHub
+. That's good for quick display. We might also include items fully mapped.
+# * Consider also including design or production status summary: e.g., maybe not here to keep it focused; those can be separate calls or included if needed (e.g., if we want to show overall design progress).
+# - If no order found, return 404 (stub does this)
+GitHub
+.
+# - This endpoint also relies on RLS for security (user can't fetch an order not in their org; if they try an ID from another org, the query returns 0 rows and we respond 404).
+#
+# Create Order (POST /api/orders): Accepts order data and creates a new order (with optional items).
+# - Validate request body against the CreateOrder schema. The CreateOrderDTO likely omits id, orderNumber, timestamps, which are generated server-side
+GitHub
+.
+# - Key fields to expect from client:
+# * organizationId (if multi-org context and user can create for a specific org; otherwise, derive from user's session).
+# * customerName, customerEmail, etc, or perhaps a customerId if selecting an existing customer (our DTO in code didn't explicitly have customerId, but better to allow it).
+# * Possibly sportId if linking to a sport/team.
+# * items: an array of line items with product and quantity (the current DTO defined an OrderItemDTO for output, not necessarily for input; we might require a simpler input structure, e.g., {productId, variantId?, quantity, unitPrice?} – the server can fetch price from catalog if needed or trust client for now).
+# * We should also allow a statusCode in input (maybe allow setting initial status to 'consultation' or 'design' if the order is being input after some process). If not provided, default to 'draft' or 'consultation'.
+# - Use the mapping function or manual mapping to go from DTO to DB fields (the stub uses mapDtoToDb(validatedData, ORDER_DTO_TO_DB_MAPPING) to convert camelCase to snake_case)
+GitHub
+.
+# - Set defaults:
+# * If status_code is missing, set it to 'draft' (the stub does this)
+GitHub
+.
+# * If code (order number) not provided by client, generate one. The stub generation:
+# js # const today = new Date().toISOString().slice(0,10).replace(/-/g,''); # const random = Math.floor(Math.random()*10000).toString().padStart(4,'0'); # dbData.code = `ORD-${today}-${random}`; #
+
+GitHub
+
+# * Ensure the generated code doesn't collide with existing (the chance is low, but to be safe you could loop-generation until unique, or enforce DB unique and handle conflict error).
+# - Insert the order:
+# * await db.insert(orders).values(dbData).returning(); to get the inserted row (Drizzle supports returning).
+# * If insertion returns empty, throw an error (stub handles length check)
+GitHub
+.
+# - If items were provided in request:
+# * Loop through each item, prepare an order_items insert (fill org_id, order_id from newly created order, product details, etc).
+# * Optionally, fetch product info from catalog_items to fill name_snapshot, price_snapshot if not provided. (Better to trust server for price: you can look up the basePrice from catalog and use that * quantity to sum total, possibly apply discounts).
+# * Insert all items in a batch (single query if using drizzle .insert(orderItems).values([...]) for multiple).
+# * If using size breakdown, handle that too (e.g., each item might carry a sizes array to insert into order_item_sizes).
+# - Compute total_amount: Sum of item price * quantity (plus any other costs). You can do this on the fly and set orders.total_amount before inserting, or calculate after insert and update the order. Simpler: calculate in code and include in the initial insert.
+# - Respond with 201 Created, and include the created order data:
+# * Map the DB order row to OrderDTO. (Stub uses sendCreated(res, mappedOrder) after logging)
+GitHub
+.
+# * If items were inserted, you may need to either fetch them or construct an items array for the response. (Since the OrderDTO expects an items array
+GitHub
+, include them).
+# - Trigger any side-effects:
+# * Log the creation in audit_logs (the stub calls logDatabaseOperation(req, 'ORDER_CREATED', ...) after insert)
+GitHub
+.
+# * If an initial status is something like 'consultation' requiring further action, maybe notify someone (out of scope, but think ahead).
+#
+# Update Order (PATCH /api/orders/:id): Allow updating order fields (excluding line items, which will be handled separately).
+# - Validate using UpdateOrderDTO (which is partial)
+GitHub
+.
+# - Check if order exists (the stub does a select and returns 404 if not found)
+GitHub
+.
+# - If statusCode is provided here, consider whether to allow full status change via this endpoint or force use of the /status endpoint. The stub does allow it with validation
+GitHub
+. We can keep that, but need to handle workflow rules (e.g., prevent illegal transitions; maybe leave that for later phase).
+# - Map DTO to DB and update:
+# * Use mapDtoToDb again to convert fields.
+# * Do db.update(orders).set({...fields..., updatedAt: new Date()})...where(id = ...)
+GitHub
+.
+# * Return the updated order via returning() (stub does and checks length)
+GitHub
+.
+# - For partial updates, ensure not to overwrite fields that are not provided (drizzle .set will only include provided fields in dbData).
+# - Possible fields to allow updating: notes, due_date, customer info (maybe customer changed their contact), status (if allowed), assigned salesperson (maybe reassign order to different sales rep), etc.
+# - Log the update (stub logs 'ORDER_UPDATED')
+GitHub
+.
+#
+# Cancel Order (POST /api/orders/:id/cancel): Implement the stubbed cancel endpoint
+GitHub
+.
+# - This is a specialized action not just a field update, so use a distinct route:
+# * Check that the order exists and is not already in a terminal state (completed or cancelled).
+# * Set status_code = 'cancelled' (ensure 'cancelled' is a valid status in status_orders; if not yet, add it as a terminal status).
+# * Optionally, capture a reason for cancellation. This could be an additional field (not in schema currently) or just a note appended to order notes or an audit_log entry.
+# * If the order had any order_items:
+# - We might also mark those as cancelled. We didn't define a 'cancelled' in item statuses explicitly; we could treat 'cancelled' as an alias of 'done' or add a 'cancelled' code in status_order_items. Better to add a 'cancelled' code as terminal for completeness.
+# - For simplicity, set each item’s status_code to 'done' or introduce 'cancelled'. This way, incomplete design or production tasks know of cancellation.
+# * If any design jobs or work orders existed, ideally flag them too (could be out-of-scope automated, but mention in documentation that manual intervention may be needed).
+# - Perform the update in a transaction if multiple updates (order + items).
+# - Return the updated order (now with status 'cancelled').
+# - Log 'ORDER_CANCELLED' in audit logs.
+# - Alternative: you could reuse the PATCH status endpoint by calling it with 'cancelled', but having a dedicated endpoint clarifies the intent and allows extra logic as above.
+#
+# Delete Order (DELETE /api/orders/:id): Already implemented in stub for basic case
+GitHub
+GitHub
+.
+# - Ensure the foreign key on order_items has ON DELETE CASCADE so that associated items go automatically
+GitHub
+.
+# - This should typically only be used in scenarios like removing test data or if an order was created in error and is still in draft. In production use, cancellation is safer than deletion (for record-keeping).
+# - Keep the endpoint but perhaps restrict its usage via role (only admins).
+# - No response body on success (204 No Content).
+#
+# Status & Item Status Codes Endpoints: Confirm these are wired (they appear in stub):
+# - GET /api/orders/status-codes: Return the list from status_orders table
+GitHub
+. Ensure it reflects any additions (like 'cancelled').
+# - GET /api/orders/item-status-codes: Return list from status_order_items
+GitHub
+ (including possibly 'cancelled' if added).
+# - Those are straightforward selects with orderBy sort_order.
+#
+# Response Shape: Make sure all endpoints output data that matches the front-end needs and the DTOs.
+# - The OrderDTO defined fields like customerEmail, customerPhone in addition to customerName
+GitHub
+, and also an assignedTo (user ID)
+GitHub
+.
+# - Ensure when sending order data, include those. For example, after joining customer, you might populate customerEmail etc. Alternatively, since we store contact in the order, just use customer_contact_email from orders if present.
+# - OrderDTO.quoteId is optional
+GitHub
+: if quotes integration (phase 14 perhaps), otherwise it can be null.
+# - Ensure totals (OrderTotalsDTO) is computed or assembled: it expects breakdown of subtotal, tax, shipping, discount, total
+GitHub
+. Currently, we only have total_amount. Possibly:
+# * Decide on tax and shipping handling. For now, set subtotal = total_amount, tax = 0, shipping = 0, total = total_amount unless we have more detail. Or extend orders table to store these components if needed.
+# * The DTO structure suggests they want these fields. Maybe implement as: if organization has tax rules, etc. For completeness, include them even if zero.
+# - Real-time considerations: The creation and update endpoints should ideally return the new state of the order. The front-end can then update its cache or state. We will add real-time push later, but this ensures immediate feedback.
+#
+# With these endpoints done, the core order CRUD operations are functional and aligned with our schema and validations.
+result: "All order endpoints (GET list/detail, POST create, PATCH update, DELETE, and cancel) are implemented. They validate input with Zod, enforce business rules (like unique order code, valid status), and interact with the database via the new schema. Responses match the expected DTO structure."
+- code: "ORD-4"
+title: "Manage Order Line Items via API"
+description: "Provide endpoints to add, update, or remove items from an order, supporting incremental order building and changes."
+details: |
+# While the Create Order endpoint can include initial items, we need flexibility to manage items after order creation:
+#
+# Add Order Item (POST /api/orders/:orderId/items):
+# - Use this to add a new product line to an existing order (for upsells or changes during consultation).
+# - Validate that the order exists and is not in a finalized state (probably allow additions only if order is in 'draft' or 'consultation' status, maybe also in 'design' phase if adding a late item is allowed).
+# - Request body could include:
+# * productId (required) and optionally a variantId.
+# * quantity (required, >0).
+# * Maybe unitPrice or we derive it from catalog.
+# * Any customization details like chosen size breakdown or notes (if size breakdown, expect an array of sizes).
+# - Similar to order creation, fetch product info for snapshots:
+# * Look up the product name, SKU, base price from catalog_items (and variant name if variant provided from a catalog_variants table or similar, if exists).
+# * If variantId is provided but we store variants in same table as catalog items, adjust accordingly.
+# - Insert the new order_items record with these values.
+# - If sizes data is provided, insert into order_item_sizes accordingly (within the same transaction).
+# - Update the order's total_amount:
+# * Recalculate as old total + (item price * quantity). Alternatively, fetch sum from DB:
+# SELECT SUM(price_snapshot * quantity) FROM order_items WHERE order_id = X and update orders.
+# * Maintain consistency by updating orders.total_amount in the same transaction.
+# - Return the updated order or at least the new item. (For front-end convenience, returning the whole updated order might be easiest, so the UI state can refresh one source. However, that means doing a join or second query; alternately, return the inserted item and let front-end append it.)
+# - Ensure RLS or checks prevent adding item to someone else's order (the route should verify the user belongs to the order's org; RLS on insert will also enforce if org_id mismatches).
+# - Log an event: e.g. "ITEM_ADDED" in audit log.
+#
+# Update Order Item (PATCH /api/orders/:orderId/items/:itemId):
+# - Allow modifying an item’s details:
+# * Typical changes: quantity, or possibly swapping productId (though that might complicate if design started on the old product).
+# * If design or production has started for this item, consider restricting changes (maybe only quantity can change up until manufacturing starts).
+# * Could also handle status updates for the item here (though we have separate flows for design and manufacturing, item status might be changed by those flows).
+# - Validate input:
+# * Ensure the item belongs to the given orderId (the URL has both; you can cross-check by a query or trust the path and rely on RLS).
+# * If updating quantity, must be >= 0 (if 0, maybe one should call delete instead of patching to 0).
+# * If updating product (productId), treat it like deleting one item and adding another – probably not allow direct switch after creation, unless it's early stage.
+# - Perform the update:
+# * Use db.update(orderItems).set({...}).where(orderItems.id == itemId && orderItems.orderId == orderId).
+# * If changing quantity or price, update orders.total_amount accordingly (recalculate difference: new_qtyprice - old_qtyprice).
+# * If updating status_code (like marking an item as approved or completed outside of design/manufacturing context), ensure the new status is valid next step (for example, maybe you allow sales to mark an item as 'approved' if customer approved artwork offline).
+# - Return the updated item or order. Likely easier to return the entire order snapshot (so frontend can refresh everything in one go).
+# - Log an "ITEM_UPDATED" event.
+#
+# Remove Order Item (DELETE /api/orders/:orderId/items/:itemId):
+# - This will remove a line from the order.
+# - Only allow if the order is not locked in production stage for that item. If design/production started, you might prevent deletion and instead suggest cancellation of the whole order or mark item cancelled (this depends on business rules).
+# - If allowed (e.g., during initial quote or customer changed mind on one item early on):
+# * Delete the order_items record. ON DELETE CASCADE will remove any order_item_sizes and perhaps design_jobs (if design_jobs.order_item_id is cascaded).
+# * Consider any design assets: if not cascaded, you might need to manually delete associated design_jobs and design_assets for that item, or mark them cancelled.
+# * Use a transaction if doing manual cascading.
+# - Update orders.total_amount (subtract the item's contribution).
+# * Alternatively, recalc total from remaining items as a safeguard.
+# - Return success (204 or a message).
+# - Log "ITEM_DELETED".
+#
+# These endpoints ensure an order can be modified after creation. They complement the initial creation by supporting dynamic changes which are common in real sales processes.
+result: "The API supports adding new items to an existing order, updating item details (quantity, etc.), and removing items. These actions update the order totals and are validated against the order’s state (preventing modifications in disallowed stages)."
+- name: "Phase 12: Integrate Design Phase"
+steps:
+- code: "ORD-5"
+title: "Link Orders to Design Jobs"
+description: "Connect order items to the design process by creating design job entries and handling design status transitions."
+details: |
+# Design Jobs Initiation:
+# - Use the design_jobs table to represent the work needed to create artwork for an order item. We will create a design_job for each order item that requires custom design.
+# - Determine when to create design_jobs:
+# * Option 1: Immediately on order creation for all items (if every order item will go through design by default). This could be done in the order POST handler after inserting items: for each item, insert a design_job with status 'pending'.
+# * Option 2: Only create when an order moves into 'design' status (e.g., a salesperson marks the order as ready for design). This is cleaner: upon status change to 'design' (via PATCH /orders/:id/status or a dedicated action), create design_jobs for items.
+# * We'll choose Option 2: When an order’s status_code changes to 'design' (meaning design phase started), do:
+# js # for each item in order_items for that order (where item.status_code was 'pending_design'): # insert into design_jobs(org_id, order_item_id, title, status_code='pending', assignee_designer_id=null, created_at=now()) # update order_items set status_code='design' for those items #
+# Now all items have a design job entry and their item status reflect design in progress.
+# * Alternatively, create design_jobs one by one as designers are assigned, but it's often helpful to have a placeholder job even before assignment.
+# - Ensure design_jobs.assignee_designer_id can be null initially (unassigned). title can default to something like <OrderCode>-Item<item#> Design or the product name.
+# - A PATCH /api/orders/:id/status handler from earlier can incorporate this:
+# * If new status is 'design', trigger creation of design_jobs as above.
+# * Conversely, if an order status moves out of design (say cancelled), you might want to handle incomplete jobs (like mark them cancelled too).
+#
+# Design Jobs API:
+# - List Design Jobs: Possibly GET /api/design-jobs?orgId=X or for a specific designer /api/design-jobs?assignee=me. This would help a designer dashboard. Implement if needed:
+# * Similar RLS by org on design_jobs.
+# * Could join order_items and orders to provide context (order number, item name).
+# * But we might leave listing to be done by fetching orders and filtering client-side, given time.
+# - Get Design Job (GET /api/design-jobs/:id): If needed for a detail view; it can include the design job info plus any associated assets and events.
+# - Update Design Job (PATCH /api/design-jobs/:id): For updating fields like brief or reassigning assignee_designer_id. Secure so that only authorized roles (e.g., design lead or admin) can change assignment or modify briefs.
+# - Design Job Status (PATCH /api/design-jobs/:id/status):
+# * Accept a new status code (e.g., 'designing' to 'completed').
+# * Validate it’s a valid status_design_jobs code.
+# * If setting to a terminal status like 'completed':
+# - Update the corresponding order_items.status_code to the next stage ('approved' or 'approved' if design completion implies approved by customer).
+# + Alternatively, you might have a separate explicit approval step. Possibly design_jobs goes 'completed' when designer finished their work, then someone (admin or customer) must mark the item 'approved'.
+# + If so, maybe 'completed' in design_jobs triggers item.status 'approved' automatically to simplify.
+# - Also consider capturing that timestamp in design_job or an event.
+# * If setting to 'in_progress', etc., just update design_jobs. Possibly update order_items.status_code to 'design' if not already.
+# * If any design job is marked completed, check if all design jobs for the order are completed:
+# - If yes, you might auto-advance the order status to 'manufacturing' (since design phase is fully done). This could be done here or deferred until someone manually changes order status.
+# - We could incorporate an automatic check: after marking last design job completed, call the same logic as if PATCH order status to manufacturing.
+# - This automation should be communicated, so perhaps log "All designs completed, order advanced to manufacturing."
+# - Assigning Designers:
+# * Perhaps handled by a separate endpoint (next step ORD-6 covers assignment explicitly). But designating an assignee_designer_id can also be done via an update or a dedicated route.
+# * For now, ensure design_jobs has a column for assignee and that it can be updated.
+#
+# Design Assets:
+# - Create an endpoint for uploading design files:
+# * POST /api/design-jobs/:id/assets as listed in API routes.
+# * The client likely will upload file to storage directly via a signed URL and then call this endpoint with file metadata (like a URL or storage key).
+# * For simplicity, allow the client to send the file (multipart form-data). The server can then:
+# - Use Supabase Storage client or AWS SDK (depending on stack) to upload the file to a bucket (e.g., bucket "app", path "designs/{orderId}/{filename}").
+# - Generate a public URL or store the path.
+# - Insert a record into design_assets with that URL, the uploader (auth.uid), maybe version number (if multiple iterations, increment), etc.
+# * If form handling is complex, consider requiring the front-end to upload and just call this with the file URL.
+# - Ensure only authorized users (designer on the job or org members) can upload.
+# - Marking designs as approved:
+# * If a designer uploads, an admin or customer might need to approve it. Possibly implement PATCH /api/design-jobs/:id/assets/:assetId to set approved_by_admin=true when an admin approves.
+# * Or have a separate endpoint /api/design-jobs/:id/approve which might mark the design job status as 'approved' (which then triggers item approval).
+# * Due to time, we note this: an admin can manually update status or directly item status to 'approved'.
+#
+# Integration with Order Flow:
+# - When order status changes to 'design', notify the design team (could be via assigning in the UI or sending an email; out-of-scope to implement, but mention).
+# - When design is done (all items approved), someone (maybe the system or an admin) should move order status to 'manufacturing'.
+# - Keep track of design timelines: insert entries in design_job_events for key events:
+# * E.g., job created, designer assigned, design completed, etc. (This can be done by triggers or in code around these state changes).
+# - Ensure RLS on design_jobs and design_assets:
+# * Both have org_id, so apply similar org-member policies. Additionally, for design_assets, you might consider that even within org, maybe only those on the design or admin can view the actual file (but that level of detail likely not needed; org-level is fine).
+#
+# After this step, every order item that needs design has a corresponding design task to track it, and the system knows when design is completed for each item (and thus for the order).
+result: "Order items are now tied to design jobs. When an order enters design phase, design_job records are created for each item, and designers can be assigned and update their progress. Completing design jobs updates the order items (and eventually the order) to move forward in the workflow."
+- code: "ORD-6"
+title: "Designer Assignment & Collaboration"
+description: "Enable assigning designers to design jobs and facilitate the design review/approval process within the application."
+details: |
+# Assigning Designers:
+# - Provide a way to assign a specific designer (user with 'design' role) to a design job or an order item.
+# - This can be done via:
+# * Endpoint PATCH /api/orders/:orderId/items/:itemId/assign-designer (as listed) which:
+# - Takes designerId (an id from designers table, which is essentially mapping to a user).
+# - Finds the corresponding design_job for that order_item (there should be one if created in previous step; if not, you may create it on assignment).
+# - Updates design_jobs.assignee_designer_id and also order_items.designer_id for that item for quick reference.
+# - If the order was not yet marked as in design, perhaps this action implicitly starts design for that item (set item status to 'design' if not already).
+# - Returns success with updated info.
+# * Alternatively, a PATCH on design-jobs directly: /api/design-jobs/:id with body { assigneeDesignerId: <id> }. This might be simpler if you know the design_job id.
+# * Implement whichever is convenient; maybe do both (the assign-designer route can find the design_job and call the same underlying logic).
+# - Only allow users with permission (e.g., admin or perhaps a "design manager" role) to assign designers. Regular designers wouldn't assign themselves unless system allows self-claiming tasks.
+# - After assignment, notify the assigned designer (e.g., via an in-app notification or email, out-of-scope to implement, but mention).
+#
+# Design Collaboration:
+# - Use design_job_events as an activity log:
+# * When a designer begins work, add an event (code 'started', actor = designer).
+# * When a design is submitted for review, add an event ('submitted_for_review', actor = designer, maybe with a link to asset).
+# * When admin/customer gives feedback or approval, add events ('feedback', 'approved_by_customer').
+# * The payload JSONB can store things like comments or references to files.
+# - Consider adding a simple comments mechanism:
+# * A POST /api/design-jobs/:id/comments which writes an event with code 'comment' and payload containing text. Designers and salespeople could use this to communicate about changes.
+# * Not a full chat system, but enough to log discussion.
+# - Approval Workflow:
+# * Decide how customer or admin approves a design. Possibly:
+# - The admin can change the design_job status to 'completed' indicating internal approval, and then notify customer offline.
+# - Or if the customer is a user, they could log into the customer portal and hit an "Approve Design" button which triggers an endpoint (e.g., PATCH /api/design-jobs/:id/status to 'completed' or sets a flag).
+# * The design_assets.signature_file_url and signature_hash fields suggest capturing an e-signature from customer for approval. If implementing:
+# - Customer would upload a signature image or we generate one from a canvas and store it, then fill those fields and mark approved_by_admin=true (since customer is essentially giving approval which admin can treat as final).
+# * This might be beyond scope to fully implement, but ensure the data model is ready (it is).
+# - UI Integration:
+# * The OrderDetails page (in frontend components) should allow an admin to assign a designer from a dropdown of available designers for each item (or unassigned items).
+# * Designers logging in should see their assignments on a DesignBoard (which we will implement).
+# * Designers should be able to upload files and perhaps mark the job done.
+# * Admin or Customer should be able to review and approve the file. Possibly just by viewing the image and clicking "Approve", which calls our patch to finalize the design.
+# - Access Control:
+# * Ensure that design_jobs can only be updated by appropriate roles:
+# - Designers can update status to 'completed' on their jobs, but maybe not mark it 'approved' (that might be reserved for admin).
+# - Only admin or sales should assign designers.
+# - Customers (if they have a login) likely have read-only access to design_jobs except an explicit approve action if provided.
+# * These can be enforced via application logic (middleware checking user role before allowing certain endpoints) on top of RLS.
+#
+# After this, the design phase is interactive: tasks can be assigned and tracked, and there's a clear way to move from design completion to manufacturing.
+result: "Design tasks can now be assigned to specific designers and managed collaboratively. The system logs design progress and approvals, ensuring a clear hand-off from design to the next stage once all designs are approved."
+- name: "Phase 13: Manufacturing & Fulfillment Integration"
+steps:
+- code: "ORD-7"
+title: "Launch Manufacturing Work Orders"
+description: "Integrate manufacturing by generating work orders for order items and tracking their production status."
+details: |
+# Work Order Creation:
+# - Similar to design, we need to create manufacturing_work_orders for each order item when it’s time for production.
+# - Trigger point: likely when an order (or item) transitions to 'manufacturing' status.
+# * If using the approach of auto-advancing order status after all designs approved, that is the time to create work orders.
+# * Alternatively, when an admin explicitly moves order status to 'manufacturing' (perhaps after ensuring materials are ready).
+# - Implementation:
+# * On order status change to 'manufacturing', iterate all order_items:
+# - If an item’s status was 'approved' (design done), create a row in manufacturing_work_orders with that order_item_id, org_id, status_code = 'not_started' or 'pending' (whatever code we define as initial).
+# - Copy any relevant instructions: you might fill instructions with catalog_items.build_instructions for that product, or any notes from design (like pantone colors from pantone_json can be referenced).
+# - If the order_items have an assigned manufacturer_id (meaning it's designated to an external vendor), include that in work_order.
+# - Otherwise manufacturer_id can be null, indicating in-house production.
+# * Update order_items.status_code to 'manufacturing' as well, to reflect they are now in production.
+# - These inserts can be done in the same function that handles status changes, or via a dedicated call (like a function startProduction(orderId) that is invoked appropriately).
+#
+# Manufacturing API:
+# - List Work Orders (GET /api/manufacturing/work-orders or part of a dashboard):
+# * Possibly provide a listing grouped by status or filtering by org. For now, focus on item-level via orders or detail.
+# - Get Work Order (GET /api/manufacturing/work-orders/:id): Returns details of a single work order, including linked order and item info.
+# * This can join order_items to get the item name, quantity, etc., and orders to get order number or customer if needed.
+# * Useful for a detailed view in manufacturing interface or debugging.
+# - Update Work Order (PATCH /api/manufacturing/work-orders/:id):
+# * Allow updating status_code (though we have a separate endpoint for status, the generic update could allow changing manufacturer assignment or instructions).
+# * Could allow updating estimated_completion_date as production planning evolves.
+# - Work Order Status (PATCH /api/manufacturing/work-orders/:id/status):
+# * Accept a new status (e.g., 'in_progress', 'completed', 'shipped').
+# * Validate against status_work_orders codes.
+# * Update manufacturing_work_orders.status_code.
+# * If status moves to a terminal state:
+# - e.g., 'completed' or 'shipped', consider what that means:
+# + If we use 'completed' as "manufacturing done, item ready to ship", and 'shipped' as "item shipped to customer".
+# + Or we could have just 'completed' meaning also shipped (depending on how we define).
+# + Let's define: 'completed' means finished production (maybe at factory), 'shipped' means shipped to customer.
+# - If setting to 'completed', update corresponding order_items.status_code to 'manufacturing_done' or we might skip and only update when shipped.
+# - If setting to 'shipped' (i.e., item left the facility):
+# * Update order_items.status_code to 'shipped'.
+# * Possibly record shipping info (if any, maybe as part of work_order or separate).
+# * Check if all items of the order are now shipped:
+# - If yes, update orders.status_code to 'shipped'.
+# - Possibly also set a shipped date on order (could add an order.shipped_at field if needed for reference).
+# * The above implies some business rules: for partial shipments, the order might remain in 'manufacturing' or have a 'partially shipped' concept (not implemented, but we can assume orders flip to 'shipped' only when everything is shipped).
+# - Instructions Updates:
+# * Manufacturing team might update instructions or add notes (e.g., encountered issues, or actual fabric used if different).
+# * They might also update actual_completion_date when done.
+# - Integration with Purchase Orders:
+# * If an item requires ordering material (PO) before production can start, there might be a dependency. Possibly, the work order stays 'pending' until POs are completed.
+# * We can address that in ORD-8 with POs.
+# - Events:
+# * Use production_events table to log changes in work order status or any incidents (similar to design events)
+GitHub
+.
+# * When status changes, insert an event with code like 'started', 'finished', 'shipped' etc., actor = user making the change.
+# - UI:
+# * The ManufacturingBoard in front-end will use these APIs to show all work orders.
+# * For example, it can fetch all work orders for the org, or separate calls for each status category.
+# * When a user drags a card to a new column, it calls the PATCH status endpoint to update.
+# - Access Control:
+# * Only users with manufacturing or admin roles should access these endpoints (enforce via middleware).
+# * RLS ensures only org's work orders are visible anyway.
+#
+# End result: each item flows into a work order, and production team can update when it's in progress, done, and shipped, which in turn updates the order's progress.
+result: "Manufacturing work orders are generated for each order item once design is complete. The production team can view and update these work orders through dedicated APIs, tracking every item from start of production to shipment."
+- code: "ORD-8"
+title: "Incorporate Purchase Orders for Materials"
+description: "Add a subsystem for purchase orders to handle external procurement of materials or outsourced work, linked to orders and production."
+details: |
+# Purchase Order (PO) Creation:
+# - Decide when a purchase order is needed: typically when production requires materials that are not in stock or when outsourcing production to a vendor.
+# - Possibly triggered when an order enters manufacturing:
+# * Example: If catalog_items have a field like preferredManufacturerIds or moq (minimum order quantity) that signals external involvement, or a manual decision by manufacturing team.
+# * We likely let the manufacturing team create POs on demand via the API.
+# - Implement POST /api/manufacturing/po:
+# * Input will include: orderId, vendor info (name, contact details), and line items of materials.
+# * Validate that the order exists and is in a stage where POs can be created (probably during manufacturing or earlier).
+# * Generate a po_number:
+# + Format similarly to orders, e.g., PO-<OrderCode>-001 if multiple POs per order, or a global sequence PO-20250918-0001. For simplicity, use a global unique sequence or random as we did with orders.
+# * Insert into purchase_orders table with status 'pending' or 'ordered'.
+# * Insert related po_items:
+# - Each item might have: materialName, quantity, unit, unitCost (from input).
+# - Sum up costs to set total_cost in purchase_orders.
+# * Optionally insert po_milestones:
+# - Could create default milestones like "Order Placed", "Shipped by Vendor", "Received". These can be created with due dates if known.
+# * Respond with the created PO data (including generated id and po_number).
+# * Perhaps also link which order_items this PO is for (if each PO might cover multiple items' materials).
+# - Could have a field in po_items referencing order_item_id if each material is for a specific item. This complicates UI but is realistic. For now, assume POs are whole-order level (the order_id link covers association).
+# - Get PO (GET /api/manufacturing/po/:id):
+# * Return the PO details including items and milestones.
+# * This likely involves a join or two separate queries: one for PO, one for items (and maybe milestones).
+# * Format the response to match PoDTO
+GitHub
+GitHub
+:
+# + vendor (object with name, contact, etc),
+# + items (array of {id, materialName, quantity, unit, unitCost, totalCost}),
+# + milestones (array of {id, name, dueDate, completed, etc}),
+# + status, totalCost, expectedDelivery, actualDelivery, notes, assignedTo.
+# - Update PO (PATCH /api/manufacturing/po/:id):
+# * Allow updating fields like status (maybe 'in_progress' meaning vendor confirmed, 'completed' meaning goods received), expectedDelivery date changes, notes, or assigning an internal responsible person (assigned_to).
+# * Possibly allow adding additional items or adjusting quantities if the order changes (though ideally lock once placed; but allow if order expanded).
+# * If marking as completed (i.e., materials received):
+# - You might then update related work orders that were waiting on this PO. Possibly set work order status to 'in_progress' now that materials are in hand.
+# - This suggests tying POs to work orders, which could be done by a field like work_order_id in purchase_orders if each PO is for a specific work order. Our schema links PO to order only.
+# - Another approach: use order_item_id in po_items to know which item’s production it affects. Then when a PO is completed, you could update those order_items or their work orders.
+# * Keep logic manageable: just mark PO as completed when delivered, manufacturing team will manually start work orders if waiting.
+# - PO Milestones (PATCH /api/manufacturing/po/:id/milestones/:mid):
+# * The stub indicates an endpoint for milestones
+GitHub
+ likely to mark one done (like acknowledging a step done).
+# * Implement: find milestone by id under that PO, set completed true and completedAt timestamp, and maybe set completedBy (if we track).
+# * If that milestone was the final one (like "Received"), perhaps also mark PO status as 'completed'. Or we have separate status vs milestone tracking.
+# * In PoDTO, milestones have completed boolean and optional completedAt and completedBy fields
+GitHub
+ (we didn't explicitly include completedBy in schema, but could add to milestones table if needed).
+# - Integration with Order/Work Order:
+# * Possibly reflect in Order status or work order status that materials are pending/received:
+# - If a PO is outstanding for an order, maybe the order remains in 'manufacturing' but no work order moves to 'in_progress' until PO done.
+# - This can be handled operationally (manufacturers just don't start until materials come), not necessarily enforced by software. We can optionally add a flag like order.status = 'awaiting_materials' if needed, but keep it simple.
+# * Ensure the OrderDetails UI can surface POs: e.g., show "Materials ordered from X, arriving by Y".
+# * When PO is completed, the UI should indicate materials ready. Then an admin could start the work (maybe by updating work order status to in_progress).
+# - RLS & Permissions:
+# * POs are org-specific (org_id in table). Use RLS policies similar to orders (org members can select, etc).
+# * Only certain roles (manufacturing, maybe purchasing or admin) should create/update POs. Enforce via application checks (e.g., requireRole('manufacturing') on these routes).
+#
+# With POs integrated, the system covers procurement. This closes the loop: design done -> materials ordered -> production -> shipping.
+result: "A purchase order module is now in place. The manufacturing team can create POs for needed materials or outsourced production, track their status through milestones, and tie them back to the customer order. This ensures external dependencies are managed and visible in the order workflow."
+- code: "ORD-9"
+title: "Finalize Fulfillment & Order Completion"
+description: "Implement steps to mark orders as shipped and completed, signaling end of fulfillment, and ensure all related data is closed out properly."
+details: |
+# Shipping Items:
+# - Once manufacturing work orders are marked 'completed', the items are ready to ship to the customer.
+# - Define how shipping is recorded:
+# * If using manufacturing_work_orders.status_code = 'shipped' to indicate item shipped, then when a user sets that:
+# - Update order_items.status_code to 'shipped'.
+# - Possibly capture shipping info. We didn't model a shipping table, but perhaps add fields to order or work_order:
+# + e.g., work_orders.tracking_number, carrier, shipped_date. If needed, extend the schema or simply add a note in work_orders.instructions with tracking.
+# * If all items become shipped, set orders.status_code to 'shipped' (if not already).
+# - The UI for manufacturing or sales should have an action to indicate an item or order is shipped. We included a PATCH /api/orders/:id/ship for convenience:
+# * That could mark the entire order as shipped (if partial shipments not handled, call this when everything ships).
+# * Or we may not need it if we handle at item level via work order status. But it can be a shortcut for admin: if they input tracking number for the whole order, we mark all items shipped.
+# * Implement: check that order.status is 'manufacturing' or 'manufacturing_done'. Set all related work_orders and order_items to 'shipped'. Set order.status to 'shipped'. Store any provided tracking details somewhere (maybe in order.notes or a new column like order.tracking_info JSON).
+# * Send notifications to customer (out-of-scope but mention).
+#
+# Order Completion:
+# - The final step is marking the order as completed (delivered/fulfilled).
+# - This could be automatic or manual:
+# * Option 1: automatically mark order completed X days after shipment (not implementing here).
+# * Option 2: when someone confirms delivery or just manually in the system.
+# * We'll provide an endpoint PATCH /api/orders/:id/complete for an explicit action.
+# - Implement PATCH /api/orders/:id/complete:
+# * Preconditions: order.status should be 'shipped' (or at least all items shipped).
+# * Action: update orders.status_code to 'completed' (terminal state). Set orders.updated_at.
+# * Also update all order_items.status_code to 'done' or 'completed' if any are not already (if an item somehow was just shipped and not marked done).
+# * Log "ORDER_COMPLETED".
+# * This final step might also trigger things like generating an invoice or capturing final payment (if those were pending).
+# - Once completed, the order is considered closed. Further changes should be disallowed (maybe enforce in update endpoints if status is completed).
+# - Post-Completion:
+# * Insert a record in accounting_invoices and/or accounting_payments if integration with accounting (our schema had placeholders)
+GitHub
+GitHub
+. For now, just note that invoice could be generated here.
+# * Possibly archive or flag the order as no longer active (e.g., move to an "archive" list in UI, but DB status already indicates that).
+# * The customer might receive a completion email or be asked for feedback (beyond our scope).
+#
+# Edge Cases:
+# - If an order was partially shipped (some items backordered), our model doesn’t explicitly handle "partial". For simplicity, assume the business ships all at once or closes order only when fully shipped.
+# - Returns or remakes: not accounted for; would likely be a new order or a negative quantity line, but out-of-scope.
+# - If an order is cancelled during manufacturing, ensure any open work orders or POs are addressed (we should mark them cancelled or inform the team separately; ensure status flows make sense).
+#
+# Summary:
+# - By explicitly marking shipped and completed, we have clear endpoints to transition the order through its final stages.
+# - At completion, all child records (items, jobs, POs, etc) should be either completed or cancelled. The audit trail should show everything that happened. Metrics (next phase) can count this order as fulfilled.
+#
+# Now the full lifecycle from creation to completion is covered by the system.
+result: "The system can now record when orders are shipped and mark them as completed. Once all items are shipped, the order's status is updated to 'completed', concluding the fulfillment process and locking down the order from further modifications."
+- name: "Phase 14: Ensure Schema & Code Consistency"
+steps:
+- code: "ORD-10"
+title: "Audit and Fix Schema vs Code Mismatches"
+description: "Perform a thorough audit of the codebase’s schema definitions and queries to ensure they align exactly with the actual database schema."
+details: |
+# Schema Definition Sync:
+# - Open the shared schema file (shared/schema.ts) and update it to reflect all the latest changes:
+# * Change any varchar or text definitions of IDs to uuid() so types match (e.g., orders.id, orders.organizationId, orders.sportId, etc should be uuid("column_name"))
+GitHub
+GitHub
+.
+# * Add newly added columns: e.g., customerId, customerContactEmail, etc, in the orders definition. If they were missing, include them now.
+# * Add definitions for new tables like design_jobs, manufacturing_work_orders, purchase_orders, etc, consistent with the SQL.
+# * Remove or mark deprecated fields: e.g., if orders.items JSONB was a placeholder and we now use order_items fully, consider removing it from code (and eventually from DB).
+# - Check the DTO mappings:
+# * The ORDER_DTO_TO_DB_MAPPING in orders route should have entries for every new field (customerContactEmail, etc) to map to DB columns
+GitHub
+. Update it to include those and ensure they match exactly (e.g., map assignedTo -> salesperson_id or similar if we decide to expose that).
+# * Same for ORDER_ITEM_DTO_TO_DB_MAPPING
+GitHub
+: include any fields if needed (though many of those fields might not be exposed directly to client in initial DTO).
+# - Verify foreign key names and references:
+# * If the code has any raw SQL references or checks of constraints by name (likely not, since using Drizzle), ensure the names match updated schema (e.g., if we named a constraint differently).
+# - Migrations:
+# * Create a new migration SQL that encapsulates the changes from these phases (if not already done stepwise). This includes altering types to uuid, adding columns, creating new tables, foreign keys, etc.
+# * Write it idempotently as in existing style (checking for existence before creating).
+# - Test queries in code:
+# * Run the app (or tests) and specifically hit endpoints to see if any runtime errors occur due to missing fields or wrong types.
+# * e.g., List orders (GET /orders) – does Drizzle complain that orders.customerId is not a field because you forgot to add it in schema.ts? If so, fix by adding.
+# * Fetch order by id – ensure orders.customerContactEmail can be accessed if needed.
+# * Creating an order – if we changed a column name like using code instead of order_number, ensure the mapping and DB both use code. (Our mapping currently says orderNumber: 'code' so code expects order_number in DTO but stores to code column).
+# * Consider aligning naming: maybe change DTO to use orderCode instead of orderNumber to reduce confusion, or it's fine as internal mapping.
+# - Remove any temporary cast usage:
+# * If anywhere in code we had to do .cast(uuid) or manipulate types due to earlier mismatches, those should be gone now. Search code for ::uuid or any references to type casting and eliminate or comment why safe if still present.
+# - Check RLS function usage in code:
+# * For Supabase client side, if using Supabase JS, ensure it’s aware of RLS. Possibly not needed as our backend handles all DB access via service role.
+# * However, if using Supabase directly from frontend for some reason (maybe not in this architecture), ensure policies are working as intended.
+# - After aligning, consider running the script scripts/route-verify.js or audit-structure.ts to detect mismatches:
+# * This script might identify missing routes or inconsistencies. It's geared towards architecture issues (like duplicate routes) but run it to catch anything.
+#
+# By end of this, the code and database speak the same schema language, preventing runtime errors and ensuring data integrity.
+result: "Schema definitions in the codebase now exactly match the database schema. All ID fields use UUID consistently, new tables and columns are represented, and the application no longer performs any type casting or workaround for mismatches."
+- code: "ORD-11"
+title: "Enforce Data Validation & Integrity"
+description: "Strengthen validation across the order system to prevent invalid data, using Zod schemas and database constraints for comprehensive coverage."
+details: |
+# Expand Zod Schemas:
+# - Review the Zod schemas in shared/dtos (OrderDTO, CreateOrderDTO, OrderItemDTO, etc)
+GitHub
+GitHub
+:
+# * Ensure they cover all relevant fields: e.g., if we added customerId on create, add it to CreateOrderDTO (with z.string().uuid()).
+# * If allowing either customerId or customerName/email, we might create a union or refine: e.g., one of (customerId provided) or (customerName & email provided) must exist. Implement such logic if needed (maybe as a custom refinement).
+# * Add schema for adding an item (if separate from OrderDTO).
+# * Add schema for POs (CreatePoDTO is defined) – ensure it's used in the PO routes for validation.
+# * Add schema for design asset upload if needed (though that might just be form-data).
+# * Validate design status changes: e.g., in design job status endpoint, ensure the new status is not the same as current (or maybe it’s fine).
+# - Business Rules:
+# * Add Zod refinements or manual checks for things like:
+# - Quantity must be >=1.
+# - Price (if accepted from client) must be >=0.
+# - Dates (due_date, expected_delivery) if present, could validate not a past date (if that rule makes sense).
+# - Ensure an assignedTo (salesperson) is actually a member of the org and has Sales role – this might be done in service logic (e.g., after validation, check in DB that user has a user_roles entry).
+# - When adding an item, ensure the productId belongs to the same org’s catalog (we can join catalog_items.org_id with order.org_id in the query to enforce).
+# - When assigning a designer, check that the designer’s user is in the org’s designers (the designers table likely is global but userRoles covers org membership, or there is a salesperson_assignments for cross-org; for designers, maybe designers are tied to org? Not sure – if not, treat as global pool).
+# - Preventing Invalid State Transitions:
+# * Implement guard checks in status update endpoints:
+# - If order.status is 'completed' or 'cancelled', reject any further status changes or item modifications (return 400 or 409 Conflict).
+# - If trying to set a status that is not the next expected one in sequence without some override, potentially warn. (E.g., if setting from 'design' back to 'consultation' – likely not allowed unless reopening an order; we can disallow for now).
+# - Ensure cancel endpoint cannot cancel an already completed order.
+# * Similarly for item status:
+# - If an item is already 'shipped', you shouldn't set it back to 'manufacturing'.
+# * Possibly maintain a simple state machine map in code or as metadata: allowed transitions from each status. Use that in the PATCH status handlers to validate.
+# - Database Constraints:
+# * Add NOT NULL constraints to fields that should always have values. For instance, if we decide orders.customer_id is always required (makes sense, an order must have a customer), ensure DB column is NOT NULL. Our earlier migration should reflect that.
+# * Ensure foreign key constraints are DEFERRABLE if needed (to allow inserting child before parent in same transaction, etc. Usually not needed since we insert parent first).
+# * Unique constraints already covered (order code, etc).
+# * Maybe add CHECK constraints for enumerated text status if needed (though we rely on foreign key to status tables which is sufficient).
+# * If any JSON fields (like pantone_json) have a specific structure, we could validate via application logic when inserting (e.g., ensure it's an array of valid color values).
+# - Testing Validation:
+# * Manually or via automated tests, attempt to send bad data:
+# - Create order missing required fields → should get 400 with validation errors.
+# - Add item with quantity 0 → validation error.
+# - Update order with invalid email in customerEmail → error from Zod email check.
+# - Assign a designer with a non-designer userId → perhaps passes schema but our service logic should catch and return an error.
+# * Ensure the error responses contain helpful messages (Zod can provide custom messages we set, e.g., "Must be a valid UUID").
+# - Idempotency Considerations:
+# * With unique order code, creating the same order twice (with the same code) will error on second attempt with a DB unique violation. We can catch that in handleDatabaseError and return a 409 Conflict or a message "Order already exists".
+# * Alternatively, implement an explicit idempotency key: for now, rely on user not double-clicking or handle on front-end side.
+# - Consistent Update of Timestamps:
+# * Make sure any manual updates set updated_at (we did in code for orders updates).
+# * Could add triggers in DB to auto-update updated_at on any change, but given our controlled API, doing it in application is fine.
+# - By enforcing these validations at multiple layers (client via Zod, server logic, and DB constraints), the system maintains high data integrity.
+result: "Robust validation is now in place. The API rejects bad data (thanks to Zod schemas and logical checks), and the database enforces key constraints. This prevents inconsistent or invalid states throughout the order lifecycle."
+- name: "Phase 15: Frontend & Real-Time Enhancements"
+steps:
+- code: "ORD-12"
+title: "Implement Order Management UI Components"
+description: "Develop and integrate frontend components for listing orders, viewing order details, and interacting with the order workflow in real-time."
+details: |
+# Order List Page:
+# - Build out OrdersPage.tsx (or equivalent) to display organization’s orders.
+# - Use React Query (useQuery) to call GET /api/orders and retrieve data
+GitHub
+GitHub
+.
+# - Display a table with columns:
+# * Order Number (code)
+# * Customer (either customer name or organization/team name, depending on context)
+# * Status (perhaps color-coded badges, e.g., blue for design, green for manufacturing, etc.)
+# * Total Amount
+# * UpdatedAt (to see recent activity)
+# - Implement search and filter:
+# * A search input that updates the query (use debounced state to call API with q param).
+# * A status filter dropdown populated by GET /api/orders/status-codes.
+# * Possibly a date range filter or sport filter if needed (skip if not critical).
+# - Pagination controls:
+# * Use page and pageSize from API. The API returns total count, use it to calculate total pages.
+# * Provide next/prev or page number buttons.
+# - The page should use the layout appropriate to role:
+# * Sales or Admin likely see all orders.
+# * Designers might not need this page (they have their own board).
+# * Customers see only their orders (the API already filters by org, but for customers, maybe call with their own context or simply rely on RLS).
+# * If needed, have a condition: if role is 'customer', add a filter on customerId = their customer record.
+# - Include a button/link to "New Order" for sales roles (not for customers).
+# * If using a modal (OrderFormModal), include it and manage its open state.
+#
+# Order Details Page:
+# - Fetch order data by ID (use useQuery with key including orderId and call GET /api/orders/{id}).
+# - Header section:
+# * Order Code and Status prominently (maybe status as a Badge).
+# * If status is not terminal, maybe a dropdown or stepper to indicate progress (for display).
+# * Buttons for allowed actions: e.g., if status = 'draft' or 'consultation', show "Move to Design" (which would PATCH status -> 'design'); if status = 'manufacturing' and items done, show "Ship Order"; if status = 'shipped', show "Complete Order". This depends on user role too.
+# * Customer Info: show name, email, phone, and possibly link to open the customer record if needed.
+# * Organization/Sport: if applicable, display sport or team name (from order.teamName or related sport entry).
+# * Assigned Salesperson: if salesperson_id is set, display rep’s name (might require a lookup from user or a cached list of salespeople; possibly include in order data if you join on user during fetch or store salesperson name).
+# * Due Date: show if set.
+# - Items section:
+# * List each order_item in a sub-table or cards. Show product name (and variant if any), quantity, item status.
+# * If an item has a design in progress:
+# - If a designer is assigned, show the designer’s name or initials and status like "Designing" or "Waiting for approval".
+# - If no designer yet and user is admin/sales, provide an "Assign Designer" control (dropdown of designers).
+# * If design is completed for an item:
+# - Show a thumbnail of the final design (if we have design_assets.thumbnail_url).
+# - If waiting for approval, an admin or customer sees an "Approve" button.
+# * If item is in manufacturing:
+# - Show a status (e.g., "In Production" or "Ready to Ship").
+# - If external manufacturing, maybe show "Vendor: X".
+# - If a work order exists, link or reference it (maybe a "View Work Order" button to see details).
+# * If item is shipped:
+# - Show "Shipped" and possibly tracking info if available.
+# * For each item, actions:
+# - If in early stage: "Remove Item" (for sales to remove if needed).
+# - If in design stage: maybe "Mark design complete" (for designer use, but they'd do it via their interface).
+# - If in manufacturing: "Mark as shipped" (manufacturing role might do at item or order level).
+# * Possibly allow editing quantity or details in draft stage (maybe not via UI to keep things simple; editing could be done by removing and re-adding item).
+# - Design jobs/Files section:
+# * Could be integrated per item (as above) or a separate tab "Designs" listing all design files.
+# * If separate: list each item and its files. Provide upload button for designers on their items.
+# * If integrated: for an item with design assets, show them (e.g., an expandable panel under that item listing all versions of design with date and uploader).
+# - Purchase Orders section:
+# * If POs exist for this order, list them (maybe under a "Materials" or "Purchasing" accordion).
+# * Show vendor name, status (like "Ordered" or "Received"), expected delivery.
+# * Manufacturing role might click into details or mark milestones as done (maybe they go to a separate PO page).
+# - Activity Timeline:
+# * If we have audit_logs or events, we can show a chronological list (e.g., "2025-09-18: Order created by Alice", "2025-09-20: Design approved by client", etc.).
+# * This is very useful for understanding order history. We can generate it from audit_logs filtering by this order, or from specific events tables.
+# * Implement if time permits; else leave a placeholder for future.
+# - Ensure to handle loading and error states:
+# * Show a spinner or skeleton while data loads (we imported Skeleton in settings page)
+GitHub
+.
+# * If error (e.g., 404 or network), handle gracefully (maybe display "Order not found or inaccessible").
+# - Real-time update:
+# * If using websockets or Supabase subscriptions, subscribe to changes on this order (e.g., any updates in orders or order_items where order_id = current).
+# * If a designer updates something or manufacturing marks something, the UI can auto-refresh that part.
+# * Without that, at least use react-query's useQuery with a refetch interval or manual refetch on certain events (like after uploading a file, call refetch).
+#
+# New Order Creation:
+# - The OrderFormModal should open from OrdersPage (or a separate page).
+# - It will collect necessary info and on submit, call POST /api/orders. If success, navigate to OrderDetails of new order.
+# - For selecting products, ideally integrate an auto-complete or modal listing products (since the catalog could be large). If not enough time, have a simple input field for product ID or a dropdown of a few (in real app, use a search).
+# - If adding multiple items in the form, implement the UI to add one item at a time into a list (with state managed in the form).
+# - Validate on client side with the same Zod schema (we can use CreateOrderSchema from shared if it's accessible, or replicate rules).
+# - Provide feedback if API returns error (display fieldErrors nicely if any).
+#
+# Role-specific Views:
+# - Sales/Admin: full access as described.
+# - Designer: will primarily use DesignBoard (below), but if they open an order detail, maybe they only see design-related info (we could hide pricing or customer info from designers if desired).
+# - Manufacturing: might have a ProductionBoard, but if they open OrderDetails, focus on showing them manufacturing and PO sections. Possibly hide financials or customer info if not needed. (Could simply not emphasize, or implement conditional rendering by role).
+# - Customer: OrderDetails for a customer should show them status of their order and maybe design proofs:
+# * Hide internal fields like cost or maybe even hide internal status like manufacturing details (or show at high level).
+# * Show expected delivery date, shipping tracking once available.
+# * Allow approving design if that's part of portal (e.g., an "Approve Design" button on the design file).
+# * Prevent any editing obviously.
+#
+# Testing UI:
+# - Use sample data to simulate an order going through stages and ensure the UI updates and actions work as expected (some might require mocking the API if not fully functional yet).
+# - Check that all components are responsive and not too cluttered.
+#
+# By building these components, end-users can interact with the system through a clear interface corresponding to their role, and track the order from start to finish.
+result: "Frontend pages for order management are implemented. Users can list and search orders, view detailed order information (including items, design progress, and production status), and perform allowed actions (like approving designs or marking shipped) with immediate feedback in the UI."
+- code: "ORD-13"
+title: "Enable Real-Time Updates & Notifications"
+description: "Set up real-time capabilities so that changes in orders (design completion, status updates, etc.) are pushed to clients instantly, and implement basic notifications for key events."
+details: |
+# Supabase Realtime Setup:
+# - Enable the Realtime addon in Supabase for the relevant tables (if not enabled by default). Mark orders, order_items, design_jobs, manufacturing_work_orders, etc., as accessible to the replication role.
+# - Ensure RLS policies allow the replication (usually by role 'anon' or similar with correct JWT claims) to read the changes. Supabase might require a policy like auth.role() = 'replication' for SELECT on those tables, or a config setting.
+# - In the front-end, use Supabase’s JS client or WebSocket to subscribe to changes:
+# * For example, when on OrderDetailsPage for order X, subscribe to orders:id= X changes and order_items:order_id = X changes.
+# * Alternatively, subscribe broadly to orders for org and filter in client, but that can be more data.
+# * Using fine-grained filters in the subscription is ideal to minimize noise.
+# - When a change event comes (insert/update):
+# * Update the relevant React state or trigger a refetch via react-query’s queryClient.invalidateQueries for that data.
+# * For instance, if a designer marks item design completed (which would update an order_item status and possibly insert a design_job_event), the sales user viewing OrderDetails should see the item move to approved in near-real time.
+# * Supabase sends events with new record data; you can merge it into the state or simply refetch to get the latest from API.
+# - Test scenario: open OrderDetails in two windows (or one as sales, one as designer using different accounts if possible). Perform an action in one (like change status via API client or through UI if built), and see the other update.
+#
+# Notification System:
+# - Implement a simple client-side notification for key events:
+# * Use a toast system (there is useToast imported in settings page)
+GitHub
+.
+# * For example, when an order status becomes 'shipped' or 'completed', show a toast "Order #XYZ has been completed!" for relevant users.
+# * Or when a designer uploads a new design, show a notification to sales "New design uploaded for Order #XYZ, awaiting approval."
+# - Triggering these notifications can be done in multiple ways:
+# * Easiest: in the subscription handler, check the event. If status_code changed and the user is someone who should know, display a message.
+# * A more advanced way is server-side to push notifications via a dedicated channel or use something like Postgres NOTIFY, but that’s complex. Client-only logic is acceptable for now.
+# - Ensure notifications are not too noisy (maybe focus on big transitions like design -> manufacturing, manufacturing -> shipped).
+#
+# Live Data on Dashboards:
+# - The ManufacturingBoard and DesignBoard components should also use realtime:
+# * ManufacturingBoard: subscribe to work_orders (and maybe purchase_orders). So as soon as a work order status changes (e.g., someone starts or completes one), all manufacturing users see the board update.
+# * DesignBoard: subscribe to design_jobs (filtered by assignee = current designer). So when a designer is assigned a new job, it appears on their board without refresh.
+# * Sales dashboard (if any analytics page) could subscribe to summary events if we had (or just refetch periodically).
+# - This ensures each role has up-to-date info:
+# * e.g., designers get tasks without needing to refresh, manufacturers see new orders entering production, sales see when orders are done.
+#
+# Email/SMS (Out-of-Scope):
+# - We note that in a real system, one might integrate email notifications: e.g., email customer when order ships with tracking, email design team when new order in design, etc. Not implemented here, but our structure (status codes, etc) would facilitate triggers for such.
+#
+# Testing Real-Time:
+# - Simulate events via direct DB changes or using the app:
+# * Change an order status in DB, see if subscription fires.
+# * Add a design_job entry, see if designer UI got it.
+# * Might need multiple test users to verify roles (or fudge by opening multiple sessions with one user if RLS allows them to see changes).
+# - Make sure to handle the case where subscription might duplicate an update we also did via mutation:
+# * E.g., if you PATCH order status via the UI, you'll optimistically update UI or refetch; then a realtime event also comes. Ensure that doesn't cause a weird double-count or flash. Usually, properly keying react-query or checking if data changed will mitigate this.
+#
+# With realtime in place, the user experience becomes much smoother – everyone is kept on the same page as the order moves through the pipeline.
+result: "Real-time features are integrated. The frontend now subscribes to changes in orders and related data, causing UI to update instantly when any status or assignment changes. Users also receive on-screen notifications for major events (like design completion or order shipment), improving awareness and coordination."
+- name: "Phase 16: Security & Testing"
+steps:
+- code: "ORD-14"
+title: "Fine-Tune Permissions & Security"
+description: "Review and adjust permissions so each user role can only access appropriate functionality, and verify that all sensitive operations are protected."
+details: |
+# Role Permissions Matrix:
+# - Summarize who should do what:
+# * Admin (Org Owner): Full access to all orders and settings in their org. Can create, edit, assign, cancel, delete orders. Can manage statuses and configurations.
+# * Sales: Can create orders, edit their orders (and possibly all orders in org if shared sales model). Likely cannot delete orders (except drafts) and cannot directly mark designs complete or do manufacturing steps.
+# * Design: Can view orders (maybe all orders in org or just those with design jobs? Typically might see only assigned tasks). Can update design_jobs (status, upload files) and not much else. Should not see financial info, ideally.
+# * Manufacturing: Can view orders (or at least those in manufacturing stage). Can update work_orders and POs. Should not modify order fields like customer info or pricing. Probably cannot cancel orders (that’s sales/admin call).
+# * Accounting: (We have an accounting role seeded
+GitHub
+). If used, they might only view order financials and mark payments. Not deeply integrated yet, but keep in mind.
+# * Customer: Can only view their own orders. Can maybe approve designs and see status, but cannot see other customers or edit anything else.
+# - Implement these rules:
+# * Back-end: Already partly enforced by RLS (org isolation) and by code checks:
+# - Use middleware or conditional logic in routes:
+# + e.g., in orders router, before allowing create, check req.user.role (assuming we attach roles) if it's in ['admin','sales']. If not, reject.
+# + For assign-designer route, ensure req.user.role == 'admin' or perhaps 'sales' (if sales is allowed to assign designers).
+# + For design asset upload, ensure req.user.role == 'design' and that the design_job is assigned to them (or allow admin to upload too if needed).
+# + For manufacturing routes, ensure role is 'manufacturing' or 'admin'.
+# + For status change endpoints:
+# - Cancel order: allow admin or maybe sales, but not designer or manufacturing.
+# - Mark shipped: allow manufacturing or admin.
+# - Complete order: allow admin or maybe sales who handle fulfillment.
+# + We can implement a simple check by looking at req.auth.userId and checking the user_roles info. If we loaded user with roles in JWT or session, use that.
+# + Since we likely have requireAuth giving us req.user with some role info (depending on how auth is set up in this project), use it.
+# * Front-end: Also hide/disable UI elements that the user shouldn't use:
+# + If a designer logs in, they shouldn't even see the "Orders" list of all orders (maybe redirect them to DesignBoard). Or if they see it, make it read-only.
+# + Only Admin sees the Settings section where they can edit status codes.
+# + Customers have a very limited navigation (just their orders).
+# * These UI conditions are not a security measure (back-end does that), but avoid confusion.
+# - API Hardening:
+# * Ensure no sensitive data leaks between orgs:
+# - RLS largely covers SELECT. But what about error messages or endpoints that might not filter properly?
+# - For example, the analytics summary endpoint /api/orders/analytics/summary takes an orgId param
+GitHub
+; even with RLS, double-check that if a user passes a different orgId, the RLS stops it (the code builds a condition and RLS should filter if they try an org they don't belong to). Possibly explicitly enforce using their org from token rather than trusting param.
+# * Check file storage rules: The design files in Supabase Storage should be private. Only authenticated users with correct JWT should access:
+# - In Supabase Storage, ensure the bucket app is private (the migration created it as private)
+GitHub
+.
+# - Create signed URLs or a proxy endpoint to serve files so that unauthorized cannot fetch them. Or use supabase storage rules to allow only members of org to fetch (if possible by bucket policy).
+# - At least, do not list these URLs publicly. In UI, when showing a thumbnail or image, you might need to use Supabase client with the user's auth token to fetch the image.
+# - This might require further configuration; note it as a consideration.
+# * SQL Injection etc.: Using parameterized queries via Drizzle, we should be safe from injection. Still, ensure no string interpolation with untrusted input in queries (like we did use raw SQL for ILIKE search, but we parameterized the searchTerm, which is safe).
+# - Audit Logs Review:
+# * Confirm that all critical operations log an entry:
+# - Order create, update, delete, status changes, item add/remove, assign designer, design upload (maybe not needed in audit log if we have separate design_events).
+# * The logDatabaseOperation calls we have cover many of these (order create/update/status)
+GitHub
+GitHub
+. Extend it to new actions:
+# - After adding an item, call logDatabaseOperation(req, 'ITEM_ADDED', 'order_items', { itemId }).
+# - After cancel, logDatabaseOperation(req, 'ORDER_CANCELLED', ...).
+# * These logs can be reviewed by admins if needed to trace issues.
+# - Penetration Testing:
+# * Try using an account with minimal permissions to call endpoints (simulate via a test or tools like Postman with a token for a design role user, try hitting /api/orders). Should get either empty data (RLS filtering) or 403/401 if we put explicit checks.
+# * Ensure a user cannot escalate privileges by changing data (e.g., customer cannot change their role or attach themselves to another org’s order).
+# - Third-Party Integration Keys:
+# * If any (like we might integrate an external API later for shipping), ensure keys are kept server-side and not exposed. (Not applicable yet, but a general note.)
+#
+# After tightening these measures, the system should enforce that each type of user can only access what's intended for their role, minimizing security risks.
+result: "Permissions have been refined so that each user role is restricted to allowed actions. All endpoints verify user roles as needed, and sensitive data (files, financial info) is protected. Security testing confirms that data is properly isolated and operations are authorized."
+- code: "ORD-15"
+title: "Conduct Comprehensive Testing"
+description: "Perform end-to-end testing of the order system, covering unit tests, integration tests, and UAT, to verify that every component works as expected and the architecture holds up."
+details: |
+# Unit Tests (Server-side):
+# - Write tests for utility functions:
+# * e.g., a function that generates order codes (ensure format and uniqueness if seeded with same date).
+# * If a custom function exists to validate transitions, test various scenarios (valid transition returns true, invalid throws or returns false).
+# - Test Zod schemas:
+# * Use Zod's safeParse in tests with good and bad data to ensure it accepts/rejects appropriately (especially for tricky logic like the presence of either customerId or customerName).
+# - Test RLS logic indirectly:
+# * Possibly using Supabase's testing or by calling our endpoints with different user contexts. (This might be more of an integration test.)
+#
+# Integration Tests (API-level):
+# - Spin up the application in a test environment (with a test database).
+# - Programmatically simulate a full order workflow:
+# 1. Create a new organization (or assume one exists with known id).
+# 2. Create users for each role and assign to org (admin, sales, design, manufacturing, customer).
+# 3. As sales user, call POST /api/orders to create an order with items.
+# - Verify response 201 and that the returned data has status 'draft'.
+# - Query the database to see that orders table has the new entry, order_items have correct links, and audit_logs has an ORDER_CREATED.
+# 4. As admin or sales, call PATCH /api/orders/:id/status to move to 'design'.
+# - Verify response and that design_jobs are created in DB, order_items statuses updated.
+# 5. As admin, assign a designer (PATCH assign-designer).
+# - Verify order_items.designer_id and design_jobs.assignee updated.
+# 6. As designer user, upload a design asset (this one might be tricky to automate without an actual file; possibly simulate by calling the endpoint with a dummy file or skipping actual upload).
+# - Instead, directly insert a design_assets row in test DB and pretend the upload happened, or test the handler if it's abstracted.
+# - Mark design job status to 'completed'.
+# 7. As admin, mark order status to 'manufacturing'.
+# - Verify work_orders created, statuses updated.
+# 8. As manufacturing user, mark work_order status to 'in_progress', then 'completed', then 'shipped'.
+# - Verify each step updates order_items and eventually order status to 'shipped'.
+# 9. As admin, call /api/orders/:id/complete.
+# - Verify order.status is 'completed', audit_logs has ORDER_COMPLETED, etc.
+# 10. Try unauthorized actions:
+# - As designer, attempt to call an endpoint like cancel order, expect a 403 or appropriate error.
+# - As customer, attempt to fetch another customer's order, expect no data.
+# - If possible, incorporate these in a test suite with assertions at each step.
+#
+# Frontend Tests:
+# - If using a framework like Jest/React Testing Library:
+# * Write a test for OrdersPage: given a list of orders data, does it render rows and allow filtering logic (you can simulate state changes and ensure only certain rows show).
+# * Test OrderDetailsPage with a mock order: check that all sections render expected info (for example, if order.status = 'design', it shows "Assign Designer" button).
+# * Possibly use Cypress or Playwright for end-to-end:
+# - Start the dev server, have Cypress script create an order via UI and go through motions.
+# - Validate the UI updates. This might be more time-consuming; if not feasible, at least do some manual clicking around once deployed in a staging environment.
+#
+# Performance & Load:
+# - Not a formal test perhaps, but consider:
+# * With, say, 1000 orders and 10000 order_items, does the list endpoint still respond quickly? (Our indexes should help; maybe test with dummy data volume and measure query time).
+# * Simulate multiple users updating different parts (not easy to test manually, but conceptually ensure no deadlocks: e.g., an order status update and an item status update happening concurrently – should be fine as they touch different rows).
+#
+# User Acceptance Testing (UAT):
+# - Have a colleague or stakeholder use the system:
+# * Provide them a dummy login for each role and let them follow a realistic scenario (sales creates order, designer uploads file, etc).
+# * Gather feedback: is the workflow intuitive? Are there any missing pieces or confusing steps?
+# * They might spot things like "Oh, I as a sales person want to get a notification when design is done" (which we did), or "As a customer, I want to see an expected delivery date" (we have due_date which we can expose).
+# - Use this feedback to refine any final details.
+#
+# After all these tests and fixes from them, we can be confident in the system’s correctness and readiness for production use.
+result: "All components of the order system have been rigorously tested. Automated tests cover key functionality and edge cases, and manual UAT confirms that the end-to-end flow works smoothly for users in each role. The architecture has proven robust under these tests."
+data_models:
+- model: "orders"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID NOT NULL REFERENCES public.organizations(id),
+sport_id UUID REFERENCES public.sports(id),
+customer_id UUID NOT NULL REFERENCES public.customers(id),
+salesperson_id UUID REFERENCES auth.users(id),
+code TEXT NOT NULL UNIQUE,
+customer_contact_name TEXT,
+customer_contact_email TEXT,
+customer_contact_phone TEXT,
+status_code TEXT NOT NULL REFERENCES public.status_orders(code),
+total_amount DECIMAL(10,2) DEFAULT 0,
+revenue_estimate DECIMAL(10,2) DEFAULT 0,
+due_date DATE,
+notes TEXT,
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "The primary table for Orders. Each order belongs to an organization (and optionally a specific sport/team), has a customer, and is handled by a salesperson. It tracks overall status and key info like total amount and due date."
+notes: |
+- UUIDs: All key fields (id, org_id, etc) use UUID for consistency and to avoid conflicts
+GitHub
+.
+- Status: The status_code follows the workflow defined in status_orders. Example values: 'draft', 'design', 'manufacturing', 'shipped', 'completed', 'cancelled'. This drives what stage the order is in.
+- Contact Info: Snapshots of customer name/email/phone are stored redundantly for reference (useful if the customers record changes later or for quick display).
+- Financials: total_amount is the sum of all item prices (populated as items are added). revenue_estimate can be used for projected profit (not fully utilized yet, but kept for analytics).
+- Indexes: there are indexes on org_id, customer_id, and status_code for filtering
+GitHub
+.
+- RLS: enforced via org_id. Each order row is accessible only to users of the same org.
+- model: "order_items"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID NOT NULL REFERENCES public.organizations(id),
+order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+product_id UUID NOT NULL REFERENCES public.catalog_items(id),
+variant_id UUID,
+name_snapshot TEXT NOT NULL,
+sku_snapshot TEXT,
+price_snapshot DECIMAL(10,2) NOT NULL,
+quantity INTEGER NOT NULL,
+status_code TEXT NOT NULL REFERENCES public.status_order_items(code),
+designer_id UUID REFERENCES public.designers(id),
+manufacturer_id UUID REFERENCES public.manufacturers(id),
+pantone_json JSONB,
+build_overrides_text TEXT,
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Line items within an order, each corresponding to a product (and possibly a specific variant) being produced. Contains snapshots of product info and tracks item-level status through design and production."
+notes: |
+- Snapshots: Storing product name (and SKU) and price at order time ensures that historical orders aren't affected by later product changes.
+- Status: Item statuses can diverge from the order status. For example, one item might still be in design while another is already in manufacturing. This table’s status_code (e.g., 'pending_design', 'manufacturing', 'shipped', etc.) captures that
+GitHub
+.
+- Assignments: designer_id and manufacturer_id link to who is responsible for design and manufacturing of the item. They may be null if unassigned or if not applicable.
+- Customization: pantone_json might hold an array or object detailing colors. build_overrides_text could include any special instructions (like "use alternative fabric for this item").
+- Indexes: on order_id (to quickly fetch all items of an order) and status_code (to filter items by production stage).
+- RLS: org_id is redundant (since it’s same as order’s org) but included to simplify RLS policy on this table. Policies use org_id for checks just like orders.
+- model: "order_item_sizes"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+order_item_id UUID NOT NULL REFERENCES public.order_items(id) ON DELETE CASCADE,
+size_code TEXT NOT NULL,
+quantity INTEGER NOT NULL
+description: "Optional breakdown of sizes for an order item, if the item includes multiple sizes of the same product."
+notes: |
+- For example, if an order item is "Jersey", this table can list how many of each size: M:10, L:5, etc.
+- This table is used only if needed (some products might not require size breakdown).
+- The sum of quantities here should equal the order_item's quantity (application should ensure this invariant).
+- No separate RLS needed since access to sizes is covered by access to parent order_item (and cascade delete ties their lifecycle).
+- model: "customers"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID NOT NULL REFERENCES public.organizations(id),
+name TEXT NOT NULL,
+email TEXT,
+phone TEXT,
+address_line1 TEXT,
+address_line2 TEXT,
+city TEXT,
+state TEXT,
+postal_code TEXT,
+country TEXT,
+notes TEXT,
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Customers (clients) who place orders. Could represent a person or an organization (e.g., a school or team) that orders products."
+notes: |
+- A customer is tied to an organization in our multi-tenant setup (the org that manages that customer). E.g., Org's salespeople manage their list of customers.
+- Ideally, email should be unique per org (not enforced in DB, but the application can ensure no duplicates).
+- If customers have user accounts (role 'customer'), we'd link that user to the customer record. We have not added a user_id here, but that could be an extension (e.g., auth_user_id UUID referencing auth.users).
+- RLS: enforced via org_id (org members can see their customers).
+- model: "design_jobs"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID NOT NULL REFERENCES public.organizations(id),
+order_item_id UUID NOT NULL REFERENCES public.order_items(id) ON DELETE CASCADE,
+title TEXT,
+brief TEXT,
+priority INTEGER,
+status_code TEXT NOT NULL REFERENCES public.status_design_jobs(code),
+assignee_designer_id UUID REFERENCES public.designers(id),
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Tasks representing the design work needed for a specific order item. Tracks the status of design (e.g., not started, in progress, needs approval, completed) and who it's assigned to."
+notes: |
+- There is typically one design_job per order item, but multiple iterations could be represented by multiple jobs (or by events within one job).
+- brief contains design requirements or a description of what's needed (could be populated from customer input).
+- priority can help designers know which job to do first (set by admin/sales).
+- Example statuses (status_design_jobs): 'pending', 'in_progress', 'review', 'completed'.
+- When a design_job is completed and approved, the related order_item moves forward to manufacturing.
+- RLS: org_id enforces org scope.
+- We log changes to design_jobs in design_job_events.
+- model: "design_job_events"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+design_job_id UUID NOT NULL REFERENCES public.design_jobs(id) ON DELETE CASCADE,
+event_code TEXT NOT NULL,
+actor_user_id UUID,
+payload JSONB,
+occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Event log for design jobs, capturing status changes, comments, and other noteworthy actions during the design process."
+notes: |
+- Each event might have an event_code like 'status_changed', 'comment', 'file_uploaded', etc., with details in payload.
+- Example: {event_code: "status_changed", payload: {"from":"pending","to":"in_progress"}, actor_user_id: <designer>} when a designer starts working.
+- Comments can be stored with event_code 'comment' and payload containing the message text.
+- This provides a timeline of the design phase for auditing or collaboration (like a mini chat history).
+- model: "design_assets"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID NOT NULL REFERENCES public.organizations(id),
+order_item_id UUID NOT NULL REFERENCES public.order_items(id) ON DELETE CASCADE,
+uploader_id UUID NOT NULL REFERENCES auth.users(id),
+version INTEGER DEFAULT 1,
+file_url TEXT NOT NULL,
+thumbnail_url TEXT,
+approved_by_admin BOOLEAN DEFAULT FALSE,
+approved_at TIMESTAMP WITH TIME ZONE,
+signature_file_url TEXT,
+signature_hash TEXT,
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+storage_object_id UUID
+description: "Stores references to design files (artwork, proofs) uploaded for an order item, including approval info and versioning."
+notes: |
+- When a designer uploads a new draft or revision, a new row is added with an incremented version number.
+- file_url points to the full-resolution design file. thumbnail_url is optional for preview images.
+- approved_by_admin and approved_at: once an admin or customer approves this design for production, these are set (could be on the final version).
+- signature_file_url and signature_hash: if a customer signs off on the design (literally), these fields store the signature image and a hash for verification.
+- storage_object_id: an internal reference to the file in storage, if needed to manage via API (Supabase uses object ID).
+- Only org members involved should have access to these files (enforced via org_id RLS + storage rules).
+- This table ties into the design approval workflow: production should ideally only proceed when one of the design_assets has been approved.
+- model: "manufacturing_work_orders"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID NOT NULL REFERENCES public.organizations(id),
+order_item_id UUID NOT NULL REFERENCES public.order_items(id) ON DELETE CASCADE,
+manufacturer_id UUID REFERENCES public.manufacturers(id),
+status_code TEXT NOT NULL REFERENCES public.status_work_orders(code),
+instructions TEXT,
+estimated_completion_date DATE,
+actual_completion_date DATE,
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Represents a unit of work to produce an order item. Tracks the production status and related info for that item, whether in-house or at an external manufacturer."
+notes: |
+- Work orders are usually created once design is done. Each covers one order_item (if an item is produced by multiple parties, you might split into multiple work orders, but our assumption is one per item).
+- manufacturer_id: if the item is being made by an external vendor (from manufacturers table), link it. Null if made internally.
+- status_code: from status_work_orders, e.g., 'not_started', 'in_progress', 'completed', 'shipped'.
+- instructions: any notes for production (e.g., "Use pattern #123 for fabric", or vendor instructions). Pre-filled from product build instructions and editable by manufacturing team.
+- estimated_completion_date vs actual_completion_date: to track schedule. Manufacturing can update these.
+- When a work order's status goes to 'shipped', that item is on its way to customer.
+- RLS: org_id ensures only org’s team sees their work orders.
+- model: "production_events"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+work_order_id UUID NOT NULL REFERENCES public.manufacturing_work_orders(id) ON DELETE CASCADE,
+event_code TEXT NOT NULL,
+actor_user_id UUID,
+payload JSONB,
+occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Event log for manufacturing work orders, similar to design_job_events but for production phase."
+notes: |
+- Logs events like 'status_changed' (with from/to in payload), 'material_delayed', 'quality_check_failed', etc., depending on complexity.
+- Helps in retrospectively analyzing production delays or issues.
+- Could integrate with notifications (e.g., if a production delay event is logged, flag to sales to inform customer).
+- model: "purchase_orders"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID NOT NULL REFERENCES public.organizations(id),
+order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+po_number TEXT NOT NULL UNIQUE,
+vendor_name TEXT NOT NULL,
+vendor_contact TEXT,
+vendor_email TEXT,
+vendor_phone TEXT,
+status TEXT NOT NULL,
+total_cost DECIMAL(10,2) DEFAULT 0,
+expected_delivery DATE,
+actual_delivery DATE,
+notes TEXT,
+assigned_to UUID REFERENCES auth.users(id),
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Represents an order issued to an external vendor for materials or subcontracted work, associated with fulfilling a customer order."
+notes: |
+- status: e.g., 'open', 'ordered', 'shipped', 'received', 'cancelled'. (We could use an enum or status table, but using text for now with known values).
+- The vendor info is stored denormalized here (name, contact) for convenience. We might also have a manufacturers or vendors table (the schema references public.manufacturers in FKs, likely a table listing vendor companies).
+- assigned_to: internal user responsible for this PO (e.g., purchasing manager or manufacturing lead).
+- One customer order can have multiple POs (for different materials or vendors). All link back via order_id.
+- When all POs for an order are completed, materials are in place to finish production.
+- RLS: org_id for isolation (only the org's team can see their POs).
+- model: "po_items"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+purchase_order_id UUID NOT NULL REFERENCES public.purchase_orders(id) ON DELETE CASCADE,
+material_name TEXT NOT NULL,
+material_sku TEXT,
+description TEXT,
+quantity DECIMAL(10,2) NOT NULL,
+unit TEXT, -- unit of measure, e.g., "yards", "pieces"
+unit_cost DECIMAL(10,2),
+total_cost DECIMAL(10,2)
+description: "Line items within a purchase order, detailing each material or service being procured."
+notes: |
+- quantity is decimal to allow fractional units (e.g., 1.5 yards).
+- unit_cost and total_cost: if both provided, ensure total_cost = quantity * unit_cost (the application can calculate this on insert).
+- These help manufacturing track what exactly has been ordered for the order.
+- If we tie specific materials to an order_item, consider adding order_item_id here (not currently included, but could be extended).
+- Protected by RLS through parent purchase_order (since it's ON CASCADE delete, and listing POs will typically include their items via join or separate query).
+- model: "po_milestones"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+purchase_order_id UUID NOT NULL REFERENCES public.purchase_orders(id) ON DELETE CASCADE,
+name TEXT NOT NULL,
+description TEXT,
+due_date DATE,
+completed BOOLEAN NOT NULL DEFAULT FALSE,
+completed_at TIMESTAMP WITH TIME ZONE,
+completed_by UUID REFERENCES auth.users(id)
+description: "Milestones or checkpoints for a purchase order, such as order placed, dispatched, delivered, etc., to track progress."
+notes: |
+- The specific milestones can be predefined (like "Vendor Confirmed", "In Transit", "Delivered to Warehouse") or added as needed.
+- completed_by tracks who marked it done (e.g., which user confirmed receipt).
+- When the final milestone is completed, the PO status should likely move to 'completed'.
+- This provides a finer timeline for POs that have multi-step processes.
+- model: "audit_logs"
+definition: |
+id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+actor UUID,
+org_id UUID,
+entity TEXT,
+entity_id UUID,
+action TEXT NOT NULL,
+before JSONB,
+after JSONB
+description: "General audit log table capturing create/update/delete events across the system for compliance and debugging."
+notes: |
+- id is bigserial for ordering (we use identity for convenience).
+- actor: the user who performed the action (null for system actions).
+- entity: the table or domain entity affected (e.g., 'orders', 'order_items', 'design_job').
+- entity_id: the primary key of the record affected.
+- action: a descriptive code for what happened, e.g., 'ORDER_CREATED', 'ORDER_STATUS_UPDATED', 'ITEM_ADDED'.
+GitHub
+GitHub
+
+- before and after: optional snapshots of data. For creation, before might be empty and after contains new record; for updates, before and after differences; for deletion, after might be null.
+- We populate this via application logs for critical actions. This is not RLS restricted (it can contain cross-org data) but we might only expose it in admin contexts.
+- Having this log ensures we can trace all changes in case of disputes or errors.
+- model: "status_orders"
+definition: |
+code TEXT PRIMARY KEY,
+sort_order INTEGER NOT NULL,
+is_terminal BOOLEAN NOT NULL DEFAULT FALSE
+description: "Lookup table for order statuses in the workflow, configurable via settings."
+notes: |
+- Pre-seeded values might include:
+- 'draft' (sort_order 0), 'consultation' (1), 'design' (2), 'manufacturing' (3), 'shipped' (4), 'completed' (5, terminal=true), 'cancelled' (6, terminal=true).
+- The system currently uses 'draft' in code (for initial) instead of 'consultation' as per new logic, but this can be adjusted. Consistency is key (update seeds accordingly to avoid confusion).
+- Admins can reorder or mark statuses terminal via the UI settings
+GitHub
+.
+- Changing sort_order affects display order in dropdowns and possibly how progress is visualized.
+- Not an RLS-protected table (it's global config), but only admins should retrieve/edit via the settings endpoints.
+- model: "status_order_items"
+definition: |
+code TEXT PRIMARY KEY,
+sort_order INTEGER NOT NULL,
+is_terminal BOOLEAN NOT NULL DEFAULT FALSE
+description: "Lookup for item-level statuses."
+notes: |
+- Likely values: 'pending_design'(1), 'designing'(2), 'approved'(3), 'manufacturing'(4), 'shipped'(5), 'completed'(6, terminal=true).
+- In DB seed it was slightly different naming
+GitHub
+; we adjusted to match our code usage (ensuring these codes align with what front-end expects in OrderItemDTO
+GitHub
+, e.g., it uses 'pending', 'design', 'approved' etc – we'll make sure front-end and here agree).
+- As with order statuses, maintain consistency between code and DB values to avoid mapping issues.
+- Managed via settings UI under "Order Item Statuses".
+- model: "status_design_jobs"
+definition: |
+code TEXT PRIMARY KEY,
+sort_order INTEGER NOT NULL,
+is_terminal BOOLEAN NOT NULL DEFAULT FALSE
+description: "Lookup for design job statuses."
+notes: |
+- Example values: 'pending'(1), 'in_progress'(2), 'review'(3), 'completed'(4, terminal=true).
+- These can be configured as needed. E.g., maybe include 'needs_changes' if a design was reviewed and sent back.
+- Managed via settings UI under "Design Job Statuses".
+- model: "status_work_orders"
+definition: |
+code TEXT PRIMARY KEY,
+sort_order INTEGER NOT NULL,
+is_terminal BOOLEAN NOT NULL DEFAULT FALSE
+description: "Lookup for production work order statuses."
+notes: |
+- Example: 'not_started'(1), 'in_progress'(2), 'completed'(3), 'shipped'(4, terminal=true).
+- Alternatively, could have more granularity like 'paused' or 'quality_check', but keep basic for now.
+- Managed via settings UI under "Work Order Statuses".
+- model: "roles"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+name TEXT NOT NULL,
+slug TEXT NOT NULL UNIQUE,
+description TEXT,
+permissions JSONB,
+is_active BOOLEAN NOT NULL DEFAULT TRUE,
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "Roles available in the system (e.g., Admin, Sales, Design, Manufacturing, Accounting, Customer). Used for access control."
+notes: |
+- Pre-seeded roles
+GitHub
+. The slug is used for quick checks (e.g., 'admin', 'sales', etc).
+- We don't rely purely on this for RLS, but user_roles combine with this for membership.
+- If needed, permissions JSON can list specific abilities (not used deeply yet, but could map to UI features).
+- model: "user_roles"
+definition: |
+user_id UUID NOT NULL REFERENCES auth.users(id),
+role_id UUID NOT NULL REFERENCES public.roles(id),
+org_id UUID REFERENCES public.organizations(id),
+assigned_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+assigned_by UUID
+description: "Join table assigning roles to users within organizations. Determines what access a user has in a given org."
+notes: |
+- A user can have multiple roles in different orgs (or multiple roles in one org, though typically one primary role per org).
+- For our needs:
+- internal staff (Admin, Sales, Design, Manufacturing, Accounting) will have org_id of the org they work for (or null if global? We use org-specific).
+- customers (external) might have a role 'customer' and an org_id of the org that manages them (i.e., the vendor org).
+- RLS uses this table via is_org_member and similar functions
+GitHub
+.
+- We have RLS on this table too (each user can probably see their own roles, and admins can see roles in their org).
+- model: "manufacturers"
+definition: |
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+org_id UUID, -- possibly null or not used if manufacturers are global
+name TEXT NOT NULL,
+contact_info JSONB,
+is_active BOOLEAN NOT NULL DEFAULT TRUE,
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+description: "External manufacturers or vendors that produce items or supply materials. Referenced by orders and POs when outsourcing work."
+notes: |
+- Contains vendor name and possibly contact info (could be broken into fields or kept in JSON for flexibility).
+- If vendors are global across orgs, org_id can be null or not used (or if each org has its own vendor list, org_id could link vendors to specific org).
+- It's referenced by order_items.manufacturer_id and manufacturing_work_orders.manufacturer_id. Also, vendor_name in POs is free text but could relate to a manufacturer entry.
+- We should decide whether to enforce linking POs to a manufacturer entry. Currently, we take vendor details directly into purchase_orders for simplicity.
+- Manage access: org members should see their org's manufacturers (if org-specific), or all if global (then possibly admin only or separate management).
+- Useful for tracking vendor performance and aggregating orders per vendor in analytics (future).
+api_routes:
+- method: GET
+path: "/api/orders"
+description: "Retrieve a list of orders for the current organization, with optional filters for status, customer, search query, and pagination."
+implementation: |
+Backend: Validates user authentication and org context. Uses query params (orgId, statusCode, customerId, q, page, pageSize) to filter results
+GitHub
+GitHub
+. Returns an array of order DTOs (with basic fields and possibly customer name & org name) and pagination info. Ensures results are limited to user's organization via RLS or explicit org filter.
+Notes: If no filters, returns recent orders by default (could sort by created_at desc). Large result sets are paginated (pageSize default 20). Search q matches order code or customer fields (case-insensitive).
+- method: GET
+path: "/api/orders/:id"
+description: "Get detailed information for a specific order by ID."
+implementation: |
+Backend: Fetches the order with given :id if it belongs to user's org
+GitHub
+. Joins related customer and organization for context
+GitHub
+. Also retrieves all order_items for that order
+GitHub
+. Assembles a detailed order DTO including items array and nested objects (customer, organization).
+Notes: Protected by RLS – if user lacks access, they either get 404 or empty result. The response includes item details and may include partial info on assignments (IDs for designer/manufacturer, which front-end may use to display names via separate lookup or ideally, we augment the DTO to include names for those as well for convenience).
+- method: POST
+path: "/api/orders"
+description: "Create a new order."
+implementation: |
+Backend: Validates request body with CreateOrderDTO
+GitHub
+. Requires at minimum: customer info (either id or name/email), at least one item (or could allow creating an order shell without items, depending on use case).
+Inserts a new order record: sets defaults (status 'draft' unless specified, generates order code as per format
+GitHub
+). If items provided, inserts each into order_items and calculates total. Returns the created order data (including its generated ID and code).
+Notes: Only Sales or Admin roles are allowed to create (enforced via middleware). The endpoint handles duplicate order prevention by unique code. Also attaches the current user's org_id to the order to ensure correct association. Any provided foreign IDs (like sport_id, customer_id) are validated for existence and org matching (to prevent cross-org reference).
+- method: PATCH
+path: "/api/orders/:id"
+description: "Update an existing order's details (excluding status or items)."
+implementation: |
+Backend: Validates body with UpdateOrderDTO (partial of CreateOrderDTO)
+GitHub
+. Finds the order by :id (404 if not found or not accessible)
+GitHub
+. Updates allowed fields:
+- Customer contact info (if, say, customer changed email mid-order or to correct a typo).
+- Notes, due_date, teamName, etc.
+- Possibly allows changing assigned salesperson (salesperson_id).
+- Does not allow changing org_id or fundamentally moving the order.
+If statusCode is included (and allowed here), it validates and updates it (though major status changes are typically via dedicated endpoints)
+GitHub
+.
+Returns the updated order DTO.
+Notes: If the order is in a terminal state (completed/cancelled), this endpoint should reject changes (to preserve history). Role restriction: Sales or Admin can edit, others mostly read-only.
+- method: PATCH
+path: "/api/orders/:id/status"
+description: "Change the status of an order (move it through workflow stages)."
+implementation: |
+Backend: Expects body { statusCode: <newStatus> }. Checks that newStatus is a valid code in status_orders (via DB lookup or allowed list)
+GitHub
+GitHub
+. Loads the order; if not found or not allowed, returns error
+GitHub
+.
+Applies business logic:
+- Prevent illegal transitions (e.g., you cannot move backwards from 'manufacturing' to 'design' unless we allow reopening).
+- If moving to 'design': create design_jobs for each item (Phase 12 logic).
+- If moving to 'manufacturing': create work_orders for each item (Phase 13 logic).
+- If moving to 'cancelled': handle cancellations (Phase 11 logic, ORD-3).
+- If moving to 'shipped' or 'completed': perhaps these are handled by other endpoints, but could allow here for simplicity.
+Updates order.status_code, and possibly related tables, all in one transaction. Returns updated order DTO.
+Notes: Only certain roles can trigger specific transitions (sales/admin for forward progress, admin for cancellation). The endpoint centralizes workflow changes to maintain consistency (ensuring all side-effects happen).
+- method: DELETE
+path: "/api/orders/:id"
+description: "Delete an order. Typically only allowed for draft orders or testing purposes."
+implementation: |
+Backend: Checks that the order exists and perhaps that its status is 'draft' or similar (to prevent deleting orders already in progress unless admin overrides).
+Performs db.delete(orders).where(id = :id) which cascades to order_items (and via cascade further to design_jobs, etc.)
+GitHub
+.
+Returns 204 No Content on success.
+Notes: This is a hard delete. In production, soft deletion or just cancellation is usually preferred. We keep this mainly for cleaning up erroneous entries. Strictly limit to Admin role, and log the deletion in audit_logs.
+- method: POST
+path: "/api/orders/:id/cancel"
+description: "Cancel an order that is in progress, halting further processing."
+implementation: |
+Backend: Locates the order by :id. If not found or already terminal, return error (404 or 400).
+If found, updates order.status_code to 'cancelled'. Also:
+- Update all related order_items.status_code to a terminal state (e.g., 'done' or introduce 'cancelled' if tracked).
+- If design_jobs exist and not completed, mark them cancelled (could update status_code or just leave but note cancellation in events).
+- If work_orders exist, mark them as cancelled or closed (not to proceed).
+- If purchase_orders exist and not received, possibly mark those cancelled or notify purchasing.
+- All these can be handled by setting statuses or by out-of-band communication; minimally, ensure no further processing is done.
+The endpoint then returns the updated order (status now 'cancelled').
+Notes: Only Admin (or possibly Sales lead) can cancel. This action is logged. Once cancelled, an order should not be editable except perhaps adding a note or refund info. No automatic refund logic here but accounting could be noted.
+- method: GET
+path: "/api/orders/status-codes"
+description: "List all possible order status codes in the system, in sorted order."
+implementation: |
+Backend: Simple SELECT * FROM status_orders ORDER BY sort_order
+GitHub
+. Returns an array of {code, sortOrder, isTerminal}.
+Notes: No auth required other than being logged in (could even be public if not sensitive). Used by front-end to populate status filters or display names. If there's a concept of customizing names separate from code (e.g., code 'design' with display name 'Design Phase'), we might include a name field in status table in future.
+- method: GET
+path: "/api/orders/item-status-codes"
+description: "List all order item status codes."
+implementation: |
+Backend: SELECT * FROM status_order_items ORDER BY sort_order
+GitHub
+. Returns {code, sortOrder, isTerminal} for each item status.
+Notes: Similarly used in settings or filters. Keep in sync with front-end expectations.
+- method: GET
+path: "/api/orders/analytics/summary"
+description: "Provide a summary of orders for analytics (counts by status, recent orders, total revenue)."
+implementation: |
+Backend: Aggregates data for the org (requires an orgId query param or infers from user context)
+GitHub
+GitHub
+:
+- Counts of orders per status (group by status_code).
+- Sum of revenue_estimate (or total_amount) for all orders (as total revenue).
+- Recent 5 orders (order by created_at desc).
+Returns an object: { statusCounts: [ {statusCode, count}, ... ], totalRevenue: X, recentOrders: [<orderDTO>, ...] }
+GitHub
+.
+Notes: This endpoint is useful for a dashboard. It may evolve (e.g., filter by date range, include other metrics like average order value). For now, it's a quick snapshot. Ensure RLS or explicit org filter prevents cross-org data leak (in query we add where org_id = user’s org or use RLS which will inherently do so).
+- method: POST
+path: "/api/orders/:orderId/items"
+description: "Add a new item to the specified order."
+implementation: |
+Backend: Validates input for the new item (e.g., productId (uuid, required), variantId (uuid, optional), quantity (int >0), maybe price or it calculates price).
+Ensures the order exists and is modifiable (not completed/cancelled).
+Inserts a new order_items row with snapshots of current product name/price:
+- Fetch product by productId to get name and price (and variant if applicable).
+- Use order.org_id for the org_id field to maintain RLS consistency.
+Possibly handle size breakdown: if request includes a sizes array, insert those into order_item_sizes referencing the new item.
+Update the parent order.total_amount (increment by new item total price) and updated_at.
+Returns either the updated order (preferred for convenience) or the new item.
+Notes: Only Sales/Admin roles should do this, and primarily when order is in early stages ('draft' or 'consultation'). If done mid-design or production, it implies a change order scenario which might require special handling (not addressed fully here).
+- method: PATCH
+path: "/api/orders/:orderId/items/:itemId"
+description: "Update an existing order item (e.g., adjust quantity or status)."
+implementation: |
+Backend: Validates that the combination orderId & itemId exists (to avoid modifying an item not in that order).
+Allows updates to:
+- quantity: if changed, recalculates total_amount difference and updates order total.
+- product_id or variant: likely not allowed straightforwardly if design started (would require design reset), so possibly restrict changes of product after creation.
+- status_code: could allow marking an item 'approved' or 'cancelled'. But those actions typically come from design or cancel flows. Could allow if needed for admin override.
+- If any dependent data (like sizes) need update, handle accordingly (e.g., if quantity changed and sizes were provided originally, might need to also update order_item_sizes).
+Perform the update on order_items and any necessary adjustments on orders (total) or related tables.
+Return updated item or entire order.
+Notes: In practice, changes to items mid-process are rare (except quantity adjustments). This endpoint is mostly for small corrections. Major changes (like switching product) might be better done by removing and adding a new item.
+- method: DELETE
+path: "/api/orders/:orderId/items/:itemId"
+description: "Remove an item from an order."
+implementation: |
+Backend: Confirms the item belongs to the given order (and user has rights to modify).
+If order is in a stage that allows removal (typically only when order is not yet in production; if already in design but design not done, you might still remove an item if customer dropped it, but need to possibly cancel any design job associated).
+Deletes the order_items row (cascades to sizes and design_jobs via FK if set up).
+Updates the orders.total_amount to subtract this item's contribution.
+Returns 204 No Content or the updated order (depending on design; 204 is fine to indicate success).
+Notes: This is used for change requests or if a mistake was made adding an item. Log an audit entry for traceability (which item was removed). If trying to remove an item that's already in manufacturing or shipped, probably disallow via business logic.
+- method: POST
+path: "/api/design-jobs"
+description: "Create a design job (if for some reason we need to manually trigger a design task outside the automatic flow)."
+implementation: |
+Backend: (Optional endpoint, as design_jobs are usually auto-created.)
+If implemented, it would accept { orderItemId, title?, brief?, assigneeDesignerId? }.
+Validates that the order_item exists and is in a state needing design (e.g., status 'pending_design').
+Inserts a design_jobs record. If assignee provided, sets it; else leaves unassigned.
+Also update order_item.status_code to 'design' (since now a design task exists).
+Returns the created design_job record.
+Notes: This can be used by an admin to initiate design on an item if for some reason it wasn't auto-created or if an additional design iteration is needed (though that might be handled by events on existing job).
+- method: PATCH
+path: "/api/design-jobs/:id/status"
+description: "Update the status of a design job (e.g., mark as in progress or completed)."
+implementation: |
+Backend: Checks that design_job :id exists and user is allowed (designer on that job or admin).
+Validates new status is one of status_design_jobs.
+If transitioning to 'completed':
+- Set design_job.status_code = 'completed'.
+- Optionally, record completed time or who completed (we can use design_job_events for that with actor).
+- Update related order_item.status_code to 'approved' (assuming completed means approved by designer; or we might set to 'design_done' and wait for explicit approval from admin/customer).
+If transitioning to an intermediate status like 'in_progress' or 'review', just update the status.
+Perhaps trigger notifications: e.g., if going to 'review', notify sales team.
+Returns updated design_job (or the whole order's relevant part if needed).
+Notes: A 'completed' design_job does not automatically mean production can start unless it's approved. In our simplified flow, we treat designer completing as the design is done. In reality, we might require admin to approve as an extra step (which could be another status or separate boolean). For now, assume completed = approved.
+- method: POST
+path: "/api/design-jobs/:id/assets"
+description: "Attach an uploaded design asset (file) to a design job."
+implementation: |
+Backend: Expects a file upload (multipart/form-data) or a JSON with file info (like { fileName, fileContentBase64 } or { file_url } if uploaded elsewhere).
+If handling file upload:
+- Save file to Supabase Storage 'app' bucket, path e.g. designs/{orderId}/{filename}. (Use appropriate library call).
+- Generate a thumbnail (optional: could use an image library to resize if image).
+- Insert new design_assets row with:
+- org_id (from design_job's org),
+- order_item_id (from design_job->order_item_id),
+- uploader_id (auth.uid of current user),
+- version = (if there's an existing asset for that item, version = max + 1 else 1),
+- file_url = public URL or storage key (we might store the key and generate URL on demand for security),
+- thumbnail_url = URL of thumb if created.
+- approved_by_admin = false initially.
+- created_at now.
+Return the created asset info.
+Notes: Only the assigned designer or an admin should hit this. After upload, you might automatically set design_job.status to 'review' or a similar state indicating waiting for approval. Notify relevant stakeholders that a new design is ready.
+- method: PATCH
+path: "/api/orders/:orderId/items/:itemId/assign-designer"
+description: "Assign a designer to a specific order item (and its design job)."
+implementation: |
+Backend: Checks that item exists and user has rights (admin typically).
+Body contains designerId (this refers to designers.id).
+Finds the design_job for that order_item (if none, optionally create it first as pending).
+Updates design_job.assignee_designer_id = given designerId.
+Also updates order_item.designer_id = corresponding designer's id (for quick reference).
+Optionally, if design had not started, update order_item.status_code to 'design' (signifying design in progress).
+Returns success (perhaps the updated design_job or item).
+Notes: This triggers actual work: you would communicate to the designer assigned (in-app notification or external). Ensure the designer belongs to the same org (validate that designers.userId has a user_roles in the org). This action helps coordinate who works on what.
+- method: GET
+path: "/api/manufacturing/work-orders/:id"
+description: "Get details of a specific manufacturing work order."
+implementation: |
+Backend: Lookup manufacturing_work_orders by :id. Join order_items to get context (product name, quantity) and orders to get order code/customer if needed.
+Return an object containing work order info (status, instructions, dates) and optionally nested order item info.
+Notes: Used when clicking a work order to see specifics or debug issues. Only manufacturing or admin should use this (enforced by role or RLS (though RLS covers org, not role)).
+- method: PATCH
+path: "/api/manufacturing/work-orders/:id/status"
+description: "Update the status of a manufacturing work order (e.g., start, complete, ship)."
+implementation: |
+Backend: Finds work_order by :id. Validates new status is in status_work_orders.
+Updates work_order.status_code.
+If new status is 'in_progress': could set started date if we tracked it (not explicitly in schema beyond events).
+If 'completed': set actual_completion_date = today.
+If 'shipped':
+- Update actual_completion_date if not set (or add a separate shipped date field if needed, or reuse completion_date to mean shipped date).
+- Also update order_item.status_code = 'shipped' for the associated item.
+- Check all order_items of that order; if all are shipped, update order.status_code = 'shipped' as well.
+Return updated work_order.
+Notes: The logic tying to order status ensures the overall order moves forward when everything is shipped. We assume shipping is the final step before completion (delivery). The next step (order completion) might be manual confirmation.
+- method: POST
+path: "/api/manufacturing/po"
+description: "Create a new purchase order for an order."
+implementation: |
+Backend: Validates input using CreatePoDTO
+GitHub
+.
+Inserts a new purchase_orders record:
+- Generates unique po_number (e.g., "PO-ORD1234-001" or globally unique).
+- Copies vendor info from input.
+- status default 'open' or 'ordered'.
+- assigned_to = auth.uid or whoever is handling (or from input if transferring responsibility).
+- order_id links to the order.
+- org_id same as order.org_id.
+Inserts each item in input.items into po_items (calculating total_cost per item).
+Sums item costs to set purchase_orders.total_cost.
+Optionally creates default milestones (like "PO Created" (completed immediately), "Materials Received" (due = expected_delivery)).
+Returns the created PO data, including items and milestones.
+Notes: Only manufacturing role or admin will call this. This essentially kicks off the procurement process for the given order. Ensure the order is in an appropriate stage (design done, manufacturing not complete).
+- method: GET
+path: "/api/manufacturing/po/:id"
+description: "Retrieve details of a specific purchase order."
+implementation: |
+Backend: Fetch purchase_order by :id. Also fetch associated po_items and po_milestones.
+Returns a structured JSON: e.g.,
+json { "id": "...", "poNumber": "...", "orderId": "...", "vendor": { "name": "...", "contact": "...", "email": "...", ... }, "status": "...", "totalCost": X.XX, "expectedDelivery": "...", "actualDelivery": "...", "notes": "...", "items": [ {...}, {...} ], "milestones": [ {...}, {...} ] }
+Notes: This helps manufacturing see the entire PO. Use it in UI when clicking on a PO.
+- method: PATCH
+path: "/api/manufacturing/po/:id"
+description: "Update a purchase order (e.g., mark status or edit details)."
+implementation: |
+Backend: Find PO by :id.
+Allow updates:
+- status: e.g., mark 'shipped' when vendor ships, 'completed' when materials received.
+- expected_delivery date if vendor gives new info.
+- actual_delivery when received.
+- notes: any additional remarks.
+- assigned_to: if reassigning responsibility internally.
+Possibly allow adding new items if scope changed, but usually you'd create another PO.
+If status changed to 'completed':
+- Perhaps trigger an update on related work orders or notify that materials are in.
+Return updated PO.
+Notes: Partially covered by milestones too. If using milestones for intermediate steps, status might mostly toggle from 'open' to 'completed'. We ensure consistency (if all milestones done, status = completed).
+- method: PATCH
+path: "/api/manufacturing/po/:id/milestones/:milestoneId"
+description: "Mark or update a specific milestone of a purchase order."
+implementation: |
+Backend: Find milestone by milestoneId belonging to PO :id (to ensure correct association).
+Allowed changes:
+- Set completed = true (and completed_at = now(), completed_by = auth.uid).
+- Potentially update due_date or name/description if adjusting timeline (admin use).
+If marking final milestone complete:
+- Could auto-set PO.status = 'completed' (for example, "Materials Received" milestone triggers PO complete).
+Return updated milestone or entire PO (depending on need).
+Notes: This provides fine-grained control via UI (like a checkbox for each milestone in a timeline).
+- method: PATCH
+path: "/api/orders/:id/ship"
+description: "Mark an entire order as shipped to the customer."
+implementation: |
+Backend: Checks order exists and is in 'manufacturing' or similar stage where shipping is next.
+Sets order.status_code = 'shipped', updated_at = now.
+Optionally takes in body details like tracking number, carrier, shipped_date:
+- If so, save these in order.notes or consider adding fields (not currently in schema; notes or a separate shipments table could hold them, but we might append to notes like "Shipped via UPS Tracking #123").
+Updates all order_items with status_code 'manufacturing' or 'approved' to 'shipped' (since now everything is leaving).
+Also update all manufacturing_work_orders for this order to status 'shipped' (so they reflect that items went out).
+Return updated order.
+Notes: Use when an order is fully shipped in one go. For partial shipments, this endpoint would not be used (one would update individual work orders instead). But if partial shipments aren't tracked separately, we assume one shipment.
+- method: PATCH
+path: "/api/orders/:id/complete"
+description: "Mark an order as completed (delivered to customer and fully closed)."
+implementation: |
+Backend: Validates order exists and is currently 'shipped' (ensuring it was sent out).
+Sets order.status_code = 'completed', updated_at = now, and perhaps a completed_at timestamp if we had one (we can use updated_at or add a new field if needed).
+Also update any order_items still at 'shipped' to 'completed' (or 'done' if using that term) to finalize them.
+Possibly create an invoice record in accounting_invoices table (if that integration were active) using order data (not required, but if accounting expects an invoice at completion).
+Return updated order (now with status 'completed').
+Notes: Only Admin or accounting role might do this, or an automated job. This is the final closure of the order. After this, no more changes should occur (the system should treat it as read-only archive). Any post-delivery issues (returns, etc.) would be handled as separate processes.
+- method: GET
+path: "/api/order-status/orders"
+description: "Admin endpoint to list order status codes (for settings UI)."
+implementation: |
+Backend: Similar to /orders/status-codes but under a versioned or admin path (the UI config used /api/v1/order-status/orders)
+GitHub
+.
+Returns list of statuses with all fields (could include a human-readable name if we add one).
+Notes: Possibly allow editing via the next route.
+- method: PATCH
+path: "/api/order-status/orders/:code"
+description: "Update an order status code's attributes (sort order, terminal flag)."
+implementation: |
+Backend: Only admin users. Finds status_orders where code = :code.
+Allows updating sort_order and is_terminal (name/slug likely remain static in this design).
+If sort_order is changed, consider any logic needed (not much, it just affects ordering).
+If is_terminal changed (e.g., marking 'shipped' as terminal would treat shipped as final in logic, which could break some flow unless logic accounts for it).
+Return updated entry.
+Notes: The UI uses this to reconfigure workflow steps on the fly. Careful that major changes could affect code logic (so perhaps document that adding/removing statuses beyond defaults isn't fully supported by back-end logic).
+Similar endpoints exist for order-items, design-jobs, work-orders statuses (just replicate for each table: status_order_items, status_design_jobs, status_work_orders).
+frontend_components:
+- component: "OrdersPage"
+file: "client/src/pages/orders/OrdersPage.tsx"
+description: "Page to display all orders for the user's organization, with filtering and navigation to order details."
+details: |
+- Layout: Likely under the Sales or Admin layout (e.g., accessible via a sidebar menu "Orders").
+- Fetches data using a custom hook or directly with react-query:
+js const { data, isLoading } = useQuery(['orders', filters], () => apiRequest('/api/orders?statusCode=...&q=...'));
+(apiRequest is a wrapper that includes auth).
+- Implements search and filter UI:
+* A search input bound to state; on change, update query (with debounce).
+* A dropdown or segmented control for status filter (populated from orderStatuses fetched from /api/orders/status-codes or a cached context).
+* Possibly filters by timeframe or other attributes if needed.
+- Table:
+* Use a table component (maybe an existing table UI as imported in settings page
+GitHub
+).
+* Columns:
+- Order: display order code (maybe as link to details) and maybe a small tag if it's new (if created within last day or so).
+- Customer: display customer name (if team/org, maybe include teamName or sport if provided, e.g., "John Doe (Football)" if football team).
+- Status: colored Badge (map code to a color: e.g., 'draft'=gray, 'design'=blue, 'manufacturing'=orange, 'shipped'=purple, 'completed'=green, 'cancelled'=red). Use lucide icons if applicable (Package for orders in progress, CheckCircle for completed, X for cancelled, etc., as imported in OrderStatusesManagement).
+- Total: format total_amount as currency.
+- Updated: human-readable time since last update (e.g., "2 days ago") or date.
+* If isLoading, show skeleton rows. If no data, show a friendly "No orders found" message (depending on filters).
+- Actions:
+* "New Order" button (visible to Sales/Admin) - opens OrderFormModal.
+* Row click navigates to OrderDetailsPage (e.g., react-router link to /orders/{id}).
+- Pagination:
+* If data.pagination is present, show controls (like "Showing 1-20 of 57" and next/prev buttons).
+* Use queryClient or useQuery with page param included in key to manage caching per page.
+- Real-time:
+* Optionally subscribe to any new orders or changes:
+- Could subscribe to orders table changes and if an order is added, show it (for instance, if another salesperson added an order concurrently).
+- Or simply rely on refetch intervals or manual refresh.
+- Role differences:
+* For a customer role, this page might list only their orders. The API already filters by org and RLS ensures they only see their org's orders, but if multiple customers exist under same org, a customer user might see all org orders unless we further filter. Probably a customer should be in their own 'organization' representing themselves or have a flag to filter. Simplest: treat each customer user as having their own org (but that's not how it's modeled). Instead, adjust API if role=customer to filter by their user or email.
+* In UI, if role is 'customer', maybe skip this page entirely and redirect them to an OrderDetails of their single order (if only one), or a minimal list of just their orders.
+- This page gives sales teams a quick overview of all orders and their status at a glance, and entry point to manage them.
+- component: "OrderDetailsPage"
+file: "client/src/pages/orders/[id].tsx" (or similar routing)
+description: "Detailed view of a single order, showing all its information and allowing actions depending on user role and order stage."
+details: |
+- Data Fetching: On mount, fetch /api/orders/{id} (and possibly parallel fetches like /api/orders/{id}/something if needed, but likely the main endpoint gives all we need).
+- Consider using useQuery with order id, and subscribe to realtime updates for that order:
+* e.g., useSupabaseChannel to listen for orders: id=... updates and order_items: order_id=... updates. On event, either refetch or manually patch the state.
+- Header Section:
+* Displays Order Code (as title) and a Status chip or stepper.
+* If not terminal, perhaps a step indicator:
+- Could use a horizontal step component with steps [Consultation, Design, Production, Fulfillment, Completed] highlighting the current one.
+- Or simpler, just show the status chip.
+* Show an "Edit" button or icon next to fields that can be edited (notes, due date) for sales/admin:
+- Could inline edit via a form or open a small modal for editing those details (or reuse form components).
+* If order is cancelable (e.g., in design or earlier): show a "Cancel Order" button for admin.
+- On click, confirm (Dialog "Are you sure?") and call POST /api/orders/:id/cancel, then redirect or update state.
+* If order can be moved forward (sales might have a "Start Design" button if status='draft'):
+- That could call PATCH status-> 'design'.
+* Due Date: if present, display "Due: <date>".
+* Org/team: if sport/team is associated, show something like "Team: Eagles Football".
+* Assigned Salesperson: "Sales Rep: Alice Smith" (if available).
+* Customer contact: "Customer: John Doe, john@example.com, 555-1234".
+* Provide a way to copy customer email or send email (maybe a mailto link on email).
+- Items & Design Section:
+* For each order_item, display in a card or expandable row:
+- Basic info: Quantity x Product Name (Variant) – Price each and subtotal.
+- Status of that item:
++ If 'pending_design' or 'design': highlight that it's in design stage.
++ If 'manufacturing': maybe show a factory icon or similar.
++ If 'shipped' or 'done': a checkmark or package icon.
+- If a designer is assigned (order_item.designer_id not null):
++ Show "Designer: Bob (bob@designco.com)" (maybe just name, or name + email if needed).
+- If no designer yet and order is in design:
++ For admin: a dropdown "Assign Designer..." listing available designers. On select, call assign-designer endpoint then refresh.
+- If in design:
++ Show any design files (if available):
+* If design_assets exist, display the latest one (thumbnail image or file name link).
+* If none yet and user is a designer who is assigned, show an "Upload Design" button (which opens file picker and calls the asset upload).
+* If a design is uploaded and awaiting approval:
+- Show it (maybe a small preview or link to view full image).
+- If user is admin/sales, show "Approve Design" button (on click, maybe call PATCH design-jobs/:id/status -> 'completed', which we equate to approved).
+- If user is customer (with portal access), they might also see an "Approve" button (calls a special endpoint or same design-jobs status if allowed).
++ Also show design notes or brief if any (e.g., "Design Notes: include logo on front").
+- If in manufacturing:
++ Show if an external manufacturer is assigned: e.g., "Production by: ABC Printing Co.".
++ Show progress: If work order exists, maybe a mini status: "Status: In Progress (expected completion 10/01)".
++ For manufacturing role, maybe a button to mark this item done or shipped if working item-by-item (but likely they'll do it via the work orders interface).
+- If shipped:
++ Show "Shipped on 10/05 via UPS Tracking #123" (if such info recorded).
+- If completed:
++ Just show "Completed on 10/07".
+- Provide an expand/collapse to view more details, possibly including:
++ Size breakdown (list sizes and quantities if order_item_sizes were used).
++ Work order details (if internal might not need, but could show actual vs estimated completion).
++ Any issues logged (e.g., if production_events had something, but probably not in initial UI).
+* If user can add items (e.g., order still draft): maybe a button "Add Item" that reuses some product selection UI to append a new item (calls our POST /items).
+* If user can remove an item (before production): a trash icon on that item. On click, confirm then call DELETE /items, then refetch or remove from state.
+- Purchase Orders Section (for manufacturing):
+* If POs exist, show a sub-list:
+- For each PO: "PO [po_number] - Vendor: X - Status: Open/Completed - Expected: date"
+- Manufacturing can click maybe a link "View PO" which opens a modal or page with milestone checklist and item list.
+- If no POs yet and order in manufacturing, manufacturing team could have a button "Create Purchase Order" (if they need to order materials). That opens a form to input vendor info and items, then calls POST /api/manufacturing/po.
+- This section might be hidden from roles that don't need it (sales, design, customer likely don't care about raw material orders).
+- Timeline / Activity:
+* A section (maybe at bottom or a sidebar) showing logged events:
+- e.g., "Sep 10, 2025: Order created by Alice", "Sep 12: Design started (assigned to Bob)", "Sep 15: Design file uploaded by Bob", "Sep 16: Design approved by Alice", "Sep 17: Sent to manufacturing", "Sep 20: Purchase order PO-0001 placed to ACME Corp", "Sep 25: Materials received", "Sep 26: Production started", "Oct 5: Order shipped via UPS", "Oct 7: Order completed".
+* These can be compiled from audit_logs and events. Implementation could be done later, but leaving space for it improves user clarity.
+- Action Buttons:
+* At various points on page, provide buttons to progress the order:
+- Top-right or bottom: If order.status = 'design' and user is admin, maybe a "Design Completed -> Move to Production" button (if we require manual trigger instead of auto when all items approved).
+- If order.status = 'manufacturing' and all items are shipped (some systems would auto change to shipped, but if not, admin can hit "Mark Order Shipped").
+- If order.status = 'shipped', show "Complete Order" to finalize it.
+- Those buttons essentially call our status endpoints.
+* Also action for cancel (if allowed in earlier stage, placed perhaps near top as a secondary/danger action).
+- Role-based UI Adjustments:
+* Designers: For them, this page might not be primary (they'll use DesignBoard). But if they open it, they see design section where they can upload files and update their parts, but other parts (like financials, POs) could be hidden or read-only.
+* Manufacturing: They focus on production and PO sections. Possibly hide the customer contact and design specifics, as not needed for their task.
+* Customer: They see summary (maybe hide internal notes or names of internal users). They see their items and statuses, and any provided tracking info. They would have an "Approve design" button during design phase if that's the process, which triggers a confirmation and calls our API to mark it approved.
+- Ensure proper cleanup: unsubscribe from realtime channels on unmount to avoid memory leaks (especially if user navigates away).
+- This page is the most complex, bringing together data and actions from multiple phases, but it gives a one-stop overview and control panel for each order.
+- component: "OrderFormModal"
+file: "client/src/components/OrderFormModal.tsx"
+description: "Modal form for creating a new order (used by sales/admin)."
+details: |
+- Appears when "New Order" is clicked.
+- Fields:
+* Customer: Could be a dropdown of existing customers or an autocomplete. Alternatively, separate radio "Existing vs New Customer":
+- If existing, select from list (need to have loaded customers from API).
+- If new, show fields for name, email, phone.
+* Sport/Team: dropdown of sports (load from /api/organizations/{orgId} summary or a sports endpoint).
+* Products/Items:
+- Possibly a dynamic list: You have a product selector and quantity input. Once one item is added to a local list, user can add another.
+- Use the product catalog: If catalog_items can be fetched (maybe we have an endpoint GET /api/catalog or similar stubbed), populate a select or a typeahead search (since catalog could be large).
+- For MVP, perhaps provide a simple input where the user types product name and price manually if catalog integration is incomplete (but that’s error-prone).
+- Ideally, do a GET /api/catalog (with maybe a search param if many products) to let user choose.
+- Each chosen product -> add to an array with quantity and maybe variant selection if needed.
+* Due Date: date picker if they want to specify (optional).
+* Notes: multiline text.
+- Validation:
+* Ensure customer name or id is present.
+* Ensure at least one item with quantity.
+* Could highlight required fields on blur.
+- Submit:
+* Disable submit while loading.
+* On submit, construct payload:
+- If new customer provided, you might have to call an API to create customer first or include those fields in order creation (our API expects a customer_id, but we could extend it to accept customer details and create under the hood if needed).
+- Simpler: require sales to create a Customer entry in a separate screen beforehand (if not existing). For now, assume customer exists or we create a quick entry:
++ If no existing customer selected, call an endpoint to create customer then use returned id for order.
+- Items: map to { productId, variantId, quantity }.
+- orgId: we know from context (maybe currentOrg).
+* Call POST /api/orders with this data.
+* On success, close modal and navigate to OrderDetailsPage of new order (use returned order id).
+* On error, display errors: If validation error, show which fields (Zod errors can be mapped to form fields using react-hook-form + zodResolver).
+- UX niceties:
+* Perhaps allow saving as draft vs submit for processing (though draft is default status anyway).
+* After creation, maybe auto-open the new order or show a success message with link.
+* Reset form on close.
+- The goal is to make order entry quick and error-free for salespeople.
+- component: "DesignBoard"
+file: "client/src/pages/design/DesignBoard.tsx"
+description: "Dashboard page for designers to view all their assigned design jobs and their status."
+details: |
+- Query design_jobs for the current user (filter assignee_designer_id = current designer’s id, and status not completed).
+- Display a list or Kanban:
+* Could be grouped by status (columns for 'pending', 'in_progress', 'review'). Drag and drop to change status could be implemented (on drop, call PATCH status).
+* Or a simple list sorted by priority or due date.
+- Each design job item shows:
+* Order/Item reference: e.g., "Order ORD-20230918-0005 – Jersey for Team X".
+* Brief or thumbnail of current design if available.
+* Current status and maybe how long it's been in that status.
+* Possibly due date if we had one (we didn't explicitly have due on design_jobs, could infer from order due_date).
+- Actions:
+* Click a job to go to OrderDetails focusing that item (or open a side panel with more details).
+* A button to start work (which essentially means changing status from 'pending' to 'in_progress').
+* Upload design directly from here: maybe a button "Upload Design" that opens a file selector and then calls the asset upload endpoint. (This could also be done on OrderDetails, but providing here streamlines designer workflow).
+- Real-time:
+* Subscribe to design_jobs where assignee == current user. So if an admin assigns them a new job, it appears without refresh.
+* Also subscribe to design_job_events for their jobs to possibly show new comments or updates.
+- This board gives designers a central place to manage tasks without navigating orders.
+- component: "ManufacturingBoard"
+file: "client/src/pages/manufacturing/ProductionBoard.tsx"
+description: "Overview of all work orders in production for manufacturing team, possibly in a Kanban style grouping by status."
+details: |
+- Query manufacturing_work_orders for current org (all open ones).
+- Display columns for each status_work_orders (Not Started, In Progress, Completed, Shipped).
+- Each work order card:
+* Identify the item: e.g., "Order ORD-... – 50x ProductName for CustomerName".
+* If any special instructions, maybe an icon or highlight to open details.
+* Maybe percentage done if partial (not applicable here).
+- Enable dragging a card from one column to next:
+* On drop, call PATCH work-orders/:id/status with new status.
+* Alternatively, have action buttons on card like "Start" or "Mark Done".
+- Provide filters or search by product or order code in case of many items.
+- Possibly incorporate purchase orders:
+* If a work order is waiting on POs (we could know if there's an outstanding PO not completed for that order_item), we might label it or sort it separately.
+* Could have an additional column or section "Waiting for Materials" to list work orders that cannot start due to POs pending (this requires logic to detect, which could be something like status 'not_started' but has PO open).
+- Also, perhaps a separate view or tab for Purchase Orders:
+* List all open purchase_orders with their status (so procurement officer can track).
+* Mark when received (which could directly be done in PO detail).
+- Real-time:
+* Subscribe to work_orders changes so the board updates when someone else updates a status (or if an external integration updated something).
+* Also subscribe to any new work_orders (when a new order goes into production).
+- This board helps manufacturing team coordinate and get an at-a-glance view of all production tasks.
+- component: "OrderStatusSettings"
+file: "client/src/pages/settings/sections/OrderStatusesManagement.tsx"
+description: "Settings UI for managing workflow status codes for orders, order items, design jobs, and work orders."
+details: |
+- UI is tabbed (as seen in code) with tabs: Order Statuses, Order Item Statuses, Design Job Statuses, Work Order Statuses
+GitHub
+.
+- For each tab, fetch the corresponding list from /api/order-status/<type>.
+- Display in a table with columns: Code, Sort Order (editable), Is Terminal (toggle switch).
+- The UI already uses a form for editing (zod schema to validate sortOrder >=0)
+GitHub
+.
+- On clicking edit for a status, open a Dialog pre-filled with sortOrder and isTerminal of that status
+GitHub
+.
+- On submit, call PATCH /api/order-status/<type>/:code with new values
+GitHub
+.
+- On success, refresh the list (or optimistic update it).
+- Provide feedback via toast on success or error
+GitHub
+.
+- Possibly disable editing of certain core codes (maybe ensure 'completed' and 'cancelled' remain terminal, etc., by not exposing toggle for those, but currently the UI allows toggling isTerminal – trust admin to know what to do, or add warnings).
+- This interface gives flexibility to the admin to adapt the workflow naming or add intermediate statuses if needed (though adding new codes isn't directly in UI, they'd need direct DB insert or extend UI).
+- It's a power feature; ensure that changing these doesn't break front-end assumptions (the code still checks specific strings like 'completed' in logic, so advise caution in documentation or disallow changing code names).
+- However, since code is primary key and not editable here, it's fine; they can reorder or mark terminal, but not rename or add new statuses via UI.
+- Overall, this component is already scaffolded and after backend is implemented, it should work to modify the status metadata.
+audit_tasks:
+- task: "Schema Verification"
+description: "Double-check that all database schema changes have been applied and that the schema matches the entity relationships described."
+checks: |
+* Tables & Columns: Ensure each table mentioned (orders, order_items, design_jobs, manufacturing_work_orders, purchase_orders, etc.) exists in the database with the specified columns and types. No lingering old columns (e.g., orders.status enum or orders.items JSONB if we decided to drop it).
+* UUID Consistency: Confirm that all PK and FK fields are UUID type in DB. Query information_schema for any text/varchar where there should be uuid and fix if found.
+* Foreign Keys: Verify all FKs are present and properly referencing (e.g., orders.customer_id -> customers.id). Attempt an insert that violates a FK (for testing) to ensure it fails.
+* Cascade Behavior: Test cascade deletes in a safe environment: delete an order, ensure its items, design_jobs, work_orders, etc., are gone. Delete a customer (if allowed) and see that orders set customer_id to null or prevent deletion if we chose restrict (depending on intended behavior).
+* Indexes: Run \d or equivalent on tables to list indexes. Ensure indexes for org_id, status_code, etc., exist as per design (especially on orders and order_items for performance).
+* Triggers: If any triggers were added for updated_at or other automation, verify they work. E.g., update an order_item, see if order.updated_at changes if we had such a trigger (we didn't add one explicitly, using app logic instead).
+* Stored Functions: Confirm the helper functions (is_org_member, etc.) exist and operate correctly
+GitHub
+. Possibly test SELECT public.is_org_member(user_id, org_id) for a known user/org combination.
+- task: "Access Control Audit"
+description: "Simulate requests from different roles to ensure RLS and explicit checks are effectively preventing unauthorized access."
+checks: |
+* Use a variety of user accounts:
+- Sales user (Org A): Try to access an order of Org B via API (should get none/404).
+- Designer (Org A): Try to GET /api/orders (the list). RLS will return Org A orders, but maybe we intend designers not to see all orders. If that's a concern, consider adjusting query or relying on front-end to not expose that route. For now, RLS doesn't distinguish roles within org for SELECT.
+- Designer: Attempt to call an endpoint like assign-designer or create order (should be blocked by our role checks on server).
+- Manufacturing: Attempt to call design asset upload or other design endpoints (should fail or do nothing due to role check or simply RLS denying if not their data).
+- Customer: Attempt to fetch another customer's order by ID (should 404 due to RLS filtering).
+- Customer: Try to call admin-only endpoints (like editing statuses in settings or listing all orders) - should be forbidden (our middleware should catch or simply no data if RLS).
+* Attempt SQL injection or breaking RLS:
+- e.g., pass a crazy search query in q param containing a SQL quote. Our implementation uses parameterized queries, so it should be safe. Verify no errors or unexpected behavior.
+- Try to directly query via PostgREST or Supabase client with a service role (if that were exposed) – ensure that outside of our API, the default RLS prevents access (This is more of a platform concern; our policies should block non-auth or incorrect org).
+* Verify file access:
+- Without a valid JWT, try to fetch a file from storage (should fail because bucket is private).
+- With a valid user JWT but for a user from another org, try to construct a storage URL for a design file not theirs (should fail unless they guess a signed URL, which they can't if not generated).
+* Ensure that all critical mutation routes (POST/PATCH/DELETE) have some role check:
+- Review code to ensure e.g., requireAuth, requireAdmin or similar is used where needed. If any were missed, add them and test again.
+* All tests should demonstrate that only intended actions succeed.
+- task: "Workflow Edge Cases"
+description: "Think through unusual sequences of events and confirm the system handles them or at least fails safely."
+checks: |
+* Re-opening a Stage: What if an order needs to go back to design after starting manufacturing (e.g., an issue found)? Currently, our flow doesn't support moving backwards via API (and we likely disallow it). Ensure the UI doesn't allow a status reversal inadvertently. If needed, document a manual workaround (like cancel order and start a replacement, or an admin-only DB tweak).
+* Partial Order Cancellation: If customer cancels one item out of several after production started on that item, how to handle?
+- We don't have a direct concept of per-item cancellation (aside from removing before production). The best we can do is mark that item as cancelled (perhaps by skipping it to shipped/completed without delivering, or adjusting quantities). This is complex; in such a scenario, the sales team might cancel the whole order and create a new one for remaining items, or complete the order but issue a refund for that item offline.
+- Ensure our documentation/guidance covers this scenario for users, since the system doesn't explicitly model partial cancellation.
+* Multiple Designers per Order: If different items go to different designers, our model supports that (each item has its own designer and design_job). Check that the UI and flow can handle multiple design_jobs per order concurrently. E.g., one item might be done, another still pending – order status stays 'design' until all done (with our approach possibly needing manual intervention to move on). That's acceptable but should be noted.
+* Delayed Materials: If a PO is significantly delayed, production might start on other items but one item is blocked. We currently don't reflect partial readiness except via work order status (some 'not_started' while others 'in_progress').
+- The manufacturing board will show that clearly.
+- It's more of a process handling than system handling: they won't mark order shipped until all items ready.
+* Concurrent Updates: Two different users updating different parts:
+- E.g., sales edits order notes while manufacturing marks a work order complete at nearly same time. Since they touch different tables (orders vs work_orders), there's no conflict.
+- If two updates on same record happen (unlikely since typically one user deals with one thing, but say two salespeople both edit notes), the last write wins and earlier changes might be overwritten if not merged. Not much we can do without optimistic locking; this risk is low for our use case.
+* APIs usage out of intended order:
+- If someone calls complete order before marking shipped, what happens? (Our complete endpoint should probably check status and reject if not shipped).
+- If someone tries to add an item when order is already shipped, what then? (We should block via status check).
+- Try these via API to ensure we indeed prevent them (or if allowed, see if it causes weird data).
+* Summarize any discovered edge-case limitations and ensure user documentation or admin training covers them so they won't be caught off guard.
+- task: "Performance Testing & Optimization"
+description: "Assess performance with a realistic amount of data and optimize any slow points."
+checks: |
+* Create a test dataset: e.g., 100 orders, each with ~5 items, simulate different stages.
+* Test the order listing API response time with filtering and searching. It should ideally be under a few hundred ms. If it seems slow:
+- Check if proper indexes are used (maybe add an index on code or customerContactName for search if needed).
+* Test the order detail API for a large order (say 20 items, each with design and production data). Ensure it’s performant:
+- Potential issue: we fetch order_items, then separately design_jobs or work_orders maybe indirectly via other endpoints. Consider joining them:
++ Could extend /api/orders/:id to also fetch design_jobs and work_orders for completeness, but that complicates the endpoint. Alternatively, the front-end can fetch those separately if needed.
+- If performance is fine, no change needed.
+* Real-time overhead:
+- If 50 orders are being updated frequently (say manufacturing moves lots of work orders), ensure the subscription system can handle it. Supabase broadcasts are fairly efficient; the front-end updates might cause minor spikes. Not easily load-testable without a scenario, but something to keep an eye on.
+* Database load:
+- Use EXPLAIN on key queries (like the join in GET order by id
+GitHub
+) to ensure indexes are used. They should, given we index by id and order_id.
+- Consider adding compound index if we frequently query composite fields (not obvious here).
+* Memory:
+- The Node server handling these should be fine, but ensure we are not loading too much into memory inadvertently (our queries are scoped by org and id, so fine).
+* If any bottleneck identified, note potential solutions (caching, further indexing) even if not implemented now.
+- task: "Deployment Review"
+description: "Go through final deployment configuration to ensure everything is set for production use."
+checks: |
+* Environment Variables: Confirm that all needed env vars (like Supabase service URL, keys, etc.) are properly set in production environment and not accidentally hard-coded.
+* Build Process: Ensure the monorepo builds both client and server without errors after all changes. No TypeScript errors, no unmet dependencies.
+* Database Migration: Apply migrations on a staging database and then production:
+- The migration for Phase 10+ combining all changes should run without errors. Particularly, type conversions from text to uuid should preserve data where possible (if pre-existing data in those tables).
+- Test migrating a copy of live data if available, to ensure no surprises.
+* Supabase Setup: In Supabase (if used):
+- The storage bucket 'app' exists and is private, with appropriate policy.
+- Row Level Security is enabled on tables and policies exist as written.
+- Supabase Realtime is enabled on needed tables and our server or client is subscribed properly using the correct channels.
+* Monitoring: Set up logging/monitoring for the app:
+- Ensure that any unhandled exceptions in our API are logged and return graceful error responses.
+- Possibly ensure audit_logs are being written for crucial events (we tested that already).
+- If using a service like Sentry or similar, integrate it (not explicitly done, but mention if relevant).
+* Documentation for Users: Prepare cheat sheets or help docs:
+- E.g., how to use the Order system for Sales (steps to create order, update, etc.), for Designers (how to see tasks and upload designs), etc.
+- This is not a code task but important for smooth adoption.
+* After deployment, closely watch initial orders going through the system and be ready to hotfix any issues discovered. The thorough testing should have minimized this risk.
+result: "Deployment is configured correctly. The system has been tested in a production-like environment, and all settings (env vars, RLS, storage) are confirmed. Documentation is in place for users, and the team is prepared to support the new order system."
