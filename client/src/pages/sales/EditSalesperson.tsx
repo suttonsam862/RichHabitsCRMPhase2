@@ -85,23 +85,28 @@ export default function EditSalesperson() {
 
   const updateSalespersonMutation = useMutation({
     mutationFn: async (data: EditSalespersonFormData) => {
-      // Update user information
-      const userResponse = await api.patch(`/api/v1/users/${id}`, {
-        fullName: data.full_name,
-        email: data.email,
-        phone: data.phone,
-      });
+      try {
+        // Update user information
+        const userResponse = await api.patch(`/api/v1/users/${id}`, {
+          fullName: data.full_name,
+          email: data.email,
+          phone: data.phone,
+        });
 
-      // Update profile information
-      const profileResponse = await api.patch(`/api/v1/sales/salespeople/${id}/profile`, {
-        // employee_id: not sent - read-only field
-        commission_rate: (data.commission_rate || 0) * 100, // Convert to basis points
-        territory: data.territory,
-        hire_date: data.hire_date,
-        performance_tier: data.performance_tier,
-      });
+        // Update profile information
+        const profileResponse = await api.patch(`/api/v1/sales/salespeople/${id}/profile`, {
+          // employee_id: not sent - read-only field
+          commission_rate: (data.commission_rate || 0), // Send as percentage, not basis points
+          territory: data.territory,
+          hire_date: data.hire_date,
+          performance_tier: data.performance_tier,
+        });
 
-      return { user: userResponse.data, profile: profileResponse.data };
+        return { user: userResponse.data, profile: profileResponse.data };
+      } catch (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({ 

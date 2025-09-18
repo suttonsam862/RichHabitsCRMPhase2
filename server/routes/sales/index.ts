@@ -48,12 +48,31 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
 router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  // Get salesperson basic info and profile
+  console.log(`🔍 Looking for salesperson with ID: ${id}`);
+
+  // First, check if the user exists at all
+  const [userExists] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, id));
+
+  console.log(`👤 User exists:`, userExists ? 'Yes' : 'No');
+  if (userExists) {
+    console.log(`👤 User details:`, { 
+      id: userExists.id, 
+      fullName: userExists.fullName, 
+      role: userExists.role 
+    });
+  }
+
+  // Get salesperson basic info and profile - don't filter by role, just get the user
   const [salesperson] = await db
     .select()
     .from(users)
     .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId))
     .where(eq(users.id, id));
+
+  console.log(`🔍 Salesperson query result:`, salesperson ? 'Found' : 'Not found');
 
   if (!salesperson) {
     return res.status(404).json({ error: "Salesperson not found" });
@@ -83,6 +102,39 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
     .orderBy(desc(salespersonMetrics.periodStart))
     .limit(12);
 
+  // If user exists but has no salesperson profile, create a basic one
+  if (!salesperson.salesperson_profiles) {
+    console.log(`📋 Creating basic salesperson profile for user ${id}`);
+    
+    // Generate sequential employee ID
+    const maxIdResult = await db.execute(sql`
+      SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
+      FROM salesperson_profiles 
+      WHERE employee_id ~ '^EMP-[0-9]+$'
+    `);
+    const nextId = maxIdResult[0]?.next_id || 1;
+    const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
+
+    // Create basic profile
+    const [newProfile] = await db.execute(sql`
+      INSERT INTO salesperson_profiles (
+        id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(),
+        ${id},
+        ${employeeId},
+        0.05,
+        'standard',
+        true,
+        NOW(),
+        NOW()
+      )
+      RETURNING *
+    `);
+
+    console.log(`✅ Created salesperson profile:`, newProfile);
+  }
+
   // Structure the response to match frontend expectations
   const response = {
     data: {
@@ -100,7 +152,17 @@ router.get("/salespeople/:id", requireAuth, asyncHandler(async (req, res) => {
         hire_date: salesperson.salesperson_profiles.hireDate,
         performance_tier: salesperson.salesperson_profiles.performanceTier,
         profile_photo_url: null // Add if needed later
-      } : null,
+      } : {
+        // Provide default profile structure if none exists
+        id: null,
+        user_id: id,
+        employee_id: 'Pending',
+        commission_rate: 0,
+        territory: null,
+        hire_date: null,
+        performance_tier: 'standard',
+        profile_photo_url: null
+      },
       assignments,
       metrics
     }
@@ -146,6 +208,104 @@ async function generateEmployeeId() {
 
   return employeeId;
 }
+
+// Update salesperson profile
+router.patch('/salespeople/:id/profile', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const profileData = req.body;
+
+  console.log(`🔄 Updating salesperson profile for user ${id}:`, profileData);
+
+  try {
+    // First verify the user exists
+    const userResult = await db.execute(sql`
+      SELECT id, full_name FROM users WHERE id = ${id} LIMIT 1
+    `);
+
+    if (userResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      });
+    }
+
+    // Check if profile exists
+    const existingResult = await db.execute(sql`
+      SELECT * FROM salesperson_profiles WHERE user_id = ${id} LIMIT 1
+    `);
+
+    if (existingResult.length > 0) {
+      // Update existing profile
+      const commissionDecimal = profileData.commission_rate ? (profileData.commission_rate / 100) : 0.05;
+      const territory = Array.isArray(profileData.territory) ? JSON.stringify(profileData.territory) : profileData.territory;
+      
+      const updated = await db.execute(sql`
+        UPDATE salesperson_profiles 
+        SET 
+          commission_rate = ${commissionDecimal},
+          territory = ${territory},
+          hire_date = ${profileData.hire_date || null},
+          performance_tier = ${profileData.performance_tier || 'standard'},
+          updated_at = NOW()
+        WHERE user_id = ${id}
+        RETURNING *
+      `);
+
+      res.json({
+        success: true,
+        data: updated[0]
+      });
+    } else {
+      // Create new profile
+      const maxIdResult = await db.execute(sql`
+        SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
+        FROM salesperson_profiles 
+        WHERE employee_id ~ '^EMP-[0-9]+$'
+      `);
+      const nextId = maxIdResult[0]?.next_id || 1;
+      const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
+
+      const commissionDecimal = profileData.commission_rate ? (profileData.commission_rate / 100) : 0.05;
+      const territory = Array.isArray(profileData.territory) ? JSON.stringify(profileData.territory) : profileData.territory;
+      
+      const created = await db.execute(sql`
+        INSERT INTO salesperson_profiles (
+          id, user_id, employee_id, commission_rate, territory, hire_date, performance_tier, is_active, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(),
+          ${id},
+          ${employeeId},
+          ${commissionDecimal},
+          ${territory},
+          ${profileData.hire_date || null},
+          ${profileData.performance_tier || 'standard'},
+          true,
+          NOW(),
+          NOW()
+        )
+        RETURNING *
+      `);
+
+      res.json({
+        success: true,
+        data: created[0]
+      });
+    }
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'PROFILE_UPDATE_ERROR',
+        message: 'Failed to update salesperson profile',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+}));
 
 // Create a new salesperson profile  
 router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
