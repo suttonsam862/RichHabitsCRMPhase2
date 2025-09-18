@@ -594,10 +594,11 @@ export default function ComprehensiveUserEditForm() {
                       
                       <div className="space-y-3 max-h-60 overflow-y-auto">
                         {templates.map((template) => (
-                          <div
+                          <button
                             key={template.id}
-                            className="p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer"
+                            className="w-full text-left p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
                             onClick={() => applyTemplate(template)}
+                            data-testid={`button-apply-template-${template.id}`}
                           >
                             <h4 className="font-medium text-white">{template.name}</h4>
                             <p className="text-sm text-white/60">{template.description}</p>
@@ -609,7 +610,7 @@ export default function ComprehensiveUserEditForm() {
                                 {Object.keys(template.page_access || {}).length} pages
                               </Badge>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                       

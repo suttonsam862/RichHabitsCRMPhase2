@@ -603,10 +603,17 @@ export default function SalesManagement() {
                           {filteredSalespeople.map((person) => (
                             <TableRow 
                               key={person.id} 
-                              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                              onClick={() => navigate(`/sales/${person.id}`)}
+                              className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                             >
-                              <TableCell className="font-medium">{person.full_name}</TableCell>
+                              <TableCell className="font-medium">
+                                <button 
+                                  className="text-left hover:text-blue-500 focus:text-blue-500 focus:outline-none focus:underline transition-colors"
+                                  onClick={() => navigate(`/sales/${person.id}`)}
+                                  data-testid={`button-view-salesperson-${person.id}`}
+                                >
+                                  {person.full_name}
+                                </button>
+                              </TableCell>
                               <TableCell>{person.email}</TableCell>
                               <TableCell>
                                 <Badge className={getTierBadgeClass(person.profile?.performance_tier || 'standard')}>
@@ -623,10 +630,7 @@ export default function SalesManagement() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/sales/${person.id}/edit`);
-                                    }}
+                                    onClick={() => navigate(`/sales/${person.id}/edit`)}
                                     data-testid={`button-edit-profile-${person.id}`}
                                   >
                                     <Edit className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +7,8 @@ import { PrimaryStep } from "./primary-step";
 import { BrandingStep } from "./branding-step";
 import { SportsContactsStep } from "./sports-contacts-step";
 import { type CreateOrgFormData } from "./types";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useScreenReaderAnnouncement } from "@/hooks/useFocusManagement";
 
 interface OrgWizardModalProps {
   open: boolean;
@@ -23,6 +25,21 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
     brand_primary: "#3B82F6",
     brand_secondary: "#8B5CF6",
   });
+
+  const { announce } = useScreenReaderAnnouncement();
+  const focusTrapRef = useFocusTrap({ isActive: open });
+
+  // Announce tab changes for screen readers
+  useEffect(() => {
+    if (open) {
+      const tabNames = {
+        primary: "Primary Information",
+        branding: "Branding and Logo",
+        contacts: "Sports and Contacts"
+      };
+      announce(`Switched to ${tabNames[activeTab as keyof typeof tabNames]} tab`, "polite");
+    }
+  }, [activeTab, announce, open]);
 
   const updateFormData = (data: Partial<CreateOrgFormData>) => {
     setFormData(prev => ({ ...prev, ...data }));
@@ -42,7 +59,10 @@ export function OrgWizardModal({ open, onClose, onSuccess }: OrgWizardModalProps
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl max-w-[95vw] sm:max-w-4xl max-h-[90vh] p-0">
+      <DialogContent 
+        className="bg-gray-900/95 border-white/20 backdrop-blur-xl max-w-[95vw] sm:max-w-4xl max-h-[90vh] p-0"
+        ref={focusTrapRef as React.RefObject<HTMLDivElement>}
+      >
         <div className="flex flex-col h-full max-h-[85vh]">
           {/* Header */}
           <DialogHeader className="px-6 py-4 border-b border-white/10">

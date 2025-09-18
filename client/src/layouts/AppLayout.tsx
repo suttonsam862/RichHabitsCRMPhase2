@@ -1,4 +1,4 @@
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { paths } from "@/lib/paths";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Home, Users, FileText, TrendingUp, Menu, X, Package, Palette, Factory, ChevronDown, Settings2 } from "lucide-react";
@@ -20,6 +20,24 @@ interface AppLayoutProps {
 export function AppLayout({ children, footer }: AppLayoutProps) {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mainContentRef = useRef<HTMLElement>(null);
+  const skipLinkRef = useRef<HTMLAnchorElement>(null);
+
+  // Focus management for page transitions
+  useEffect(() => {
+    // Focus main content when location changes for screen reader users
+    if (mainContentRef.current) {
+      mainContentRef.current.focus();
+    }
+  }, [location.pathname]);
+
+  // Handle skip link click
+  const handleSkipToMain = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (mainContentRef.current) {
+      mainContentRef.current.focus();
+    }
+  };
 
   // Main navigation items
   const mainNavItems = [
@@ -44,11 +62,36 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-bg-void">
+      {/* Skip Links */}
+      <div className="sr-only focus-within:not-sr-only">
+        <a
+          ref={skipLinkRef}
+          href="#main-content"
+          onClick={handleSkipToMain}
+          className="absolute top-0 left-0 z-[100] bg-blue-600 text-white px-4 py-2 rounded-br focus:outline-none focus:ring-2 focus:ring-blue-300 transform -translate-y-full focus:translate-y-0 transition-transform"
+          data-testid="skip-link-main"
+        >
+          Skip to main content
+        </a>
+        <a
+          href="#navigation"
+          className="absolute top-0 left-32 z-[100] bg-blue-600 text-white px-4 py-2 rounded-br focus:outline-none focus:ring-2 focus:ring-blue-300 transform -translate-y-full focus:translate-y-0 transition-transform"
+          data-testid="skip-link-nav"
+        >
+          Skip to navigation
+        </a>
+      </div>
+
       {/* Background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-bg-void via-gray-900/50 to-bg-void -z-10" />
       
       {/* Top Navigation */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-black/20 border-b border-white/10">
+      <nav 
+        id="navigation"
+        role="navigation" 
+        aria-label="Main navigation"
+        className="sticky top-0 z-50 backdrop-blur-xl bg-black/20 border-b border-white/10"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -130,9 +173,11 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
             {/* Hamburger Menu Button - Visible on mobile */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+              className="md:hidden p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-900"
               data-testid="button-hamburger-menu"
               aria-label="Toggle navigation menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-navigation"
             >
               <motion.div
                 animate={{ rotate: isMobileMenuOpen ? 180 : 0 }}
@@ -160,7 +205,12 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
             className="md:hidden sticky top-16 z-40 backdrop-blur-xl bg-black/30 border-b border-white/10 overflow-hidden"
           >
             <div className="max-w-7xl mx-auto px-4 py-4">
-              <nav className="space-y-2">
+              <nav 
+                id="mobile-navigation"
+                className="space-y-2" 
+                role="navigation" 
+                aria-label="Mobile navigation menu"
+              >
                 {/* Main Nav Items */}
                 {mainNavItems.map(({ path, label, icon: Icon }) => {
                   const isActive = location.pathname === path;
@@ -221,7 +271,14 @@ export function AppLayout({ children, footer }: AppLayoutProps) {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="relative">
+      <main 
+        id="main-content"
+        ref={mainContentRef}
+        role="main"
+        className="relative focus:outline-none"
+        tabIndex={-1}
+        aria-label="Main content"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <AnimatePresence mode="wait">
             <motion.div
