@@ -1,12 +1,9 @@
 
 import express from 'express';
 import { z } from 'zod';
-import { db } from '../../db';
-import { users } from '../../../shared/schema';
 import { sendSuccess, sendErr, sendCreated } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { supabaseAdmin } from '../../lib/supabase';
-import { eq, like, or, and, count, desc, sql } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -58,13 +55,9 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
 
     const pageNum = Math.max(1, parseInt(page as string) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt((pageSize || limit) as string) || 20));
-    const offset = (pageNum - 1) * limitNum;
 
     // Get users from Supabase Auth instead of our database table
-    const { data: authUsers, error } = await supabaseAdmin.auth.admin.listUsers({
-      page: pageNum,
-      perPage: limitNum
-    });
+    const { data: authUsers, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
       console.error('Error fetching users from Supabase Auth:', error);
@@ -72,7 +65,6 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
     }
 
     const results = authUsers?.users || [];
-    const total = authUsers?.total || 0;
 
     // Filter out test/mock users based on email patterns
     const isTestUser = (email: string | undefined) => {
@@ -117,8 +109,12 @@ router.get('/', requireAuth, async (req: AuthedRequest, res) => {
       }
     }
 
+    // Apply pagination
+    const offset = (pageNum - 1) * limitNum;
+    const paginatedResults = filteredResults.slice(offset, offset + limitNum);
+
     // Transform users to include address object structure
-    const transformedUsers = filteredResults.map(user => ({
+    const transformedUsers = paginatedResults.map(user => ({
       id: user.id,
       email: user.email,
       fullName: user.user_metadata?.full_name || null,

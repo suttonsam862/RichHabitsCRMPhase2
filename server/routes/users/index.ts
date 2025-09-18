@@ -2,46 +2,15 @@ import express from 'express';
 import { CreateUserDTO, UpdateUserDTO, UserDTO } from '@shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { db } from '../../db';
-import { userRoles } from '@shared/schema';
-import { sql, eq, ilike, desc } from 'drizzle-orm';
-import { sendSuccess, sendOk, sendErr, sendCreated, HttpErrors, handleDatabaseError, mapDtoToDb, mapDbToDto } from '../../lib/http';
+import { sendSuccess, sendOk, sendErr, sendCreated, HttpErrors, handleDatabaseError } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { supabaseAdmin } from '../../lib/supabase';
 import { logDatabaseOperation, logSecurityEvent } from '../../lib/log';
 import { z } from 'zod';
-import { users, salespersonProfiles } from "../../../shared/schema.js";
-import { randomUUID } from "crypto";
 
 const router = express.Router();
 
-// DTO <-> DB field mappings for camelCase <-> snake_case conversion
-const DTO_TO_DB_MAPPING = {
-  fullName: 'full_name',
-  avatarUrl: 'avatar_url',
-  isActive: 'is_active',
-  lastLogin: 'last_login',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
-};
-
-// Helper to map DB row to DTO
-function dbRowToDto(row: any): any {
-  if (!row) return null;
-
-  const mapped = mapDbToDto(row, DTO_TO_DB_MAPPING);
-
-  return {
-    id: row.id,
-    email: row.email,
-    phone: row.phone,
-    preferences: row.preferences || {},
-    ...mapped,
-    createdAt: row.created_at?.toISOString?.() ?? null,
-    updatedAt: row.updated_at?.toISOString?.() ?? null,
-    lastLogin: row.last_login?.toISOString?.() ?? null,
-  };
-}
+// All user operations now use Supabase Auth directly
 
 // Validation schemas
 const updateEmailSchema = z.object({
@@ -228,7 +197,7 @@ router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedR
   }
 }));
 
-// PATCH /:id/roles - Update user roles
+// PATCH /:id/roles - Update user roles (now handled via Supabase user metadata)
 router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
@@ -241,35 +210,27 @@ router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, 
 
     const { roles } = validation.data;
 
-    for (const roleChange of roles) {
-      // Get role ID from slug
-      const roleResult = await db.execute(sql`
-        SELECT id FROM roles WHERE slug = ${roleChange.slug} LIMIT 1
-      `);
-
-      if (!roleResult || roleResult.length === 0) {
-        continue;
-      }
-
-      const roleId = (roleResult as any)[0].id;
-
-      if (roleChange.action === 'add') {
-        // Add role
-        await db.execute(sql`
-          INSERT INTO user_roles (user_id, org_id, role_id)
-          VALUES (${id}, ${roleChange.orgId}, ${roleId})
-          ON CONFLICT (user_id, org_id, role_id) DO NOTHING
-        `);
-      } else {
-        // Remove role
-        await db.execute(sql`
-          DELETE FROM user_roles
-          WHERE user_id = ${id} AND org_id = ${roleChange.orgId} AND role_id = ${roleId}
-        `);
-      }
+    // Get current user metadata
+    const { data: currentUser, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(id);
+    if (fetchError || !currentUser) {
+      return sendErr(res, 'USER_NOT_FOUND', 'User not found', undefined, 404);
     }
 
-    logDatabaseOperation(req, 'USER_ROLES_UPDATED', 'user_roles', { userId: id, changes: roles });
+    // Update user roles in metadata
+    const updatedMetadata = {
+      ...currentUser.user.user_metadata,
+      roles: roles.map(r => r.slug) // Store role slugs in metadata
+    };
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(id, {
+      user_metadata: updatedMetadata
+    });
+
+    if (updateError) {
+      return sendErr(res, 'UPDATE_ERROR', updateError.message, undefined, 400);
+    }
+
+    logDatabaseOperation(req, 'USER_ROLES_UPDATED', 'users', { userId: id, changes: roles });
     sendOk(res, { success: true });
   } catch (error) {
     handleDatabaseError(res, error, 'update user roles');

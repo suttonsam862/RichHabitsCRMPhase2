@@ -1,70 +1,77 @@
-import { db } from "./db";
-import { organizations } from "../shared/schema";
-import { sql } from "drizzle-orm";
+
+import { supabaseAdmin } from "./lib/supabase";
 
 async function testDbConnection() {
-  console.log("Testing database connection and query...");
+  console.log("Testing Supabase connection and queries...");
   
   try {
     // Test basic connection
-    console.log("1. Testing basic SQL query...");
-    const basicResult = await db.execute(sql`SELECT 1 as test`);
-    console.log("✅ Basic query successful:", basicResult);
+    console.log("1. Testing basic Supabase query...");
+    const { data: testData, error: testError } = await supabaseAdmin
+      .from('organizations')
+      .select('count', { count: 'exact', head: true });
+      
+    if (testError) throw testError;
+    console.log("✅ Basic query successful, org count:", testData);
     
     // Test organizations table structure
-    console.log("\n2. Testing organizations table structure...");
-    const columnsResult = await db.execute(sql`
-      SELECT column_name, data_type, is_nullable 
-      FROM information_schema.columns 
-      WHERE table_name = 'organizations' 
-      ORDER BY ordinal_position
-    `);
-    console.log("✅ Organization columns:", columnsResult);
+    console.log("\n2. Testing organizations table data...");
+    const { data: orgs, error: orgsError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name, state')
+      .limit(2);
+      
+    if (orgsError) throw orgsError;
+    console.log("✅ Organization data:", orgs);
     
     // Test count query
     console.log("\n3. Testing count query...");
-    const countResult = await db.execute(sql`SELECT COUNT(*) as count FROM organizations`);
-    console.log("✅ Count result:", countResult);
+    const { count, error: countError } = await supabaseAdmin
+      .from('organizations')
+      .select('*', { count: 'exact', head: true });
+      
+    if (countError) throw countError;
+    console.log("✅ Count result:", count);
     
     // Test simple select from organizations table
     console.log("\n4. Testing simple select...");
-    const selectResult = await db.execute(sql`SELECT id, name FROM organizations LIMIT 2`);
+    const { data: selectResult, error: selectError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name')
+      .limit(2);
+      
+    if (selectError) throw selectError;
     console.log("✅ Simple select result:", selectResult);
     
-    // Test Drizzle select with explicit columns
-    console.log("\n5. Testing Drizzle select with explicit columns...");
-    const drizzleResult = await db
-      .select({
-        id: organizations.id,
-        name: organizations.name,
-        state: organizations.state
-      })
-      .from(organizations)
+    // Test Supabase select with specific columns
+    console.log("\n5. Testing Supabase select with specific columns...");
+    const { data: specificResult, error: specificError } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name, state')
       .limit(2);
-    console.log("✅ Drizzle explicit select result:", drizzleResult);
+      
+    if (specificError) throw specificError;
+    console.log("✅ Supabase specific select result:", specificResult);
     
-    // Test Drizzle select all
-    console.log("\n6. Testing Drizzle select all...");
-    const drizzleAllResult = await db.select().from(organizations).limit(2);
-    console.log("✅ Drizzle select all result:", drizzleAllResult);
+    // Test Supabase select all
+    console.log("\n6. Testing Supabase select all...");
+    const { data: allResult, error: allError } = await supabaseAdmin
+      .from('organizations')
+      .select('*')
+      .limit(2);
+      
+    if (allError) throw allError;
+    console.log("✅ Supabase select all result:", allResult);
     
   } catch (error: any) {
-    console.error("❌ Database test failed:", {
+    console.error("❌ Supabase test failed:", {
       message: error.message,
       code: error.code,
-      position: error.position,
-      file: error.file,
-      line: error.line,
-      routine: error.routine,
+      details: error.details,
+      hint: error.hint,
       stack: error.stack
     });
   }
 }
 
-testDbConnection().then(() => {
-  console.log("\nDatabase test completed.");
-  process.exit(0);
-}).catch(err => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+testDbConnection();

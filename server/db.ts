@@ -1,13 +1,12 @@
+
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import * as schema from '../shared/schema';
+import { supabaseAdmin } from './lib/supabase';
 
 // Force load .env file and bypass any cached environment variables
 config({ path: resolve(process.cwd(), '.env'), override: true });
 
-// Create connection string for the database - should always be Supabase
+// Verify we're using Supabase
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -17,7 +16,6 @@ if (!connectionString) {
 
 console.log('🔌 Database connection string:', connectionString.replace(/:[^:@]*@/, ':***@'));
 
-// Verify we're using Supabase
 const isSupabase = connectionString.includes('supabase.co') || connectionString.includes('supabase.com');
 console.log('🔍 Is Supabase?', isSupabase);
 
@@ -27,30 +25,22 @@ if (!isSupabase) {
   throw new Error('Invalid database configuration - must use Supabase');
 }
 
-// Create postgres connection with Supabase-specific configuration
-const client = postgres(connectionString, { 
-  max: 20,
-  ssl: 'require',
-  connection: {
-    application_name: 'rich-habits-app'
-  }
-});
+// Export Supabase admin client for database operations
+export const db = supabaseAdmin;
 
-// Create drizzle instance
-export const db = drizzle(client, { schema });
-
-// Test database connection
+// Test database connection using Supabase
 async function testConnection() {
   try {
-    await client`SELECT 1 as test`;
-    console.log('✅ Database connection test successful');
+    const { data, error } = await supabaseAdmin.from('organizations').select('count', { count: 'exact', head: true });
+    if (error) throw error;
+    console.log('✅ Supabase database connection test successful');
   } catch (error) {
-    console.error('❌ Database connection test failed:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ Supabase database connection test failed:', error instanceof Error ? error.message : 'Unknown error');
     throw error;
   }
 }
 
 // Test connection on startup
 testConnection().catch(error => {
-  console.error('Failed to establish database connection:', error);
+  console.error('Failed to establish Supabase database connection:', error);
 });
