@@ -324,23 +324,44 @@ router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
         role: validatedData.role
       });
 
-      // Create user using Supabase Auth
-      const { data: newUser, error } = await supabaseAdmin.auth.admin.createUser({
+      // Create user using Supabase Auth, or get existing user if they already exist
+      let newUser, error;
+      
+      // First try to create the user
+      const createResult = await supabaseAdmin.auth.admin.createUser({
         email: validatedData.email,
         phone: validatedData.phone,
         user_metadata: {
           full_name: validatedData.fullName || validatedData.email.split('@')[0],
           preferences: {},
-          role: validatedData.role || 'customer' // Use provided role or default to customer
+          role: validatedData.role || 'customer'
         },
-        email_confirm: true // Auto-confirm email for admin-created users
+        email_confirm: true
       });
+
+      if (createResult.error && createResult.error.message.includes('already registered')) {
+        // User already exists in Supabase Auth, try to get them
+        console.log('User already exists in Supabase Auth, fetching existing user...');
+        const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        
+        if (listError) {
+          return sendErr(res, 'CREATE_ERROR', 'Failed to fetch existing user', listError, 400);
+        }
+        
+        const existingUser = users.users.find(u => u.email === validatedData.email);
+        if (!existingUser) {
+          return sendErr(res, 'CREATE_ERROR', 'User exists but could not be found', null, 400);
+        }
+        
+        newUser = { user: existingUser };
+        error = null;
+      } else {
+        newUser = createResult.data;
+        error = createResult.error;
+      }
 
       if (error) {
         console.error('Supabase user creation error:', error);
-        if (error.message.includes('already registered')) {
-          return HttpErrors.conflict(res, 'User with this email already exists');
-        }
         return sendErr(res, 'CREATE_ERROR', error.message, error, 400);
       }
 
