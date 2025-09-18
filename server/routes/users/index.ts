@@ -487,52 +487,9 @@ router.patch('/:id',
 
       console.log(`✅ Updated user: ${updatedUser.fullName} (${updatedUser.id})`);
 
-      // Check if user was changed to sales role and needs a profile
-      const wasSalesUser = existingUser.role === 'sales' || existingUser.subrole === 'salesperson';
-      const isSalesUser = updatedUser.role === 'sales' || updatedUser.subrole === 'salesperson';
-
-      if (!wasSalesUser && isSalesUser) {
-        try {
-          console.log(`📋 User role changed to sales, creating salesperson profile for: ${updatedUser.fullName}`);
-
-          // Check if profile already exists (shouldn't, but safety check)
-          const [existingProfile] = await db
-            .select()
-            .from(salespersonProfiles)
-            .where(eq(salespersonProfiles.userId, updatedUser.id));
-
-          if (!existingProfile) {
-            // Generate sequential employee ID
-            const maxIdResult = await db.execute(sql`
-              SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
-              FROM salesperson_profiles
-              WHERE employee_id ~ '^EMP-[0-9]+$'
-            `);
-            const nextId = maxIdResult[0]?.next_id || 1;
-            const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
-
-            await db.execute(sql`
-              INSERT INTO salesperson_profiles (
-                id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
-              ) VALUES (
-                gen_random_uuid(),
-                ${updatedUser.id},
-                ${employeeId},
-                0.05,
-                'standard',
-                true,
-                NOW(),
-                NOW()
-              )
-            `);
-
-            console.log(`✅ Created salesperson profile with employee ID ${employeeId}`);
-          }
-        } catch (profileError) {
-          console.error(`⚠️ Failed to create salesperson profile for ${updatedUser.fullName}:`, profileError);
-          // Don't fail the whole request if profile creation fails
-        }
-      }
+      // Note: Salesperson profiles should be created explicitly through the sales route
+      // This prevents automatic profile creation when roles change
+      // Users with sales access should be managed through /sales/salespeople endpoints
 
       res.json({
         success: true,

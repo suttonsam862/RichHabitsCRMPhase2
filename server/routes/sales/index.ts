@@ -73,7 +73,7 @@ async function ensureSalespersonProfile(userId: string, userFullName: string = '
 
 // Get all salespeople with their profiles and metrics
 router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
-  // First, get all users with sales roles
+  // Get all users with sales roles (primary sales role or salesperson subrole)
   const salesUsers = await db
     .select({
       id: users.id,
@@ -86,7 +86,10 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
     })
     .from(users)
     .where(
-      or(eq(users.role, 'sales'), eq(users.subrole, 'salesperson'))
+      or(
+        eq(users.role, 'sales'), 
+        eq(users.subrole, 'salesperson')
+      )
     );
 
   console.log(`🔍 Found ${salesUsers.length} users with sales roles`);
@@ -486,23 +489,13 @@ router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
     `);
 
     if (existingResult.length > 0) {
-      // Update existing profile - convert commission rate from percentage to decimal
-      const commissionDecimal = profileData.commission_rate ? (profileData.commission_rate / 100) : 0.05;
-      const updated = await db.execute(sql`
-        UPDATE salesperson_profiles 
-        SET 
-          commission_rate = ${commissionDecimal},
-          territory = ${profileData.territory || null},
-          hire_date = ${profileData.hire_date || null},
-          performance_tier = ${profileData.performance_tier || 'standard'},
-          updated_at = NOW()
-        WHERE user_id = ${id}
-        RETURNING *
-      `);
-
-      res.json({
-        success: true,
-        data: updated[0]
+      // Return error for duplicate profile when creating new
+      return res.status(409).json({
+        success: false,
+        error: {
+          code: 'PROFILE_EXISTS',
+          message: 'A sales profile has already been created for this user.'
+        }
       });
     } else {
       // Generate sequential employee ID
@@ -516,6 +509,8 @@ router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
 
       // Create new profile - convert commission rate from percentage to decimal
       const commissionDecimal = profileData.commission_rate ? (profileData.commission_rate / 100) : 0.05;
+      const territory = Array.isArray(profileData.territory) ? JSON.stringify(profileData.territory) : profileData.territory;
+      
       const created = await db.execute(sql`
         INSERT INTO salesperson_profiles (
           id, user_id, employee_id, commission_rate, territory, hire_date, performance_tier, is_active, created_at, updated_at
@@ -524,7 +519,7 @@ router.post('/salespeople/:id/profile', asyncHandler(async (req, res) => {
           ${id},
           ${employeeId},
           ${commissionDecimal},
-          ${profileData.territory || null},
+          ${territory},
           ${profileData.hire_date || null},
           ${profileData.performance_tier || 'standard'},
           true,
