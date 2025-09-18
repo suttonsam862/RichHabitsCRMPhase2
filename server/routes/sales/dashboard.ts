@@ -36,26 +36,43 @@ router.get('/dashboard', async (req, res) => {
 
     try {
       // Count active salespeople using same logic as /salespeople endpoint
+      // Include anyone with sales role or salesperson subrole
       totalSalespeopleResult = await db.execute(sql`
         SELECT COUNT(DISTINCT u.id) as count 
         FROM public.users u
-        LEFT JOIN public.salesperson_profiles sp ON u.id = sp.user_id
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
-        AND (sp.is_active = true OR sp.is_active IS NULL)
+        AND u.is_active != 0
       `);
       
       console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult);
+      
+      // Also log individual salespeople for debugging
+      const debugResult = await db.execute(sql`
+        SELECT u.id, u.full_name, u.role, u.subrole, u.is_active
+        FROM public.users u
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
+        AND u.is_active != 0
+      `);
+      console.log('📊 All salespeople in database:', debugResult);
     } catch (publicError) {
       console.log('❌ Public schema failed, trying without schema prefix:', publicError.message);
       totalSalespeopleResult = await db.execute(sql`
         SELECT COUNT(DISTINCT u.id) as count 
         FROM users u
-        LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
-        AND (sp.is_active = true OR sp.is_active IS NULL)
+        AND u.is_active != 0
       `);
       
-      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult);
+      console.log('📊 Dashboard total salespeople query result (fallback):', totalSalespeopleResult);
+      
+      // Also log individual salespeople for debugging
+      const debugResult = await db.execute(sql`
+        SELECT u.id, u.full_name, u.role, u.subrole, u.is_active
+        FROM users u
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
+        AND u.is_active != 0
+      `);
+      console.log('📊 All salespeople in database (fallback):', debugResult);
     }
 
     try {
@@ -104,7 +121,7 @@ router.get('/dashboard', async (req, res) => {
         LEFT JOIN public.orders o ON u.id = o.salesperson_id 
           AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
-        AND (sp.is_active = true OR sp.is_active IS NULL)
+        AND u.is_active != 0
         GROUP BY u.id, u.full_name, sp.commission_rate
         ORDER BY total_sales DESC, orders_count DESC
         LIMIT 10
@@ -122,7 +139,7 @@ router.get('/dashboard', async (req, res) => {
         LEFT JOIN orders o ON u.id = o.salesperson_id 
           AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
-        AND (sp.is_active = true OR sp.is_active IS NULL)
+        AND u.is_active != 0
         GROUP BY u.id, u.full_name, sp.commission_rate
         ORDER BY total_sales DESC, orders_count DESC
         LIMIT 10

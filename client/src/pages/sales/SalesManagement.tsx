@@ -180,8 +180,8 @@ export default function SalesManagement() {
       const response = await api.get(`/api/v1/sales/dashboard?period=${selectedPeriod}`);
       return response; // Server returns direct data, not wrapped in .data
     },
-    refetchInterval: 30000, // Refresh every 30 seconds for real-time KPIs
-    staleTime: 25000 // Consider data fresh for 25 seconds
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time KPIs
+    staleTime: 5000 // Consider data fresh for 5 seconds only
   });
 
   const { data: salespeople, isLoading: salespeopleLoading } = useQuery<Salesperson[]>({
@@ -206,8 +206,8 @@ export default function SalesManagement() {
         active_assignments: person.active_assignments || 0
       }));
     },
-    refetchInterval: 30000, // Refresh more frequently to catch deletions
-    staleTime: 25000
+    refetchInterval: 10000, // Refresh more frequently to catch changes
+    staleTime: 5000 // Consider data fresh for 5 seconds only
   });
 
   const { data: salespersonDetails } = useQuery<SalespersonDetails>({
@@ -374,6 +374,19 @@ export default function SalesManagement() {
                   <SelectItem value="365">Last year</SelectItem>
                 </SelectContent>
               </Select>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+                  queryClient.refetchQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+                  queryClient.refetchQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+                }}
+                className="border-gray-700 hover:bg-gray-800/50"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
               <Button 
                 onClick={() => navigate('/sales/create')}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
