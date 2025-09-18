@@ -26,10 +26,19 @@ const server = createServer(app);
 const PORT = parseInt(env.PORT || '3000', 10);
 const isDevelopment = env.NODE_ENV === 'development';
 
-// Security middleware
+// Security middleware - Phase 0 SEC-4: Enhanced security headers
 app.use(helmet({
   crossOriginEmbedderPolicy: false, // Allow Vite in development
-  contentSecurityPolicy: isDevelopment ? false : undefined
+  contentSecurityPolicy: isDevelopment ? false : undefined,
+  hsts: isDevelopment ? false : {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  hidePoweredBy: true,
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: 'same-origin' }
 }));
 
 // Trust proxy setting to prevent X-Forwarded-For warnings

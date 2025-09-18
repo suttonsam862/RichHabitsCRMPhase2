@@ -3,6 +3,7 @@ import { sendOk, sendErr } from '../../lib/http';
 import { supabaseAdmin } from '../../lib/supabase';
 import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, supabaseEmailShell, actionButton } from '../../lib/email';
 import { requireAuth } from '../../middleware/auth';
+import { logAuditEvent, AuditAction, getRequestMetadata } from '../../lib/audit';
 const r = Router();
 
 // POST /api/v1/auth/reset-request { email }
@@ -71,11 +72,57 @@ r.post('/complete-profile', requireAuth, async (req:any,res) => {
   }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Complete-profile error', undefined, 500); }
 });
 
-// POST /api/v1/auth/admin/create-user — create admin user directly
-r.post('/admin/create-user', async (req, res) => {
+// POST /api/v1/auth/admin/create-user — SECURED: only accessible in development or with explicit env flag
+r.post('/admin/create-user', requireAuth, async (req: any, res) => {
   try{
+    // SECURITY: Kill-switch for production environments
+    const isProduction = process.env.NODE_ENV === 'production';
+    const allowAdminSeed = process.env.ALLOW_ADMIN_SEED === 'true';
+    
+    if (isProduction && !allowAdminSeed) {
+      console.warn(`[SEC-1] Blocked admin creation attempt in production by user: ${req.user?.id}`);
+      await logAuditEvent({
+        action: AuditAction.ADMIN_USER_CREATION_BLOCKED,
+        actor: req.user?.id,
+        success: false,
+        metadata: { reason: 'Production environment without ALLOW_ADMIN_SEED flag' },
+        ...getRequestMetadata(req)
+      });
+      return sendErr(res,'FORBIDDEN','Admin creation disabled in production', undefined, 403);
+    }
+    
+    // Additional check: Require system admin role for this operation
+    const { data: userRoles } = await supabaseAdmin
+      .from('user_roles')
+      .select('role:roles(slug)')
+      .eq('user_id', req.user?.id);
+    
+    const isSystemAdmin = userRoles?.some((ur: any) => ur.role?.slug === 'admin');
+    if (!isSystemAdmin) {
+      console.warn(`[SEC-1] Non-admin user attempted admin creation: ${req.user?.id}`);
+      await logAuditEvent({
+        action: AuditAction.ADMIN_USER_CREATION_BLOCKED,
+        actor: req.user?.id,
+        success: false,
+        metadata: { reason: 'Non-admin user attempted admin creation' },
+        ...getRequestMetadata(req)
+      });
+      return sendErr(res,'FORBIDDEN','System admin access required', undefined, 403);
+    }
+    
     const { email, password, fullName, role } = req.body || {};
     if (!email || !password || !fullName) return sendErr(res,'BAD_REQUEST','Missing required fields', undefined, 400);
+    
+    // Log admin creation for audit trail
+    console.log(`[AUDIT] Admin user creation initiated by ${req.user?.id} for email: ${email}`);
+    await logAuditEvent({
+      action: AuditAction.ADMIN_USER_CREATION_ATTEMPT,
+      actor: req.user?.id,
+      target: email,
+      success: true,
+      metadata: { targetRole: role || 'admin' },
+      ...getRequestMetadata(req)
+    });
     
     // Create user directly with admin privileges
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -96,8 +143,20 @@ r.post('/admin/create-user', async (req, res) => {
     await supabaseAdmin.from('user_roles')
       .insert({ user_id: data.user.id, org_id: null, role_id: roleId });
 
+    console.log(`[AUDIT] Admin user created successfully: ${data.user.id} by ${req.user?.id}`);
+    await logAuditEvent({
+      action: AuditAction.ADMIN_USER_CREATION_SUCCESS,
+      actor: req.user?.id,
+      target: data.user.id,
+      success: true,
+      metadata: { email: data.user.email, role: targetRole },
+      ...getRequestMetadata(req)
+    });
     return sendOk(res,{ created:true, user_id: data.user.id, email: data.user.email, role: targetRole });
-  }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Admin user creation error', undefined, 500); }
+  }catch(e:any){ 
+    console.error(`[ERROR] Admin user creation failed:`, e);
+    return sendErr(res,'INTERNAL_ERROR',e?.message || 'Admin user creation error', undefined, 500); 
+  }
 });
 
 export default r;
