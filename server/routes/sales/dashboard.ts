@@ -35,20 +35,22 @@ router.get('/dashboard', async (req, res) => {
     let totalSalespeopleResult, activeAssignmentsResult, ordersResult, topPerformersResult;
 
     try {
-      // Count active salespeople with profiles (inner join to ensure they exist)
+      // Count active salespeople (left join to include users with sales roles even without complete profiles)
       [totalSalespeopleResult] = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM public.users u
-        INNER JOIN public.salesperson_profiles sp ON u.id = sp.user_id
-        WHERE sp.is_active = true
+        LEFT JOIN public.salesperson_profiles sp ON u.id = sp.user_id
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson') 
+        AND (sp.is_active = true OR sp.is_active IS NULL)
       `);
     } catch (publicError) {
       console.log('❌ Public schema failed, trying without schema prefix:', publicError.message);
       [totalSalespeopleResult] = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM users u
-        INNER JOIN salesperson_profiles sp ON u.id = sp.user_id
-        WHERE sp.is_active = true
+        LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson') 
+        AND (sp.is_active = true OR sp.is_active IS NULL)
       `);
     }
 
@@ -84,7 +86,7 @@ router.get('/dashboard', async (req, res) => {
       `);
     }
 
-    // Get top performers
+    // Get top performers (include all sales users to match count)
     try {
       topPerformersResult = await db.execute(sql`
         SELECT 
@@ -92,13 +94,14 @@ router.get('/dashboard', async (req, res) => {
           u.full_name,
           COALESCE(COUNT(o.id), 0) as orders_count,
           COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
-          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * 0.05, 0) as commission_earned
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * COALESCE(sp.commission_rate, 0.05), 0) as commission_earned
         FROM public.users u
-        INNER JOIN public.salesperson_profiles sp ON u.id = sp.user_id
+        LEFT JOIN public.salesperson_profiles sp ON u.id = sp.user_id
         LEFT JOIN public.orders o ON u.id = o.salesperson_id 
           AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
-        WHERE sp.is_active = true
-        GROUP BY u.id, u.full_name
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
+        AND (sp.is_active = true OR sp.is_active IS NULL)
+        GROUP BY u.id, u.full_name, sp.commission_rate
         ORDER BY total_sales DESC, orders_count DESC
         LIMIT 10
       `);
@@ -109,13 +112,14 @@ router.get('/dashboard', async (req, res) => {
           u.full_name,
           COALESCE(COUNT(o.id), 0) as orders_count,
           COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
-          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * 0.05, 0) as commission_earned
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * COALESCE(sp.commission_rate, 0.05), 0) as commission_earned
         FROM users u
-        INNER JOIN salesperson_profiles sp ON u.id = sp.user_id
+        LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id
         LEFT JOIN orders o ON u.id = o.salesperson_id 
           AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
-        WHERE sp.is_active = true
-        GROUP BY u.id, u.full_name
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
+        AND (sp.is_active = true OR sp.is_active IS NULL)
+        GROUP BY u.id, u.full_name, sp.commission_rate
         ORDER BY total_sales DESC, orders_count DESC
         LIMIT 10
       `);

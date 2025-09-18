@@ -84,7 +84,7 @@ export default function SalespersonDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -96,7 +96,7 @@ export default function SalespersonDetails() {
 
   if (error || !salesperson?.data) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -117,32 +117,32 @@ export default function SalespersonDetails() {
 
   const person = salesperson.data;
   const profile = person.profile;
-  
+
   // Calculate recent performance metrics (last 30 days)
   const calculateRecentMetrics = () => {
     if (!person.metrics || person.metrics.length === 0) {
       return { totalSales: 0, ordersCount: 0, commissionEarned: 0 };
     }
-    
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     // Filter metrics for last 30 days and aggregate
     const recentMetrics = person.metrics.filter((metric: SalespersonMetric) => 
       new Date(metric.period_start) >= thirtyDaysAgo
     );
-    
+
     return recentMetrics.reduce((acc: { totalSales: number; ordersCount: number; commissionEarned: number }, metric: SalespersonMetric) => ({
       totalSales: acc.totalSales + (metric.total_sales || 0),
       ordersCount: acc.ordersCount + (metric.orders_count || 0),
       commissionEarned: acc.commissionEarned + (metric.commission_earned || 0)
     }), { totalSales: 0, ordersCount: 0, commissionEarned: 0 });
   };
-  
+
   const recentMetrics = calculateRecentMetrics();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -201,7 +201,7 @@ export default function SalespersonDetails() {
                   <p className="font-medium">{person.email}</p>
                 </div>
               </div>
-              
+
               {person.phone && (
                 <div className="flex items-center gap-3">
                   <Phone className="h-4 w-4 text-gray-400" />
@@ -305,9 +305,9 @@ export default function SalespersonDetails() {
                   <p className="text-sm text-gray-500 dark:text-gray-400">Orders</p>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="text-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
                 <p className="text-2xl font-bold text-indigo-600">{formatCurrency(recentMetrics.commissionEarned)}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Commission Earned</p>
