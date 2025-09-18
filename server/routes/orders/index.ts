@@ -11,6 +11,7 @@ import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { logDatabaseOperation } from '../../lib/log';
 import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
 import { idempotent } from '../../lib/idempotency';
+import { trackBusinessEvent } from '../../middleware/metrics';
 
 const router = express.Router();
 
@@ -302,6 +303,13 @@ router.post('/',
 
       const newOrder = insertedOrders[0];
       const mappedOrder = orderDbRowToDto(newOrder);
+
+      // Track business metrics for order creation
+      trackBusinessEvent('order_created', req, { 
+        status: newOrder.status_code || 'draft',
+        order_id: newOrder.id,
+        organization_id: newOrder.org_id 
+      });
 
       logDatabaseOperation(req, 'ORDER_CREATED', 'orders', { orderId: newOrder.id });
       sendCreated(res, mappedOrder);

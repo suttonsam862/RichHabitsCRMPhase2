@@ -10,7 +10,9 @@ import { supabaseForUser } from '../../lib/supabase.js';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../../middleware/auth';
 import { requireOrgMember, requireOrgAdmin, requireOrgOwner, requireOrgReadonly } from '../../middleware/orgSecurity';
-import { sql } from '@vercel/postgres'; // Assuming sql tagged template literal is from @vercel/postgres
+import { sql } from '@vercel/postgres';
+import { businessOrganizationsCreated, getOrganizationLabel, getUserRoleLabel } from '../../lib/metrics'; // Assuming sql tagged template literal is from @vercel/postgres
+import { trackBusinessEvent } from '../../middleware/metrics';
 
 const router = Router();
 
@@ -306,6 +308,9 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     const validatedData = validation.data;
+    
+    // Track organization creation attempt using business event tracker
+    trackBusinessEvent('organization_created', req, { status: 'attempt' });
 
     // Check database schema compatibility
     const schemaCheck = await validateDatabaseSchema();
@@ -336,6 +341,9 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (orgError) {
       logSbError(req, 'orgs.create.insert', orgError);
+      
+      // Track organization creation failure
+      trackBusinessEvent('organization_created', req, { status: 'failure', reason: 'database_error' });
 
       // Provide specific error analysis
       if (orgError.message.includes('column') && orgError.message.includes('does not exist')) {
@@ -432,6 +440,13 @@ router.post('/', requireAuth, async (req, res) => {
 
       logger.info(`Created ${sportsData.length} sports with user associations for organization ${orgData.id}`);
     }
+
+    // Track successful organization creation
+    trackBusinessEvent('organization_created', req, { 
+      status: 'success', 
+      organization_id: orgData.id,
+      organization_name: orgData.name
+    });
 
     return res.status(201).json({
       success: true,

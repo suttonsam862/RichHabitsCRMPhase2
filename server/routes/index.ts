@@ -23,6 +23,7 @@ import adminConfig from './admin/config.js';
 import adminDiagnostics from './admin/diagnostics.js';
 import adminRls from './admin/rls.js';
 import adminSchema from './admin/schema.js';
+import testSentryRoutes from './test-sentry.js';
 
 const router = Router();
 
@@ -49,6 +50,11 @@ router.use('/admin/config', adminConfig);
 router.use('/admin/diagnostics', adminDiagnostics);
 router.use('/admin/rls', adminRls);
 router.use('/admin/schema', adminSchema);
+
+// Development-only test routes for Sentry integration
+if (process.env.NODE_ENV === 'development') {
+  router.use('/test/sentry', testSentryRoutes);
+}
 
 // Object storage routes - using ObjectStorageService implementation below
 

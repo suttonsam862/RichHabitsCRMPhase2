@@ -3,6 +3,14 @@
  * Configures Express app with API routes and Vite integration
  */
 
+// Load environment variables first
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Sentry must be imported and initialized as early as possible
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
+
 import express from 'express';
 import { createServer } from 'http';
 import helmet from 'helmet';
@@ -15,10 +23,115 @@ import { errorHandler } from './middleware/error';
 // slim request logger (1 line/req; ignores vite/assets)
 import { requestLog } from './middleware/requestLog.js';
 import { env } from './lib/env';
-import dotenv from 'dotenv';
+// Metrics middleware and service
+import { metricsMiddleware, rateLimitMetricsMiddleware, corsMetricsMiddleware, errorMetricsMiddleware } from './middleware/metrics';
+import { getMetrics, getMetricsContentType, healthCheckStatus, healthCheckDuration } from './lib/metrics';
 
-// Load environment variables
-dotenv.config();
+// Initialize Sentry for error tracking and performance monitoring
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    integrations: [
+      // Enable HTTP calls tracing
+      Sentry.httpIntegration(),
+      // Enable Express.js middleware tracing
+      Sentry.expressIntegration(),
+      // Enable automatic Node.js profiling
+      nodeProfilingIntegration(),
+    ],
+    
+    // Performance Monitoring
+    tracesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 1.0, // 10% in production, 100% in dev
+    profilesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    
+    // Release tracking
+    release: process.env.npm_package_version || '1.0.0',
+    environment: env.NODE_ENV,
+    
+    // Enhanced data scrubbing and privacy protection
+    beforeSend(event) {
+      // Don't send health check errors
+      if (event.request?.url?.includes('/healthz') || event.request?.url?.includes('/metrics')) {
+        return null;
+      }
+      
+      // Scrub sensitive data from request context
+      if (event.contexts?.request) {
+        const request = event.contexts.request as any;
+        
+        // Remove sensitive headers
+        if (request.headers && typeof request.headers === 'object') {
+          const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token', 'x-session-token'];
+          sensitiveHeaders.forEach(header => {
+            if (request.headers[header]) {
+              request.headers[header] = '[Filtered]';
+            }
+            if (request.headers[header.toUpperCase()]) {
+              request.headers[header.toUpperCase()] = '[Filtered]';
+            }
+          });
+        }
+        
+        // Remove request body entirely
+        if (request.data) {
+          request.data = '[Filtered]';
+        }
+        
+        // Remove query parameters that might contain sensitive data
+        if (request.query_string && typeof request.query_string === 'string') {
+          // Filter out common sensitive query params
+          const sensitiveParams = ['token', 'key', 'secret', 'password', 'auth', 'session'];
+          let queryString = request.query_string;
+          sensitiveParams.forEach(param => {
+            const regex = new RegExp(`[?&]${param}=[^&]*`, 'gi');
+            queryString = queryString.replace(regex, `&${param}=[Filtered]`);
+          });
+          request.query_string = queryString;
+        }
+      }
+      
+      // Scrub sensitive data from extra context
+      if (event.extra && typeof event.extra === 'object') {
+        Object.keys(event.extra).forEach(key => {
+          if (key.toLowerCase().includes('password') || 
+              key.toLowerCase().includes('secret') || 
+              key.toLowerCase().includes('token') || 
+              key.toLowerCase().includes('key')) {
+            (event.extra as any)[key] = '[Filtered]';
+          }
+        });
+      }
+      
+      // Scrub sensitive data from breadcrumbs
+      if (event.breadcrumbs) {
+        event.breadcrumbs = event.breadcrumbs.map(breadcrumb => {
+          if (breadcrumb.data && typeof breadcrumb.data === 'object') {
+            Object.keys(breadcrumb.data).forEach(key => {
+              if (key.toLowerCase().includes('password') || 
+                  key.toLowerCase().includes('secret') || 
+                  key.toLowerCase().includes('token') || 
+                  key.toLowerCase().includes('key')) {
+                (breadcrumb.data as any)[key] = '[Filtered]';
+              }
+            });
+          }
+          return breadcrumb;
+        });
+      }
+      
+      return event;
+    },
+    
+    // Additional options
+    maxBreadcrumbs: 50,
+    debug: env.NODE_ENV === 'development',
+    
+    // Disable in development to reduce noise
+    enabled: env.NODE_ENV !== 'development' || !!env.SENTRY_DSN,
+  });
+  
+  console.log('🔍 Sentry error tracking initialized');
+}
 
 const app = express();
 const server = createServer(app);
@@ -44,6 +157,8 @@ app.use(helmet({
 // Trust proxy setting to prevent X-Forwarded-For warnings
 app.set('trust proxy', 1);
 
+// Sentry Express integration is automatic with expressIntegration()
+
 // CORS configuration
 const allowedOrigins = env.ORIGINS.split(',').map(o => o.trim());
 console.log('Allowed CORS origins:', allowedOrigins);
@@ -54,6 +169,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['X-Total-Count']
 }));
+
+// Add CORS metrics tracking after CORS middleware
+app.use(corsMetricsMiddleware as any);
 
 // Compression middleware
 app.use(compression());
@@ -92,61 +210,134 @@ const authLimiter = rateLimit({
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+// Add metrics collection middleware first - before CORS for proper ordering
+app.use(metricsMiddleware as any);
+
 app.use(requestLog);
 
-// Health check endpoint
-app.get('/healthz', (req, res) => {
-  const uptime = process.uptime();
-  res.status(200).json({
-    status: 'ok',
-    version: process.env.npm_package_version || '1.0.0',
-    uptimeSec: Math.floor(uptime),
-    timestamp: new Date().toISOString()
-  });
-});
+// Add Sentry request handler for proper request scoping
+if (env.SENTRY_DSN) {
+  // This middleware creates isolated scopes for each request
+  // Using built-in Express integration which handles request scoping automatically
+}
 
-// Additional health endpoint at /api/health for compatibility
-app.get('/api/health', (req, res) => {
-  const uptime = process.uptime();
-  res.status(200).json({
-    success: true,
-    data: {
+// Health check endpoint with metrics tracking
+app.get('/healthz', async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const uptime = process.uptime();
+    
+    // Update health check metrics
+    healthCheckStatus.labels('api').set(1);
+    healthCheckDuration.labels('api').observe((Date.now() - startTime) / 1000);
+    
+    res.status(200).json({
       status: 'ok',
       version: process.env.npm_package_version || '1.0.0',
       uptimeSec: Math.floor(uptime),
       timestamp: new Date().toISOString()
-    }
-  });
+    });
+  } catch (error) {
+    healthCheckStatus.labels('api').set(0);
+    healthCheckDuration.labels('api').observe((Date.now() - startTime) / 1000);
+    
+    res.status(503).json({
+      status: 'error',
+      error: 'Health check failed'
+    });
+  }
 });
 
-// Metrics endpoint (basic stub)
-app.get('/metrics', (req, res) => {
-  const memoryUsage = process.memoryUsage();
-  const uptime = process.uptime();
+// Additional health endpoint at /api/health for compatibility
+app.get('/api/health', async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const uptime = process.uptime();
+    
+    // Update health check metrics
+    healthCheckStatus.labels('api').set(1);
+    healthCheckDuration.labels('api').observe((Date.now() - startTime) / 1000);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        status: 'ok',
+        version: process.env.npm_package_version || '1.0.0',
+        uptimeSec: Math.floor(uptime),
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    healthCheckStatus.labels('api').set(0);
+    healthCheckDuration.labels('api').observe((Date.now() - startTime) / 1000);
+    
+    res.status(503).json({
+      success: false,
+      error: {
+        code: 'HEALTH_CHECK_FAILED',
+        message: 'Health check failed'
+      }
+    });
+  }
+});
 
-  // Prometheus-style metrics (basic)
-  const metrics = [
-    `# HELP process_uptime_seconds Process uptime in seconds`,
-    `# TYPE process_uptime_seconds gauge`,
-    `process_uptime_seconds ${uptime}`,
-    `# HELP nodejs_heap_size_used_bytes Process heap size used`,
-    `# TYPE nodejs_heap_size_used_bytes gauge`,
-    `nodejs_heap_size_used_bytes ${memoryUsage.heapUsed}`,
-    `# HELP nodejs_heap_size_total_bytes Process heap size total`,
-    `# TYPE nodejs_heap_size_total_bytes gauge`,
-    `nodejs_heap_size_total_bytes ${memoryUsage.heapTotal}`
-  ].join('\n');
-
-  res.set('Content-Type', 'text/plain');
-  res.send(metrics);
+// Enhanced metrics endpoint with comprehensive Prometheus metrics
+app.get('/metrics', async (req, res) => {
+  try {
+    // Security: Basic IP-based access control (can be enhanced as needed)
+    const clientIp = req.ip || req.connection.remoteAddress;
+    
+    // Allow localhost and private networks by default
+    // In production, this should be configured properly
+    const allowedIps = (process.env.METRICS_ALLOWED_IPS || '127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16').split(',');
+    
+    // Simple IP check (basic implementation - enhance as needed)
+    const isAllowed = allowedIps.some(ip => {
+      if (ip.includes('/')) {
+        // CIDR notation - simplified check
+        return clientIp?.startsWith(ip.split('/')[0]);
+      }
+      return clientIp === ip || ip === '0.0.0.0';
+    });
+    
+    if (!isAllowed && process.env.NODE_ENV === 'production') {
+      res.status(403).json({
+        error: 'Access denied',
+        message: 'Metrics endpoint access restricted'
+      });
+      return;
+    }
+    
+    // Get comprehensive metrics
+    const metrics = await getMetrics();
+    
+    res.set('Content-Type', getMetricsContentType());
+    res.send(metrics);
+  } catch (error) {
+    console.error('Error generating metrics:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to generate metrics'
+    });
+  }
 });
 
 // Mount auth routes with stricter rate limiting
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
 
+// Add rate limit metrics tracking after rate limiters
+app.use(rateLimitMetricsMiddleware as any);
+
 // Mount canonical API router at /api/v1 with rate limiting
 app.use('/api/v1', apiLimiter, apiRouter);
+
+// Sentry error handler is handled automatically by expressIntegration
+
+// Error metrics middleware (should come before the final error handler)
+app.use(errorMetricsMiddleware as any);
 
 // Centralized error handler (last middleware)
 app.use((err:any, req:any, res:any, next:any)=>{
@@ -155,7 +346,7 @@ app.use((err:any, req:any, res:any, next:any)=>{
   const code = err?.code || 'ERR_UNEXPECTED';
   const msg = err?.message || 'Unhandled error';
 
-  // Log the error
+  // Log the error (without sensitive data)
   console.error({
     rid: res.locals?.rid,
     error: err?.message || 'Unknown error',
@@ -197,11 +388,16 @@ if (isDevelopment) {
   }
 }
 
+// Initialize database monitoring
+import { metricsDB } from './lib/db-metrics';
+metricsDB.startConnectionPoolMonitoring();
+
 // Start server
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📁 API routes available at: http://0.0.0.0:${PORT}/api`);
+  console.log(`📊 Prometheus metrics available at: http://0.0.0.0:${PORT}/metrics`);
 });
 
 // Graceful shutdown

@@ -5,18 +5,21 @@ import { AppRoutes } from "./routes";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import DevOverlay from '@/components/DevOverlay';
+import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 
 function App() {
   return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AppRoutes />
-          <Toaster />
-          <DevOverlay />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+    <SentryErrorBoundary>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AppRoutes />
+            <Toaster />
+            <DevOverlay />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </SentryErrorBoundary>
   );
 }
 

@@ -19,6 +19,10 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   ENABLE_DOMAIN_STUBS: z.string().optional().default("0"),
   
+  // Sentry configuration
+  SENTRY_DSN: z.string().optional(),
+  VITE_SENTRY_DSN: z.string().optional(),
+  
   // Security flags (Phase 0)
   ALLOW_ADMIN_SEED: z.string().optional().default("false"), // SEC-1: Kill-switch for admin creation in production
   ALLOW_DEBUG_ENDPOINTS: z.string().optional().default("false"), // SEC-2: Kill-switch for debug endpoints in production
@@ -43,6 +47,14 @@ function validateEnv(): EnvSchema {
     
     if (parsedEnv.OPENAI_API_KEY) {
       console.log(`✓ OPENAI_API_KEY: ${parsedEnv.OPENAI_API_KEY.substring(0, 6)}*** (length: ${parsedEnv.OPENAI_API_KEY.length})`);
+    }
+    
+    if (parsedEnv.SENTRY_DSN) {
+      console.log(`✓ SENTRY_DSN: ${parsedEnv.SENTRY_DSN.substring(0, 20)}*** (length: ${parsedEnv.SENTRY_DSN.length})`);
+    }
+    
+    if (parsedEnv.VITE_SENTRY_DSN) {
+      console.log(`✓ VITE_SENTRY_DSN: ${parsedEnv.VITE_SENTRY_DSN.substring(0, 20)}*** (length: ${parsedEnv.VITE_SENTRY_DSN.length})`);
     }
     
     console.log(`✓ ENABLE_DOMAIN_STUBS: ${parsedEnv.ENABLE_DOMAIN_STUBS}`);

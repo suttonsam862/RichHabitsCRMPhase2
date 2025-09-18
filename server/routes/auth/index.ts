@@ -5,17 +5,76 @@ import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, supabaseEmailSh
 import { requireAuth } from '../../middleware/auth';
 import { logAuditEvent, AuditAction, getRequestMetadata } from '../../lib/audit';
 import { validateRequest, CreateAdminUserSchema } from '../../lib/validation';
+import { 
+  authAttempts, 
+  authTokensIssued, 
+  authPasswordResets, 
+  businessUserRegistrations,
+  getOrganizationLabel,
+  getUserRoleLabel
+} from '../../lib/metrics';
+import { trackBusinessEvent } from '../../middleware/metrics';
 const r = Router();
+
+// POST /api/v1/auth/login { email, password } - Added for metrics tracking
+r.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const orgLabel = getOrganizationLabel(req);
+    
+    // Track login attempt
+    authAttempts.labels('login', 'attempt', orgLabel).inc();
+    
+    if (!email || !password) {
+      authAttempts.labels('login', 'failure', orgLabel).inc();
+      return sendErr(res, 'BAD_REQUEST', 'Email and password required', undefined, 400);
+    }
+    
+    // Use Supabase Auth to sign in the user
+    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error || !data?.user) {
+      authAttempts.labels('login', 'failure', orgLabel).inc();
+      return sendErr(res, 'UNAUTHORIZED', error?.message || 'Invalid credentials', undefined, 401);
+    }
+    
+    // Track successful login
+    authAttempts.labels('login', 'success', orgLabel).inc();
+    authTokensIssued.labels(orgLabel, data.user?.user_metadata?.role || 'unknown').inc();
+    
+    return sendOk(res, { 
+      user: data.user,
+      session: data.session,
+      access_token: data.session?.access_token
+    });
+    
+  } catch (e: any) {
+    const orgLabel = getOrganizationLabel(req);
+    authAttempts.labels('login', 'error', orgLabel).inc();
+    return sendErr(res, 'INTERNAL_ERROR', e?.message || 'Login error', undefined, 500);
+  }
+});
 
 // POST /api/v1/auth/reset-request { email }
 r.post('/reset-request', async (req, res) => {
   try{
     const { email } = req.body || {};
+    const orgLabel = getOrganizationLabel(req);
+    
     if (!email) return sendErr(res, 'BAD_REQUEST', 'Email required', undefined, 400);
     if (!isEmailConfigured()) return sendErr(res,'SERVICE_UNAVAILABLE','Email not configured: missing '+emailConfigIssues().join(', '), undefined, 503);
+    
     const redirectTo = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'') + '/reset-password';
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type:'recovery', email, options:{ redirectTo } });
-    if (error || !data?.properties?.action_link) return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate link', undefined, 400);
+    
+    if (error || !data?.properties?.action_link) {
+      authPasswordResets.labels('failure', orgLabel).inc();
+      return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate link', undefined, 400);
+    }
+    
     const html = supabaseEmailShell(
       'Reset your password',
       `<p style="opacity:.8">Click the button below to set a new password. This link will expire soon.</p>
@@ -23,23 +82,53 @@ r.post('/reset-request', async (req, res) => {
        <p style="opacity:.65;font-size:13px">If you did not request this, ignore this email.</p>`
     );
     await sendBrandedEmail(email,'Reset your password',html);
+    
+    // Track successful password reset request
+    authPasswordResets.labels('success', orgLabel).inc();
+    
     return sendOk(res,{ sent:true });
-  }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Email error', undefined, 500); }
+  }catch(e:any){ 
+    const orgLabel = getOrganizationLabel(req);
+    authPasswordResets.labels('error', orgLabel).inc();
+    return sendErr(res,'INTERNAL_ERROR',e?.message || 'Email error', undefined, 500); 
+  }
 });
 
 // POST /api/v1/auth/register { email,password,fullName,role, portfolioKey? }
 r.post('/register', async (req, res) => {
   try{
     const { email, password, fullName, role, portfolioKey } = req.body || {};
-    if (!email || !password || !fullName || !role) return sendErr(res,'BAD_REQUEST','Missing required fields', undefined, 400);
-    if (!['customer','sales','design'].includes(role)) return sendErr(res,'BAD_REQUEST','Invalid role', undefined, 400);
-    if (!isEmailConfigured()) return sendErr(res,'SERVICE_UNAVAILABLE','Email not configured: missing '+emailConfigIssues().join(', '), undefined, 503);
+    const orgLabel = getOrganizationLabel(req);
+    
+    // Track registration attempt using business event tracker
+    trackBusinessEvent('user_registered', req, { status: 'attempt', role: role || 'unknown' });
+    
+    if (!email || !password || !fullName || !role) {
+      trackBusinessEvent('user_registered', req, { status: 'failure', role: role || 'unknown', reason: 'missing_fields' });
+      return sendErr(res,'BAD_REQUEST','Missing required fields', undefined, 400);
+    }
+    
+    if (!['customer','sales','design'].includes(role)) {
+      trackBusinessEvent('user_registered', req, { status: 'failure', role, reason: 'invalid_role' });
+      return sendErr(res,'BAD_REQUEST','Invalid role', undefined, 400);
+    }
+    
+    if (!isEmailConfigured()) {
+      trackBusinessEvent('user_registered', req, { status: 'error', role, reason: 'email_not_configured' });
+      return sendErr(res,'SERVICE_UNAVAILABLE','Email not configured: missing '+emailConfigIssues().join(', '), undefined, 503);
+    }
+    
     const redirectTo = (process.env.APP_PUBLIC_URL || '').replace(/\/$/,'') + '/auth/confirmed';
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type:'signup', email, password,
       options:{ data:{ full_name: fullName, desired_role: role, portfolio_key: portfolioKey || null }, redirectTo }
     });
-    if (error || !data?.properties?.action_link) return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate confirmation link', undefined, 400);
+    
+    if (error || !data?.properties?.action_link) {
+      trackBusinessEvent('user_registered', req, { status: 'failure', role, reason: 'link_generation_failed' });
+      return sendErr(res,'BAD_REQUEST',error?.message || 'Could not generate confirmation link', undefined, 400);
+    }
+    
     const html = supabaseEmailShell(
       'Confirm your email',
       `<p style="opacity:.8">Welcome to Rich Habits. Please confirm your email to activate your account.</p>
@@ -47,8 +136,15 @@ r.post('/register', async (req, res) => {
        <p style="opacity:.65;font-size:13px">After confirming, you will be redirected to finish setup.</p>`
     );
     await sendBrandedEmail(email,'Confirm your email',html);
+    
+    // Track successful registration
+    trackBusinessEvent('user_registered', req, { status: 'success', role });
+    
     return sendOk(res,{ sent:true });
-  }catch(e:any){ return sendErr(res,'INTERNAL_ERROR',e?.message || 'Email error', undefined, 500); }
+  }catch(e:any){ 
+    trackBusinessEvent('user_registered', req, { status: 'error', role: req.body?.role || 'unknown', reason: 'email_error' });
+    return sendErr(res,'INTERNAL_ERROR',e?.message || 'Email error', undefined, 500); 
+  }
 });
 
 // POST /api/v1/auth/complete-profile — after verified login, apply desired_role -> user_roles
