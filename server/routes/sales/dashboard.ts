@@ -35,23 +35,27 @@ router.get('/dashboard', async (req, res) => {
     let totalSalespeopleResult, activeAssignmentsResult, ordersResult, topPerformersResult;
 
     try {
-      // Count active salespeople (left join to include users with sales roles even without complete profiles)
+      // Count active salespeople using same logic as /salespeople endpoint
       [totalSalespeopleResult] = await db.execute(sql`
-        SELECT COUNT(*) as count 
+        SELECT COUNT(DISTINCT u.id) as count 
         FROM public.users u
         LEFT JOIN public.salesperson_profiles sp ON u.id = sp.user_id
-        WHERE (u.role = 'sales' OR u.subrole = 'salesperson') 
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
         AND (sp.is_active = true OR sp.is_active IS NULL)
       `);
+      
+      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult[0]);
     } catch (publicError) {
       console.log('❌ Public schema failed, trying without schema prefix:', publicError.message);
       [totalSalespeopleResult] = await db.execute(sql`
-        SELECT COUNT(*) as count 
+        SELECT COUNT(DISTINCT u.id) as count 
         FROM users u
         LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id
-        WHERE (u.role = 'sales' OR u.subrole = 'salesperson') 
+        WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
         AND (sp.is_active = true OR sp.is_active IS NULL)
       `);
+      
+      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult[0]);
     }
 
     try {
