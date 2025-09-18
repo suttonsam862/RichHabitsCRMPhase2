@@ -24,6 +24,62 @@ router.use('/', dashboardRouter);
 
 // Get all salespeople with their profiles and metrics
 router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
+  // First, get all users with sales roles
+  const salesUsers = await db
+    .select({
+      id: users.id,
+      full_name: users.fullName,
+      email: users.email,
+      phone: users.phone,
+      organization_id: users.organizationId,
+      role: users.role,
+      subrole: users.subrole
+    })
+    .from(users)
+    .where(
+      or(eq(users.role, 'sales'), eq(users.subrole, 'salesperson'))
+    );
+
+  console.log(`🔍 Found ${salesUsers.length} users with sales roles`);
+
+  // Create missing salesperson profiles automatically
+  for (const user of salesUsers) {
+    const [existingProfile] = await db
+      .select()
+      .from(salespersonProfiles)
+      .where(eq(salespersonProfiles.userId, user.id));
+
+    if (!existingProfile) {
+      console.log(`📋 Creating salesperson profile for ${user.full_name} (${user.id})`);
+      
+      // Generate sequential employee ID
+      const maxIdResult = await db.execute(sql`
+        SELECT COALESCE(MAX(CAST(SUBSTRING(employee_id FROM 5) AS INTEGER)), 0) + 1 as next_id
+        FROM salesperson_profiles 
+        WHERE employee_id ~ '^EMP-[0-9]+$'
+      `);
+      const nextId = maxIdResult[0]?.next_id || 1;
+      const employeeId = `EMP-${nextId.toString().padStart(4, '0')}`;
+
+      await db.execute(sql`
+        INSERT INTO salesperson_profiles (
+          id, user_id, employee_id, commission_rate, performance_tier, is_active, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(),
+          ${user.id},
+          ${employeeId},
+          0.05,
+          'standard',
+          true,
+          NOW(),
+          NOW()
+        )
+        ON CONFLICT (user_id) DO NOTHING
+      `);
+    }
+  }
+
+  // Now get salespeople with their profiles and metrics
   const salespeople = await db
     .select({
       id: users.id,
@@ -36,12 +92,14 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
       active_assignments: sql<number>`COUNT(CASE WHEN ${salespersonAssignments.isActive} = true THEN 1 END)::int`
     })
     .from(users)
-    .innerJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId)) // Inner join to only get actual salespeople
+    .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId))
     .leftJoin(salespersonAssignments, eq(users.id, salespersonAssignments.salespersonId))
-    .where(and(
-      or(eq(users.role, 'sales'), eq(users.subrole, 'salesperson')),
-      eq(salespersonProfiles.isActive, true)
-    ))
+    .where(
+      and(
+        or(eq(users.role, 'sales'), eq(users.subrole, 'salesperson')),
+        or(eq(salespersonProfiles.isActive, true), sql`${salespersonProfiles.isActive} IS NULL`)
+      )
+    )
     .groupBy(users.id, salespersonProfiles.id);
 
   console.log(`🔍 Found ${salespeople.length} active salespeople in database`);
