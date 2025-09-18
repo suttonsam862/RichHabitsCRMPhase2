@@ -36,7 +36,7 @@ router.get('/dashboard', async (req, res) => {
 
     try {
       // Count active salespeople using same logic as /salespeople endpoint
-      [totalSalespeopleResult] = await db.execute(sql`
+      totalSalespeopleResult = await db.execute(sql`
         SELECT COUNT(DISTINCT u.id) as count 
         FROM public.users u
         LEFT JOIN public.salesperson_profiles sp ON u.id = sp.user_id
@@ -44,10 +44,10 @@ router.get('/dashboard', async (req, res) => {
         AND (sp.is_active = true OR sp.is_active IS NULL)
       `);
       
-      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult[0]);
+      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult);
     } catch (publicError) {
       console.log('❌ Public schema failed, trying without schema prefix:', publicError.message);
-      [totalSalespeopleResult] = await db.execute(sql`
+      totalSalespeopleResult = await db.execute(sql`
         SELECT COUNT(DISTINCT u.id) as count 
         FROM users u
         LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id
@@ -55,17 +55,17 @@ router.get('/dashboard', async (req, res) => {
         AND (sp.is_active = true OR sp.is_active IS NULL)
       `);
       
-      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult[0]);
+      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult);
     }
 
     try {
-      [activeAssignmentsResult] = await db.execute(sql`
+      activeAssignmentsResult = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM public.salesperson_assignments 
         WHERE is_active = true
       `);
     } catch (publicError) {
-      [activeAssignmentsResult] = await db.execute(sql`
+      activeAssignmentsResult = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM salesperson_assignments 
         WHERE is_active = true
@@ -73,7 +73,7 @@ router.get('/dashboard', async (req, res) => {
     }
 
     try {
-      [ordersResult] = await db.execute(sql`
+      ordersResult = await db.execute(sql`
         SELECT 
           COUNT(*) as total_orders,
           COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
@@ -81,7 +81,7 @@ router.get('/dashboard', async (req, res) => {
         WHERE created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
       `);
     } catch (publicError) {
-      [ordersResult] = await db.execute(sql`
+      ordersResult = await db.execute(sql`
         SELECT 
           COUNT(*) as total_orders,
           COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
