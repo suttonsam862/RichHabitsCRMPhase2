@@ -131,7 +131,10 @@ export default function CreateSalesperson() {
         title: "Salesperson created successfully!", 
         description: `${data.user.full_name} has been added to the sales team.` 
       });
+      // Invalidate all sales-related queries to refresh dashboard and list
       queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users/enhanced'] });
       navigate('/sales');
     },
     onError: (error: any) => {
@@ -186,7 +189,10 @@ export default function CreateSalesperson() {
         title: "Salesperson profile created successfully!", 
         description: `${selectedUser?.fullName} has been added to the sales team.` 
       });
+      // Invalidate all sales-related queries to refresh dashboard and list
       queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users/enhanced'] });
       navigate('/sales');
     },
     onError: (error: any) => {
