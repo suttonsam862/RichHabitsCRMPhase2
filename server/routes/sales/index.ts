@@ -36,11 +36,15 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
       active_assignments: sql<number>`COUNT(CASE WHEN ${salespersonAssignments.isActive} = true THEN 1 END)::int`
     })
     .from(users)
-    .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId))
+    .innerJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId)) // Inner join to only get actual salespeople
     .leftJoin(salespersonAssignments, eq(users.id, salespersonAssignments.salespersonId))
-    .where(or(eq(users.role, 'sales'), eq(users.role, 'staff')))
+    .where(and(
+      or(eq(users.role, 'sales'), eq(users.subrole, 'salesperson')),
+      eq(salespersonProfiles.isActive, true)
+    ))
     .groupBy(users.id, salespersonProfiles.id);
 
+  console.log(`🔍 Found ${salespeople.length} active salespeople in database`);
   res.json(salespeople);
 }));
 
@@ -491,11 +495,13 @@ router.patch("/assignments/:assignmentId/toggle", requireAuth, asyncHandler(asyn
   res.json(updated);
 }));
 
-// Delete salesperson
+// Delete salesperson (soft delete by deactivating)
 router.delete('/salespeople/:id', requireAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   try {
+    console.log(`🗑️ Attempting to delete/deactivate salesperson: ${id}`);
+    
     // First verify the user exists
     const userResult = await db.execute(sql`
       SELECT id, full_name FROM users WHERE id = ${id} LIMIT 1
@@ -511,29 +517,33 @@ router.delete('/salespeople/:id', requireAuth, asyncHandler(async (req, res) => 
       });
     }
 
-    // Delete salesperson profile first (due to foreign key constraints)
-    await db.execute(sql`
-      DELETE FROM salesperson_profiles WHERE user_id = ${id}
+    // Deactivate salesperson profile instead of deleting
+    const profileResult = await db.execute(sql`
+      UPDATE salesperson_profiles 
+      SET is_active = false, updated_at = NOW()
+      WHERE user_id = ${id}
+      RETURNING *
     `);
 
-    // Delete salesperson assignments
+    // Deactivate all assignments
     await db.execute(sql`
-      DELETE FROM salesperson_assignments WHERE salesperson_id = ${id}
+      UPDATE salesperson_assignments 
+      SET is_active = false, updated_at = NOW()
+      WHERE salesperson_id = ${id}
     `);
 
-    // Delete salesperson metrics
+    // Mark user as inactive
     await db.execute(sql`
-      DELETE FROM salesperson_metrics WHERE salesperson_id = ${id}
+      UPDATE users 
+      SET is_active = 0, updated_at = NOW()
+      WHERE id = ${id}
     `);
 
-    // Finally delete the user
-    await db.execute(sql`
-      DELETE FROM users WHERE id = ${id}
-    `);
+    console.log(`✅ Salesperson ${id} deactivated successfully`);
 
     res.json({
       success: true,
-      message: 'Salesperson deleted successfully'
+      message: 'Salesperson deactivated successfully'
     });
   } catch (error) {
     console.error('Salesperson deletion error:', error);

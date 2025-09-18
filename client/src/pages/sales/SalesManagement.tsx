@@ -184,29 +184,29 @@ export default function SalesManagement() {
   });
 
   const { data: salespeople, isLoading: salespeopleLoading } = useQuery<Salesperson[]>({
-    queryKey: ['/api/v1/users/enhanced', 'sales'],
+    queryKey: ['/api/v1/sales/salespeople'],
     queryFn: async () => {
-      const response = await api.get('/api/v1/users/enhanced?type=staff');
-      // Filter for sales role users and map to expected format
-      const users = response.success ? (response.data?.users || response.data || []) : [];
-      return users
-        .filter((user: any) => user.role === 'sales' || user.subrole === 'salesperson')
-        .map((user: any) => ({
-          id: user.id,
-          full_name: user.fullName || user.full_name,
-          email: user.email,
-          phone: user.phone,
-          organization_id: user.organizationId || user.organization_id,
-          profile: user.salesperson_profile || {
-            performance_tier: 'standard',
-            commission_rate: 0
-          },
-          assignments: 0, // Will be populated by separate query if needed
-          active_assignments: 0
-        }));
+      const response = await api.get('/api/v1/sales/salespeople');
+      console.log('📊 Salespeople data received:', response);
+      
+      if (!Array.isArray(response)) {
+        console.error('❌ Expected array but got:', typeof response, response);
+        return [];
+      }
+      
+      return response.map((person: any) => ({
+        id: person.id,
+        full_name: person.full_name,
+        email: person.email,
+        phone: person.phone,
+        organization_id: person.organization_id,
+        profile: person.profile,
+        assignments: person.assignments || 0,
+        active_assignments: person.active_assignments || 0
+      }));
     },
-    refetchInterval: 60000,
-    staleTime: 50000
+    refetchInterval: 30000, // Refresh more frequently to catch deletions
+    staleTime: 25000
   });
 
   const { data: salespersonDetails } = useQuery<SalespersonDetails>({

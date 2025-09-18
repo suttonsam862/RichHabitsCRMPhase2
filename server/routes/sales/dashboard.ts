@@ -35,19 +35,20 @@ router.get('/dashboard', async (req, res) => {
     let totalSalespeopleResult, activeAssignmentsResult, ordersResult, topPerformersResult;
 
     try {
-      // First try with explicit public schema
+      // Count active salespeople with profiles (inner join to ensure they exist)
       [totalSalespeopleResult] = await db.execute(sql`
         SELECT COUNT(*) as count 
-        FROM public.salesperson_profiles 
-        WHERE is_active = true
+        FROM public.users u
+        INNER JOIN public.salesperson_profiles sp ON u.id = sp.user_id
+        WHERE sp.is_active = true
       `);
     } catch (publicError) {
       console.log('❌ Public schema failed, trying without schema prefix:', publicError.message);
-      // Try without schema prefix
       [totalSalespeopleResult] = await db.execute(sql`
         SELECT COUNT(*) as count 
-        FROM salesperson_profiles 
-        WHERE is_active = true
+        FROM users u
+        INNER JOIN salesperson_profiles sp ON u.id = sp.user_id
+        WHERE sp.is_active = true
       `);
     }
 

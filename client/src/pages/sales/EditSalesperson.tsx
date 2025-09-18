@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -136,6 +135,9 @@ export default function EditSalesperson() {
   const deleteSalespersonMutation = useMutation({
     mutationFn: async () => {
       const response = await api.delete(`/api/v1/sales/salespeople/${id}`);
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to delete salesperson');
+      }
       return response;
     },
     onSuccess: () => {
@@ -143,7 +145,10 @@ export default function EditSalesperson() {
         title: "Salesperson deleted successfully!", 
         description: "The salesperson has been removed from the system." 
       });
+      // Invalidate all sales-related queries to force refresh
       queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/users/enhanced'] });
       navigate('/sales');
     },
     onError: (error: any) => {
