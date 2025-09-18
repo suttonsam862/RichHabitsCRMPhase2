@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabaseAdmin } from '../lib/supabase.js';
+import { supabaseAdmin } from '../../lib/supabase.js';
 import { requireAuth, AuthedRequest } from '../middleware/auth.js';
 import { sendSuccess, sendErr } from '../lib/http.js';
 import { dashboardRouter } from './dashboard.js';
