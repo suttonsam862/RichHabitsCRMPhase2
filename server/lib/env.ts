@@ -19,8 +19,9 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   ENABLE_DOMAIN_STUBS: z.string().optional().default("0"),
   
-  // Security flags (Phase 0 SEC-1)
-  ALLOW_ADMIN_SEED: z.string().optional().default("false"), // Kill-switch for admin creation in production
+  // Security flags (Phase 0)
+  ALLOW_ADMIN_SEED: z.string().optional().default("false"), // SEC-1: Kill-switch for admin creation in production
+  ALLOW_DEBUG_ENDPOINTS: z.string().optional().default("false"), // SEC-2: Kill-switch for debug endpoints in production
 });
 
 type EnvSchema = z.infer<typeof envSchema>;
