@@ -73,35 +73,31 @@ async function ensureSalespersonProfile(userId: string, userFullName: string = '
 
 // Get all salespeople with their profiles and metrics
 router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
-  // Get all users with sales roles (primary sales role or salesperson subrole)
-  const salesUsers = await db
-    .select({
-      id: users.id,
-      full_name: users.fullName,
-      email: users.email,
-      phone: users.phone,
-      organization_id: users.organizationId,
-      role: users.role,
-      subrole: users.subrole
-    })
-    .from(users)
-    .where(
-      or(
-        eq(users.role, 'sales'), 
-        eq(users.subrole, 'salesperson')
-      )
-    );
+  console.log('🔍 Starting salespeople fetch...');
+  
+  // Get all users with sales roles (primary sales role or salesperson subrole) - force fresh query
+  const salesUsers = await db.execute(sql`
+    SELECT id, full_name, email, phone, organization_id, role, subrole, is_active, created_at, updated_at
+    FROM users 
+    WHERE (role = 'sales' OR subrole = 'salesperson')
+    AND is_active != 0
+    ORDER BY updated_at DESC
+  `);
 
-  console.log(`🔍 Found ${salesUsers.length} users with sales roles`);
+  console.log(`🔍 Found ${salesUsers.length} users with sales roles:`, salesUsers.map(u => ({ 
+    name: u.full_name, 
+    role: u.role, 
+    subrole: u.subrole,
+    id: u.id 
+  })));
 
   // Create missing salesperson profiles automatically for any sales users
   for (const user of salesUsers) {
-    const [existingProfile] = await db
-      .select()
-      .from(salespersonProfiles)
-      .where(eq(salespersonProfiles.userId, user.id));
+    const existingProfileResult = await db.execute(sql`
+      SELECT * FROM salesperson_profiles WHERE user_id = ${user.id} LIMIT 1
+    `);
 
-    if (!existingProfile) {
+    if (existingProfileResult.length === 0) {
       console.log(`📋 Auto-creating salesperson profile for ${user.full_name} (${user.id})`);
       
       // Generate sequential employee ID
@@ -136,30 +132,72 @@ router.get("/salespeople", requireAuth, asyncHandler(async (req, res) => {
     }
   }
 
-  // Now get salespeople with their profiles and metrics
-  const salespeople = await db
-    .select({
-      id: users.id,
-      full_name: users.fullName,
-      email: users.email,
-      phone: users.phone,
-      organization_id: users.organizationId,
-      profile: salespersonProfiles,
-      assignments: sql<number>`COUNT(${salespersonAssignments.id})::int`,
-      active_assignments: sql<number>`COUNT(CASE WHEN ${salespersonAssignments.isActive} = true THEN 1 END)::int`
-    })
-    .from(users)
-    .leftJoin(salespersonProfiles, eq(users.id, salespersonProfiles.userId))
-    .leftJoin(salespersonAssignments, eq(users.id, salespersonAssignments.salespersonId))
-    .where(
-      and(
-        or(eq(users.role, 'sales'), eq(users.subrole, 'salesperson')),
-        or(eq(salespersonProfiles.isActive, true), sql`${salespersonProfiles.isActive} IS NULL`)
-      )
-    )
-    .groupBy(users.id, salespersonProfiles.id);
+  // Now get salespeople with their profiles and metrics using fresh query
+  const salespeopleResult = await db.execute(sql`
+    SELECT 
+      u.id,
+      u.full_name,
+      u.email,
+      u.phone,
+      u.organization_id,
+      sp.id as profile_id,
+      sp.user_id as profile_user_id,
+      sp.employee_id,
+      sp.tax_id,
+      sp.commission_rate,
+      sp.territory,
+      sp.hire_date,
+      sp.manager_id,
+      sp.performance_tier,
+      sp.is_active as profile_is_active,
+      sp.created_at as profile_created_at,
+      sp.updated_at as profile_updated_at,
+      COUNT(sa.id)::int as assignments,
+      COUNT(CASE WHEN sa.is_active = true THEN 1 END)::int as active_assignments
+    FROM users u
+    LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id AND sp.is_active = true
+    LEFT JOIN salesperson_assignments sa ON u.id = sa.salesperson_id
+    WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
+    AND u.is_active != 0
+    GROUP BY u.id, u.full_name, u.email, u.phone, u.organization_id, 
+             sp.id, sp.user_id, sp.employee_id, sp.tax_id, sp.commission_rate, 
+             sp.territory, sp.hire_date, sp.manager_id, sp.performance_tier, 
+             sp.is_active, sp.created_at, sp.updated_at
+    ORDER BY u.updated_at DESC
+  `);
 
-  console.log(`🔍 Found ${salespeople.length} active salespeople in database`);
+  // Transform the result to match expected format
+  const salespeople = salespeopleResult.map((row: any) => ({
+    id: row.id,
+    full_name: row.full_name,
+    email: row.email,
+    phone: row.phone,
+    organization_id: row.organization_id,
+    profile: row.profile_id ? {
+      id: row.profile_id,
+      userId: row.profile_user_id,
+      employeeId: row.employee_id,
+      taxId: row.tax_id,
+      commissionRate: row.commission_rate,
+      territory: row.territory,
+      hireDate: row.hire_date,
+      managerId: row.manager_id,
+      performanceTier: row.performance_tier,
+      isActive: row.profile_is_active,
+      createdAt: row.profile_created_at,
+      updatedAt: row.profile_updated_at
+    } : null,
+    assignments: row.assignments,
+    active_assignments: row.active_assignments
+  }));
+
+  console.log(`🔍 Returning ${salespeople.length} active salespeople to frontend`);
+  console.log(`📊 Salespeople details:`, salespeople.map(sp => ({ 
+    name: sp.full_name, 
+    profile: !!sp.profile,
+    assignments: sp.assignments 
+  })));
+  
   res.json(salespeople);
 }));
 

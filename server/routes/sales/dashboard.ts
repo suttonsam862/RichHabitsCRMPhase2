@@ -31,12 +31,13 @@ router.get('/dashboard', async (req, res) => {
       });
     }
 
-    // Get overview metrics with safe queries - try both schema approaches
+    // Get real-time metrics by counting from actual data
     let totalSalespeopleResult, activeAssignmentsResult, ordersResult, topPerformersResult;
 
+    console.log(`🔍 Dashboard query for period: ${period} days`);
+
     try {
-      // Count active salespeople using same logic as /salespeople endpoint
-      // Include anyone with sales role or salesperson subrole
+      // Count active salespeople - anyone with sales role or salesperson subrole
       totalSalespeopleResult = await db.execute(sql`
         SELECT COUNT(DISTINCT u.id) as count 
         FROM public.users u
@@ -44,44 +45,38 @@ router.get('/dashboard', async (req, res) => {
         AND u.is_active != 0
       `);
       
-      console.log('📊 Dashboard total salespeople query result:', totalSalespeopleResult);
+      console.log('📊 Total salespeople count:', totalSalespeopleResult[0]?.count);
       
-      // Also log individual salespeople for debugging
-      const debugResult = await db.execute(sql`
-        SELECT u.id, u.full_name, u.role, u.subrole, u.is_active
+      // Debug: Show all salespeople details
+      const debugSalespeople = await db.execute(sql`
+        SELECT u.id, u.full_name, u.role, u.subrole, u.is_active, u.created_at
         FROM public.users u
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
         AND u.is_active != 0
+        ORDER BY u.created_at DESC
       `);
-      console.log('📊 All salespeople in database:', debugResult);
-    } catch (publicError) {
-      console.log('❌ Public schema failed, trying without schema prefix:', publicError.message);
+      console.log('📊 Active salespeople details:', debugSalespeople);
+      
+    } catch (error) {
+      console.log('❌ Trying fallback query for salespeople count:', error.message);
       totalSalespeopleResult = await db.execute(sql`
         SELECT COUNT(DISTINCT u.id) as count 
         FROM users u
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
         AND u.is_active != 0
       `);
-      
-      console.log('📊 Dashboard total salespeople query result (fallback):', totalSalespeopleResult);
-      
-      // Also log individual salespeople for debugging
-      const debugResult = await db.execute(sql`
-        SELECT u.id, u.full_name, u.role, u.subrole, u.is_active
-        FROM users u
-        WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
-        AND u.is_active != 0
-      `);
-      console.log('📊 All salespeople in database (fallback):', debugResult);
     }
 
     try {
+      // Count active assignments
       activeAssignmentsResult = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM public.salesperson_assignments 
         WHERE is_active = true
       `);
-    } catch (publicError) {
+      console.log('📊 Active assignments count:', activeAssignmentsResult[0]?.count);
+    } catch (error) {
+      console.log('❌ Trying fallback query for assignments:', error.message);
       activeAssignmentsResult = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM salesperson_assignments 
@@ -90,54 +85,69 @@ router.get('/dashboard', async (req, res) => {
     }
 
     try {
+      // Count orders and revenue for the period
       ordersResult = await db.execute(sql`
         SELECT 
-          COUNT(*) as total_orders,
-          COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
+          COUNT(*)::int as total_orders,
+          COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0)::decimal as total_revenue
         FROM public.orders 
         WHERE created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
+        AND status_code NOT IN ('cancelled', 'rejected')
       `);
-    } catch (publicError) {
+      console.log('📊 Orders result for period:', ordersResult[0]);
+    } catch (error) {
+      console.log('❌ Trying fallback query for orders:', error.message);
       ordersResult = await db.execute(sql`
         SELECT 
-          COUNT(*) as total_orders,
-          COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0) as total_revenue
+          COUNT(*)::int as total_orders,
+          COALESCE(SUM(CAST(total_amount AS NUMERIC)), 0)::decimal as total_revenue
         FROM orders 
         WHERE created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
+        AND status_code NOT IN ('cancelled', 'rejected')
       `);
     }
 
-    // Get top performers (include all sales users to match count)
     try {
+      // Get top performers with real order data
       topPerformersResult = await db.execute(sql`
         SELECT 
           u.id as salesperson_id,
           u.full_name,
-          COALESCE(COUNT(o.id), 0) as orders_count,
-          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
-          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * COALESCE(sp.commission_rate, 0.05), 0) as commission_earned
+          COUNT(o.id)::int as orders_count,
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0)::decimal as total_sales,
+          COALESCE(
+            SUM(CAST(o.total_amount AS NUMERIC)) * COALESCE(sp.commission_rate, 0.05), 
+            0
+          )::decimal as commission_earned
         FROM public.users u
-        LEFT JOIN public.salesperson_profiles sp ON u.id = sp.user_id
+        LEFT JOIN public.salesperson_profiles sp ON u.id = sp.user_id AND sp.is_active = true
         LEFT JOIN public.orders o ON u.id = o.salesperson_id 
           AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
+          AND o.status_code NOT IN ('cancelled', 'rejected')
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
         AND u.is_active != 0
         GROUP BY u.id, u.full_name, sp.commission_rate
         ORDER BY total_sales DESC, orders_count DESC
         LIMIT 10
       `);
-    } catch (publicError) {
+      console.log('📊 Top performers result:', topPerformersResult);
+    } catch (error) {
+      console.log('❌ Trying fallback query for top performers:', error.message);
       topPerformersResult = await db.execute(sql`
         SELECT 
           u.id as salesperson_id,
           u.full_name,
-          COALESCE(COUNT(o.id), 0) as orders_count,
-          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0) as total_sales,
-          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)) * COALESCE(sp.commission_rate, 0.05), 0) as commission_earned
+          COUNT(o.id)::int as orders_count,
+          COALESCE(SUM(CAST(o.total_amount AS NUMERIC)), 0)::decimal as total_sales,
+          COALESCE(
+            SUM(CAST(o.total_amount AS NUMERIC)) * COALESCE(sp.commission_rate, 0.05), 
+            0
+          )::decimal as commission_earned
         FROM users u
-        LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id
+        LEFT JOIN salesperson_profiles sp ON u.id = sp.user_id AND sp.is_active = true
         LEFT JOIN orders o ON u.id = o.salesperson_id 
           AND o.created_at >= NOW() - INTERVAL '${sql.raw(period.toString())} days'
+          AND o.status_code NOT IN ('cancelled', 'rejected')
         WHERE (u.role = 'sales' OR u.subrole = 'salesperson')
         AND u.is_active != 0
         GROUP BY u.id, u.full_name, sp.commission_rate

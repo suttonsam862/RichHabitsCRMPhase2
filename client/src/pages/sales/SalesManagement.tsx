@@ -177,16 +177,22 @@ export default function SalesManagement() {
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery<DashboardData>({
     queryKey: ['/api/v1/sales/dashboard', selectedPeriod],
     queryFn: async () => {
+      console.log('🔍 Fetching dashboard data for period:', selectedPeriod);
       const response = await api.get(`/api/v1/sales/dashboard?period=${selectedPeriod}`);
+      console.log('📊 Dashboard response:', response);
       return response; // Server returns direct data, not wrapped in .data
     },
-    refetchInterval: 10000, // Refresh every 10 seconds for real-time KPIs
-    staleTime: 5000 // Consider data fresh for 5 seconds only
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
+    staleTime: 0, // Always consider data stale - force fresh queries
+    gcTime: 0, // Don't cache results
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   const { data: salespeople, isLoading: salespeopleLoading } = useQuery<Salesperson[]>({
     queryKey: ['/api/v1/sales/salespeople'],
     queryFn: async () => {
+      console.log('🔍 Fetching salespeople data...');
       const response = await api.get('/api/v1/sales/salespeople');
       console.log('📊 Salespeople data received:', response);
       
@@ -195,7 +201,7 @@ export default function SalesManagement() {
         return [];
       }
       
-      return response.map((person: any) => ({
+      const mappedData = response.map((person: any) => ({
         id: person.id,
         full_name: person.full_name,
         email: person.email,
@@ -205,9 +211,15 @@ export default function SalesManagement() {
         assignments: person.assignments || 0,
         active_assignments: person.active_assignments || 0
       }));
+      
+      console.log('📊 Mapped salespeople data:', mappedData);
+      return mappedData;
     },
-    refetchInterval: 10000, // Refresh more frequently to catch changes
-    staleTime: 5000 // Consider data fresh for 5 seconds only
+    refetchInterval: 5000, // Refresh every 5 seconds
+    staleTime: 0, // Always consider data stale - force fresh queries
+    gcTime: 0, // Don't cache results
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   const { data: salespersonDetails } = useQuery<SalespersonDetails>({
@@ -376,16 +388,41 @@ export default function SalesManagement() {
               </Select>
               <Button 
                 variant="outline"
-                onClick={() => {
-                  queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/dashboard'] });
-                  queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
-                  queryClient.refetchQueries({ queryKey: ['/api/v1/sales/dashboard'] });
-                  queryClient.refetchQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+                onClick={async () => {
+                  console.log('🔄 Manual refresh triggered');
+                  
+                  // Clear all caches first
+                  queryClient.removeQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+                  queryClient.removeQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+                  queryClient.removeQueries({ queryKey: ['/api/v1/sales/assignments'] });
+                  
+                  // Force refetch with fresh data
+                  await Promise.all([
+                    queryClient.refetchQueries({ 
+                      queryKey: ['/api/v1/sales/dashboard'], 
+                      type: 'all'
+                    }),
+                    queryClient.refetchQueries({ 
+                      queryKey: ['/api/v1/sales/salespeople'], 
+                      type: 'all'
+                    }),
+                    queryClient.refetchQueries({ 
+                      queryKey: ['/api/v1/sales/assignments'], 
+                      type: 'all'
+                    })
+                  ]);
+                  
+                  console.log('✅ Manual refresh completed');
+                  
+                  toast({
+                    title: "Data refreshed",
+                    description: "Sales data has been updated with the latest information"
+                  });
                 }}
                 className="border-gray-700 hover:bg-gray-800/50"
               >
                 <Activity className="h-4 w-4 mr-2" />
-                Refresh
+                Refresh Data
               </Button>
               <Button 
                 onClick={() => navigate('/sales/create')}
@@ -420,8 +457,19 @@ export default function SalesManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {dashboardLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : dashboardData?.overview?.total_salespeople || 0}
+                        {dashboardLoading ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          <span className="text-cyan-400">
+                            {dashboardData?.overview?.total_salespeople || 0}
+                          </span>
+                        )}
                       </div>
+                      {!dashboardLoading && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Last updated: {new Date().toLocaleTimeString()}
+                        </p>
+                      )}
                     </CardContent>
                   </GlowCard>
 

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -114,36 +113,44 @@ export default function CreateSalesperson() {
           hire_date: data.hire_date,
           performance_tier: data.performance_tier,
         });
-        
+
         if (!profileResponse.success) {
           const errorMsg = profileResponse.error?.message || 'Failed to create salesperson profile';
           console.error('Profile creation failed:', profileResponse);
           throw new Error(errorMsg);
         }
-        
+
         return { user: userResponse.data, profile: profileResponse.data };
       }
 
       throw new Error('No user data returned from creation');
     },
     onSuccess: (data) => {
-      toast({ 
-        title: "Salesperson created successfully!", 
-        description: `${data.user.full_name} has been added to the sales team.` 
+      toast({
+        title: "Salesperson created successfully!",
+        description: `${data.user.full_name} has been added to the sales team.`
       });
-      // Invalidate all sales-related queries to refresh dashboard and list
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/users/enhanced'] });
+      // Clear cache and force immediate refresh
+      queryClient.removeQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+      queryClient.removeQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+      queryClient.removeQueries({ queryKey: ['/api/v1/users/enhanced'] });
+
+      // Force immediate refetch
+      Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/v1/sales/salespeople'], type: 'all' }),
+        queryClient.refetchQueries({ queryKey: ['/api/v1/sales/dashboard'], type: 'all' })
+      ]);
+
+      console.log('✅ Cache cleared and data refreshed after salesperson creation');
       navigate('/sales');
     },
     onError: (error: any) => {
       console.error('Salesperson creation error:', error);
       const errorMessage = error?.response?.data?.error?.message || error?.message || "Please try again.";
-      toast({ 
-        title: "Failed to create salesperson", 
+      toast({
+        title: "Failed to create salesperson",
         description: errorMessage,
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   });
@@ -168,10 +175,10 @@ export default function CreateSalesperson() {
         hire_date: data.hire_date,
         performance_tier: data.performance_tier,
       });
-      
+
       if (!profileResponse.success) {
         // Check if it's a duplicate profile error
-        if (profileResponse.error?.message?.includes('already exists') || 
+        if (profileResponse.error?.message?.includes('already exists') ||
             profileResponse.error?.message?.includes('duplicate') ||
             profileResponse.error?.code === 'PROFILE_EXISTS') {
           throw new Error('A sales profile has already been created for this user.');
@@ -180,28 +187,36 @@ export default function CreateSalesperson() {
         console.error('Profile creation failed:', profileResponse);
         throw new Error(errorMsg);
       }
-      
+
       return { user: userResponse.data, profile: profileResponse.data };
     },
     onSuccess: (data) => {
       const selectedUser = existingUsers?.find((u: User) => u.id === existingUserForm.getValues('user_id'));
-      toast({ 
-        title: "Salesperson profile created successfully!", 
-        description: `${selectedUser?.fullName} has been added to the sales team.` 
+      toast({
+        title: "Salesperson profile created successfully!",
+        description: `${selectedUser?.fullName} has been added to the sales team.`
       });
-      // Invalidate all sales-related queries to refresh dashboard and list
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/users/enhanced'] });
+      // Clear cache and force immediate refresh
+      queryClient.removeQueries({ queryKey: ['/api/v1/sales/salespeople'] });
+      queryClient.removeQueries({ queryKey: ['/api/v1/sales/dashboard'] });
+      queryClient.removeQueries({ queryKey: ['/api/v1/users/enhanced'] });
+
+      // Force immediate refetch
+      Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/v1/sales/salespeople'], type: 'all' }),
+        queryClient.refetchQueries({ queryKey: ['/api/v1/sales/dashboard'], type: 'all' })
+      ]);
+
+      console.log('✅ Cache cleared and data refreshed after salesperson profile creation');
       navigate('/sales');
     },
     onError: (error: any) => {
       console.error('Salesperson profile creation error:', error);
       const errorMessage = error?.message || error?.response?.data?.error?.message || "Please try again.";
-      toast({ 
-        title: "Failed to create salesperson profile", 
+      toast({
+        title: "Failed to create salesperson profile",
         description: errorMessage,
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   });
