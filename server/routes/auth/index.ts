@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../../lib/supabase';
 import { isEmailConfigured, emailConfigIssues, sendBrandedEmail, supabaseEmailShell, actionButton } from '../../lib/email';
 import { requireAuth } from '../../middleware/auth';
 import { logAuditEvent, AuditAction, getRequestMetadata } from '../../lib/audit';
+import { validateRequest, CreateAdminUserSchema } from '../../lib/validation';
 const r = Router();
 
 // POST /api/v1/auth/reset-request { email }
@@ -73,7 +74,7 @@ r.post('/complete-profile', requireAuth, async (req:any,res) => {
 });
 
 // POST /api/v1/auth/admin/create-user — SECURED: only accessible in development or with explicit env flag
-r.post('/admin/create-user', requireAuth, async (req: any, res) => {
+r.post('/admin/create-user', requireAuth, validateRequest(CreateAdminUserSchema), async (req: any, res) => {
   try{
     // SECURITY: Kill-switch for production environments
     const isProduction = process.env.NODE_ENV === 'production';

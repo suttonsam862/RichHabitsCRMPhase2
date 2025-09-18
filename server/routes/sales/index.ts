@@ -3,6 +3,11 @@ import { supabaseAdmin } from '../../lib/supabase.js';
 import { requireAuth, AuthedRequest } from '../middleware/auth.js';
 import { sendSuccess, sendErr } from '../lib/http.js';
 import { dashboardRouter } from './dashboard.js';
+import { 
+  validateRequest, 
+  CreateSalespersonProfileSchema, 
+  UpdateSalespersonProfileSchema 
+} from '../../lib/validation.js';
 
 const router = express.Router();
 
@@ -74,7 +79,10 @@ router.get('/salespeople', requireAuth, async (req: AuthedRequest, res) => {
 });
 
 // Create salesperson profile for existing user
-router.post('/salespeople/:userId/profile', requireAuth, async (req: AuthedRequest, res) => {
+router.post('/salespeople/:userId/profile', 
+  requireAuth, 
+  validateRequest(CreateSalespersonProfileSchema),
+  async (req: AuthedRequest, res) => {
   const { userId } = req.params;
   const {
     commission_rate = 0.05,
@@ -138,7 +146,10 @@ router.post('/salespeople/:userId/profile', requireAuth, async (req: AuthedReque
 });
 
 // Update salesperson profile
-router.patch('/salespeople/:userId/profile', requireAuth, async (req: AuthedRequest, res) => {
+router.patch('/salespeople/:userId/profile', 
+  requireAuth, 
+  validateRequest(UpdateSalespersonProfileSchema),
+  async (req: AuthedRequest, res) => {
   const { userId } = req.params;
   const updateData = req.body;
 
