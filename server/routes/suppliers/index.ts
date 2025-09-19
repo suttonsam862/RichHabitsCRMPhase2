@@ -7,7 +7,7 @@ import express from 'express';
 import { 
   SupplierFiltersDTO,
   SupplierType,
-} from '@shared/dtos';
+} from '../../../shared/dtos/index.js';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
@@ -44,7 +44,7 @@ router.get('/',
     const orgId = req.query.orgId as string;
     
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     // Parse and validate filters
@@ -92,7 +92,7 @@ router.get('/:supplierId',
     const orgId = req.query.orgId as string;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
@@ -125,7 +125,7 @@ router.get('/:supplierId',
       }
 
       if (!supplier) {
-        return sendErr(res, HttpErrors.NotFound('Supplier not found'));
+        return HttpErrors.notFound(res, 'Supplier not found');
       }
 
       // Get recent purchase orders for additional context
@@ -174,7 +174,7 @@ router.get('/:supplierId/performance',
     const periodEnd = req.query.periodEnd as string;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
@@ -250,9 +250,7 @@ router.post('/:supplierId/performance/calculate',
     const { periodStart, periodEnd } = req.body;
 
     if (!orgId || !periodStart || !periodEnd) {
-      return sendErr(res, HttpErrors.BadRequest(
-        'Organization ID, periodStart, and periodEnd are required'
-      ));
+      return HttpErrors.badRequest(res, 'Organization ID, periodStart, and periodEnd are required');
     }
 
     try {
@@ -309,7 +307,7 @@ router.get('/:supplierId/materials',
     const orgId = req.query.orgId as string;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
@@ -373,7 +371,7 @@ router.get('/:supplierId/purchase-orders',
     const offset = parseInt(req.query.offset as string) || 0;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {

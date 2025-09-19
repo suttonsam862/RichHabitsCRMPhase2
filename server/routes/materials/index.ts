@@ -12,7 +12,7 @@ import {
   MaterialType,
   MaterialsInventoryType,
   MaterialRequirementType,
-} from '@shared/dtos';
+} from '../../../shared/dtos/index.js';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
@@ -50,7 +50,7 @@ router.get('/',
     const orgId = req.query.orgId as string;
     
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     // Parse and validate filters
@@ -150,7 +150,7 @@ router.get('/:materialId',
     const orgId = req.query.orgId as string;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
@@ -185,7 +185,7 @@ router.get('/:materialId',
       }
 
       if (!material) {
-        return sendErr(res, HttpErrors.NotFound('Material not found'));
+        return HttpErrors.notFound(res, 'Material not found');
       }
 
       // Get recent material requirements
@@ -277,7 +277,7 @@ router.post('/',
           .single();
 
         if (existingMaterial) {
-          return sendErr(res, HttpErrors.BadRequest('SKU already exists for this organization'));
+          return HttpErrors.badRequest(res, 'SKU already exists for this organization');
         }
       }
 
@@ -290,11 +290,11 @@ router.post('/',
           .single();
 
         if (supplierError || !supplier) {
-          return sendErr(res, HttpErrors.BadRequest('Preferred supplier not found'));
+          return HttpErrors.badRequest(res, 'Preferred supplier not found');
         }
 
         if (!supplier.is_active) {
-          return sendErr(res, HttpErrors.BadRequest('Preferred supplier is not active'));
+          return HttpErrors.badRequest(res, 'Preferred supplier is not active');
         }
       }
 
@@ -369,7 +369,7 @@ router.put('/:materialId',
     const orgId = req.query.orgId as string;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
@@ -384,7 +384,7 @@ router.put('/:materialId',
           .single();
 
         if (existingMaterial) {
-          return sendErr(res, HttpErrors.BadRequest('SKU already exists for this organization'));
+          return HttpErrors.badRequest(res, 'SKU already exists for this organization');
         }
       }
 
@@ -397,7 +397,7 @@ router.put('/:materialId',
           .single();
 
         if (!supplier || !supplier.is_active) {
-          return sendErr(res, HttpErrors.BadRequest('Preferred supplier not found or not active'));
+          return HttpErrors.badRequest(res, 'Preferred supplier not found or not active');
         }
       }
 
@@ -428,7 +428,7 @@ router.put('/:materialId',
       }
 
       if (!updatedMaterial) {
-        return sendErr(res, HttpErrors.NotFound('Material not found'));
+        return HttpErrors.notFound(res, 'Material not found');
       }
 
       await logDatabaseOperation('materials', 'UPDATE', { materialId, orgId });
@@ -453,7 +453,7 @@ router.get('/:materialId/inventory',
     const orgId = req.query.orgId as string;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
@@ -529,11 +529,11 @@ router.put('/:materialId/inventory',
     const actorUserId = req.user?.id;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     if (quantityOnHand === undefined || quantityOnHand < 0) {
-      return sendErr(res, HttpErrors.BadRequest('Valid quantity on hand is required'));
+      return HttpErrors.badRequest(res, 'Valid quantity on hand is required');
     }
 
     try {
@@ -563,7 +563,7 @@ router.put('/:materialId/inventory',
       }
 
       if (!updatedInventory) {
-        return sendErr(res, HttpErrors.NotFound('Material inventory not found'));
+        return HttpErrors.notFound(res, 'Material inventory not found');
       }
 
       await logDatabaseOperation('materials_inventory', 'UPDATE', {
@@ -597,7 +597,7 @@ router.get('/:materialId/requirements',
     const offset = parseInt(req.query.offset as string) || 0;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
@@ -683,11 +683,11 @@ router.post('/:materialId/requirements',
         .single();
 
       if (woError || !workOrder) {
-        return sendErr(res, HttpErrors.BadRequest('Work order not found'));
+        return HttpErrors.badRequest(res, 'Work order not found');
       }
 
       if (workOrder.org_id !== requirementData.orgId) {
-        return sendErr(res, HttpErrors.BadRequest('Work order does not belong to organization'));
+        return HttpErrors.badRequest(res, 'Work order does not belong to organization');
       }
 
       // Check if requirement already exists
@@ -699,7 +699,7 @@ router.post('/:materialId/requirements',
         .single();
 
       if (existingReq) {
-        return sendErr(res, HttpErrors.BadRequest('Material requirement already exists for this work order'));
+        return HttpErrors.badRequest(res, 'Material requirement already exists for this work order');
       }
 
       const requirements = await PurchaseOrderService.createMaterialRequirements(
@@ -739,7 +739,7 @@ router.get('/low-stock',
     const orgId = req.query.orgId as string;
 
     if (!orgId) {
-      return sendErr(res, HttpErrors.BadRequest('Organization ID is required'));
+      return HttpErrors.badRequest(res, 'Organization ID is required');
     }
 
     try {
