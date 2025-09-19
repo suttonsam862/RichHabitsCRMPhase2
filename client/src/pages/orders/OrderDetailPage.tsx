@@ -59,7 +59,7 @@ interface TimelineEvent {
   actor_avatar?: string;
   payload?: any;
   occurred_at: string;
-  event_type?: string;
+  event_type?: 'status_change' | 'item_added' | 'item_updated' | 'note_added' | 'assignment' | 'file_upload' | 'payment' | 'shipping';
 }
 
 export function OrderDetailPage() {
@@ -227,7 +227,7 @@ export function OrderDetailPage() {
 
   const handleOrderArchive = () => {
     if (order) {
-      updateOrderMutation.mutate({ statusCode: 'archived' });
+      updateOrderMutation.mutate({ status_code: 'archived' });
     }
   };
 
@@ -268,7 +268,7 @@ export function OrderDetailPage() {
   };
 
   const handleUpdateItemStatus = (itemId: string, status: string) => {
-    updateItemMutation.mutate({ itemId, updates: { statusCode: status } });
+    updateItemMutation.mutate({ itemId, updates: { status_code: status } });
   };
 
   const handleAddNote = () => {

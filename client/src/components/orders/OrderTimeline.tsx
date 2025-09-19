@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarContent, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { 
   Clock,
@@ -40,7 +39,6 @@ interface OrderTimelineProps {
 }
 
 export function OrderTimeline({
-  orderId,
   events,
   isLoading = false,
   onAddNote,
@@ -74,7 +72,7 @@ export function OrderTimeline({
     }
   };
 
-  const getEventIcon = (eventCode: string, eventType?: string) => {
+  const getEventIcon = (eventCode: string) => {
     const iconMap: Record<string, any> = {
       order_created: Package,
       status_changed: ArrowRight,
@@ -94,7 +92,7 @@ export function OrderTimeline({
     return iconMap[eventCode] || Clock;
   };
 
-  const getEventColor = (eventCode: string, eventType?: string) => {
+  const getEventColor = (eventCode: string) => {
     const colorMap: Record<string, string> = {
       order_created: 'bg-blue-500',
       status_changed: 'bg-purple-500',
@@ -258,7 +256,7 @@ export function OrderTimeline({
                 key={type}
                 variant={filterType === type ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setFilterType(type)}
+                onClick={() => setFilterType(type || 'all')}
               >
                 {getEventTypeLabel(type)}
               </Button>
@@ -281,8 +279,8 @@ export function OrderTimeline({
           <ScrollArea className="h-96">
             <div className="space-y-6 pr-4">
               {filteredEvents.map((event, index) => {
-                const Icon = getEventIcon(event.event_code, event.event_type);
-                const iconColor = getEventColor(event.event_code, event.event_type);
+                const Icon = getEventIcon(event.event_code);
+                const iconColor = getEventColor(event.event_code);
                 const isLast = index === filteredEvents.length - 1;
 
                 return (
