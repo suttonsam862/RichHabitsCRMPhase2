@@ -9,15 +9,13 @@ import {
   httpRequestTotal,
   httpRequestSize,
   httpResponseSize,
-  getOrganizationLabel,
-  getUserRoleLabel,
   normalizeRoute,
   rateLimitHits,
   corsViolations
 } from '../lib/metrics';
 import { createHash } from 'crypto'; // Import createHash here
 
-interface MetricsRequest extends Request {
+export interface MetricsRequest extends Request {
   startTime?: number;
   user?: {
     id: string;
@@ -134,7 +132,7 @@ export function corsMetricsMiddleware(req: Request, res: Response, next: NextFun
  * Business metrics tracking helper
  * Call this from business logic to track business-specific events
  */
-export function trackBusinessEvent(event: string, req: MetricsRequest, additionalLabels: Record<string, string> = {}) {
+export async function trackBusinessEvent(event: string, req: MetricsRequest, additionalLabels: Record<string, string> = {}) {
   const orgLabel = getOrganizationLabel(req);
   const roleLabel = getUserRoleLabel(req);
 
@@ -146,7 +144,7 @@ export function trackBusinessEvent(event: string, req: MetricsRequest, additiona
       businessFileUploads, 
       businessOrganizationsCreated, 
       businessQuotesGenerated 
-    } = require('../lib/metrics');
+    } = await import('../lib/metrics.js');
 
     // Track specific business events with dedicated counters
     switch (event) {
@@ -195,12 +193,12 @@ export function trackBusinessEvent(event: string, req: MetricsRequest, additiona
  * Error tracking middleware
  * Should be added near the error handling middleware
  */
-export function errorMetricsMiddleware(error: any, req: MetricsRequest, res: Response, next: NextFunction) {
+export async function errorMetricsMiddleware(error: any, req: MetricsRequest, res: Response, next: NextFunction) {
   try {
     const orgLabel = getOrganizationLabel(req);
 
     // Import the error counter here to avoid circular dependencies
-    const { errorTotal } = require('../lib/metrics');
+    const { errorTotal } = await import('../lib/metrics.js');
 
     // Determine error type and severity
     let errorType = 'unknown';
@@ -249,9 +247,9 @@ export function errorMetricsMiddleware(error: any, req: MetricsRequest, res: Res
  * Security event tracker
  * Use this to track security-related events
  */
-export function trackSecurityEvent(eventType: string, req: MetricsRequest, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') {
+export async function trackSecurityEvent(eventType: string, req: MetricsRequest, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') {
   try {
-    const { securityEvents } = require('../lib/metrics');
+    const { securityEvents } = await import('../lib/metrics.js');
     const orgLabel = getOrganizationLabel(req);
 
     securityEvents.labels(eventType, severity, orgLabel).inc();

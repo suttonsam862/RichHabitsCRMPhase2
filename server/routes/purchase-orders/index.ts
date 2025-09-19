@@ -25,7 +25,7 @@ import { requireOrgMember } from '../../middleware/orgSecurity';
 import { logDatabaseOperation } from '../../lib/log';
 import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
 import { idempotent } from '../../lib/idempotency';
-import { trackBusinessEvent } from '../../middleware/metrics';
+import { trackBusinessEvent, MetricsRequest } from '../../middleware/metrics';
 import { PurchaseOrderService } from '../../services/purchaseOrderService';
 
 const router = express.Router();
@@ -233,7 +233,6 @@ router.post('/',
   requireOrgMember,
   validateRequest(CreatePurchaseOrderDTO),
   idempotent,
-  trackBusinessEvent('purchase_order_created'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const purchaseOrderData = req.body;
@@ -250,6 +249,12 @@ router.post('/',
         poId: purchaseOrder.id,
         orgId: purchaseOrderData.orgId,
         totalAmount: purchaseOrder.totalAmount,
+      });
+
+      // Track business event
+      await trackBusinessEvent('purchase_order_created', req as MetricsRequest, {
+        status: 'success',
+        orgId: purchaseOrderData.orgId
       });
 
       return sendCreated(res, purchaseOrder, 'Purchase order created successfully');
@@ -269,7 +274,6 @@ router.post('/bulk-generate',
   requireOrgMember,
   validateRequest(BulkGeneratePurchaseOrdersDTO),
   idempotent,
-  trackBusinessEvent('purchase_orders_bulk_generated'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const bulkData = req.body;
@@ -298,6 +302,13 @@ router.post('/bulk-generate',
         orgId,
       });
 
+      // Track business event
+      await trackBusinessEvent('purchase_orders_bulk_generated', req as MetricsRequest, {
+        status: 'success',
+        count: purchaseOrders.length.toString(),
+        orgId
+      });
+
       return sendCreated(res, { purchaseOrders }, `${purchaseOrders.length} purchase orders generated successfully`);
 
     } catch (error) {
@@ -314,7 +325,6 @@ router.post('/bulk-generate',
 router.put('/:poId/approve',
   requireOrgMember,
   validateRequest(ApprovePurchaseOrderDTO),
-  trackBusinessEvent('purchase_order_approved'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { poId } = req.params;
@@ -364,7 +374,6 @@ router.put('/:poId/approve',
 router.put('/:poId/status',
   requireOrgMember,
   validateRequest(UpdatePurchaseOrderStatusDTO),
-  trackBusinessEvent('purchase_order_status_updated'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { poId } = req.params;
@@ -392,6 +401,13 @@ router.put('/:poId/status',
         actorUserId,
       });
 
+      // Track business event
+      await trackBusinessEvent('purchase_order_status_updated', req as MetricsRequest, {
+        status: 'success',
+        newStatus: statusData.statusCode,
+        orgId
+      });
+
       return sendOk(res, purchaseOrder, 'Purchase order status updated successfully');
 
     } catch (error) {
@@ -414,7 +430,6 @@ router.put('/:poId/status',
 router.post('/:poId/receive',
   requireOrgMember,
   validateRequest(ReceivePurchaseOrderItemsDTO),
-  trackBusinessEvent('purchase_order_items_received'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { poId } = req.params;
@@ -443,6 +458,13 @@ router.post('/:poId/receive',
         receivedBy: actorUserId,
       });
 
+      // Track business event
+      await trackBusinessEvent('purchase_order_items_received', req as MetricsRequest, {
+        status: 'success',
+        itemsReceived: receiptData.items.length.toString(),
+        orgId
+      });
+
       return sendOk(res, purchaseOrder, 'Purchase order items received successfully');
 
     } catch (error) {
@@ -465,7 +487,6 @@ router.post('/:poId/receive',
 router.put('/:poId',
   requireOrgMember,
   validateRequest(UpdatePurchaseOrderDTO),
-  trackBusinessEvent('purchase_order_updated'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { poId } = req.params;
@@ -509,6 +530,12 @@ router.put('/:poId',
         orgId
       );
 
+      // Track business event
+      await trackBusinessEvent('purchase_order_updated', req as MetricsRequest, {
+        status: 'success',
+        orgId
+      });
+
       return sendOk(res, purchaseOrder, 'Purchase order updated successfully');
 
     } catch (error) {
@@ -524,7 +551,6 @@ router.put('/:poId',
  */
 router.delete('/:poId',
   requireOrgMember,
-  trackBusinessEvent('purchase_order_cancelled'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { poId } = req.params;
