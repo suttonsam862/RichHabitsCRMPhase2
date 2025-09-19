@@ -18,7 +18,6 @@ import {
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -33,14 +32,11 @@ import {
 } from "@/components/ui/select";
 import { 
   Users, 
-  Plus, 
   Search, 
-  Filter,
   Edit,
   Trash2,
   Mail,
   Phone,
-  MapPin,
   Building,
   Loader2,
   UserPlus,
@@ -370,11 +366,6 @@ export default function UsersManagement() {
     setShowEditModal(true);
   };
 
-  // Open view modal
-  const openViewModal = (user: User) => {
-    setSelectedUser(user);
-    setShowViewModal(true);
-  };
 
   // Format role badge
   const getRoleBadgeVariant = (role: string) => {

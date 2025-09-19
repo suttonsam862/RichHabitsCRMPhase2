@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { 
   Users, 
@@ -157,7 +157,7 @@ export default function UserRolesManagement() {
                 <div className={`w-3 h-3 rounded-full ${getRoleColor(role as Role)}`} />
                 <div>
                   <p className="text-sm font-medium text-white">{getUserRoleDisplayName(role as Role)}</p>
-                  <p className="text-2xl font-bold text-white">{count}</p>
+                  <p className="text-2xl font-bold text-white">{count as number}</p>
                 </div>
               </div>
             </CardContent>

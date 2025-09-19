@@ -11,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -19,11 +18,8 @@ import {
   Plus,
   Edit2,
   User,
-  Mail,
   Key,
   Shield,
-  CheckCircle,
-  XCircle,
   AlertCircle,
   Loader2,
   Copy,
@@ -150,7 +146,7 @@ export default function UsersAdminPage() {
   // Fetch organizations for role assignment
   const { data: orgsData } = useQuery({
     queryKey: ['/api/v1/organizations'],
-    queryFn: () => apiRequest('/v1/organizations'),
+    queryFn: () => apiRequest('/api/v1/organizations'),
     staleTime: 300000,
   });
 

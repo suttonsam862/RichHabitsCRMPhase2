@@ -50,7 +50,8 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 // Statistics endpoint MUST come before /:id route to avoid conflicts
-router.get('/__stats', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.get('/__stats', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { data: users, error: usersError } = await supabaseAdmin
       .from('users')
@@ -87,13 +88,14 @@ router.get('/__stats', requireAuth, async (req: AuthedRequest, res: Response) =>
 
     sendOk(res, stats);
   } catch (error: any) {
-    logger.error({ error: error.message, rid: req.id }, 'Failed to get user statistics');
+    logger.error({ error: error.message, rid: authedReq.user?.id }, 'Failed to get user statistics');
     sendErr(res, 'INTERNAL_ERROR', 'Failed to get user statistics', undefined, 500);
   }
 });
 
 // List users with filtering and pagination
-router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.get('/', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
   try {
     const {
       page = '1',
@@ -211,7 +213,8 @@ router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // Get user by ID
-router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.get('/:id', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { id } = req.params;
 
@@ -281,7 +284,8 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // Create new user
-router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.post('/', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
   try {
     const parseResult = CreateUserSchema.safeParse(req.body);
 
@@ -417,7 +421,8 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // Update user
-router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.patch('/:id', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { id } = req.params;
     const parseResult = UpdateUserSchema.safeParse(req.body);
@@ -536,7 +541,8 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // Delete user
-router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.delete('/:id', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { id } = req.params;
 

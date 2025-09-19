@@ -26,7 +26,8 @@ const updateRolesSchema = z.object({
 });
 
 // List all users with pagination and search
-router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
+  const authedReq = req as AuthedRequest;
   const {
     q = '',
     page = '1',
@@ -104,7 +105,8 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
 }));
 
 // Get user by ID
-router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
+  const authedReq = req as AuthedRequest;
   const { id } = req.params;
 
   try {
@@ -136,7 +138,8 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
 }));
 
 // PATCH /:id/email - Update user email
-router.patch('/:id/email', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+router.patch('/:id/email', requireAuth, asyncHandler(async (req, res) => {
+  const authedReq = req as AuthedRequest;
   const { id } = req.params;
 
   try {
@@ -164,7 +167,8 @@ router.patch('/:id/email', requireAuth, asyncHandler(async (req: AuthedRequest, 
 }));
 
 // POST /:id/reset-password - Reset user password
-router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+router.post('/:id/reset-password', requireAuth, asyncHandler(async (req, res) => {
+  const authedReq = req as AuthedRequest;
   const { id } = req.params;
 
   try {
@@ -183,7 +187,7 @@ router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedR
       return sendErr(res, 'UPDATE_ERROR', error.message, undefined, 400);
     }
 
-    logSecurityEvent(req, 'USER_PASSWORD_RESET', { userId: id, adminId: req.user?.id });
+    logSecurityEvent(req, 'USER_PASSWORD_RESET', { userId: id, adminId: authedReq.user?.id });
 
     // Only return masked version (first 3 chars)
     const maskedPassword = password.substring(0, 3) + '*'.repeat(9);
@@ -198,7 +202,8 @@ router.post('/:id/reset-password', requireAuth, asyncHandler(async (req: AuthedR
 }));
 
 // PATCH /:id/roles - Update user roles (now handled via Supabase user metadata)
-router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
+router.patch('/:id/roles', requireAuth, asyncHandler(async (req, res) => {
+  const authedReq = req as AuthedRequest;
   const { id } = req.params;
 
   try {
@@ -239,11 +244,12 @@ router.patch('/:id/roles', requireAuth, asyncHandler(async (req: AuthedRequest, 
 
 // Create user - only in Supabase Auth
 router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
-  asyncHandler(async (req: AuthedRequest, res) => {
+  asyncHandler(async (req, res) => {
+    const authedReq = req as AuthedRequest;
     const validatedData = req.body;
 
     // Role-based authorization: only admins can assign admin/staff roles
-    const requestingUser = req.user;
+    const requestingUser = authedReq.user;
     const requestedRole = validatedData.role || 'customer';
 
     if (['admin', 'staff', 'sales'].includes(requestedRole)) {
@@ -319,7 +325,8 @@ router.post('/', requireAuth, validateRequest({ body: CreateUserDTO }),
 // Update user - only in Supabase Auth
 router.patch('/:id',
   validateRequest({ body: UpdateUserDTO }),
-  asyncHandler(async (req: AuthedRequest, res) => {
+  asyncHandler(async (req, res) => {
+    const authedReq = req as AuthedRequest;
     const { id } = req.params;
     const updateData = req.body;
 
