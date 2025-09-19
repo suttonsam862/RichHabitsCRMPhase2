@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { requireOrgAdmin } from '../middleware/orgSecurity';
 import authRoutes from './auth';
 import { usersRouter } from './users';
@@ -8,7 +8,7 @@ import { comprehensiveUsersRouter } from './users/comprehensive';
 import { enhancedUsersRouter } from './users/enhanced';
 import organizationsRoutes from './organizations/index.js';
 import sportsRoutes from './sports/index';
-import salesRoutes from './sales/index';
+import { salesRouter } from './sales/index';
 import regionsRoutes from './regions/index';
 import performanceTiersRoutes from './performance-tiers/index';
 import orderStatusRoutes from './order-status/index';
@@ -43,7 +43,7 @@ router.use('/users', usersRouter);
 router.use('/organizations', organizationsRoutes);
 router.use('/files', brandingRouter); // Mount branding routes under /files
 router.use('/sports', sportsRoutes);
-router.use('/sales', salesRoutes);
+router.use('/sales', salesRouter);
 router.use('/regions', regionsRoutes);
 router.use('/performance-tiers', performanceTiersRoutes);
 router.use('/order-status', orderStatusRoutes);
@@ -74,7 +74,7 @@ if (process.env.NODE_ENV === 'development') {
 // Object storage routes - using ObjectStorageService implementation below
 
 // SECURED: Upload endpoint with organization-scoped access control - Phase 0 SEC-2
-router.post('/objects/upload', requireAuth, requireOrgAdmin(), async (req: any, res) => {
+router.post('/objects/upload', requireAuth, requireOrgAdmin(), async (req, res) => {
   try {
     const { fileName, organizationId } = req.body || {};
 
@@ -126,18 +126,18 @@ router.post('/objects/upload', requireAuth, requireOrgAdmin(), async (req: any, 
 });
 
 // Debug route to list files in storage - SECURED: disabled in production unless explicitly enabled
-router.get('/debug/storage-files', requireAuth, async (req: any, res) => {
+router.get('/debug/storage-files', requireAuth, async (req, res) => {
   // Phase 0 SEC-2: Block debug endpoints in production
   const isProduction = process.env.NODE_ENV === 'production';
   const allowDebugEndpoints = process.env.ALLOW_DEBUG_ENDPOINTS === 'true';
   
   if (isProduction && !allowDebugEndpoints) {
-    console.warn(`[SEC-2] Blocked debug endpoint access in production by user: ${req.user?.id}`);
+    console.warn(`[SEC-2] Blocked debug endpoint access in production by user: ${(req as AuthedRequest).user?.id}`);
     return res.status(404).json({ error: 'Not found' }); // Return 404 to hide endpoint existence
   }
   
   // SECURITY: Only super-admins can access storage files listing
-  if (!req.user?.is_super_admin) {
+  if (!(req as AuthedRequest).user?.is_super_admin) {
     return res.status(403).json({ error: 'Super admin access required' });
   }
   try {
@@ -155,10 +155,10 @@ router.get('/debug/storage-files', requireAuth, async (req: any, res) => {
 });
 
 // SECURED: File serving endpoint with strict path validation and org membership check - Phase 0 SEC-2
-router.get('/files/public-objects/:filePath(*)', requireAuth, async (req: any, res) => {
+router.get('/files/public-objects/:filePath(*)', requireAuth, async (req, res) => {
   try {
     const filePath = req.params.filePath as string;
-    const user = req.user;
+    const user = (req as AuthedRequest).user;
 
     if (!user?.id) {
       return res.status(401).json({ error: 'Authentication required' });

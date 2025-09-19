@@ -55,7 +55,7 @@ function hasRequiredRole(userRole: OrgRole, requiredRole: OrgRole): boolean {
  * @param allowSuperAdmin - Whether super admins bypass role checks (defaults to true)
  */
 export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSuperAdmin: boolean = true) {
-  return async (req: AuthedRequest, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     try {
@@ -63,7 +63,7 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
       const orgId = extractOrgId(req);
       
       if (!orgId) {
-        logSecurityEvent(req, 'ORG_ACCESS_NO_ID', { 
+        logSecurityEvent(req as AuthedRequest, 'ORG_ACCESS_NO_ID', { 
           path: req.path, 
           method: req.method,
           requestId 
@@ -74,7 +74,7 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
       // Note: organization.id is varchar, may not always be UUID format
       // Remove strict UUID validation to allow non-UUID varchar IDs
       if (!orgId || orgId.trim() === '') {
-        logSecurityEvent(req, 'ORG_ACCESS_INVALID_ID', { 
+        logSecurityEvent(req as AuthedRequest, 'ORG_ACCESS_INVALID_ID', { 
           orgId, 
           path: req.path,
           requestId 
@@ -82,9 +82,9 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
         return sendErr(res, 'BAD_REQUEST', 'Invalid organization ID', undefined, 400);
       }
 
-      const user = req.user;
+      const user = (req as AuthedRequest).user;
       if (!user) {
-        logSecurityEvent(req, 'ORG_ACCESS_NO_AUTH', { 
+        logSecurityEvent(req as AuthedRequest, 'ORG_ACCESS_NO_AUTH', { 
           orgId, 
           path: req.path,
           requestId 
@@ -175,7 +175,7 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logSecurityEvent(req, 'ORG_ACCESS_DB_ERROR', { 
         orgId: extractOrgId(req), 
-        userId: req.user?.id, 
+        userId: (req as AuthedRequest).user?.id, 
         error: errorMessage,
         path: req.path,
         requestId 
@@ -256,7 +256,7 @@ export async function addUserToOrganization(
     const canonicalOrgId = orgResult[0].id;
     
     // Check if the canonical org ID is UUID-formatted
-    if (!uuidRegex.test(canonicalOrgId)) {
+    if (!uuidRegex.test(canonicalOrgId as string)) {
       return { 
         success: false, 
         error: 'Cannot create membership for non-UUID organization ID with current schema' 
