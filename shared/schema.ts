@@ -1300,5 +1300,94 @@ export const statusShipping = pgTable("status_shipping", {
         iconName: text("icon_name"), // For UI display
 });
 
+// Notifications and Real-Time System Tables
+
+export const notifications = pgTable("notifications", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        userId: varchar("user_id").notNull(),
+        type: varchar({ length: 50 }).notNull(), // info, success, warning, error, order_update, design_update, etc.
+        title: varchar({ length: 255 }).notNull(),
+        message: text().notNull(),
+        data: jsonb(), // Additional structured data (order_id, item_id, etc.)
+        isRead: boolean("is_read").default(false),
+        readAt: timestamp("read_at", { withTimezone: true, mode: 'string' }),
+        category: varchar({ length: 50 }).default('general'), // order, design, manufacturing, fulfillment, system, etc.
+        priority: varchar({ length: 20 }).default('normal'), // low, normal, high, urgent
+        actionUrl: varchar("action_url"), // URL to navigate to when notification is clicked
+        expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }),
+        metadata: jsonb(), // Additional metadata for real-time events
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxNotificationsOrgId: index("idx_notifications_org_id").on(table.orgId),
+        idxNotificationsUserId: index("idx_notifications_user_id").on(table.userId),
+        idxNotificationsType: index("idx_notifications_type").on(table.type),
+        idxNotificationsIsRead: index("idx_notifications_is_read").on(table.isRead),
+        idxNotificationsCreatedAt: index("idx_notifications_created_at").on(table.createdAt),
+        idxNotificationsCategory: index("idx_notifications_category").on(table.category),
+        fkNotificationsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_notifications_org_id"
+        }),
+        fkNotificationsUserId: foreignKey({
+                columns: [table.userId],
+                foreignColumns: [users.id],
+                name: "fk_notifications_user_id"
+        }).onDelete("cascade"),
+}));
+
+export const notificationPreferences = pgTable("notification_preferences", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        userId: varchar("user_id").notNull(),
+        category: varchar({ length: 50 }).notNull(), // order, design, manufacturing, fulfillment, system
+        channel: varchar({ length: 20 }).notNull(), // real_time, email, sms, push
+        isEnabled: boolean("is_enabled").default(true),
+        settings: jsonb(), // Additional channel-specific settings
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxNotificationPrefsUserId: index("idx_notification_prefs_user_id").on(table.userId),
+        idxNotificationPrefsCategory: index("idx_notification_prefs_category").on(table.category),
+        uniqNotificationPrefs: unique("uniq_notification_prefs").on(table.userId, table.category, table.channel),
+        fkNotificationPrefsUserId: foreignKey({
+                columns: [table.userId],
+                foreignColumns: [users.id],
+                name: "fk_notification_prefs_user_id"
+        }).onDelete("cascade"),
+}));
+
+export const realtimeEvents = pgTable("realtime_events", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        eventType: varchar("event_type", { length: 100 }).notNull(), // order_created, order_updated, design_job_assigned, etc.
+        entityType: varchar("entity_type", { length: 50 }).notNull(), // order, order_item, design_job, work_order, etc.
+        entityId: varchar("entity_id").notNull(),
+        actorUserId: varchar("actor_user_id"), // User who triggered the event
+        eventData: jsonb(), // Event payload data
+        broadcastToUsers: text("broadcast_to_users").array(), // Specific user IDs to broadcast to
+        broadcastToRoles: text("broadcast_to_roles").array(), // Roles to broadcast to
+        isBroadcast: boolean("is_broadcast").default(true),
+        processedAt: timestamp("processed_at", { withTimezone: true, mode: 'string' }),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxRealtimeEventsOrgId: index("idx_realtime_events_org_id").on(table.orgId),
+        idxRealtimeEventsEventType: index("idx_realtime_events_event_type").on(table.eventType),
+        idxRealtimeEventsEntityType: index("idx_realtime_events_entity_type").on(table.entityType),
+        idxRealtimeEventsEntityId: index("idx_realtime_events_entity_id").on(table.entityId),
+        idxRealtimeEventsCreatedAt: index("idx_realtime_events_created_at").on(table.createdAt),
+        fkRealtimeEventsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_realtime_events_org_id"
+        }),
+        fkRealtimeEventsActorUserId: foreignKey({
+                columns: [table.actorUserId],
+                foreignColumns: [users.id],
+                name: "fk_realtime_events_actor_user_id"
+        }).onDelete("set null"),
+}));
+
 
 // All tables are already exported above where they are defined

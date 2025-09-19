@@ -59,6 +59,7 @@ router.use('/materials', materialRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/fulfillment', fulfillmentRoutes);
 router.use('/permission-templates', permissionTemplatesRoutes);
+router.use('/notifications', require('./notifications').default);
 // Removed deprecated upload routes - now handled by objects endpoint
 router.use('/admin/config', adminConfig);
 router.use('/admin/diagnostics', adminDiagnostics);

@@ -283,6 +283,40 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Verification endpoint for real-time system health
+app.get('/api/verification', async (req, res) => {
+  try {
+    const { StartupVerification } = await import('./lib/startup-verification');
+    const verificationResult = await StartupVerification.healthCheck();
+    const statusCode = verificationResult.status === 'healthy' ? 200 : 503;
+    res.status(statusCode).json(verificationResult);
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error',
+      message: 'Verification check failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// WebSocket-specific health check
+app.get('/api/verification/websocket', async (req, res) => {
+  try {
+    const { StartupVerification } = await import('./lib/startup-verification');
+    const wsHealth = await StartupVerification.wsHealthCheck();
+    const statusCode = wsHealth.status === 'healthy' ? 200 : 503;
+    res.status(statusCode).json(wsHealth);
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error',
+      message: 'WebSocket health check failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Enhanced metrics endpoint with comprehensive Prometheus metrics
 app.get('/metrics', async (req, res) => {
   try {
@@ -388,21 +422,54 @@ if (isDevelopment) {
   }
 }
 
+// Initialize WebSocket server
+import { initializeWebSocket } from './lib/websocket';
+import { StartupVerification } from './lib/startup-verification';
+let wsManager: any = null;
+
 // Initialize database monitoring
 import { metricsDB } from './lib/db-metrics';
 metricsDB.startConnectionPoolMonitoring();
 
-// Start server
-server.listen(PORT, '0.0.0.0', () => {
+// Start server with startup verification
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📁 API routes available at: http://0.0.0.0:${PORT}/api`);
   console.log(`📊 Prometheus metrics available at: http://0.0.0.0:${PORT}/metrics`);
+  
+  // Initialize WebSocket server after HTTP server is listening
+  try {
+    wsManager = initializeWebSocket(server);
+    console.log(`🔌 WebSocket server running on ws://0.0.0.0:${PORT}/ws`);
+  } catch (error) {
+    console.error('❌ Failed to initialize WebSocket server:', error);
+  }
+
+  // Run startup verification checks
+  try {
+    const { passed, results } = await StartupVerification.runAllChecks();
+    
+    if (!passed) {
+      console.error('\n❌ Startup verification failed! Some critical components are not ready.');
+      const criticalFailures = results.filter(r => r.status === 'failed');
+      if (criticalFailures.some(f => f.name.includes('Database') || f.name.includes('WebSocket'))) {
+        console.error('🚨 Critical infrastructure failure detected. Real-time features may not work properly.');
+      }
+    } else {
+      console.log('\n✅ All startup verification checks passed! Server is ready for real-time operations.');
+    }
+  } catch (verificationError) {
+    console.error('❌ Error running startup verification:', verificationError);
+  }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
+  if (wsManager) {
+    wsManager.shutdown();
+  }
   server.close(() => {
     console.log('Process terminated');
   });
@@ -410,6 +477,9 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('\nSIGINT received, shutting down gracefully');
+  if (wsManager) {
+    wsManager.shutdown();
+  }
   server.close(() => {
     console.log('Process terminated');
   });

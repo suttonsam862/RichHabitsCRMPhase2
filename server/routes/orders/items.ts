@@ -10,6 +10,7 @@ import { requireOrgMember } from '../../middleware/orgSecurity';
 import { logDatabaseOperation } from '../../lib/log';
 import { trackBusinessEvent } from '../../middleware/metrics';
 import { DesignJobService } from '../../services/designJobService';
+import { notificationService } from '../../services/notificationService';
 
 const router = express.Router({ mergeParams: true });
 
@@ -226,6 +227,30 @@ router.post('/',
       });
 
       logDatabaseOperation(req, 'ORDER_ITEM_CREATED', 'order_items', { orderId, itemId: newItem.id });
+
+      // Broadcast real-time event for order item creation
+      try {
+        await notificationService.broadcastEvent({
+          orgId: order.org_id,
+          eventType: 'order_item_created',
+          entityType: 'order_item',
+          entityId: newItem.id,
+          actorUserId: req.user?.id,
+          eventData: {
+            orderId: orderId,
+            itemId: newItem.id,
+            nameSnapshot: newItem.name_snapshot,
+            quantity: newItem.quantity,
+            statusCode: newItem.status_code,
+            priceSnapshot: newItem.price_snapshot
+          },
+          broadcastToRoles: ['admin', 'sales', 'manager'],
+          isBroadcast: true
+        });
+      } catch (wsError) {
+        console.error('Error broadcasting order item creation event:', wsError);
+      }
+
       sendCreated(res, newItem);
     } catch (error) {
       if (error instanceof Error && error.message === 'Order not found') {
@@ -366,6 +391,36 @@ router.put('/:itemId',
       });
 
       logDatabaseOperation(req, 'ORDER_ITEM_UPDATED', 'order_items', { orderId, itemId });
+
+      // Broadcast real-time event for order item update
+      try {
+        const eventType = validatedData.statusCode && validatedData.statusCode !== item.status_code
+          ? 'order_item_status_updated'
+          : 'order_item_updated';
+
+        await notificationService.broadcastEvent({
+          orgId: order.org_id,
+          eventType,
+          entityType: 'order_item',
+          entityId: itemId,
+          actorUserId: req.user?.id,
+          eventData: {
+            orderId: orderId,
+            itemId: itemId,
+            updatedFields: Object.keys(updateData).filter(key => key !== 'updated_at'),
+            previousStatus: validatedData.statusCode ? item.status_code : undefined,
+            newStatus: validatedData.statusCode || updatedItem.status_code,
+            nameSnapshot: updatedItem.name_snapshot,
+            quantity: updatedItem.quantity,
+            priceSnapshot: updatedItem.price_snapshot
+          },
+          broadcastToRoles: ['admin', 'sales', 'manager'],
+          isBroadcast: true
+        });
+      } catch (wsError) {
+        console.error('Error broadcasting order item update:', wsError);
+      }
+
       sendOk(res, updatedItem);
     } catch (error) {
       if (error instanceof Error && (error.message === 'Order not found' || error.message === 'Order item not found')) {

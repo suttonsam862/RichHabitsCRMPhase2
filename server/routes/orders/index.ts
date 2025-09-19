@@ -20,6 +20,8 @@ import { idempotent } from '../../lib/idempotency';
 import { trackBusinessEvent } from '../../middleware/metrics';
 import orderItemsRouter from './items';
 import { fulfillmentService } from '../../services/fulfillmentService';
+import { notificationService } from '../../services/notificationService';
+import { getWebSocketManager } from '../../lib/websocket';
 
 const router = express.Router();
 
@@ -518,6 +520,30 @@ router.post('/',
       });
 
       logDatabaseOperation(req, 'ORDER_CREATED', 'orders', { orderId: newOrder.id });
+
+      // Broadcast real-time event
+      try {
+        await notificationService.broadcastEvent({
+          orgId: newOrder.org_id,
+          eventType: 'order_created',
+          entityType: 'order',
+          entityId: newOrder.id,
+          actorUserId: req.user?.id,
+          eventData: {
+            orderCode: newOrder.code,
+            customerContactName: newOrder.customer_contact_name,
+            statusCode: newOrder.status_code,
+            totalAmount: newOrder.total_amount,
+            itemCount: validatedData.items?.length || 0
+          },
+          broadcastToRoles: ['admin', 'sales', 'manager'],
+          isBroadcast: true
+        });
+      } catch (wsError) {
+        console.error('Error broadcasting order creation event:', wsError);
+        // Don't fail the request if WebSocket fails
+      }
+
       sendCreated(res, newOrder);
     } catch (error) {
       if (error instanceof Error && error.message === 'Missing authentication token') {
@@ -577,6 +603,61 @@ router.patch('/:id/status', requireOrgMember(), asyncHandler(async (req: AuthedR
     }
 
     logDatabaseOperation(req, 'ORDER_STATUS_UPDATED', 'orders', { orderId: id, statusCode, previousStatus: currentStatus });
+
+    // Broadcast real-time status update
+    try {
+      await notificationService.broadcastEvent({
+        orgId: data.org_id,
+        eventType: 'order_status_updated',
+        entityType: 'order',
+        entityId: id,
+        actorUserId: req.user?.id,
+        eventData: {
+          orderCode: data.code,
+          previousStatus: currentStatus,
+          newStatus: statusCode,
+          customerContactName: data.customer_contact_name,
+          totalAmount: data.total_amount
+        },
+        broadcastToRoles: ['admin', 'sales', 'manager'],
+        isBroadcast: true
+      });
+
+      // Create targeted notifications for important status changes
+      if (['confirmed', 'processing', 'shipped', 'completed', 'cancelled'].includes(statusCode)) {
+        // Get organization members who should be notified
+        const { data: orgMembers } = await sb
+          .from('organization_memberships')
+          .select('user_id, role')
+          .eq('org_id', data.org_id)
+          .eq('status', 'active')
+          .in('role', ['admin', 'sales', 'manager']);
+
+        if (orgMembers?.length) {
+          const notifications = orgMembers.map(member => ({
+            orgId: data.org_id,
+            userId: member.user_id,
+            type: 'order_update' as const,
+            title: `Order ${data.code} ${statusCode}`,
+            message: `Order ${data.code} status changed from ${currentStatus} to ${statusCode}`,
+            category: 'order' as const,
+            priority: ['cancelled', 'completed'].includes(statusCode) ? 'high' as const : 'normal' as const,
+            actionUrl: `/orders/${id}`,
+            data: {
+              orderId: id,
+              orderCode: data.code,
+              previousStatus: currentStatus,
+              newStatus: statusCode
+            }
+          }));
+
+          await notificationService.createNotifications(notifications);
+        }
+      }
+    } catch (wsError) {
+      console.error('Error broadcasting order status update:', wsError);
+    }
+
     sendOk(res, data);
   } catch (error) {
     if (error instanceof Error && error.message === 'Order not found') {
@@ -655,6 +736,30 @@ router.patch('/:id',
         updatedFields: Object.keys(updateData),
         statusChanged: validatedData.statusCode ? { from: currentStatus, to: validatedData.statusCode } : undefined
       });
+
+      // Broadcast real-time order update
+      try {
+        await notificationService.broadcastEvent({
+          orgId: data.org_id,
+          eventType: validatedData.statusCode ? 'order_status_updated' : 'order_updated',
+          entityType: 'order',
+          entityId: id,
+          actorUserId: req.user?.id,
+          eventData: {
+            orderCode: data.code,
+            updatedFields: Object.keys(updateData).filter(key => key !== 'updated_at'),
+            previousStatus: validatedData.statusCode ? currentStatus : undefined,
+            newStatus: validatedData.statusCode || data.status_code,
+            customerContactName: data.customer_contact_name,
+            totalAmount: data.total_amount
+          },
+          broadcastToRoles: ['admin', 'sales', 'manager'],
+          isBroadcast: true
+        });
+      } catch (wsError) {
+        console.error('Error broadcasting order update:', wsError);
+      }
+
       sendOk(res, data);
     } catch (error) {
       if (error instanceof Error && error.message === 'Order not found') {
@@ -745,6 +850,59 @@ router.post('/:id/cancel',
       reason: reason || 'No reason provided',
       previous_status: currentStatus
     });
+
+    // Broadcast real-time cancellation event
+    try {
+      await notificationService.broadcastEvent({
+        orgId: cancelledOrder.org_id,
+        eventType: 'order_cancelled',
+        entityType: 'order',
+        entityId: id,
+        actorUserId: req.user?.id,
+        eventData: {
+          orderCode: cancelledOrder.code,
+          previousStatus: currentStatus,
+          newStatus: 'cancelled',
+          reason: reason || 'No reason provided',
+          customerContactName: cancelledOrder.customer_contact_name,
+          totalAmount: cancelledOrder.total_amount
+        },
+        broadcastToRoles: ['admin', 'sales', 'manager'],
+        isBroadcast: true
+      });
+
+      // Create urgent notification for order cancellation
+      const { data: orgMembers } = await sb
+        .from('organization_memberships')
+        .select('user_id, role')
+        .eq('org_id', cancelledOrder.org_id)
+        .eq('status', 'active')
+        .in('role', ['admin', 'sales', 'manager']);
+
+      if (orgMembers?.length) {
+        const notifications = orgMembers.map(member => ({
+          orgId: cancelledOrder.org_id,
+          userId: member.user_id,
+          type: 'order_update' as const,
+          title: `Order ${cancelledOrder.code} Cancelled`,
+          message: `Order ${cancelledOrder.code} has been cancelled. Reason: ${reason || 'No reason provided'}`,
+          category: 'order' as const,
+          priority: 'urgent' as const,
+          actionUrl: `/orders/${id}`,
+          data: {
+            orderId: id,
+            orderCode: cancelledOrder.code,
+            previousStatus: currentStatus,
+            newStatus: 'cancelled',
+            reason: reason || 'No reason provided'
+          }
+        }));
+
+        await notificationService.createNotifications(notifications);
+      }
+    } catch (wsError) {
+      console.error('Error broadcasting order cancellation:', wsError);
+    }
     
     logDatabaseOperation(req, 'ORDER_CANCELLED', 'orders', { orderId: id, reason, previousStatus: currentStatus });
     sendOk(res, cancelledOrder);
