@@ -227,6 +227,15 @@ export class WorkOrderService {
       );
     }
 
+    // Trigger fulfillment integration for key manufacturing milestones
+    await WorkOrderService.triggerFulfillmentIntegration(
+      sb, 
+      workOrder, 
+      currentStatus, 
+      newStatusCode, 
+      actorUserId
+    );
+
     return updatedWorkOrder;
   }
 
@@ -803,6 +812,358 @@ export class WorkOrderService {
 
     } catch (error) {
       console.error(`Error checking material requirements for work order ${workOrderId}:`, error);
+    }
+  }
+
+  /**
+   * Trigger fulfillment integration when manufacturing milestones are reached
+   * This bridges the manufacturing and fulfillment workflows
+   */
+  static async triggerFulfillmentIntegration(
+    sb: SupabaseClient,
+    workOrder: any,
+    fromStatus: string,
+    toStatus: string,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      // Import fulfillment service dynamically to avoid circular dependencies
+      const { fulfillmentService } = await import('./fulfillmentService');
+
+      // Get order information for fulfillment integration
+      const { data: orderItem } = await sb
+        .from('order_items')
+        .select('order_id, org_id')
+        .eq('id', workOrder.order_item_id)
+        .single();
+
+      if (!orderItem) {
+        console.warn(`Order item not found for work order ${workOrder.id}`);
+        return;
+      }
+
+      const orderId = orderItem.order_id;
+      const orgId = orderItem.org_id;
+
+      // Trigger different fulfillment actions based on manufacturing status changes
+      switch (toStatus) {
+        case 'completed':
+          // Manufacturing completed - check if ready for fulfillment
+          await this.handleManufacturingCompletion(
+            sb, 
+            fulfillmentService, 
+            orderId, 
+            orgId, 
+            workOrder, 
+            actorUserId
+          );
+          break;
+
+        case 'quality_approved':
+          // Quality approved - update quality milestone
+          await this.handleQualityApproval(
+            sb, 
+            fulfillmentService, 
+            orderId, 
+            orgId, 
+            workOrder, 
+            actorUserId
+          );
+          break;
+
+        case 'shipped':
+          // Item shipped from manufacturer - update shipping milestone
+          await this.handleManufacturerShipment(
+            sb, 
+            fulfillmentService, 
+            orderId, 
+            orgId, 
+            workOrder, 
+            actorUserId
+          );
+          break;
+
+        case 'delayed':
+        case 'on_hold':
+          // Manufacturing issues - create fulfillment blocker
+          await this.handleManufacturingDelay(
+            sb, 
+            fulfillmentService, 
+            orderId, 
+            orgId, 
+            workOrder, 
+            fromStatus, 
+            toStatus, 
+            actorUserId
+          );
+          break;
+      }
+    } catch (error) {
+      console.error('Error in fulfillment integration:', error);
+      // Don't throw - this shouldn't block the manufacturing workflow
+    }
+  }
+
+  /**
+   * Handle manufacturing completion and check for fulfillment readiness
+   */
+  private static async handleManufacturingCompletion(
+    sb: SupabaseClient,
+    fulfillmentService: any,
+    orderId: string,
+    orgId: string,
+    workOrder: any,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      // Check if fulfillment has been started for this order
+      const { data: existingMilestones } = await sb
+        .from('fulfillment_milestones')
+        .select('id')
+        .eq('order_id', orderId)
+        .eq('org_id', orgId)
+        .limit(1);
+
+      // If no fulfillment started yet, start it now
+      if (!existingMilestones || existingMilestones.length === 0) {
+        await fulfillmentService.startFulfillment(
+          orderId, 
+          orgId, 
+          actorUserId, 
+          {
+            notes: `Fulfillment auto-started after manufacturing completion for work order ${workOrder.id}`,
+            priority: workOrder.priority || 5
+          }
+        );
+      }
+
+      // Update manufacturing completed milestone
+      const milestoneResult = await fulfillmentService.updateMilestone(
+        orderId, 
+        orgId, 
+        'MANUFACTURING_COMPLETED', 
+        {
+          status: 'completed',
+          completedBy: actorUserId,
+          notes: `Manufacturing completed for work order ${workOrder.id}`
+        }
+      );
+
+      // Check if all manufacturing is complete to trigger next phase
+      await this.checkAndTriggerFulfillmentReadiness(sb, fulfillmentService, orderId, orgId);
+
+    } catch (error) {
+      console.error('Error handling manufacturing completion:', error);
+    }
+  }
+
+  /**
+   * Handle quality approval from manufacturing
+   */
+  private static async handleQualityApproval(
+    sb: SupabaseClient,
+    fulfillmentService: any,
+    orderId: string,
+    orgId: string,
+    workOrder: any,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      // Create quality check record for fulfillment tracking
+      await fulfillmentService.createQualityCheck({
+        orgId,
+        orderId,
+        workOrderId: workOrder.id,
+        checkType: 'post_manufacturing',
+        checkedBy: actorUserId || 'system',
+        overallResult: 'pass',
+        qualityScore: 5.0,
+        notes: `Quality approved for work order ${workOrder.id}`,
+        checkResults: {
+          manufacturingQuality: 'pass',
+          workOrderId: workOrder.id
+        }
+      });
+
+      // Update quality milestone
+      await fulfillmentService.updateMilestone(
+        orderId, 
+        orgId, 
+        'QUALITY_CHECK_PASSED', 
+        {
+          status: 'completed',
+          completedBy: actorUserId,
+          notes: `Quality check passed for work order ${workOrder.id}`
+        }
+      );
+
+    } catch (error) {
+      console.error('Error handling quality approval:', error);
+    }
+  }
+
+  /**
+   * Handle shipment from manufacturer to fulfillment center
+   */
+  private static async handleManufacturerShipment(
+    sb: SupabaseClient,
+    fulfillmentService: any,
+    orderId: string,
+    orgId: string,
+    workOrder: any,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      // Create fulfillment event for manufacturer shipment
+      const { error } = await sb
+        .from('fulfillment_events')
+        .insert({
+          org_id: orgId,
+          order_id: orderId,
+          work_order_id: workOrder.id,
+          event_code: 'RECEIVED_FROM_MANUFACTURER',
+          event_type: 'status_change',
+          status_after: 'ready_to_ship',
+          actor_user_id: actorUserId,
+          notes: `Items received from manufacturer for work order ${workOrder.id}`,
+          metadata: {
+            workOrderId: workOrder.id,
+            manufacturerId: workOrder.manufacturer_id,
+            quantity: workOrder.quantity
+          }
+        });
+
+      // Update ready to ship milestone
+      await fulfillmentService.updateMilestone(
+        orderId, 
+        orgId, 
+        'READY_TO_SHIP', 
+        {
+          status: 'completed',
+          completedBy: actorUserId,
+          notes: `Items ready to ship after receiving from manufacturer (work order ${workOrder.id})`
+        }
+      );
+
+    } catch (error) {
+      console.error('Error handling manufacturer shipment:', error);
+    }
+  }
+
+  /**
+   * Handle manufacturing delays that affect fulfillment
+   */
+  private static async handleManufacturingDelay(
+    sb: SupabaseClient,
+    fulfillmentService: any,
+    orderId: string,
+    orgId: string,
+    workOrder: any,
+    fromStatus: string,
+    toStatus: string,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      // Create fulfillment event for delay
+      const { error } = await sb
+        .from('fulfillment_events')
+        .insert({
+          org_id: orgId,
+          order_id: orderId,
+          work_order_id: workOrder.id,
+          event_code: 'MANUFACTURING_DELAYED',
+          event_type: 'status_change',
+          status_before: fromStatus,
+          status_after: toStatus,
+          actor_user_id: actorUserId,
+          notes: `Manufacturing delayed for work order ${workOrder.id}: ${toStatus}`,
+          metadata: {
+            workOrderId: workOrder.id,
+            delayReason: workOrder.delay_reason,
+            fromStatus,
+            toStatus
+          }
+        });
+
+      // Update milestones to blocked if not already completed
+      const milestonesToBlock = ['MANUFACTURING_COMPLETED', 'QUALITY_CHECK_PASSED', 'READY_TO_SHIP'];
+      
+      for (const milestoneCode of milestonesToBlock) {
+        await fulfillmentService.updateMilestone(
+          orderId, 
+          orgId, 
+          milestoneCode, 
+          {
+            status: 'blocked',
+            blockedReason: `Manufacturing ${toStatus}: ${workOrder.delay_reason || 'No specific reason provided'}`,
+            notes: `Blocked due to manufacturing delay in work order ${workOrder.id}`
+          }
+        );
+      }
+
+    } catch (error) {
+      console.error('Error handling manufacturing delay:', error);
+    }
+  }
+
+  /**
+   * Check if all manufacturing is complete and trigger fulfillment readiness
+   */
+  private static async checkAndTriggerFulfillmentReadiness(
+    sb: SupabaseClient,
+    fulfillmentService: any,
+    orderId: string,
+    orgId: string
+  ): Promise<void> {
+    try {
+      // Check if all work orders for this order are complete
+      const { data: orderItems } = await sb
+        .from('order_items')
+        .select('id')
+        .eq('order_id', orderId)
+        .eq('org_id', orgId);
+
+      if (!orderItems || orderItems.length === 0) return;
+
+      const { data: workOrders } = await sb
+        .from('manufacturing_work_orders')
+        .select('status_code')
+        .in('order_item_id', orderItems.map(item => item.id));
+
+      const allCompleted = workOrders?.every(wo => 
+        ['completed', 'shipped', 'quality_approved'].includes(wo.status_code)
+      );
+
+      if (allCompleted) {
+        // All manufacturing complete - trigger fulfillment preparation
+        const { error } = await sb
+          .from('fulfillment_events')
+          .insert({
+            org_id: orgId,
+            order_id: orderId,
+            event_code: 'READY_FOR_PACKAGING',
+            event_type: 'milestone',
+            status_after: 'packaging',
+            notes: 'All manufacturing completed - ready for packaging and shipment',
+            metadata: {
+              allItemsComplete: true,
+              workOrdersCount: workOrders?.length || 0
+            }
+          });
+
+        // Auto-update to packaging milestone
+        await fulfillmentService.updateMilestone(
+          orderId, 
+          orgId, 
+          'READY_TO_SHIP', 
+          {
+            status: 'in_progress',
+            notes: 'All manufacturing completed - beginning packaging process'
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Error checking fulfillment readiness:', error);
     }
   }
 

@@ -984,5 +984,321 @@ export const systemSettings = pgTable("system_settings", {
         updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 });
 
+// Fulfillment & Order Completion Tables
+
+export const fulfillmentEvents = pgTable("fulfillment_events", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        orderId: varchar("order_id").notNull(),
+        orderItemId: uuid("order_item_id"), // Optional - for item-specific events
+        workOrderId: uuid("work_order_id"), // Optional - link to manufacturing
+        eventCode: text("event_code").notNull(), // e.g., 'FULFILL_STARTED', 'PACKED', 'SHIPPED', 'DELIVERED', 'COMPLETED'
+        eventType: text("event_type").notNull().default('status_change'), // status_change, milestone, quality_check, notification
+        statusBefore: text("status_before"),
+        statusAfter: text("status_after"),
+        actorUserId: varchar("actor_user_id"), // Who performed the action
+        notes: text(),
+        metadata: jsonb(), // Additional event data (tracking numbers, quality scores, etc.)
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxFulfillmentEventsOrgId: index("idx_fulfillment_events_org_id").on(table.orgId),
+        idxFulfillmentEventsOrderId: index("idx_fulfillment_events_order_id").on(table.orderId),
+        idxFulfillmentEventsEventCode: index("idx_fulfillment_events_event_code").on(table.eventCode),
+        idxFulfillmentEventsCreatedAt: index("idx_fulfillment_events_created_at").on(table.createdAt),
+        fkFulfillmentEventsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_fulfillment_events_org_id"
+        }),
+        fkFulfillmentEventsOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_fulfillment_events_order_id"
+        }).onDelete("cascade"),
+}));
+
+export const shippingInfo = pgTable("shipping_info", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        orderId: varchar("order_id").notNull(),
+        shipmentNumber: text("shipment_number"), // Internal shipment identifier
+        carrier: text().notNull(), // e.g., 'UPS', 'FedEx', 'USPS', 'DHL'
+        service: text(), // e.g., 'Ground', 'Express', 'Overnight'
+        trackingNumber: text("tracking_number"),
+        trackingUrl: text("tracking_url"),
+        labelUrl: text("label_url"), // URL to shipping label PDF
+        shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }),
+        weight: decimal({ precision: 10, scale: 3 }), // Package weight
+        dimensions: jsonb(), // { length, width, height, unit }
+        shippingAddress: jsonb("shipping_address"), // Complete shipping address
+        originAddress: jsonb("origin_address"), // Warehouse/shipping origin
+        estimatedDeliveryDate: date("estimated_delivery_date"),
+        actualDeliveryDate: date("actual_delivery_date"),
+        deliveryInstructions: text("delivery_instructions"),
+        requiresSignature: boolean("requires_signature").default(false),
+        isInsured: boolean("is_insured").default(false),
+        insuranceAmount: decimal("insurance_amount", { precision: 10, scale: 2 }),
+        statusCode: text("status_code").default('preparing'), // preparing, shipped, in_transit, delivered, exception
+        deliveryAttempts: integer("delivery_attempts").default(0),
+        lastStatusUpdate: timestamp("last_status_update", { withTimezone: true, mode: 'string' }),
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxShippingInfoOrgId: index("idx_shipping_info_org_id").on(table.orgId),
+        idxShippingInfoOrderId: index("idx_shipping_info_order_id").on(table.orderId),
+        idxShippingInfoTrackingNumber: index("idx_shipping_info_tracking_number").on(table.trackingNumber),
+        idxShippingInfoStatusCode: index("idx_shipping_info_status_code").on(table.statusCode),
+        uniqShippingInfoTrackingNumber: unique("uniq_shipping_info_tracking_number").on(table.trackingNumber),
+        fkShippingInfoOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_shipping_info_org_id"
+        }),
+        fkShippingInfoOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_shipping_info_order_id"
+        }).onDelete("cascade"),
+}));
+
+export const completionRecords = pgTable("completion_records", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        orderId: varchar("order_id").notNull(),
+        completionType: text("completion_type").notNull(), // 'automatic', 'manual', 'exception'
+        completedBy: varchar("completed_by"), // User who marked as completed
+        completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }).notNull(),
+        verificationMethod: text("verification_method"), // 'delivery_confirmation', 'customer_feedback', 'manual_verification'
+        deliveryConfirmed: boolean("delivery_confirmed").default(false),
+        customerSatisfactionScore: integer("customer_satisfaction_score"), // 1-5 rating
+        customerFeedback: text("customer_feedback"),
+        qualityScore: decimal("quality_score", { precision: 3, scale: 2 }), // Overall quality score
+        defectsReported: integer("defects_reported").default(0),
+        reworkRequired: boolean("rework_required").default(false),
+        reworkNotes: text("rework_notes"),
+        completionCertificateUrl: text("completion_certificate_url"), // PDF certificate
+        invoiceGenerated: boolean("invoice_generated").default(false),
+        invoiceId: uuid("invoice_id"), // FK to accounting_invoices.id
+        finalPaymentCaptured: boolean("final_payment_captured").default(false),
+        archivedAt: timestamp("archived_at", { withTimezone: true, mode: 'string' }),
+        metadata: jsonb(), // Additional completion data
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxCompletionRecordsOrgId: index("idx_completion_records_org_id").on(table.orgId),
+        idxCompletionRecordsOrderId: index("idx_completion_records_order_id").on(table.orderId),
+        idxCompletionRecordsCompletedAt: index("idx_completion_records_completed_at").on(table.completedAt),
+        idxCompletionRecordsCompletionType: index("idx_completion_records_completion_type").on(table.completionType),
+        uniqCompletionRecordsOrderId: unique("uniq_completion_records_order_id").on(table.orderId),
+        fkCompletionRecordsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_completion_records_org_id"
+        }),
+        fkCompletionRecordsOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_completion_records_order_id"
+        }).onDelete("cascade"),
+        fkCompletionRecordsInvoiceId: foreignKey({
+                columns: [table.invoiceId],
+                foreignColumns: [accountingInvoices.id],
+                name: "fk_completion_records_invoice_id"
+        }).onDelete("set null"),
+}));
+
+export const qualityChecks = pgTable("quality_checks", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        orderId: varchar("order_id").notNull(),
+        orderItemId: uuid("order_item_id"), // Optional - for item-specific checks
+        workOrderId: uuid("work_order_id"), // Link to manufacturing work order
+        checkType: text("check_type").notNull(), // 'pre_production', 'in_production', 'final_inspection', 'pre_shipment'
+        checklistId: uuid("checklist_id"), // FK to quality checklist template
+        checkedBy: varchar("checked_by").notNull(), // User who performed quality check
+        checkedAt: timestamp("checked_at", { withTimezone: true, mode: 'string' }).notNull(),
+        overallResult: text("overall_result").notNull(), // 'pass', 'fail', 'conditional'
+        qualityScore: decimal("quality_score", { precision: 3, scale: 2 }), // 0.00 to 5.00
+        defectsFound: integer("defects_found").default(0),
+        criticalDefects: integer("critical_defects").default(0),
+        minorDefects: integer("minor_defects").default(0),
+        checkResults: jsonb("check_results"), // Detailed checklist results
+        defectDetails: jsonb("defect_details"), // Array of defect descriptions
+        correctionRequired: boolean("correction_required").default(false),
+        correctionInstructions: text("correction_instructions"),
+        correctedBy: varchar("corrected_by"),
+        correctedAt: timestamp("corrected_at", { withTimezone: true, mode: 'string' }),
+        reworkRequired: boolean("rework_required").default(false),
+        reworkInstructions: text("rework_instructions"),
+        photoUrls: text("photo_urls").array(), // Quality check photos
+        approvedBy: varchar("approved_by"),
+        approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }),
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxQualityChecksOrgId: index("idx_quality_checks_org_id").on(table.orgId),
+        idxQualityChecksOrderId: index("idx_quality_checks_order_id").on(table.orderId),
+        idxQualityChecksWorkOrderId: index("idx_quality_checks_work_order_id").on(table.workOrderId),
+        idxQualityChecksCheckType: index("idx_quality_checks_check_type").on(table.checkType),
+        idxQualityChecksResult: index("idx_quality_checks_result").on(table.overallResult),
+        idxQualityChecksCheckedAt: index("idx_quality_checks_checked_at").on(table.checkedAt),
+        fkQualityChecksOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_quality_checks_org_id"
+        }),
+        fkQualityChecksOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_quality_checks_order_id"
+        }).onDelete("cascade"),
+        fkQualityChecksWorkOrderId: foreignKey({
+                columns: [table.workOrderId],
+                foreignColumns: [manufacturingWorkOrders.id],
+                name: "fk_quality_checks_work_order_id"
+        }).onDelete("cascade"),
+}));
+
+export const fulfillmentMilestones = pgTable("fulfillment_milestones", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        orderId: varchar("order_id").notNull(),
+        milestoneCode: text("milestone_code").notNull(), // 'ORDER_CONFIRMED', 'DESIGN_APPROVED', 'MANUFACTURING_STARTED', 'QUALITY_PASSED', 'SHIPPED', 'DELIVERED', 'COMPLETED'
+        milestoneName: text("milestone_name").notNull(),
+        milestoneType: text("milestone_type").notNull().default('standard'), // standard, quality_gate, approval_gate, notification
+        status: text().notNull().default('pending'), // pending, in_progress, completed, skipped, blocked
+        dependsOn: text("depends_on").array(), // Array of milestone codes this depends on
+        plannedDate: date("planned_date"),
+        startedAt: timestamp("started_at", { withTimezone: true, mode: 'string' }),
+        completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
+        completedBy: varchar("completed_by"),
+        durationMinutes: integer("duration_minutes"), // Actual duration to complete
+        blockedReason: text("blocked_reason"),
+        notes: text(),
+        metadata: jsonb(), // Additional milestone data
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxFulfillmentMilestonesOrgId: index("idx_fulfillment_milestones_org_id").on(table.orgId),
+        idxFulfillmentMilestonesOrderId: index("idx_fulfillment_milestones_order_id").on(table.orderId),
+        idxFulfillmentMilestonesMilestoneCode: index("idx_fulfillment_milestones_milestone_code").on(table.milestoneCode),
+        idxFulfillmentMilestonesStatus: index("idx_fulfillment_milestones_status").on(table.status),
+        idxFulfillmentMilestonesPlannedDate: index("idx_fulfillment_milestones_planned_date").on(table.plannedDate),
+        uniqFulfillmentMilestonesOrderMilestone: unique("uniq_fulfillment_milestones_order_milestone").on(table.orderId, table.milestoneCode),
+        fkFulfillmentMilestonesOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_fulfillment_milestones_org_id"
+        }),
+        fkFulfillmentMilestonesOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_fulfillment_milestones_order_id"
+        }).onDelete("cascade"),
+}));
+
+// Shipment tables for partial fulfillment support
+export const shipments = pgTable("shipments", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        orderId: varchar("order_id").notNull(),
+        shipmentNumber: text("shipment_number").notNull(), // Human-readable shipment ID
+        carrier: text().notNull(),
+        service: text(),
+        trackingNumber: text("tracking_number"),
+        trackingUrl: text("tracking_url"),
+        labelUrl: text("label_url"),
+        shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }),
+        weight: decimal({ precision: 10, scale: 3 }),
+        dimensions: jsonb(),
+        shippingAddress: jsonb("shipping_address").notNull(),
+        originAddress: jsonb("origin_address"),
+        estimatedDeliveryDate: date("estimated_delivery_date"),
+        actualDeliveryDate: date("actual_delivery_date"),
+        deliveryInstructions: text("delivery_instructions"),
+        requiresSignature: boolean("requires_signature").default(false),
+        isInsured: boolean("is_insured").default(false),
+        insuranceAmount: decimal("insurance_amount", { precision: 10, scale: 2 }),
+        statusCode: text("status_code").default('preparing'),
+        deliveryAttempts: integer("delivery_attempts").default(0),
+        lastStatusUpdate: timestamp("last_status_update", { withTimezone: true, mode: 'string' }),
+        shippedAt: timestamp("shipped_at", { withTimezone: true, mode: 'string' }),
+        deliveredAt: timestamp("delivered_at", { withTimezone: true, mode: 'string' }),
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxShipmentsOrgId: index("idx_shipments_org_id").on(table.orgId),
+        idxShipmentsOrderId: index("idx_shipments_order_id").on(table.orderId),
+        idxShipmentsTrackingNumber: index("idx_shipments_tracking_number").on(table.trackingNumber),
+        idxShipmentsStatusCode: index("idx_shipments_status_code").on(table.statusCode),
+        uniqShipmentsTrackingNumber: unique("uniq_shipments_tracking_number").on(table.trackingNumber),
+        uniqShipmentsNumber: unique("uniq_shipments_number").on(table.orgId, table.shipmentNumber),
+        fkShipmentsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_shipments_org_id"
+        }),
+        fkShipmentsOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_shipments_order_id"
+        }).onDelete("cascade"),
+}));
+
+export const shipmentItems = pgTable("shipment_items", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        shipmentId: uuid("shipment_id").notNull(),
+        orderItemId: uuid("order_item_id").notNull(),
+        quantity: integer().notNull(),
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxShipmentItemsOrgId: index("idx_shipment_items_org_id").on(table.orgId),
+        idxShipmentItemsShipmentId: index("idx_shipment_items_shipment_id").on(table.shipmentId),
+        idxShipmentItemsOrderItemId: index("idx_shipment_items_order_item_id").on(table.orderItemId),
+        uniqShipmentItemsOrderItem: unique("uniq_shipment_items_order_item").on(table.shipmentId, table.orderItemId),
+        fkShipmentItemsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_shipment_items_org_id"
+        }),
+        fkShipmentItemsShipmentId: foreignKey({
+                columns: [table.shipmentId],
+                foreignColumns: [shipments.id],
+                name: "fk_shipment_items_shipment_id"
+        }).onDelete("cascade"),
+        fkShipmentItemsOrderItemId: foreignKey({
+                columns: [table.orderItemId],
+                foreignColumns: [orderItems.id],
+                name: "fk_shipment_items_order_item_id"
+        }).onDelete("cascade"),
+}));
+
+export const statusFulfillment = pgTable("status_fulfillment", {
+        code: text().primaryKey().notNull(),
+        name: text().notNull(),
+        description: text(),
+        sortOrder: integer("sort_order").notNull(),
+        isTerminal: boolean("is_terminal").default(false).notNull(),
+        colorCode: text("color_code"), // For UI display
+        iconName: text("icon_name"), // For UI display
+});
+
+export const statusShipping = pgTable("status_shipping", {
+        code: text().primaryKey().notNull(),
+        name: text().notNull(),
+        description: text(),
+        sortOrder: integer("sort_order").notNull(),
+        isTerminal: boolean("is_terminal").default(false).notNull(),
+        colorCode: text("color_code"), // For UI display
+        iconName: text("icon_name"), // For UI display
+});
+
 
 // All tables are already exported above where they are defined

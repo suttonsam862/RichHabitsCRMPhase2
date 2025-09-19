@@ -43,6 +43,10 @@ const QuoteHistory = lazy(() => import('@/pages/QuoteHistory').then(m => ({ defa
 const CatalogManagement = lazy(() => import('@/pages/catalog/CatalogManagement').then(m => ({ default: m.default })));
 const DesignerManagement = lazy(() => import('@/pages/designers/DesignerManagement').then(m => ({ default: m.default })));
 const ManufacturerManagement = lazy(() => import('@/pages/manufacturers/ManufacturerManagement').then(m => ({ default: m.default })));
+const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const FulfillmentDashboard = lazy(() => import('@/pages/fulfillment/FulfillmentDashboard').then(m => ({ default: m.default })));
+const OrderFulfillmentPage = lazy(() => import('@/pages/fulfillment/OrderFulfillmentPage').then(m => ({ default: m.default })));
+const OrderTrackingPage = lazy(() => import('@/pages/fulfillment/OrderTrackingPage').then(m => ({ default: m.default })));
 
 // Loading component for lazy loaded pages
 function PageLoader() {
@@ -116,6 +120,16 @@ export function AppRoutes() {
               
               <Route path="/manufacturers" element={<ProtectedRoute />}>
                 <Route index element={<ManufacturerManagement />} />
+              </Route>
+              
+              <Route path="/orders" element={<ProtectedRoute />}>
+                <Route index element={<OrdersPage />} />
+                <Route path=":orderId/fulfillment" element={<OrderFulfillmentPage />} />
+                <Route path=":orderId/tracking" element={<OrderTrackingPage />} />
+              </Route>
+              
+              <Route path="/fulfillment" element={<ProtectedRoute />}>
+                <Route index element={<FulfillmentDashboard />} />
               </Route>
               
               <Route path="/settings" element={<ProtectedRoute />}>

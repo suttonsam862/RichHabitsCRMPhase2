@@ -1,6 +1,13 @@
 import express from 'express';
 import { z } from 'zod';
 import { CreateOrderDTO, UpdateOrderDTO, OrderDTO, CancelOrderDTO } from '@shared/dtos';
+import { 
+  StartFulfillmentDTO, 
+  ShipOrderDTO, 
+  DeliverOrderDTO, 
+  CompleteOrderDTO,
+  UpdateFulfillmentMilestoneDTO 
+} from '@shared/dtos/FulfillmentDTO';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
@@ -12,6 +19,7 @@ import { parsePaginationParams, sendPaginatedResponse } from '../../lib/paginati
 import { idempotent } from '../../lib/idempotency';
 import { trackBusinessEvent } from '../../middleware/metrics';
 import orderItemsRouter from './items';
+import { fulfillmentService } from '../../services/fulfillmentService';
 
 const router = express.Router();
 
@@ -730,5 +738,359 @@ router.get('/analytics/summary', requireOrgMember(), asyncHandler(async (req: Au
     handleDatabaseError(res, error, 'fetch order analytics');
   }
 }));
+
+// ============================================
+// FULFILLMENT ENDPOINTS
+// ============================================
+
+/**
+ * GET /api/orders/:id/fulfillment
+ * Get comprehensive fulfillment status and details for an order
+ */
+router.get('/:id/fulfillment', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+
+  try {
+    const sb = getAuthenticatedClient(req);
+    
+    // First verify order access
+    const order = await verifyOrderAccess(id, req, sb);
+    
+    // Get fulfillment status
+    const fulfillmentStatus = await fulfillmentService.getFulfillmentStatus(id, order.org_id);
+
+    sendOk(res, fulfillmentStatus);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Order not found') {
+      return HttpErrors.notFound(res, 'Order not found');
+    }
+    handleDatabaseError(res, error, 'fetch fulfillment status');
+  }
+}));
+
+/**
+ * POST /api/orders/:id/start-fulfillment
+ * Start the fulfillment process for an order
+ */
+router.post('/:id/start-fulfillment',
+  requireOrgMember(),
+  validateRequest({ body: StartFulfillmentDTO }),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { id } = req.params;
+    const { notes, priority, plannedShipDate, specialInstructions } = req.body;
+
+    try {
+      const sb = getAuthenticatedClient(req);
+      
+      // First verify order access
+      const order = await verifyOrderAccess(id, req, sb);
+      
+      // Start fulfillment
+      const result = await fulfillmentService.startFulfillment(
+        id, 
+        order.org_id, 
+        req.user.id, 
+        { notes, priority, plannedShipDate, specialInstructions }
+      );
+
+      if (!result.success) {
+        return HttpErrors.badRequest(res, result.error || 'Failed to start fulfillment');
+      }
+
+      trackBusinessEvent('fulfillment_started', req, {
+        order_id: id,
+        organization_id: order.org_id,
+        priority: priority || 5
+      });
+
+      sendCreated(res, result.fulfillmentStatus);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Order not found') {
+        return HttpErrors.notFound(res, 'Order not found');
+      }
+      handleDatabaseError(res, error, 'start fulfillment');
+    }
+  })
+);
+
+/**
+ * POST /api/orders/:id/ship
+ * Mark order as shipped with tracking information
+ */
+router.post('/:id/ship',
+  requireOrgMember(),
+  validateRequest({ body: ShipOrderDTO }),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { id } = req.params;
+    const shippingData = req.body;
+
+    try {
+      const sb = getAuthenticatedClient(req);
+      
+      // First verify order access
+      const order = await verifyOrderAccess(id, req, sb);
+      
+      // Ship the order
+      const result = await fulfillmentService.shipOrder(id, order.org_id, shippingData, req.user.id);
+
+      if (!result.success) {
+        return HttpErrors.badRequest(res, result.error || 'Failed to ship order');
+      }
+
+      trackBusinessEvent('order_shipped', req, {
+        order_id: id,
+        organization_id: order.org_id,
+        carrier: shippingData.carrier,
+        tracking_number: shippingData.trackingNumber
+      });
+
+      sendCreated(res, result.shippingInfo);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Order not found') {
+        return HttpErrors.notFound(res, 'Order not found');
+      }
+      handleDatabaseError(res, error, 'ship order');
+    }
+  })
+);
+
+/**
+ * POST /api/orders/:id/deliver
+ * Mark order as delivered
+ */
+router.post('/:id/deliver',
+  requireOrgMember(),
+  validateRequest({ body: DeliverOrderDTO }),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { id } = req.params;
+    const deliveryData = req.body;
+
+    try {
+      const sb = getAuthenticatedClient(req);
+      
+      // First verify order access
+      const order = await verifyOrderAccess(id, req, sb);
+      
+      // Mark as delivered
+      const result = await fulfillmentService.markDelivered(id, order.org_id, deliveryData, req.user.id);
+
+      if (!result.success) {
+        return HttpErrors.badRequest(res, result.error || 'Failed to mark as delivered');
+      }
+
+      trackBusinessEvent('order_delivered', req, {
+        order_id: id,
+        organization_id: order.org_id,
+        delivery_method: deliveryData.deliveryMethod
+      });
+
+      sendOk(res, { success: true, message: 'Order marked as delivered' });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Order not found') {
+        return HttpErrors.notFound(res, 'Order not found');
+      }
+      handleDatabaseError(res, error, 'mark as delivered');
+    }
+  })
+);
+
+/**
+ * POST /api/orders/:id/complete
+ * Mark order as completed with final verification
+ */
+router.post('/:id/complete',
+  requireOrgMember(),
+  validateRequest({ body: CompleteOrderDTO }),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { id } = req.params;
+    const completionData = req.body;
+
+    try {
+      const sb = getAuthenticatedClient(req);
+      
+      // First verify order access
+      const order = await verifyOrderAccess(id, req, sb);
+      
+      // Complete the order
+      const result = await fulfillmentService.completeOrder(id, order.org_id, completionData, req.user.id);
+
+      if (!result.success) {
+        return HttpErrors.badRequest(res, result.error || 'Failed to complete order');
+      }
+
+      trackBusinessEvent('order_completed', req, {
+        order_id: id,
+        organization_id: order.org_id,
+        completion_type: completionData.completionType,
+        customer_satisfaction: completionData.customerSatisfactionScore
+      });
+
+      sendCreated(res, result.completionRecord);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Order not found') {
+        return HttpErrors.notFound(res, 'Order not found');
+      }
+      handleDatabaseError(res, error, 'complete order');
+    }
+  })
+);
+
+/**
+ * PUT /api/orders/:id/fulfillment/milestone/:milestoneCode
+ * Update a specific fulfillment milestone
+ */
+router.put('/:id/fulfillment/milestone/:milestoneCode',
+  requireOrgMember(),
+  validateRequest({ body: UpdateFulfillmentMilestoneDTO }),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { id, milestoneCode } = req.params;
+    const updates = req.body;
+
+    try {
+      const sb = getAuthenticatedClient(req);
+      
+      // First verify order access
+      const order = await verifyOrderAccess(id, req, sb);
+      
+      // Update milestone
+      const result = await fulfillmentService.updateMilestone(
+        id, 
+        order.org_id, 
+        milestoneCode, 
+        {
+          ...updates,
+          completedBy: req.user.id
+        }
+      );
+
+      if (!result.success) {
+        return HttpErrors.badRequest(res, result.error || 'Failed to update milestone');
+      }
+
+      trackBusinessEvent('milestone_updated', req, {
+        order_id: id,
+        organization_id: order.org_id,
+        milestone_code: milestoneCode,
+        new_status: updates.status
+      });
+
+      sendOk(res, { success: true, message: 'Milestone updated successfully' });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Order not found') {
+        return HttpErrors.notFound(res, 'Order not found');
+      }
+      handleDatabaseError(res, error, 'update milestone');
+    }
+  })
+);
+
+/**
+ * GET /api/orders/:id/tracking
+ * Get shipping tracking information for an order
+ */
+router.get('/:id/tracking', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+
+  try {
+    const sb = getAuthenticatedClient(req);
+    
+    // First verify order access
+    const order = await verifyOrderAccess(id, req, sb);
+    
+    // Get shipping information
+    const { data: shippingInfo, error } = await sb
+      .from('shipping_info')
+      .select('*')
+      .eq('order_id', id)
+      .eq('org_id', order.org_id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      throw error;
+    }
+
+    if (!shippingInfo) {
+      return HttpErrors.notFound(res, 'No tracking information found for this order');
+    }
+
+    // Return tracking information
+    sendOk(res, {
+      orderId: id,
+      carrier: shippingInfo.carrier,
+      service: shippingInfo.service,
+      trackingNumber: shippingInfo.tracking_number,
+      trackingUrl: shippingInfo.tracking_url,
+      estimatedDeliveryDate: shippingInfo.estimated_delivery_date,
+      actualDeliveryDate: shippingInfo.actual_delivery_date,
+      statusCode: shippingInfo.status_code,
+      deliveryAttempts: shippingInfo.delivery_attempts,
+      lastStatusUpdate: shippingInfo.last_status_update,
+      requiresSignature: shippingInfo.requires_signature,
+      deliveryInstructions: shippingInfo.delivery_instructions
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Order not found') {
+      return HttpErrors.notFound(res, 'Order not found');
+    }
+    handleDatabaseError(res, error, 'fetch tracking information');
+  }
+}));
+
+/**
+ * PUT /api/orders/:id/fulfillment/status
+ * Update fulfillment status for an order
+ */
+router.put('/:id/fulfillment/status',
+  requireOrgMember(),
+  validateRequest({ 
+    body: z.object({
+      statusCode: z.string(),
+      notes: z.string().optional(),
+      metadata: z.record(z.any()).optional()
+    })
+  }),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { id } = req.params;
+    const { statusCode, notes, metadata } = req.body;
+
+    try {
+      const sb = getAuthenticatedClient(req);
+      
+      // First verify order access
+      const order = await verifyOrderAccess(id, req, sb);
+      
+      // Create fulfillment event for status change
+      const { error } = await sb
+        .from('fulfillment_events')
+        .insert({
+          org_id: order.org_id,
+          order_id: id,
+          event_code: 'STATUS_UPDATED',
+          event_type: 'status_change',
+          status_after: statusCode,
+          actor_user_id: req.user.id,
+          notes,
+          metadata
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      trackBusinessEvent('fulfillment_status_updated', req, {
+        order_id: id,
+        organization_id: order.org_id,
+        new_status: statusCode
+      });
+
+      sendOk(res, { success: true, message: 'Fulfillment status updated' });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Order not found') {
+        return HttpErrors.notFound(res, 'Order not found');
+      }
+      handleDatabaseError(res, error, 'update fulfillment status');
+    }
+  })
+);
 
 export default router;
