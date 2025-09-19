@@ -1,7 +1,7 @@
 // Schema updated to match actual database structure on 2025-09-11
 // Aligned with business database - removed auth enums, added real business tables
 
-import { pgTable, uuid, varchar, text, timestamp, boolean, integer, jsonb, decimal, date, bigint } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, integer, jsonb, decimal, date, bigint, index, unique, foreignKey } from "drizzle-orm/pg-core";
 
 // Business Tables
 
@@ -241,29 +241,66 @@ export const orgSports = pgTable("org_sports", {
 
 export const orderEvents = pgTable("order_events", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        orderId: uuid("order_id").notNull(),
+        orderId: varchar("order_id").notNull(), // FK to orders.id (varchar)
         eventCode: text("event_code").notNull(),
         actorUserId: uuid("actor_user_id"),
         payload: jsonb(),
         occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
+}, (table) => ({
+        // Foreign key constraints
+        fkOrderEventsOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_order_events_order_id"
+        }).onDelete("cascade"),
+}));
 
 export const orderItems = pgTable("order_items", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        orgId: uuid("org_id"),
-        orderId: uuid("order_id"),
-        productId: uuid("product_id"),
-        nameSnapshot: text("name_snapshot"),
-        priceSnapshot: decimal("price_snapshot", { precision: 10, scale: 2 }),
-        designerId: uuid("designer_id"),
-        manufacturerId: uuid("manufacturer_id"),
-        statusCode: text("status_code"),
-        variantImageUrl: text("variant_image_url"),
-        pantoneJson: jsonb("pantone_json"),
-        buildOverridesText: text("build_overrides_text"),
-        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-});
+        orgId: varchar("org_id").notNull(), // FK to organizations.id (varchar)
+        orderId: varchar("order_id").notNull(), // FK to orders.id (varchar)
+        productId: uuid("product_id"), // FK to catalog_items.id
+        variantId: uuid("variant_id"), // FK to product variant if applicable
+        nameSnapshot: text("name_snapshot"), // Product name at time of order
+        skuSnapshot: text("sku_snapshot"), // Product SKU at time of order
+        priceSnapshot: decimal("price_snapshot", { precision: 10, scale: 2 }), // Unit price at order time
+        quantity: integer().notNull(), // Quantity of this item ordered
+        statusCode: text("status_code").default("pending_design"), // FK to status_order_items.code
+        designerId: uuid("designer_id"), // FK to designers.id
+        manufacturerId: uuid("manufacturer_id"), // FK to manufacturers.id
+        pantoneJson: jsonb("pantone_json"), // Color codes and design data
+        buildOverridesText: text("build_overrides_text"), // Special manufacturing instructions
+        variantImageUrl: text("variant_image_url"), // Legacy field
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        // Indexes for efficient filtering and RLS queries
+        idxOrderItemsOrderId: index("idx_order_items_order_id").on(table.orderId),
+        idxOrderItemsStatusCode: index("idx_order_items_status_code").on(table.statusCode),
+        idxOrderItemsProductId: index("idx_order_items_product_id").on(table.productId),
+        idxOrderItemsOrgId: index("idx_order_items_org_id").on(table.orgId),
+        // Foreign key constraints
+        fkOrderItemsOrderId: foreignKey({
+                columns: [table.orderId],
+                foreignColumns: [orders.id],
+                name: "fk_order_items_order_id"
+        }).onDelete("cascade"),
+        fkOrderItemsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_order_items_org_id"
+        }),
+        fkOrderItemsDesignerId: foreignKey({
+                columns: [table.designerId],
+                foreignColumns: [designers.id],
+                name: "fk_order_items_designer_id"
+        }).onDelete("set null"),
+        fkOrderItemsManufacturerId: foreignKey({
+                columns: [table.manufacturerId],
+                foreignColumns: [manufacturers.id],
+                name: "fk_order_items_manufacturer_id"
+        }).onDelete("set null"),
+}));
 
 export const orderItemSizes = pgTable("order_item_sizes", {
         id: uuid().defaultRandom().primaryKey().notNull(),
@@ -274,19 +311,52 @@ export const orderItemSizes = pgTable("order_item_sizes", {
 
 export const orders = pgTable("orders", {
         id: varchar().primaryKey().notNull(),
-        organizationId: varchar("organization_id").notNull(),
-        orderNumber: text("order_number").notNull(),
-        customerName: text("customer_name").notNull(),
+        orgId: varchar("org_id").notNull(), // FK to organizations.id (varchar)
+        customerId: uuid("customer_id").notNull(), // FK to customers.id (uuid) - REQUIRED
+        salespersonId: varchar("salesperson_id"), // FK to users.id (varchar)
+        sportId: uuid("sport_id"), // FK to sports.id (uuid)
+        code: text().notNull(), // Unique order number (ORD-YYYYMMDD-XXXX format)
+        customerContactName: text("customer_contact_name"),
+        customerContactEmail: text("customer_contact_email"),
+        customerContactPhone: text("customer_contact_phone"),
+        statusCode: text("status_code").default("draft"), // FK to status_orders.code
         totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
-        items: jsonb(),
+        revenueEstimate: decimal("revenue_estimate", { precision: 10, scale: 2 }),
+        dueDate: date("due_date"),
         notes: text(),
-        createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-        updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
-        statusCode: text("status_code"),
-        salespersonId: varchar("salesperson_id"),
-        sportId: varchar("sport_id"),
-        teamName: text("team_name"),
-});
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        // Legacy fields - keep for backwards compatibility
+        organizationId: varchar("organization_id").notNull(), // Legacy alias for org_id
+        orderNumber: text("order_number").notNull(), // Legacy alias for code
+        customerName: text("customer_name").notNull(), // Legacy field
+        items: jsonb(), // Legacy field
+        teamName: text("team_name"), // Legacy field
+}, (table) => ({
+        // Indexes for efficient filtering and RLS queries
+        idxOrdersOrgId: index("idx_orders_org_id").on(table.orgId),
+        idxOrdersCustomerId: index("idx_orders_customer_id").on(table.customerId),
+        idxOrdersStatusCode: index("idx_orders_status_code").on(table.statusCode),
+        idxOrdersSalespersonId: index("idx_orders_salesperson_id").on(table.salespersonId),
+        // Unique constraint on order code (order number)
+        uniqOrdersCode: unique("uniq_orders_code").on(table.code),
+        // Foreign key constraints
+        fkOrdersOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_orders_org_id"
+        }),
+        fkOrdersCustomerId: foreignKey({
+                columns: [table.customerId],
+                foreignColumns: [customers.id],
+                name: "fk_orders_customer_id"
+        }),
+        fkOrdersSalespersonId: foreignKey({
+                columns: [table.salespersonId],
+                foreignColumns: [users.id],
+                name: "fk_orders_salesperson_id"
+        }).onDelete("set null"),
+}));
 
 export const organizationFavorites = pgTable("organization_favorites", {
         id: uuid().defaultRandom().primaryKey().notNull(),

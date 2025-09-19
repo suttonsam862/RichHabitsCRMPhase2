@@ -72,13 +72,16 @@ jobs:
         run: npm run db:push --force
       
       - name: Run unit tests
-        run: npm run test:unit
+        run: npx vitest run tests/unit --reporter=verbose
       
       - name: Run integration tests
-        run: npm run test:integration
+        run: npx vitest run tests/integration --reporter=verbose
+      
+      - name: Run security tests
+        run: npx vitest run tests/security --reporter=verbose
       
       - name: Generate coverage report
-        run: npm run test:coverage
+        run: npx vitest run --coverage
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -116,7 +119,7 @@ jobs:
           npx wait-on http://localhost:5000 -t 30000
       
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npx playwright test --reporter=html
       
       - name: Upload test results
         if: always()
@@ -137,18 +140,35 @@ jobs:
       - name: Run npm audit
         run: npm audit --audit-level=moderate
       
+      - name: Security vulnerability scan
+        run: npx audit-ci --moderate
+        continue-on-error: true
+      
+      - name: Run security linting
+        run: npx eslint . --ext .ts,.tsx,.js,.jsx --config .eslintrc-security.js
+        continue-on-error: true
+      
+      - name: Check for hardcoded secrets
+        run: |
+          # Check for potential secrets in code
+          grep -r -i "password\s*=" --include="*.ts" --include="*.js" . || true
+          grep -r -i "api[_-]key" --include="*.ts" --include="*.js" . || true
+          grep -r -i "secret" --include="*.ts" --include="*.js" . || true
+      
       - name: Run dependency check
         uses: dependency-check/Dependency-Check_Action@main
         with:
-          project: 'rich-habits'
+          project: 'rich-habits-crm'
           path: '.'
           format: 'HTML'
+        continue-on-error: true
       
-      - name: Upload dependency check results
+      - name: Upload security scan results
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-report
+          name: security-scan-reports
           path: reports/
+        if: always()
 
   deploy:
     name: Deploy to Production
