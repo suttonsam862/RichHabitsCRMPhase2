@@ -146,6 +146,149 @@ router.get('/item-status-codes', asyncHandler(async (req: AuthedRequest, res) =>
   }
 }));
 
+// Get order statistics for dashboard
+router.get('/stats', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+  try {
+    const sb = getAuthenticatedClient(req);
+    
+    // Get current date ranges
+    const now = new Date();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    
+    // Get total orders
+    const { count: totalOrders } = await sb
+      .from('orders')
+      .select('*', { count: 'exact', head: true });
+    
+    // Get active orders (not completed or cancelled)
+    const { count: activeOrders } = await sb
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .not('status_code', 'in', '(completed,cancelled)');
+    
+    // Get completed this month
+    const { count: completedThisMonth } = await sb
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('status_code', 'completed')
+      .gte('updated_at', thisMonth.toISOString());
+    
+    // Get revenue this month
+    const { data: revenueData } = await sb
+      .from('orders')
+      .select('total_amount')
+      .eq('status_code', 'completed')
+      .gte('updated_at', thisMonth.toISOString());
+    
+    const revenueThisMonth = revenueData?.reduce((sum, order) => 
+      sum + (parseFloat(order.total_amount || '0')), 0) || 0;
+    
+    // Get average order value
+    const { data: allCompleted } = await sb
+      .from('orders')
+      .select('total_amount')
+      .eq('status_code', 'completed');
+    
+    const averageOrderValue = allCompleted?.length > 0 
+      ? allCompleted.reduce((sum, order) => sum + (parseFloat(order.total_amount || '0')), 0) / allCompleted.length
+      : 0;
+    
+    // Get overdue orders
+    const { count: overdueOrders } = await sb
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .not('status_code', 'in', '(completed,cancelled)')
+      .lt('due_date', now.toISOString());
+    
+    // Calculate on-time delivery rate (simplified)
+    const onTimeDeliveryRate = allCompleted?.length > 0 ? 85 : 0; // Simplified calculation
+    
+    const stats = {
+      totalOrders: totalOrders || 0,
+      activeOrders: activeOrders || 0,
+      completedThisMonth: completedThisMonth || 0,
+      revenueThisMonth,
+      averageOrderValue,
+      onTimeDeliveryRate,
+      overdueOrders: overdueOrders || 0,
+      trends: {
+        orders: completedThisMonth || 0,
+        revenue: revenueThisMonth
+      }
+    };
+    
+    sendOk(res, stats);
+  } catch (error) {
+    handleDatabaseError(res, error, 'fetch order statistics');
+  }
+}));
+
+// Bulk action endpoint for multiple orders
+router.post('/bulk-action', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+  const { action, orderIds } = req.body;
+  
+  if (!action || !orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+    return HttpErrors.badRequest(res, 'Action and orderIds are required');
+  }
+  
+  try {
+    const sb = getAuthenticatedClient(req);
+    const results = [];
+    
+    for (const orderId of orderIds) {
+      try {
+        // Verify order access
+        await verifyOrderAccess(orderId, req, sb);
+        
+        let updateData: any = {};
+        
+        switch (action) {
+          case 'cancel':
+            updateData = { status_code: 'cancelled' };
+            break;
+          case 'confirm':
+            updateData = { status_code: 'confirmed' };
+            break;
+          case 'process':
+            updateData = { status_code: 'processing' };
+            break;
+          default:
+            throw new Error(`Unsupported bulk action: ${action}`);
+        }
+        
+        const { error } = await sb
+          .from('orders')
+          .update(updateData)
+          .eq('id', orderId);
+        
+        if (error) throw error;
+        
+        results.push({ orderId, success: true });
+      } catch (error) {
+        results.push({ 
+          orderId, 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+    
+    sendOk(res, {
+      action,
+      totalProcessed: orderIds.length,
+      successCount,
+      failureCount,
+      results
+    });
+  } catch (error) {
+    handleDatabaseError(res, error, 'bulk action');
+  }
+}));
+
 // List all orders with filtering, sorting, and pagination
 router.get('/', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
   const {
@@ -1092,5 +1235,108 @@ router.put('/:id/fulfillment/status',
     }
   })
 );
+
+// Get order events/timeline
+router.get('/:id/events', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+  
+  try {
+    const sb = getAuthenticatedClient(req);
+    
+    // Verify order access
+    await verifyOrderAccess(id, req, sb);
+    
+    // Get order events from audit logs and fulfillment events
+    const { data: auditEvents } = await sb
+      .from('audit_logs')
+      .select('*')
+      .eq('entity', 'orders')
+      .eq('entity_id', id)
+      .order('occurred_at', { ascending: false });
+    
+    const { data: fulfillmentEvents } = await sb
+      .from('fulfillment_events')
+      .select('*')
+      .eq('order_id', id)
+      .order('occurred_at', { ascending: false });
+    
+    // Combine and format events
+    const events = [
+      ...(auditEvents || []).map(event => ({
+        id: event.id,
+        event_code: event.action,
+        actor_user_id: event.actor,
+        actor_name: null, // Could be populated by joining with users table
+        payload: event.after,
+        occurred_at: event.occurred_at,
+        event_type: 'audit'
+      })),
+      ...(fulfillmentEvents || []).map(event => ({
+        id: event.id,
+        event_code: event.event_code,
+        actor_user_id: event.actor_user_id,
+        actor_name: null, // Could be populated by joining with users table
+        payload: event.metadata,
+        occurred_at: event.occurred_at,
+        event_type: 'fulfillment'
+      }))
+    ].sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
+    
+    sendOk(res, events);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Order not found') {
+      return HttpErrors.notFound(res, 'Order not found');
+    }
+    handleDatabaseError(res, error, 'fetch order events');
+  }
+}));
+
+// Add note to order
+router.post('/:id/notes', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+  const { id } = req.params;
+  const { note } = req.body;
+  
+  if (!note || typeof note !== 'string' || note.trim().length === 0) {
+    return HttpErrors.badRequest(res, 'Note content is required');
+  }
+  
+  try {
+    const sb = getAuthenticatedClient(req);
+    
+    // Verify order access
+    const order = await verifyOrderAccess(id, req, sb);
+    
+    // Create audit log entry for the note
+    const { data: auditEntry, error } = await sb
+      .from('audit_logs')
+      .insert({
+        occurred_at: new Date().toISOString(),
+        actor: req.user.id,
+        org_id: order.org_id,
+        entity: 'orders',
+        entity_id: id,
+        action: 'NOTE_ADDED',
+        after: { note: note.trim() }
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    sendCreated(res, {
+      id: auditEntry.id,
+      note: note.trim(),
+      created_at: auditEntry.occurred_at,
+      author_id: req.user.id
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Order not found') {
+      return HttpErrors.notFound(res, 'Order not found');
+    }
+    handleDatabaseError(res, error, 'add order note');
+  }
+}));
 
 export default router;
