@@ -32,7 +32,7 @@ router.use(requireAuth);
 
 // Get authenticated Supabase client
 async function getSupabaseClient(req: AuthedRequest) {
-  const token = extractAccessToken(req);
+  const token = extractAccessToken(req.headers.authorization);
   if (!token) {
     throw new Error('Missing authentication token');
   }
