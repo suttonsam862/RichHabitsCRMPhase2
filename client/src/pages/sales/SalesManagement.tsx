@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -16,12 +16,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -42,21 +40,10 @@ import {
   Award,
   Plus, 
   Search, 
-  Filter,
   Edit,
-  Trash2,
-  Mail,
-  Phone,
-  MapPin,
-  Building,
   Loader2,
   UserPlus,
-  Eye,
-  Calendar,
-  Briefcase,
-  Star,
   BarChart3,
-  PieChart,
   Activity
 } from 'lucide-react';
 import GlowCard from '@/components/ui/GlowCard';
@@ -98,24 +85,6 @@ interface Assignment {
   sport_name?: string;
 }
 
-interface SalespersonDetails {
-  users: Salesperson;
-  salesperson_profiles?: SalespersonProfile;
-  assignments: Assignment[];
-  metrics: SalespersonMetric[];
-}
-
-interface SalespersonMetric {
-  id: string;
-  period_start: string;
-  period_end: string;
-  total_sales: number;
-  orders_count: number;
-  conversion_rate: number;
-  average_deal_size: number;
-  commission_earned: number;
-  active_assignments: number;
-}
 
 interface DashboardData {
   overview: {
@@ -150,20 +119,9 @@ export default function SalesManagement() {
   const [selectedPeriod, setSelectedPeriod] = useState('30');
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('all');
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [selectedSalesperson, setSelectedSalesperson] = useState<string | null>(null);
 
-  // Profile form state
-  const [profileData, setProfileData] = useState({
-    employee_id: '',
-    tax_id: '',
-    commission_rate: 0,
-    territory: '',
-    hire_date: '',
-    manager_id: '',
-    performance_tier: 'standard'
-  });
 
   // Assignment form state
   const [assignmentData, setAssignmentData] = useState({
@@ -222,14 +180,6 @@ export default function SalesManagement() {
     refetchOnWindowFocus: true
   });
 
-  const { data: salespersonDetails } = useQuery<SalespersonDetails>({
-    queryKey: ['/api/v1/sales/salespeople', selectedSalesperson],
-    queryFn: async () => {
-      const response = await api.get(`/api/v1/sales/salespeople/${selectedSalesperson}`);
-      return response; // Server returns direct data, not wrapped in .data
-    },
-    enabled: !!selectedSalesperson
-  });
 
   // Query for all assignments across all salespeople
   const { data: allAssignments, isLoading: assignmentsLoading } = useQuery<Assignment[]>({
@@ -241,6 +191,9 @@ export default function SalesManagement() {
     refetchInterval: 30000,
     staleTime: 25000
   });
+
+
+
 
   // Query for organizations and sports for assignment dropdowns
   const { data: organizations } = useQuery({
@@ -259,32 +212,7 @@ export default function SalesManagement() {
     }
   });
 
-  // Fetch users with staff roles for salesperson assignment
-  const { data: usersResponse, isLoading: usersLoading } = useQuery({
-    queryKey: ['/api/v1/users/enhanced-staff'],
-    queryFn: async () => {
-      const response = await api.get('/api/v1/users/enhanced?type=staff&pageSize=100');
-      return response;
-    },
-  });
-
-  const allUsers = usersResponse?.data?.users || usersResponse?.data || [];
-
   // Mutations
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: typeof profileData) => {
-      const response = await api.patch(`/api/v1/sales/salespeople/${selectedSalesperson}/profile`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      toast({ title: 'Profile updated successfully' });
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/sales/salespeople'] });
-      setShowProfileModal(false);
-    },
-    onError: () => {
-      toast({ title: 'Failed to update profile', variant: 'destructive' });
-    }
-  });
 
   const createAssignmentMutation = useMutation({
     mutationFn: async (data: typeof assignmentData) => {
@@ -325,22 +253,6 @@ export default function SalesManagement() {
     return tierConfig?.color || 'bg-gray-100 text-gray-800';
   };
 
-  const openProfileModal = (salespersonId: string) => {
-    setSelectedSalesperson(salespersonId);
-    const person = salespeopleArray.find(s => s.id === salespersonId);
-    if (person?.profile) {
-      setProfileData({
-        employee_id: person.profile.employee_id || '',
-        tax_id: person.profile.tax_id || '',
-        commission_rate: person.profile.commission_rate || 0,
-        territory: person.profile.territory || '',
-        hire_date: person.profile.hire_date?.split('T')[0] || '',
-        manager_id: person.profile.manager_id || '',
-        performance_tier: person.profile.performance_tier || 'standard'
-      });
-    }
-    setShowProfileModal(true);
-  };
 
   const openAssignmentModal = (salespersonId: string) => {
     setSelectedSalesperson(salespersonId);
@@ -348,7 +260,7 @@ export default function SalesManagement() {
   };
 
   // Show loading state while data is fetching
-  if (dashboardLoading || salespeopleLoading || usersLoading) {
+  if (dashboardLoading || salespeopleLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
@@ -715,91 +627,6 @@ export default function SalesManagement() {
           </Tabs>
         </div>
       </div>
-
-      {/* Profile Edit Modal */}
-      <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Salesperson Profile</DialogTitle>
-            <DialogDescription>
-              Update the salesperson's profile information and performance settings.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="employee_id">Employee ID</Label>
-                <Input
-                  id="employee_id"
-                  value={profileData.employee_id}
-                  onChange={(e) => setProfileData({ ...profileData, employee_id: e.target.value })}
-                  data-testid="input-employee-id"
-                />
-              </div>
-              <div>
-                <Label htmlFor="commission_rate">Commission Rate (%)</Label>
-                <Input
-                  id="commission_rate"
-                  type="number"
-                  value={profileData.commission_rate}
-                  onChange={(e) => setProfileData({ ...profileData, commission_rate: parseFloat(e.target.value) })}
-                  data-testid="input-commission-rate"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="territory">Territory</Label>
-                <Input
-                  id="territory"
-                  value={profileData.territory}
-                  onChange={(e) => setProfileData({ ...profileData, territory: e.target.value })}
-                  data-testid="input-territory"
-                />
-              </div>
-              <div>
-                <Label htmlFor="hire_date">Hire Date</Label>
-                <Input
-                  id="hire_date"
-                  type="date"
-                  value={profileData.hire_date}
-                  onChange={(e) => setProfileData({ ...profileData, hire_date: e.target.value })}
-                  data-testid="input-hire-date"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="performance_tier">Performance Tier</Label>
-              <Select 
-                value={profileData.performance_tier} 
-                onValueChange={(value) => setProfileData({ ...profileData, performance_tier: value })}
-              >
-                <SelectTrigger data-testid="select-performance-tier">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PERFORMANCE_TIERS.map(tier => (
-                    <SelectItem key={tier.value} value={tier.value}>{tier.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowProfileModal(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={() => updateProfileMutation.mutate(profileData)}
-              disabled={updateProfileMutation.isPending}
-              data-testid="button-save-profile"
-            >
-              {updateProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Assignment Creation Modal */}
       <Dialog open={showAssignmentModal} onOpenChange={setShowAssignmentModal}>

@@ -27,7 +27,7 @@ router.get('/salespeople', requireAuth, async (req, res) => {
       .from('salesperson_profiles')
       .select(`
         *,
-        user:userId (
+        user:user_id (
           id,
           email,
           full_name,
@@ -49,20 +49,20 @@ router.get('/salespeople', requireAuth, async (req, res) => {
         const { count: totalAssignments, error: totalError } = await supabaseAdmin
           .from('salesperson_assignments')
           .select('*', { count: 'exact', head: true })
-          .eq('salespersonId', profile.userId);
+          .eq('salesperson_id', profile.user_id);
 
         // Get active assignments count
         const { count: activeAssignments, error: activeError } = await supabaseAdmin
           .from('salesperson_assignments')
           .select('*', { count: 'exact', head: true })
-          .eq('salespersonId', profile.userId)
-          .eq('isActive', true);
+          .eq('salesperson_id', profile.user_id)
+          .eq('is_active', true);
 
-        if (totalError) console.warn('Error fetching total assignments for', profile.userId, totalError);
-        if (activeError) console.warn('Error fetching active assignments for', profile.userId, activeError);
+        if (totalError) console.warn('Error fetching total assignments for', profile.user_id, totalError);
+        if (activeError) console.warn('Error fetching active assignments for', profile.user_id, activeError);
 
         return {
-          id: profile.userId,
+          id: profile.user_id,
           full_name: profile.user?.full_name || 'Unknown',
           email: profile.user?.email || '',
           phone: profile.user?.phone || '',
@@ -106,7 +106,7 @@ router.post('/salespeople/:userId/profile',
       const { data: existingProfile, error: checkError } = await supabaseAdmin
         .from('salesperson_profiles')
         .select('id')
-        .eq('userId', userId)
+        .eq('user_id', userId)
         .single();
 
       if (existingProfile) {
@@ -130,13 +130,13 @@ router.post('/salespeople/:userId/profile',
       const { data: profile, error: createError } = await supabaseAdmin
         .from('salesperson_profiles')
         .insert({
-          userId,
-          employeeId,
-          commissionRate: commission_rate,
+          user_id: userId,
+          employee_id: employeeId,
+          commission_rate: commission_rate,
           territory: Array.isArray(territory) ? JSON.stringify(territory) : territory,
-          hireDate: hire_date,
-          performanceTier: performance_tier,
-          isActive: true
+          hire_date: hire_date,
+          performance_tier: performance_tier,
+          is_active: true
         })
         .select()
         .single();
@@ -173,25 +173,25 @@ router.patch('/salespeople/:userId/profile',
       const updatePayload: any = {};
 
       if (updateData.commission_rate !== undefined) {
-        updatePayload.commissionRate = updateData.commission_rate;
+        updatePayload.commission_rate = updateData.commission_rate;
       }
       if (updateData.territory !== undefined) {
         updatePayload.territory = Array.isArray(updateData.territory) ? JSON.stringify(updateData.territory) : updateData.territory;
       }
       if (updateData.hire_date !== undefined) {
-        updatePayload.hireDate = updateData.hire_date;
+        updatePayload.hire_date = updateData.hire_date;
       }
       if (updateData.performance_tier !== undefined) {
-        updatePayload.performanceTier = updateData.performance_tier;
+        updatePayload.performance_tier = updateData.performance_tier;
       }
       if (updateData.is_active !== undefined) {
-        updatePayload.isActive = updateData.is_active;
+        updatePayload.is_active = updateData.is_active;
       }
 
       const { data: updatedProfile, error: updateError } = await supabaseAdmin
         .from('salesperson_profiles')
         .update(updatePayload)
-        .eq('userId', userId)
+        .eq('user_id', userId)
         .select()
         .single();
 
@@ -222,7 +222,7 @@ router.delete('/salespeople/:userId/profile', requireAuth, async (req, res) => {
     const { error: deleteError } = await supabaseAdmin
       .from('salesperson_profiles')
       .delete()
-      .eq('userId', userId);
+      .eq('user_id', userId);
 
     if (deleteError) {
       console.error('Error deleting salesperson profile:', deleteError);

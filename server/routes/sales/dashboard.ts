@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import { supabaseAdmin } from '../../lib/supabase.js';
+import { requireAuth } from '../../middleware/auth';
 
 const router = Router();
 
 // Get sales dashboard metrics
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     // Get total salespeople count
     const { count: salespeopleCount, error: salespeopleError } = await supabaseAdmin
       .from('salesperson_profiles')
       .select('*', { count: 'exact', head: true })
-      .eq('isActive', true);
+      .eq('is_active', true);
 
     if (salespeopleError) {
       console.error('Error fetching salespeople count:', salespeopleError);
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
     const { count: assignmentsCount, error: assignmentsError } = await supabaseAdmin
       .from('salesperson_assignments')
       .select('*', { count: 'exact', head: true })
-      .eq('isActive', true);
+      .eq('is_active', true);
 
     if (assignmentsError) {
       console.error('Error fetching assignments count:', assignmentsError);
@@ -34,8 +35,8 @@ router.get('/', async (req, res) => {
 
     const { data: recentMetrics, error: metricsError } = await supabaseAdmin
       .from('salesperson_metrics')
-      .select('totalSales, totalOrders, commissionEarned')
-      .gte('periodStart', thirtyDaysAgo.toISOString().split('T')[0]);
+      .select('total_sales, total_orders, commission_earned')
+      .gte('period_start', thirtyDaysAgo.toISOString().split('T')[0]);
 
     if (metricsError) {
       console.error('Error fetching recent metrics:', metricsError);
@@ -43,25 +44,18 @@ router.get('/', async (req, res) => {
     }
 
     // Calculate totals
-    const totalSales = recentMetrics?.reduce((sum, metric) => sum + parseFloat(metric.totalSales || '0'), 0) || 0;
-    const totalOrders = recentMetrics?.reduce((sum, metric) => sum + (metric.totalOrders || 0), 0) || 0;
-    const totalCommission = recentMetrics?.reduce((sum, metric) => sum + parseFloat(metric.commissionEarned || '0'), 0) || 0;
+    const totalSales = recentMetrics?.reduce((sum, metric) => sum + parseFloat(metric.total_sales || '0'), 0) || 0;
+    const totalOrders = recentMetrics?.reduce((sum, metric) => sum + (metric.total_orders || 0), 0) || 0;
+    const totalCommission = recentMetrics?.reduce((sum, metric) => sum + parseFloat(metric.commission_earned || '0'), 0) || 0;
 
     const dashboardData = {
-      salespeople: {
-        total: salespeopleCount || 0,
-        active: salespeopleCount || 0
+      overview: {
+        total_salespeople: salespeopleCount || 0,
+        active_assignments: assignmentsCount || 0,
+        total_orders: totalOrders,
+        total_revenue: totalSales
       },
-      assignments: {
-        total: assignmentsCount || 0,
-        active: assignmentsCount || 0
-      },
-      metrics: {
-        totalSales,
-        totalOrders,
-        totalCommission,
-        averageOrderValue: totalOrders > 0 ? totalSales / totalOrders : 0
-      }
+      top_performers: [] // Empty for now - would need actual salesperson performance data
     };
 
     res.json({
