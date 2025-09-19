@@ -16,7 +16,7 @@ import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember } from '../../middleware/orgSecurity';
 import { logDatabaseOperation } from '../../lib/log';
 import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
-import { trackBusinessEvent } from '../../middleware/metrics';
+import { trackBusinessEvent, MetricsRequest } from '../../middleware/metrics';
 import { PurchaseOrderService } from '../../services/purchaseOrderService';
 
 const router = express.Router();
@@ -243,7 +243,6 @@ router.get('/:supplierId/performance',
  */
 router.post('/:supplierId/performance/calculate',
   requireOrgMember,
-  trackBusinessEvent('supplier_performance_calculated'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { supplierId } = req.params;
@@ -280,6 +279,13 @@ router.post('/:supplierId/performance/calculate',
         orgId,
         periodStart,
         periodEnd,
+      });
+
+      // Track business event
+      await trackBusinessEvent('supplier_performance_calculated', req as MetricsRequest, {
+        status: 'success',
+        supplierId,
+        orgId
       });
 
       return sendOk(res, metrics, 'Supplier performance metrics calculated successfully');

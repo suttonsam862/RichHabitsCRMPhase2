@@ -22,7 +22,7 @@ import { requireOrgMember } from '../../middleware/orgSecurity';
 import { logDatabaseOperation } from '../../lib/log';
 import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
 import { idempotent } from '../../lib/idempotency';
-import { trackBusinessEvent } from '../../middleware/metrics';
+import { trackBusinessEvent, MetricsRequest } from '../../middleware/metrics';
 import { PurchaseOrderService } from '../../services/purchaseOrderService';
 
 const router = express.Router();
@@ -262,7 +262,6 @@ router.post('/',
   requireOrgMember,
   validateRequest(CreateMaterialDTO),
   idempotent,
-  trackBusinessEvent('material_created'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const materialData = req.body;
@@ -340,6 +339,13 @@ router.post('/',
         orgId: materialData.orgId,
       });
 
+      // Track business event
+      await trackBusinessEvent('material_created', req as MetricsRequest, {
+        status: 'success',
+        materialId: newMaterial.id,
+        orgId: materialData.orgId
+      });
+
       return sendCreated(res, newMaterial, 'Material created successfully');
 
     } catch (error) {
@@ -356,7 +362,6 @@ router.post('/',
 router.put('/:materialId',
   requireOrgMember,
   validateRequest(UpdateMaterialDTO),
-  trackBusinessEvent('material_updated'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { materialId } = req.params;
@@ -516,7 +521,6 @@ router.get('/:materialId/inventory',
  */
 router.put('/:materialId/inventory',
   requireOrgMember,
-  trackBusinessEvent('material_inventory_adjusted'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { materialId } = req.params;
@@ -664,7 +668,6 @@ router.get('/:materialId/requirements',
 router.post('/:materialId/requirements',
   requireOrgMember,
   validateRequest(CreateMaterialRequirementDTO),
-  trackBusinessEvent('material_requirement_created'),
   asyncHandler(async (req: AuthedRequest, res) => {
     const sb = await getSupabaseClient(req);
     const { materialId } = req.params;
