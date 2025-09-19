@@ -18,6 +18,7 @@ import catalogRoutes from './catalog/index';
 import designerRoutes from './designers/index';
 import designJobRoutes from './design-jobs/index';
 import manufacturerRoutes from './manufacturers/index';
+import workOrderRoutes from './work-orders/index';
 // Removed uploadRoutes import - deprecated in favor of objects endpoint
 import { brandingRouter } from './files/branding.js';
 import adminConfig from './admin/config.js';
@@ -46,6 +47,7 @@ router.use('/catalog', catalogRoutes);
 router.use('/designers', designerRoutes);
 router.use('/design-jobs', designJobRoutes);
 router.use('/manufacturers', manufacturerRoutes);
+router.use('/work-orders', workOrderRoutes);
 router.use('/permission-templates', permissionTemplatesRoutes);
 // Removed deprecated upload routes - now handled by objects endpoint
 router.use('/admin/config', adminConfig);

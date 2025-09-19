@@ -4,9 +4,10 @@
  */
 
 import { DesignJobService } from './designJobService';
+import { WorkOrderService } from './workOrderService';
 
-// Export the class
-export { DesignJobService };
+// Export the classes
+export { DesignJobService, WorkOrderService };
 
 // Export specific functions for convenience
 export const {
@@ -19,3 +20,15 @@ export const {
   isValidStatusTransition,
   getValidTransitions
 } = DesignJobService;
+
+export const {
+  createWorkOrder,
+  updateWorkOrderStatus,
+  assignManufacturer,
+  bulkGenerateWorkOrders,
+  getWorkOrderWithDetails,
+  createProductionEvent,
+  updateMilestone,
+  getManufacturerCapacity,
+  reportDelay
+} = WorkOrderService;

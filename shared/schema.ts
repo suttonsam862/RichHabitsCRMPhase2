@@ -178,13 +178,44 @@ export const manufacturingWorkOrders = pgTable("manufacturing_work_orders", {
         orgId: uuid("org_id").notNull(),
         orderItemId: uuid("order_item_id").notNull(),
         manufacturerId: uuid("manufacturer_id"),
-        statusCode: text("status_code"),
+        statusCode: text("status_code").default("pending"),
+        priority: integer().default(5), // 1=highest, 10=lowest
+        quantity: integer().notNull(),
         instructions: text(),
         estimatedCompletionDate: date("estimated_completion_date"),
         actualCompletionDate: date("actual_completion_date"),
+        plannedStartDate: date("planned_start_date"),
+        plannedDueDate: date("planned_due_date"),
+        actualStartDate: timestamp("actual_start_date", { withTimezone: true, mode: 'string' }),
+        actualEndDate: timestamp("actual_end_date", { withTimezone: true, mode: 'string' }),
+        delayReason: text("delay_reason"),
+        qualityNotes: text("quality_notes"),
         createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
         updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-});
+}, (table) => ({
+        // Indexes for efficient filtering and RLS queries
+        idxWorkOrdersOrgId: index("idx_work_orders_org_id").on(table.orgId),
+        idxWorkOrdersOrderItemId: index("idx_work_orders_order_item_id").on(table.orderItemId),
+        idxWorkOrdersManufacturerId: index("idx_work_orders_manufacturer_id").on(table.manufacturerId),
+        idxWorkOrdersStatusCode: index("idx_work_orders_status_code").on(table.statusCode),
+        idxWorkOrdersPlannedDue: index("idx_work_orders_planned_due").on(table.plannedDueDate),
+        // Foreign key constraints
+        fkWorkOrdersOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_work_orders_org_id"
+        }),
+        fkWorkOrdersOrderItemId: foreignKey({
+                columns: [table.orderItemId],
+                foreignColumns: [orderItems.id],
+                name: "fk_work_orders_order_item_id"
+        }).onDelete("cascade"),
+        fkWorkOrdersManufacturerId: foreignKey({
+                columns: [table.manufacturerId],
+                foreignColumns: [manufacturers.id],
+                name: "fk_work_orders_manufacturer_id"
+        }).onDelete("set null"),
+}));
 
 export const organizations = pgTable("organizations", {
         id: varchar().primaryKey().notNull(),
@@ -400,12 +431,56 @@ export const permissionTemplates = pgTable("permission_templates", {
 
 export const productionEvents = pgTable("production_events", {
         id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: uuid("org_id").notNull(), // CRITICAL: Added for RLS and tenancy
         workOrderId: uuid("work_order_id").notNull(),
         eventCode: text("event_code").notNull(),
         actorUserId: uuid("actor_user_id"),
         payload: jsonb(),
         occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-});
+}, (table) => ({
+        // Indexes for efficient event queries
+        idxProductionEventsWorkOrderId: index("idx_production_events_work_order_id").on(table.workOrderId),
+        idxProductionEventsEventCode: index("idx_production_events_event_code").on(table.eventCode),
+        idxProductionEventsOccurredAt: index("idx_production_events_occurred_at").on(table.occurredAt),
+        // Foreign key constraints
+        fkProductionEventsWorkOrderId: foreignKey({
+                columns: [table.workOrderId],
+                foreignColumns: [manufacturingWorkOrders.id],
+                name: "fk_production_events_work_order_id"
+        }).onDelete("cascade"),
+}));
+
+export const productionMilestones = pgTable("production_milestones", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: uuid("org_id").notNull(), // CRITICAL: Added for RLS and tenancy
+        workOrderId: uuid("work_order_id").notNull(),
+        milestoneCode: text("milestone_code").notNull(),
+        milestoneName: text("milestone_name").notNull(),
+        targetDate: date("target_date"),
+        actualDate: timestamp("actual_date", { withTimezone: true, mode: 'string' }),
+        status: text().default("pending"), // pending, in_progress, completed, skipped
+        notes: text(),
+        completedBy: uuid("completed_by"),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        // Indexes for milestone tracking
+        idxMilestonesWorkOrderId: index("idx_milestones_work_order_id").on(table.workOrderId),
+        idxMilestonesStatus: index("idx_milestones_status").on(table.status),
+        idxMilestonesTargetDate: index("idx_milestones_target_date").on(table.targetDate),
+        // Foreign key constraints
+        fkMilestonesWorkOrderId: foreignKey({
+                columns: [table.workOrderId],
+                foreignColumns: [manufacturingWorkOrders.id],
+                name: "fk_milestones_work_order_id"
+        }).onDelete("cascade"),
+        // TODO: Re-enable after users.id type is standardized
+        // fkMilestonesCompletedBy: foreignKey({
+        //         columns: [table.completedBy],
+        //         foreignColumns: [users.id],
+        //         name: "fk_milestones_completed_by"
+        // }).onDelete("set null"),
+}));
 
 export const rolePermissions = pgTable("role_permissions", {
         roleId: uuid("role_id").notNull(),

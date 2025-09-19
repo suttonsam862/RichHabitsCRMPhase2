@@ -17,6 +17,7 @@ import type {
   SkillMatchType
 } from '../../shared/dtos';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { WorkOrderService } from './workOrderService';
 
 export class DesignJobService {
   
@@ -116,10 +117,116 @@ export class DesignJobService {
         }
       });
       
+      // AUTO-GENERATE WORK ORDER: When design is approved, automatically create work order
+      if (approved && !requestRevisions && newStatus === 'approved') {
+        try {
+          await this.autoGenerateWorkOrderFromApprovedDesign(sb, updatedJob, actorUserId);
+        } catch (workOrderError) {
+          console.error('Failed to auto-generate work order for approved design:', workOrderError);
+          // Don't fail the design approval if work order generation fails
+          // Log the error but continue - work orders can be created manually later
+        }
+      }
+      
       return updatedJob;
     } catch (error) {
       console.error('Error reviewing design:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Auto-generate work order when design job is approved
+   * SECURITY: Uses authenticated client with org validation
+   * INTEGRATION: Links design approval to manufacturing workflow
+   */
+  static async autoGenerateWorkOrderFromApprovedDesign(
+    sb: SupabaseClient,
+    approvedDesignJob: DesignJobType,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      console.log(`Auto-generating work order for approved design job: ${approvedDesignJob.id}`);
+
+      // Get order item details
+      const { data: orderItem, error: orderItemError } = await sb
+        .from('order_items')
+        .select('id, org_id, order_id, quantity, name_snapshot, status_code')
+        .eq('id', approvedDesignJob.orderItemId)
+        .single();
+
+      if (orderItemError || !orderItem) {
+        throw new Error(`Failed to get order item for design job ${approvedDesignJob.id}: ${orderItemError?.message || 'Not found'}`);
+      }
+
+      // Validate organization access
+      if (orderItem.org_id !== approvedDesignJob.orgId) {
+        throw new Error('Organization mismatch between design job and order item');
+      }
+
+      // Check if work order already exists for this order item
+      const { data: existingWorkOrder } = await sb
+        .from('manufacturing_work_orders')
+        .select('id, status_code')
+        .eq('order_item_id', orderItem.id)
+        .single();
+
+      if (existingWorkOrder) {
+        console.log(`Work order already exists for order item ${orderItem.id}: ${existingWorkOrder.id}`);
+        return; // Don't create duplicate work order
+      }
+
+      // Prepare work order data with smart defaults
+      const workOrderData = {
+        orgId: orderItem.org_id,
+        orderItemId: orderItem.id,
+        quantity: orderItem.quantity,
+        priority: 5, // Medium priority for auto-generated orders
+        statusCode: 'pending' as const,
+        instructions: `Auto-generated from approved design job: ${approvedDesignJob.title || 'Untitled'}`,
+        // Could add planned dates based on business rules
+        plannedStartDate: undefined,
+        plannedDueDate: undefined,
+      };
+
+      // Create the work order using WorkOrderService
+      const workOrder = await WorkOrderService.createWorkOrder(sb, workOrderData, actorUserId);
+
+      console.log(`Successfully created work order ${workOrder.id} for approved design job ${approvedDesignJob.id}`);
+
+      // Update order item status to manufacturing
+      const { error: updateError } = await sb
+        .from('order_items')
+        .update({ 
+          status_code: 'manufacturing',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderItem.id);
+
+      if (updateError) {
+        console.error('Failed to update order item status to manufacturing:', updateError);
+        // Don't throw error - work order was created successfully
+      } else {
+        console.log(`Updated order item ${orderItem.id} status to 'manufacturing'`);
+      }
+
+      // Create design job event for the connection
+      await this.createDesignJobEvent(sb, {
+        designJobId: approvedDesignJob.id,
+        eventCode: 'WORK_ORDER_AUTO_GENERATED',
+        actorUserId,
+        payload: {
+          work_order_id: workOrder.id,
+          order_item_id: orderItem.id,
+          quantity: orderItem.quantity,
+          auto_generated: true,
+          timestamp: new Date().toISOString(),
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in autoGenerateWorkOrderFromApprovedDesign:', error);
+      throw error; // Re-throw to be caught by caller
     }
   }
   
