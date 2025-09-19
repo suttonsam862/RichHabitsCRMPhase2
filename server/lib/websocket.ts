@@ -1,7 +1,7 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import { parse } from 'url';
-import { verify } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from './supabaseAdmin';
 import type { WebSocketMessage, WebSocketAuth, CreateRealtimeEvent } from '../../shared/dtos/NotificationDTO';
 import { env } from './env';
@@ -187,7 +187,7 @@ export class WebSocketManager {
       const authData = WebSocketAuth.parse(payload);
       
       // Verify JWT token
-      const decoded = verify(authData.token, env.JWT_SECRET) as any;
+      const decoded = jwt.verify(authData.token, env.JWT_SECRET) as any;
       if (!decoded.sub || !decoded.org_id) {
         throw new Error('Invalid token payload');
       }
