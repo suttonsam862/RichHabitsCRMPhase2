@@ -1,16 +1,16 @@
-import { supabase } from '../lib/supabase';
-import { 
-  FulfillmentEventType, 
+import { supabaseAdmin } from '../lib/supabase';
+import {
+  FulfillmentEventType,
   CreateFulfillmentEventType,
-  ShippingInfoType, 
-  CreateShippingInfoType, 
+  ShippingInfoType,
+  CreateShippingInfoType,
   UpdateShippingInfoType,
-  QualityCheckType, 
-  CreateQualityCheckType, 
+  QualityCheckType,
+  CreateQualityCheckType,
   UpdateQualityCheckType,
-  CompletionRecordType, 
+  CompletionRecordType,
   CreateCompletionRecordType,
-  FulfillmentMilestoneType, 
+  FulfillmentMilestoneType,
   CreateFulfillmentMilestoneType,
   FulfillmentStatusType,
   FulfillmentDashboardType,
@@ -53,7 +53,7 @@ import {
  * - Integration with manufacturing and billing systems
  */
 export class FulfillmentService {
-  
+
   /**
    * Initialize fulfillment process for an order
    * Creates default milestones and triggers the first fulfillment event
@@ -72,7 +72,7 @@ export class FulfillmentService {
       }
 
       // Verify order exists and get current status
-      const { data: order, error: orderError } = await supabase
+      const { data: order, error: orderError } = await supabaseAdmin
         .from('orders')
         .select('id, status_code, org_id')
         .eq('id', orderId)
@@ -99,7 +99,7 @@ export class FulfillmentService {
       }));
 
       // Insert milestones
-      const { error: milestonesError } = await supabase
+      const { error: milestonesError } = await supabaseAdmin
         .from('fulfillment_milestones')
         .insert(milestonesToCreate);
 
@@ -125,7 +125,7 @@ export class FulfillmentService {
 
       // Get the updated fulfillment status
       const fulfillmentStatus = await this.getFulfillmentStatus(orderId, orgId);
-      
+
       return { success: true, fulfillmentStatus };
     } catch (error) {
       console.error('Error starting fulfillment:', error);
@@ -162,7 +162,7 @@ export class FulfillmentService {
         updateData.notes = updates.notes;
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('fulfillment_milestones')
         .update(updateData)
         .eq('order_id', orderId)
@@ -210,7 +210,7 @@ export class FulfillmentService {
       });
 
       // Insert shipping information
-      const { data: shippingInfo, error: shippingError } = await supabase
+      const { data: shippingInfo, error: shippingError } = await supabaseAdmin
         .from('shipping_info')
         .insert(serializedData)
         .select()
@@ -274,7 +274,7 @@ export class FulfillmentService {
       });
 
       // Update shipping info with delivery details
-      const { error: shippingError } = await supabase
+      const { error: shippingError } = await supabaseAdmin
         .from('shipping_info')
         .update(updateData)
         .eq('order_id', orderId)
@@ -299,7 +299,7 @@ export class FulfillmentService {
         eventType: 'status_change',
         statusAfter: FULFILLMENT_STATUS_CODES.DELIVERED,
         actorUserId,
-        notes: `Order delivered successfully`,
+        notes: 'Order delivered successfully',
         metadata: {
           deliveryDate: deliveryData.deliveryDate,
           deliveryMethod: deliveryData.deliveryMethod,
@@ -342,14 +342,14 @@ export class FulfillmentService {
         FULFILLMENT_MILESTONE_CODES.DELIVERED
       ];
 
-      const incompleteMilestones = milestones.filter(m => 
+      const incompleteMilestones = milestones.filter(m =>
         criticalMilestones.includes(m.milestoneCode as any) && m.status !== 'completed'
       );
 
       if (incompleteMilestones.length > 0) {
-        return { 
-          success: false, 
-          error: `Cannot complete order: pending milestones - ${incompleteMilestones.map(m => m.milestoneName).join(', ')}` 
+        return {
+          success: false,
+          error: `Cannot complete order: pending milestones - ${incompleteMilestones.map(m => m.milestoneName).join(', ')}`
         };
       }
 
@@ -371,7 +371,7 @@ export class FulfillmentService {
         notes: completionData.notes
       });
 
-      const { data: completionRecord, error: completionError } = await supabase
+      const { data: completionRecord, error: completionError } = await supabaseAdmin
         .from('completion_records')
         .insert(serializedCompletionData)
         .select()
@@ -389,7 +389,7 @@ export class FulfillmentService {
       });
 
       // Update order status to completed
-      const { error: orderError } = await supabase
+      const { error: orderError } = await supabaseAdmin
         .from('orders')
         .update({
           status_code: 'completed',
@@ -448,7 +448,7 @@ export class FulfillmentService {
         checkedAt: new Date().toISOString()
       });
 
-      const { data: qualityCheck, error } = await supabase
+      const { data: qualityCheck, error } = await supabaseAdmin
         .from('quality_checks')
         .insert(serializedData)
         .select()
@@ -502,7 +502,7 @@ export class FulfillmentService {
       const fulfillmentProgress = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
 
       // Determine current and next milestone
-      const currentMilestone = milestones.find(m => m.status === 'in_progress')?.milestoneName || 
+      const currentMilestone = milestones.find(m => m.status === 'in_progress')?.milestoneName ||
                               milestones.filter(m => m.status === 'completed').slice(-1)[0]?.milestoneName;
       const nextMilestone = milestones.find(m => m.status === 'pending')?.milestoneName;
 
@@ -570,7 +570,7 @@ export class FulfillmentService {
   }): Promise<FulfillmentDashboardType> {
     try {
       // Get orders with fulfillment information
-      let query = supabase
+      let query = supabaseAdmin
         .from('orders')
         .select(`
           id,
@@ -614,16 +614,16 @@ export class FulfillmentService {
 
       for (const order of orders || []) {
         totalOrders++;
-        
+
         // Get fulfillment status for each order
         const fulfillmentStatus = await this.getFulfillmentStatus(order.id, orgId);
-        
+
         const daysInFulfillment = Math.floor(
           (new Date().getTime() - new Date(order.created_at).getTime()) / (1000 * 60 * 60 * 24)
         );
 
         const isOrderOverdue = order.due_date && new Date(order.due_date) < new Date();
-        
+
         if (isOrderOverdue) overdue++;
 
         // Count by status
@@ -693,7 +693,7 @@ export class FulfillmentService {
   // Helper methods for data retrieval
 
   private async getFulfillmentMilestones(orderId: string, orgId: string): Promise<FulfillmentMilestoneType[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('fulfillment_milestones')
       .select('*')
       .eq('order_id', orderId)
@@ -709,7 +709,7 @@ export class FulfillmentService {
   }
 
   private async getFulfillmentEvents(orderId: string, orgId: string, limit = 50): Promise<FulfillmentEventType[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('fulfillment_events')
       .select('*')
       .eq('order_id', orderId)
@@ -726,7 +726,7 @@ export class FulfillmentService {
   }
 
   private async getShippingInfo(orderId: string, orgId: string): Promise<ShippingInfoType | undefined> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('shipping_info')
       .select('*')
       .eq('order_id', orderId)
@@ -741,7 +741,7 @@ export class FulfillmentService {
   }
 
   private async getQualityChecks(orderId: string, orgId: string): Promise<QualityCheckType[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('quality_checks')
       .select('*')
       .eq('order_id', orderId)
@@ -757,7 +757,7 @@ export class FulfillmentService {
   }
 
   private async getCompletionRecord(orderId: string, orgId: string): Promise<CompletionRecordType | undefined> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('completion_records')
       .select('*')
       .eq('order_id', orderId)
@@ -774,8 +774,8 @@ export class FulfillmentService {
   private async createFulfillmentEvent(eventData: CreateFulfillmentEventType): Promise<void> {
     // Use proper serialization for DB insert
     const serializedEventData = serializeFulfillmentEvent(eventData);
-    
-    const { error } = await supabase
+
+    const { error } = await supabaseAdmin
       .from('fulfillment_events')
       .insert(serializedEventData);
 
@@ -792,7 +792,7 @@ export class FulfillmentService {
   private async checkAndUpdateOrderStatus(orderId: string, orgId: string): Promise<void> {
     try {
       // Get all order items and their statuses
-      const { data: orderItems, error: itemsError } = await supabase
+      const { data: orderItems, error: itemsError } = await supabaseAdmin
         .from('order_items')
         .select('id, status_code, manufacturer_id')
         .eq('order_id', orderId)
@@ -804,7 +804,7 @@ export class FulfillmentService {
       }
 
       // Get manufacturing work orders for these items
-      const { data: workOrders, error: workOrdersError } = await supabase
+      const { data: workOrders, error: workOrdersError } = await supabaseAdmin
         .from('manufacturing_work_orders')
         .select('id, order_item_id, status_code')
         .in('order_item_id', orderItems.map(item => item.id));
@@ -814,12 +814,12 @@ export class FulfillmentService {
       }
 
       // Check if all manufacturing is complete
-      const allManufacturingComplete = workOrders?.every(wo => 
+      const allManufacturingComplete = workOrders?.every(wo =>
         ['completed', 'shipped'].includes(wo.status_code)
       ) || false;
 
       // Check if shipping info exists
-      const { data: shippingInfo } = await supabase
+      const { data: shippingInfo } = await supabaseAdmin
         .from('shipping_info')
         .select('status_code')
         .eq('order_id', orderId)
@@ -828,7 +828,7 @@ export class FulfillmentService {
 
       // Update order status based on fulfillment progress
       let newOrderStatus = null;
-      
+
       if (shippingInfo?.status_code === 'delivered') {
         newOrderStatus = 'delivered';
       } else if (shippingInfo?.status_code === 'shipped') {
@@ -838,9 +838,9 @@ export class FulfillmentService {
       }
 
       if (newOrderStatus) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from('orders')
-          .update({ 
+          .update({
             status_code: newOrderStatus,
             updated_at: new Date().toISOString()
           })
@@ -863,7 +863,7 @@ export class FulfillmentService {
     try {
       // Get organization settings for auto-completion rules
       const autoCompletionRules = await this.getAutoCompletionRules(orgId);
-      
+
       // Check all completion criteria
       const completionChecks = await Promise.all([
         this.checkAllItemsDelivered(orderId, orgId),
@@ -882,7 +882,7 @@ export class FulfillmentService {
       ] = completionChecks;
 
       // Apply business rules for auto-completion
-      const shouldAutoComplete = 
+      const shouldAutoComplete =
         allItemsDelivered &&
         (autoCompletionRules.requirePayment ? paymentComplete : true) &&
         (autoCompletionRules.requireQualityCheck ? qualityPassed : true) &&
@@ -891,7 +891,7 @@ export class FulfillmentService {
 
       if (shouldAutoComplete) {
         console.log(`Auto-completing order ${orderId} based on business rules`);
-        
+
         // Auto-complete the order
         const result = await this.completeOrder(orderId, orgId, {
           completionType: 'automatic',
@@ -939,7 +939,7 @@ export class FulfillmentService {
    * Check if all items in the order have been delivered
    */
   private async checkAllItemsDelivered(orderId: string, orgId: string): Promise<boolean> {
-    const { data: shippingInfo } = await supabase
+    const { data: shippingInfo } = await supabaseAdmin
       .from('shipping_info')
       .select('status_code')
       .eq('order_id', orderId)
@@ -956,7 +956,7 @@ export class FulfillmentService {
     if (!rules.requirePayment) return true;
 
     // Check accounting_payments table for payment records
-    const { data: payments } = await supabase
+    const { data: payments } = await supabaseAdmin
       .from('accounting_payments')
       .select('amount, status')
       .eq('order_id', orderId)
@@ -964,8 +964,8 @@ export class FulfillmentService {
 
     // Sum paid amounts and check against order total
     const totalPaid = payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-    
-    const { data: order } = await supabase
+
+    const { data: order } = await supabaseAdmin
       .from('orders')
       .select('total_amount')
       .eq('id', orderId)
@@ -981,14 +981,14 @@ export class FulfillmentService {
   private async checkQualityRequirements(orderId: string, orgId: string, rules: any): Promise<boolean> {
     if (!rules.requireQualityCheck) return true;
 
-    const { data: qualityChecks } = await supabase
+    const { data: qualityChecks } = await supabaseAdmin
       .from('quality_checks')
       .select('overall_result, check_type')
       .eq('order_id', orderId)
       .eq('org_id', orgId);
 
     // Ensure all critical quality checks have passed
-    const criticalChecks = qualityChecks?.filter(qc => 
+    const criticalChecks = qualityChecks?.filter(qc =>
       ['final_inspection', 'pre_shipment'].includes(qc.check_type)
     ) || [];
 
@@ -1002,7 +1002,7 @@ export class FulfillmentService {
     if (!rules.requireNotifications) return true;
 
     // Check fulfillment events for notification events
-    const { data: notificationEvents } = await supabase
+    const { data: notificationEvents } = await supabaseAdmin
       .from('fulfillment_events')
       .select('event_code')
       .eq('order_id', orderId)
@@ -1020,7 +1020,7 @@ export class FulfillmentService {
    * Check manufacturing completion status
    */
   private async checkManufacturingCompletion(orderId: string, orgId: string): Promise<boolean> {
-    const { data: orderItems } = await supabase
+    const { data: orderItems } = await supabaseAdmin
       .from('order_items')
       .select('id')
       .eq('order_id', orderId)
@@ -1028,7 +1028,7 @@ export class FulfillmentService {
 
     if (!orderItems?.length) return false;
 
-    const { data: workOrders } = await supabase
+    const { data: workOrders } = await supabaseAdmin
       .from('manufacturing_work_orders')
       .select('status_code')
       .in('order_item_id', orderItems.map(item => item.id));
@@ -1073,7 +1073,7 @@ export class FulfillmentService {
   private async updateInventoryLevels(orderId: string, orgId: string): Promise<void> {
     try {
       // Get order items to update inventory
-      const { data: orderItems } = await supabase
+      const { data: orderItems } = await supabaseAdmin
         .from('order_items')
         .select('product_id, variant_id, quantity')
         .eq('order_id', orderId)
@@ -1105,7 +1105,7 @@ export class FulfillmentService {
   private async sendCustomerCompletionNotification(orderId: string, orgId: string): Promise<void> {
     try {
       // Get order and customer information
-      const { data: order } = await supabase
+      const { data: order } = await supabaseAdmin
         .from('orders')
         .select(`
           id,
@@ -1120,7 +1120,7 @@ export class FulfillmentService {
       if (order?.customer_contact_email) {
         // TODO: Integrate with email service (SendGrid, etc.)
         console.log(`Sending completion notification to ${order.customer_contact_email} for order ${order.code}`);
-        
+
         // Log notification event
         await this.createFulfillmentEvent({
           orgId,
@@ -1128,7 +1128,7 @@ export class FulfillmentService {
           eventCode: 'CUSTOMER_NOTIFICATION_SENT',
           eventType: 'notification',
           notes: `Completion notification sent to ${order.customer_contact_email}`,
-          metadata: { 
+          metadata: {
             recipient: order.customer_contact_email,
             orderCode: order.code
           }
@@ -1145,7 +1145,7 @@ export class FulfillmentService {
   private async generateCompletionInvoice(orderId: string, orgId: string): Promise<void> {
     try {
       // Check if invoice already exists
-      const { data: existingInvoice } = await supabase
+      const { data: existingInvoice } = await supabaseAdmin
         .from('accounting_invoices')
         .select('id')
         .eq('order_id', orderId)
@@ -1154,7 +1154,7 @@ export class FulfillmentService {
 
       if (!existingInvoice) {
         // Get order details for invoice generation
-        const { data: order } = await supabase
+        const { data: order } = await supabaseAdmin
           .from('orders')
           .select('total_amount, customer_contact_name')
           .eq('id', orderId)
@@ -1163,7 +1163,7 @@ export class FulfillmentService {
         if (order) {
           // TODO: Integrate with accounting/billing system
           console.log(`Generating invoice for order ${orderId}, amount: ${order.total_amount}`);
-          
+
           // Log invoice generation event
           await this.createFulfillmentEvent({
             orgId,
@@ -1171,7 +1171,7 @@ export class FulfillmentService {
             eventCode: 'INVOICE_GENERATED',
             eventType: 'notification',
             notes: 'Completion invoice generated automatically',
-            metadata: { 
+            metadata: {
               amount: order.total_amount,
               customer: order.customer_contact_name
             }
@@ -1189,7 +1189,7 @@ export class FulfillmentService {
   private async updateCompletionAnalytics(orderId: string, orgId: string): Promise<void> {
     try {
       // Calculate completion metrics
-      const { data: order } = await supabase
+      const { data: order } = await supabaseAdmin
         .from('orders')
         .select('created_at, total_amount')
         .eq('id', orderId)
@@ -1209,7 +1209,7 @@ export class FulfillmentService {
           eventCode: FULFILLMENT_EVENT_CODES.ANALYTICS_UPDATED,
           eventType: 'notification',
           notes: 'Completion analytics updated',
-          metadata: { 
+          metadata: {
             completionDays,
             orderValue: order.total_amount
           }
@@ -1281,7 +1281,7 @@ export class FulfillmentService {
 
       const serializedShipmentData = serializeShipment(shipmentCreateData);
 
-      const { data: shipment, error: shipmentError } = await supabase
+      const { data: shipment, error: shipmentError } = await supabaseAdmin
         .from('shipments')
         .insert(serializedShipmentData)
         .select()
@@ -1300,10 +1300,10 @@ export class FulfillmentService {
           quantity: item.quantity,
           notes: item.notes
         };
-        
+
         const serializedItemData = serializeShipmentItem(itemData);
-        
-        return supabase
+
+        return supabaseAdmin
           .from('shipment_items')
           .insert(serializedItemData);
       });
@@ -1313,7 +1313,7 @@ export class FulfillmentService {
 
       if (failedItems.length > 0) {
         // Rollback shipment if items failed
-        await supabase.from('shipments').delete().eq('id', shipment.id);
+        await supabaseAdmin.from('shipments').delete().eq('id', shipment.id);
         throw new Error(`Failed to create shipment items: ${failedItems.map(f => f.error?.message).join(', ')}`);
       }
 
@@ -1354,7 +1354,7 @@ export class FulfillmentService {
   }, actorUserId?: string): Promise<{ success: boolean; shipment?: ShipmentType; error?: string }> {
     try {
       // Get shipment and validate
-      const { data: shipment, error: shipmentError } = await supabase
+      const { data: shipment, error: shipmentError } = await supabaseAdmin
         .from('shipments')
         .select('*')
         .eq('id', shipmentId)
@@ -1378,7 +1378,7 @@ export class FulfillmentService {
         updated_at: new Date().toISOString()
       };
 
-      const { data: updatedShipment, error: updateError } = await supabase
+      const { data: updatedShipment, error: updateError } = await supabaseAdmin
         .from('shipments')
         .update(updateData)
         .eq('id', shipmentId)
@@ -1430,7 +1430,7 @@ export class FulfillmentService {
   }> {
     try {
       // Get all order items
-      const { data: orderItems } = await supabase
+      const { data: orderItems } = await supabaseAdmin
         .from('order_items')
         .select('id, quantity')
         .eq('order_id', orderId)
@@ -1439,7 +1439,7 @@ export class FulfillmentService {
       const totalItems = orderItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
       // Get all shipments for this order
-      const { data: shipments } = await supabase
+      const { data: shipments } = await supabaseAdmin
         .from('shipments')
         .select(`
           *,
@@ -1454,11 +1454,11 @@ export class FulfillmentService {
       // Calculate shipped and delivered quantities
       for (const shipment of shipments || []) {
         const shipmentQuantity = shipment.shipment_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
-        
+
         if (shipment.status_code === 'shipped' || shipment.status_code === 'delivered') {
           shippedItems += shipmentQuantity;
         }
-        
+
         if (shipment.status_code === 'delivered') {
           deliveredItems += shipmentQuantity;
         }
@@ -1498,7 +1498,7 @@ export class FulfillmentService {
     try {
       // Get order items with their quantities
       const orderItemIds = items.map(item => item.orderItemId);
-      const { data: orderItems } = await supabase
+      const { data: orderItems } = await supabaseAdmin
         .from('order_items')
         .select('id, quantity')
         .eq('order_id', orderId)
@@ -1506,7 +1506,7 @@ export class FulfillmentService {
         .in('id', orderItemIds);
 
       // Get already shipped quantities
-      const { data: shippedItems } = await supabase
+      const { data: shippedItems } = await supabaseAdmin
         .from('shipment_items')
         .select('order_item_id, quantity')
         .in('order_item_id', orderItemIds);
@@ -1520,9 +1520,9 @@ export class FulfillmentService {
 
         const alreadyShipped = shippedItems?.filter(si => si.order_item_id === item.orderItemId)
           .reduce((sum, si) => sum + si.quantity, 0) || 0;
-        
+
         const remainingQuantity = orderItem.quantity - alreadyShipped;
-        
+
         if (item.quantity > remainingQuantity) {
           return { valid: false, error: `Cannot ship ${item.quantity} of item ${item.orderItemId}. Only ${remainingQuantity} remaining.` };
         }
@@ -1540,7 +1540,7 @@ export class FulfillmentService {
   private async checkOrderShippingStatus(orderId: string, orgId: string): Promise<void> {
     try {
       const shippingStatus = await this.getOrderShippingStatus(orderId, orgId);
-      
+
       // Update SHIPPED milestone only when all items are shipped
       if (shippingStatus.isFullyShipped) {
         await this.updateMilestone(orderId, orgId, FULFILLMENT_MILESTONE_CODES.SHIPPED, {
@@ -1548,7 +1548,7 @@ export class FulfillmentService {
           notes: `All items shipped across ${shippingStatus.shipments.length} shipment(s)`
         });
       }
-      
+
       // Update DELIVERED milestone only when all items are delivered
       if (shippingStatus.isFullyDelivered) {
         await this.updateMilestone(orderId, orgId, FULFILLMENT_MILESTONE_CODES.DELIVERED, {
