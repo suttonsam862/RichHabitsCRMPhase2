@@ -4,19 +4,7 @@ import { logSecurityEvent } from '../lib/log';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { organizationMemberships } from '../../shared/schema';
-
-export interface AuthedRequest extends Request {
-  user?: {
-    id: string;
-    email?: string;
-    full_name?: string;
-    role?: string;
-    organization_id?: string;
-    is_super_admin?: boolean;
-    raw_user_meta_data?: any;
-    user_metadata?: any;
-  };
-}
+import { AuthedRequest } from './auth';
 
 /**
  * Organization roles in order of privilege level

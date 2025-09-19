@@ -11,11 +11,15 @@ import { logDatabaseOperation } from '../../lib/log';
 import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
 import { idempotent } from '../../lib/idempotency';
 import { trackBusinessEvent } from '../../middleware/metrics';
+import orderItemsRouter from './items';
 
 const router = express.Router();
 
 // All orders routes require authentication
 router.use(requireAuth);
+
+// Mount order items routes
+router.use('/:orderId/items', orderItemsRouter);
 
 // Helper function to generate order code with collision retry
 function generateOrderCode(): string {
