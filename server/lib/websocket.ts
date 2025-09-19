@@ -1,9 +1,10 @@
-import { WebSocket, WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer, RawData } from 'ws';
 import { IncomingMessage } from 'http';
 import { parse } from 'url';
 import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from './supabaseAdmin';
 import type { WebSocketMessage, WebSocketAuth, CreateRealtimeEvent } from '../../shared/dtos/NotificationDTO';
+import { WebSocketAuthDTO } from '../../shared/dtos/NotificationDTO';
 import { env } from './env';
 
 interface AuthenticatedWebSocket extends WebSocket {
@@ -44,7 +45,7 @@ export class WebSocketManager {
       'https://localhost:5000',
       process.env.FRONTEND_URL,
       process.env.REPL_URL
-    ].filter(Boolean);
+    ].filter((url): url is string => typeof url === 'string' && url.length > 0);
     
     this.wss = new WebSocketServer({
       server,
@@ -127,8 +128,11 @@ export class WebSocketManager {
     }, 30000);
   }
 
-  private async handleMessage(ws: AuthenticatedWebSocket, clientId: string, data: Buffer) {
+  private async handleMessage(ws: AuthenticatedWebSocket, clientId: string, data: RawData) {
     try {
+      // Convert RawData to Buffer for consistent handling
+      const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data.toString());
+      
       // Rate limiting check
       if (!this.checkRateLimit(ws)) {
         console.warn(`Rate limit exceeded for client ${clientId}`);
@@ -137,13 +141,13 @@ export class WebSocketManager {
       }
       
       // Message size check (max 64KB)
-      if (data.length > 64 * 1024) {
-        console.warn(`Message too large from client ${clientId}: ${data.length} bytes`);
+      if (buffer.length > 64 * 1024) {
+        console.warn(`Message too large from client ${clientId}: ${buffer.length} bytes`);
         this.sendError(ws, 'Message too large');
         return;
       }
       
-      const message = JSON.parse(data.toString());
+      const message = JSON.parse(buffer.toString());
 
       // Handle authentication first
       if (message.type === 'auth' && !ws.isAuthenticated) {
@@ -184,7 +188,7 @@ export class WebSocketManager {
 
   private async authenticateClient(ws: AuthenticatedWebSocket, clientId: string, payload: any) {
     try {
-      const authData = WebSocketAuth.parse(payload);
+      const authData = WebSocketAuthDTO.parse(payload);
       
       // Verify JWT token
       const decoded = jwt.verify(authData.token, env.JWT_SECRET) as any;
@@ -208,8 +212,8 @@ export class WebSocketManager {
         .from('organization_memberships')
         .select('role')
         .eq('user_id', decoded.sub)
-        .eq('org_id', decoded.org_id)
-        .eq('status', 'active')
+        .eq('organization_id', decoded.org_id)
+        .eq('is_active', true)
         .single();
 
       if (orgError || !orgAccess) {

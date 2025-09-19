@@ -1,7 +1,7 @@
 // Schema updated to match actual database structure on 2025-09-11
 // Aligned with business database - removed auth enums, added real business tables
 
-import { pgTable, uuid, varchar, text, timestamp, boolean, integer, jsonb, decimal, date, bigint, index, unique, foreignKey } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, integer, jsonb, decimal, date, index, unique, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 

@@ -5,6 +5,7 @@ import { logSecurityEvent } from '../lib/log';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 
+// Keep AuthedRequest as a type alias for backwards compatibility
 export interface AuthedRequest extends Request {
   user?: {
     id: string;
@@ -21,7 +22,7 @@ export interface AuthedRequest extends Request {
 /**
  * Middleware to require authentication for protected routes
  */
-export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers['authorization'];
 

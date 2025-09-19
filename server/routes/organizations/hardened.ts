@@ -10,8 +10,7 @@ import { supabaseForUser } from '../../lib/supabase.js';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../../middleware/auth';
 import { requireOrgMember, requireOrgAdmin, requireOrgOwner, requireOrgReadonly } from '../../middleware/orgSecurity';
-import { sql } from '@vercel/postgres';
-import { businessOrganizationsCreated, getOrganizationLabel, getUserRoleLabel } from '../../lib/metrics'; // Assuming sql tagged template literal is from @vercel/postgres
+import { businessOrganizationsCreated, getOrganizationLabel, getUserRoleLabel } from '../../lib/metrics';
 import { trackBusinessEvent } from '../../middleware/metrics';
 
 const router = Router();
@@ -47,6 +46,26 @@ const CreateOrganizationSchema = z.object({
 });
 
 type CreateOrganizationRequest = z.infer<typeof CreateOrganizationSchema>;
+
+// Strong typing for database operations as recommended by architect
+type OrganizationCreated = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
+type OrgSportInsert = {
+  organization_id: string;
+  sport_id: string;
+  team_name: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string | null;
+  contact_user_id: string | null;
+  is_primary_contact: number;
+  created_at: string;
+  updated_at: string;
+};
 
 // Auto-tagging function based on organization name
 function autoTagOrganization(name: string, isBusiness: boolean = false): string[] {
@@ -137,7 +156,7 @@ async function createUserFromContact(contactEmail: string, contactName: string, 
     // Check if Supabase Auth user already exists
     // Use paginated approach since listUsers doesn't support email filtering
     let page = 1;
-    let existingUser = null;
+    let existingUser: { id: string; email?: string } | null = null;
 
     while (!existingUser) {
       const { data: authUsersPage, error: authCheckError } = await supabaseAdmin.auth.admin.listUsers({
@@ -150,7 +169,7 @@ async function createUserFromContact(contactEmail: string, contactName: string, 
         break;
       }
 
-      existingUser = authUsersPage?.users?.find(user => user.email === contactEmail);
+      existingUser = authUsersPage?.users?.find(user => user.email === contactEmail) ?? null;
 
       // If we found less than 100 users, we've reached the end
       if (!authUsersPage?.users || authUsersPage.users.length < 100) {
@@ -366,17 +385,17 @@ router.post('/', requireAuth, async (req, res) => {
 
     // Handle sports contacts if any
     if (validatedData.sports.length > 0) {
-      const sportsWithUsers = [];
+      const sportsWithUsers: OrgSportInsert[] = [];
 
       // Process each sport contact (either existing user or new contact)
       for (const sport of validatedData.sports) {
         try {
-          let contactUserId = null;
+          let contactUserId: string | null = null;
 
           if (sport.userId) {
             // Using existing user
             logger.info(`Associating existing user ${sport.userId} with sport ${sport.sportId}`);
-            contactUserId = sport.userId;
+            contactUserId = sport.userId ?? null;
           } else {
             // Auto-create user from contact
             const userResult = await createUserFromContact(
@@ -396,10 +415,11 @@ router.post('/', requireAuth, async (req, res) => {
           sportsWithUsers.push({
             organization_id: orgData.id,
             sport_id: sport.sportId,
+            team_name: sport.teamName || 'Main Team',
             contact_name: sport.contactName,
             contact_email: sport.contactEmail,
-            contact_phone: sport.contactPhone || null,
-            contact_user_id: contactUserId,
+            contact_phone: sport.contactPhone ?? null,
+            contact_user_id: contactUserId ?? null,
             is_primary_contact: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -410,9 +430,10 @@ router.post('/', requireAuth, async (req, res) => {
           sportsWithUsers.push({
             organization_id: orgData.id,
             sport_id: sport.sportId,
+            team_name: sport.teamName || 'Main Team',
             contact_name: sport.contactName,
             contact_email: sport.contactEmail,
-            contact_phone: sport.contactPhone || null,
+            contact_phone: sport.contactPhone ?? null,
             contact_user_id: null,
             is_primary_contact: 0,
             created_at: new Date().toISOString(),

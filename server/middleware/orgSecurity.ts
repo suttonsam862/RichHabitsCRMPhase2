@@ -4,7 +4,7 @@ import { logSecurityEvent } from '../lib/log';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { organizationMemberships } from '../../shared/schema';
-import { AuthedRequest } from './auth';
+// AuthedRequest is now available via Express.Request augmentation
 
 /**
  * Organization roles in order of privilege level
@@ -63,7 +63,7 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
       const orgId = extractOrgId(req);
       
       if (!orgId) {
-        logSecurityEvent(req as AuthedRequest, 'ORG_ACCESS_NO_ID', { 
+        logSecurityEvent(req, 'ORG_ACCESS_NO_ID', { 
           path: req.path, 
           method: req.method,
           requestId 
@@ -74,7 +74,7 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
       // Note: organization.id is varchar, may not always be UUID format
       // Remove strict UUID validation to allow non-UUID varchar IDs
       if (!orgId || orgId.trim() === '') {
-        logSecurityEvent(req as AuthedRequest, 'ORG_ACCESS_INVALID_ID', { 
+        logSecurityEvent(req, 'ORG_ACCESS_INVALID_ID', { 
           orgId, 
           path: req.path,
           requestId 
@@ -82,9 +82,9 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
         return sendErr(res, 'BAD_REQUEST', 'Invalid organization ID', undefined, 400);
       }
 
-      const user = (req as AuthedRequest).user;
+      const user = req.user;
       if (!user) {
-        logSecurityEvent(req as AuthedRequest, 'ORG_ACCESS_NO_AUTH', { 
+        logSecurityEvent(req, 'ORG_ACCESS_NO_AUTH', { 
           orgId, 
           path: req.path,
           requestId 
@@ -175,7 +175,7 @@ export function requireOrgRole(requiredRole: OrgRole = OrgRole.MEMBER, allowSupe
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logSecurityEvent(req, 'ORG_ACCESS_DB_ERROR', { 
         orgId: extractOrgId(req), 
-        userId: (req as AuthedRequest).user?.id, 
+        userId: req.user?.id, 
         error: errorMessage,
         path: req.path,
         requestId 
