@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabaseAdmin } from '../../lib/supabase';
+import { supabaseAdmin, supabaseForUser } from '../../lib/supabase';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { sendSuccess, sendErr, handleDatabaseError } from '../../lib/http';
 
@@ -266,7 +266,8 @@ router.post('/:id/notes', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/orders/bulk-action - Bulk actions on orders
+
+// POST /api/v1/orders/bulk-action - Frontend bulk operations endpoint  
 router.post('/bulk-action', requireAuth, async (req, res) => {
   const authedReq = req as AuthedRequest;
   if (!authedReq.user) {
@@ -274,35 +275,97 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
   }
 
   try {
-    const { action, orderIds } = req.body;
+    const { action, orderIds, filters } = req.body;
 
-    if (!action || !Array.isArray(orderIds) || orderIds.length === 0) {
-      return sendErr(res, 'VALIDATION_ERROR', 'Action and order IDs are required', undefined, 400);
+    if (!action) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Action is required', undefined, 400);
     }
 
-    let updateData: any = {};
-    
+    // SECURITY: Use user's scoped client instead of admin client for bulk operations
+    const userClient = supabaseForUser(req.headers.authorization?.split(' ')[1] || '');
+
+    // Handle bulk operations based on action type
+    let result;
     switch (action) {
       case 'archive':
-        updateData = { status_code: 'archived', updated_at: new Date().toISOString() };
+        if (!Array.isArray(orderIds) || orderIds.length === 0) {
+          return sendErr(res, 'VALIDATION_ERROR', 'Order IDs are required for archive action', undefined, 400);
+        }
+        
+        // Use user client to enforce RLS and org scoping
+        const { error: archiveError } = await userClient
+          .from('orders')
+          .update({ 
+            status_code: 'archived',
+            updated_at: new Date().toISOString()
+          })
+          .in('id', orderIds);
+
+        if (archiveError) {
+          return handleDatabaseError(res, archiveError, 'bulk archive orders');
+        }
+        
+        result = { action: 'archive', affected: orderIds.length };
         break;
-      case 'confirm':
-        updateData = { status_code: 'confirmed', updated_at: new Date().toISOString() };
+
+      case 'changeStatus':
+        const { statusCode } = req.body;
+        if (!statusCode || !Array.isArray(orderIds) || orderIds.length === 0) {
+          return sendErr(res, 'VALIDATION_ERROR', 'Status code and order IDs are required', undefined, 400);
+        }
+
+        const { error: statusError } = await userClient
+          .from('orders')
+          .update({ 
+            status_code: statusCode,
+            updated_at: new Date().toISOString()
+          })
+          .in('id', orderIds);
+
+        if (statusError) {
+          return handleDatabaseError(res, statusError, 'bulk status change');
+        }
+        
+        result = { action: 'changeStatus', statusCode, affected: orderIds.length };
         break;
+
+      case 'assign':
+        const { assigneeId } = req.body;
+        if (!assigneeId || !Array.isArray(orderIds) || orderIds.length === 0) {
+          return sendErr(res, 'VALIDATION_ERROR', 'Assignee ID and order IDs are required', undefined, 400);
+        }
+
+        const { error: assignError } = await userClient
+          .from('orders')
+          .update({ 
+            assigned_to: assigneeId,
+            updated_at: new Date().toISOString()
+          })
+          .in('id', orderIds);
+
+        if (assignError) {
+          return handleDatabaseError(res, assignError, 'bulk assign orders');
+        }
+        
+        result = { action: 'assign', assigneeId, affected: orderIds.length };
+        break;
+
+      case 'export':
+        // For export, we don't modify data, just return success
+        // The frontend handles the actual export logic
+        result = { 
+          action: 'export', 
+          message: 'Export initiated',
+          filters: filters || {},
+          timestamp: new Date().toISOString()
+        };
+        break;
+
       default:
-        return sendErr(res, 'VALIDATION_ERROR', 'Invalid bulk action', undefined, 400);
+        return sendErr(res, 'VALIDATION_ERROR', `Unsupported bulk action: ${action}`, undefined, 400);
     }
 
-    const { error } = await supabaseAdmin
-      .from('orders')
-      .update(updateData)
-      .in('id', orderIds);
-
-    if (error) {
-      return handleDatabaseError(res, error, 'bulk action');
-    }
-
-    sendSuccess(res, { message: `Bulk ${action} completed successfully` });
+    sendSuccess(res, result);
   } catch (error) {
     console.error('Error performing bulk action:', error);
     sendErr(res, 'DATABASE_ERROR', 'Failed to perform bulk action', undefined, 500);

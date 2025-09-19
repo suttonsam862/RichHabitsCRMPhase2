@@ -74,7 +74,7 @@ if (process.env.NODE_ENV === 'development') {
 // Object storage routes - using ObjectStorageService implementation below
 
 // SECURED: Upload endpoint with organization-scoped access control - Phase 0 SEC-2
-router.post('/objects/upload', requireAuth, requireOrgAdmin(), async (req: AuthedRequest, res) => {
+router.post('/objects/upload', requireAuth, requireOrgAdmin(), async (req, res) => {
   try {
     const { fileName, organizationId } = req.body || {};
 
@@ -126,7 +126,7 @@ router.post('/objects/upload', requireAuth, requireOrgAdmin(), async (req: Authe
 });
 
 // Debug route to list files in storage - SECURED: disabled in production unless explicitly enabled
-router.get('/debug/storage-files', requireAuth, async (req: AuthedRequest, res) => {
+router.get('/debug/storage-files', requireAuth, async (req, res) => {
   // Phase 0 SEC-2: Block debug endpoints in production
   const isProduction = process.env.NODE_ENV === 'production';
   const allowDebugEndpoints = process.env.ALLOW_DEBUG_ENDPOINTS === 'true';
@@ -155,7 +155,7 @@ router.get('/debug/storage-files', requireAuth, async (req: AuthedRequest, res) 
 });
 
 // SECURED: File serving endpoint with strict path validation and org membership check - Phase 0 SEC-2
-router.get('/files/public-objects/:filePath(*)', requireAuth, async (req: AuthedRequest, res) => {
+router.get('/files/public-objects/:filePath(*)', requireAuth, async (req, res) => {
   try {
     const filePath = req.params.filePath as string;
     const user = (req as AuthedRequest).user;

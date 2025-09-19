@@ -11,6 +11,26 @@ import {
 
 const router = express.Router();
 
+// Base route for Sales module health check
+router.get('/', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
+  if (!authedReq.user) {
+    return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
+  }
+  
+  try {
+    // Simple module status response
+    sendSuccess(res, {
+      module: 'sales',
+      status: 'operational',
+      availableEndpoints: ['/dashboard', '/salespeople', '/profiles', '/assignments']
+    });
+  } catch (error) {
+    console.error('Sales module status error:', error);
+    sendErr(res, 'INTERNAL_ERROR', 'Sales module status check failed', undefined, 500);
+  }
+});
+
 // Mount dashboard routes
 router.use('/dashboard', dashboardRouter);
 
