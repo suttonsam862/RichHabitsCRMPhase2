@@ -1389,5 +1389,94 @@ export const realtimeEvents = pgTable("realtime_events", {
         }).onDelete("set null"),
 }));
 
+// Security and Audit Tables
+
+export const auditLogs = pgTable("audit_logs", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        userId: varchar("user_id"), // User who performed the action
+        organizationId: varchar("organization_id"), // Organization context
+        operation: varchar({ length: 100 }).notNull(), // CREATE, UPDATE, DELETE, etc.
+        entityType: varchar("entity_type", { length: 50 }).notNull(), // order, user, etc.
+        entityId: varchar("entity_id"), // ID of the affected entity
+        previousState: jsonb("previous_state"), // State before the operation
+        newState: jsonb("new_state"), // State after the operation
+        requestMethod: varchar("request_method", { length: 10 }), // GET, POST, etc.
+        requestPath: varchar("request_path", { length: 500 }), // API endpoint path
+        statusCode: integer("status_code"), // HTTP response code
+        success: boolean().notNull().default(false), // Whether operation succeeded
+        ipAddress: varchar("ip_address", { length: 45 }), // IPv4/IPv6 address
+        userAgent: text("user_agent"), // Browser/client info
+        sessionId: varchar("session_id", { length: 100 }), // Session identifier
+        metadata: jsonb(), // Additional context data
+        riskScore: integer("risk_score"), // Computed risk score (1-100)
+        flagged: boolean().default(false), // Flagged for review
+        reviewedBy: varchar("reviewed_by"), // Admin who reviewed
+        reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxAuditLogsUserId: index("idx_audit_logs_user_id").on(table.userId),
+        idxAuditLogsOrgId: index("idx_audit_logs_org_id").on(table.organizationId),
+        idxAuditLogsOperation: index("idx_audit_logs_operation").on(table.operation),
+        idxAuditLogsEntityType: index("idx_audit_logs_entity_type").on(table.entityType),
+        idxAuditLogsEntityId: index("idx_audit_logs_entity_id").on(table.entityId),
+        idxAuditLogsCreatedAt: index("idx_audit_logs_created_at").on(table.createdAt),
+        idxAuditLogsSuccess: index("idx_audit_logs_success").on(table.success),
+        idxAuditLogsFlagged: index("idx_audit_logs_flagged").on(table.flagged),
+        idxAuditLogsRiskScore: index("idx_audit_logs_risk_score").on(table.riskScore),
+        fkAuditLogsUserId: foreignKey({
+                columns: [table.userId],
+                foreignColumns: [users.id],
+                name: "fk_audit_logs_user_id"
+        }).onDelete("set null"),
+        fkAuditLogsOrgId: foreignKey({
+                columns: [table.organizationId],
+                foreignColumns: [organizations.id],
+                name: "fk_audit_logs_org_id"
+        }).onDelete("cascade"),
+}));
+
+export const securityEvents = pgTable("security_events", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        eventType: varchar("event_type", { length: 50 }).notNull(), // PERMISSION_DENIED, RATE_LIMIT_EXCEEDED, etc.
+        severity: varchar({ length: 20 }).notNull().default('medium'), // low, medium, high, critical
+        userId: varchar("user_id"), // User involved in the event
+        organizationId: varchar("organization_id"), // Organization context
+        ipAddress: varchar("ip_address", { length: 45 }),
+        userAgent: text("user_agent"),
+        requestPath: varchar("request_path", { length: 500 }),
+        details: jsonb(), // Event-specific details
+        resolved: boolean().default(false),
+        resolvedBy: varchar("resolved_by"),
+        resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: 'string' }),
+        resolution: text(), // Resolution notes
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxSecurityEventsType: index("idx_security_events_type").on(table.eventType),
+        idxSecurityEventsSeverity: index("idx_security_events_severity").on(table.severity),
+        idxSecurityEventsUserId: index("idx_security_events_user_id").on(table.userId),
+        idxSecurityEventsOrgId: index("idx_security_events_org_id").on(table.organizationId),
+        idxSecurityEventsCreatedAt: index("idx_security_events_created_at").on(table.createdAt),
+        idxSecurityEventsResolved: index("idx_security_events_resolved").on(table.resolved),
+        fkSecurityEventsUserId: foreignKey({
+                columns: [table.userId],
+                foreignColumns: [users.id],
+                name: "fk_security_events_user_id"
+        }).onDelete("set null"),
+        fkSecurityEventsOrgId: foreignKey({
+                columns: [table.organizationId],
+                foreignColumns: [organizations.id],
+                name: "fk_security_events_org_id"
+        }).onDelete("cascade"),
+}));
+
+
+// Zod schemas for new tables
+export const insertAuditLogSchema = createInsertSchema(auditLogs);
+export const insertSecurityEventSchema = createInsertSchema(securityEvents);
+
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type InsertSecurityEvent = z.infer<typeof insertSecurityEventSchema>;
+export type SelectAuditLog = typeof auditLogs.$inferSelect;
+export type SelectSecurityEvent = typeof securityEvents.$inferSelect;
 
 // All tables are already exported above where they are defined

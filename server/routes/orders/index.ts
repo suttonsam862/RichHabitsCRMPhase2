@@ -14,6 +14,21 @@ import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr, HttpErrors, handleDatabaseError } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember } from '../../middleware/orgSecurity';
+import { 
+  requireOrderRead, 
+  requireOrderCreate, 
+  requireOrderUpdate, 
+  requireOrderSensitiveUpdate,
+  requireOrderDelete, 
+  requireOrderStatusChange, 
+  requireOrderCancel,
+  requireOrderFinancials,
+  requireOrderBulkOps,
+  requireOrderPermissionWithContext,
+  requireApprovalWorkflow,
+  rateLimitOrderOperations
+} from '../../middleware/orderSecurity';
+import { ACTION_PERMISSIONS } from '../../lib/permissions';
 import { logDatabaseOperation } from '../../lib/log';
 import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
 import { idempotent } from '../../lib/idempotency';
@@ -227,7 +242,7 @@ router.get('/stats', requireOrgMember(), asyncHandler(async (req: AuthedRequest,
 }));
 
 // Bulk action endpoint for multiple orders
-router.post('/bulk-action', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+router.post('/bulk-action', requireOrderBulkOps(), rateLimitOrderOperations(3, 60000), requireApprovalWorkflow('bulk_operation'), asyncHandler(async (req: AuthedRequest, res) => {
   const { action, orderIds } = req.body;
   
   if (!action || !orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
@@ -292,7 +307,7 @@ router.post('/bulk-action', requireOrgMember(), asyncHandler(async (req: AuthedR
 }));
 
 // List all orders with filtering, sorting, and pagination
-router.get('/', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+router.get('/', requireOrderRead(), asyncHandler(async (req: AuthedRequest, res) => {
   const {
     q = '',
     orgId,
@@ -352,7 +367,7 @@ router.get('/', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res)
 }));
 
 // Get order by ID
-router.get('/:id', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+router.get('/:id', requireOrderPermissionWithContext(ACTION_PERMISSIONS.ORDERS.READ, (req) => ({ orderId: req.params.id })), asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {
@@ -402,7 +417,7 @@ router.get('/:id', requireOrgMember(), asyncHandler(async (req: AuthedRequest, r
 
 // Create order (with idempotency support)
 router.post('/',
-  requireOrgMember(),
+  requireOrderCreate(),
   idempotent(),
   validateRequest({ body: CreateOrderDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
@@ -555,7 +570,7 @@ router.post('/',
 );
 
 // Update order status
-router.patch('/:id/status', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+router.patch('/:id/status', requireOrderStatusChange(), rateLimitOrderOperations(5, 30000), asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
   const { statusCode } = req.body;
 
@@ -672,7 +687,10 @@ router.patch('/:id/status', requireOrgMember(), asyncHandler(async (req: AuthedR
 
 // Update order
 router.patch('/:id',
-  requireOrgMember(),
+  requireOrderPermissionWithContext(ACTION_PERMISSIONS.ORDERS.UPDATE, (req) => ({ 
+    orderId: req.params.id,
+    sensitiveData: ['pricing', 'cost', 'internal_notes'] 
+  })),
   validateRequest({ body: UpdateOrderDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
     const { id } = req.params;
@@ -775,7 +793,8 @@ router.patch('/:id',
 
 // Cancel order - specialized status change endpoint
 router.post('/:id/cancel', 
-  requireOrgMember(), 
+  requireOrderCancel(),
+  rateLimitOrderOperations(10, 60000),
   validateRequest({ body: CancelOrderDTO }),
   asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
@@ -918,7 +937,7 @@ router.post('/:id/cancel',
 }));
 
 // Delete order
-router.delete('/:id', requireOrgMember(), asyncHandler(async (req: AuthedRequest, res) => {
+router.delete('/:id', requireOrderDelete(), rateLimitOrderOperations(3, 300000), asyncHandler(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {

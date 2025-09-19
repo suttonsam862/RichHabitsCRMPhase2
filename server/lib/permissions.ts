@@ -30,17 +30,27 @@ export const ACTION_PERMISSIONS = {
     EDIT_PERMISSIONS: 'users.edit_permissions',
   },
 
-  // Orders management
+  // Orders management - Enhanced granular permissions
   ORDERS: {
     CREATE: 'orders.create',
     READ: 'orders.read',
+    READ_ALL: 'orders.read_all', // View all orders in org vs just assigned
     UPDATE: 'orders.update',
+    UPDATE_SENSITIVE: 'orders.update_sensitive', // Update pricing, costs, internal notes
     DELETE: 'orders.delete',
     CHANGE_STATUS: 'orders.change_status',
+    APPROVE_STATUS_CHANGE: 'orders.approve_status_change', // Approve critical status changes
     ASSIGN: 'orders.assign',
     FULFILL: 'orders.fulfill', 
     CANCEL: 'orders.cancel',
+    FORCE_CANCEL: 'orders.force_cancel', // Cancel without approval workflow
     VIEW_FINANCIALS: 'orders.view_financials',
+    EDIT_FINANCIALS: 'orders.edit_financials',
+    VIEW_INTERNAL_NOTES: 'orders.view_internal_notes',
+    EDIT_INTERNAL_NOTES: 'orders.edit_internal_notes',
+    BULK_OPERATIONS: 'orders.bulk_operations',
+    EXPORT_DATA: 'orders.export_data',
+    OVERRIDE_VALIDATIONS: 'orders.override_validations', // Skip business rule validations
   },
 
   // Product catalog management
@@ -277,8 +287,26 @@ export const ROLE_DEFAULTS = {
       [ACTION_PERMISSIONS.USERS.READ]: true,
       [ACTION_PERMISSIONS.USERS.UPDATE]: true,
       
-      // Orders - full management
-      ...Object.values(ACTION_PERMISSIONS.ORDERS).reduce((acc, perm) => ({ ...acc, [perm]: true }), {}),
+      // Orders - full management for sales
+      [ACTION_PERMISSIONS.ORDERS.CREATE]: true,
+      [ACTION_PERMISSIONS.ORDERS.READ]: true,
+      [ACTION_PERMISSIONS.ORDERS.READ_ALL]: true,
+      [ACTION_PERMISSIONS.ORDERS.UPDATE]: true,
+      [ACTION_PERMISSIONS.ORDERS.UPDATE_SENSITIVE]: false, // Requires manager+ approval
+      [ACTION_PERMISSIONS.ORDERS.DELETE]: false, // Requires admin approval
+      [ACTION_PERMISSIONS.ORDERS.CHANGE_STATUS]: true,
+      [ACTION_PERMISSIONS.ORDERS.APPROVE_STATUS_CHANGE]: false, // Manager+ only
+      [ACTION_PERMISSIONS.ORDERS.ASSIGN]: true,
+      [ACTION_PERMISSIONS.ORDERS.FULFILL]: true,
+      [ACTION_PERMISSIONS.ORDERS.CANCEL]: true,
+      [ACTION_PERMISSIONS.ORDERS.FORCE_CANCEL]: false, // Admin only
+      [ACTION_PERMISSIONS.ORDERS.VIEW_FINANCIALS]: true,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_FINANCIALS]: false, // Manager+ only
+      [ACTION_PERMISSIONS.ORDERS.VIEW_INTERNAL_NOTES]: true,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_INTERNAL_NOTES]: true,
+      [ACTION_PERMISSIONS.ORDERS.BULK_OPERATIONS]: true,
+      [ACTION_PERMISSIONS.ORDERS.EXPORT_DATA]: true,
+      [ACTION_PERMISSIONS.ORDERS.OVERRIDE_VALIDATIONS]: false, // Admin only
       
       // Sales - full access
       ...Object.values(ACTION_PERMISSIONS.SALES).reduce((acc, perm) => ({ ...acc, [perm]: true }), {}),
@@ -309,6 +337,93 @@ export const ROLE_DEFAULTS = {
     subroles: ['salesperson']
   },
 
+  MANAGER: {
+    description: 'Management team with elevated permissions',
+    is_staff: true,
+    permissions: {
+      // Organizations - full management except delete
+      [ACTION_PERMISSIONS.ORGANIZATIONS.READ]: true,
+      [ACTION_PERMISSIONS.ORGANIZATIONS.UPDATE]: true,
+      [ACTION_PERMISSIONS.ORGANIZATIONS.SETUP]: true,
+      [ACTION_PERMISSIONS.ORGANIZATIONS.MANAGE_SPORTS]: true,
+      [ACTION_PERMISSIONS.ORGANIZATIONS.MANAGE_USERS]: true,
+      [ACTION_PERMISSIONS.ORGANIZATIONS.MANAGE_BRANDING]: true,
+      [ACTION_PERMISSIONS.ORGANIZATIONS.VIEW_METRICS]: true,
+      
+      // Users - full management
+      [ACTION_PERMISSIONS.USERS.CREATE]: true,
+      [ACTION_PERMISSIONS.USERS.READ]: true,
+      [ACTION_PERMISSIONS.USERS.UPDATE]: true,
+      [ACTION_PERMISSIONS.USERS.ASSIGN_ROLES]: true,
+      [ACTION_PERMISSIONS.USERS.RESET_PASSWORD]: true,
+      [ACTION_PERMISSIONS.USERS.DEACTIVATE]: true,
+      [ACTION_PERMISSIONS.USERS.VIEW_PERMISSIONS]: true,
+      
+      // Orders - elevated management permissions
+      [ACTION_PERMISSIONS.ORDERS.CREATE]: true,
+      [ACTION_PERMISSIONS.ORDERS.READ]: true,
+      [ACTION_PERMISSIONS.ORDERS.READ_ALL]: true,
+      [ACTION_PERMISSIONS.ORDERS.UPDATE]: true,
+      [ACTION_PERMISSIONS.ORDERS.UPDATE_SENSITIVE]: true, // Manager can update sensitive data
+      [ACTION_PERMISSIONS.ORDERS.DELETE]: false, // Still requires admin approval
+      [ACTION_PERMISSIONS.ORDERS.CHANGE_STATUS]: true,
+      [ACTION_PERMISSIONS.ORDERS.APPROVE_STATUS_CHANGE]: true, // Manager can approve
+      [ACTION_PERMISSIONS.ORDERS.ASSIGN]: true,
+      [ACTION_PERMISSIONS.ORDERS.FULFILL]: true,
+      [ACTION_PERMISSIONS.ORDERS.CANCEL]: true,
+      [ACTION_PERMISSIONS.ORDERS.FORCE_CANCEL]: false, // Admin only
+      [ACTION_PERMISSIONS.ORDERS.VIEW_FINANCIALS]: true,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_FINANCIALS]: true, // Manager can edit financials
+      [ACTION_PERMISSIONS.ORDERS.VIEW_INTERNAL_NOTES]: true,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_INTERNAL_NOTES]: true,
+      [ACTION_PERMISSIONS.ORDERS.BULK_OPERATIONS]: true,
+      [ACTION_PERMISSIONS.ORDERS.EXPORT_DATA]: true,
+      [ACTION_PERMISSIONS.ORDERS.OVERRIDE_VALIDATIONS]: false, // Admin only
+      
+      // Sales - full access
+      ...Object.values(ACTION_PERMISSIONS.SALES).reduce((acc, perm) => ({ ...acc, [perm]: true }), {}),
+      
+      // Quotes - full access
+      ...Object.values(ACTION_PERMISSIONS.QUOTES).reduce((acc, perm) => ({ ...acc, [perm]: true }), {}),
+      
+      // Manufacturing - view and basic management
+      [ACTION_PERMISSIONS.MANUFACTURING.VIEW_ORDERS]: true,
+      [ACTION_PERMISSIONS.MANUFACTURING.UPDATE_PRODUCTION_STATUS]: true,
+      [ACTION_PERMISSIONS.MANUFACTURING.MANAGE_PO]: true,
+      [ACTION_PERMISSIONS.MANUFACTURING.VIEW_MATERIALS]: true,
+      [ACTION_PERMISSIONS.MANUFACTURING.UPDATE_MILESTONES]: true,
+      
+      // Catalog - full access
+      ...Object.values(ACTION_PERMISSIONS.CATALOG).reduce((acc, perm) => ({ ...acc, [perm]: true }), {}),
+      
+      // Page access
+      [PAGE_ACCESS.DASHBOARD.VIEW]: true,
+      [PAGE_ACCESS.DASHBOARD.EDIT]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.VIEW]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.EDIT]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.GENERAL]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.SPORTS]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.BRANDING]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.USERS]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.ORDERS]: true,
+      [PAGE_ACCESS.ORGANIZATIONS.METRICS]: true,
+      [PAGE_ACCESS.USERS.VIEW]: true,
+      [PAGE_ACCESS.USERS.EDIT]: true,
+      [PAGE_ACCESS.USERS.STAFF]: true,
+      [PAGE_ACCESS.USERS.CUSTOMERS]: true,
+      [PAGE_ACCESS.SALES.VIEW]: true,
+      [PAGE_ACCESS.SALES.EDIT]: true,
+      [PAGE_ACCESS.ORDERS.VIEW]: true,
+      [PAGE_ACCESS.ORDERS.EDIT]: true,
+      [PAGE_ACCESS.QUOTES.VIEW]: true,
+      [PAGE_ACCESS.QUOTES.EDIT]: true,
+      [PAGE_ACCESS.CATALOG.VIEW]: true,
+      [PAGE_ACCESS.CATALOG.EDIT]: true,
+      [PAGE_ACCESS.MANUFACTURING.VIEW]: true,
+    },
+    subroles: ['manager', 'team_lead']
+  },
+
   DESIGNER: {
     description: 'Design team access',
     is_staff: true, 
@@ -317,10 +432,25 @@ export const ROLE_DEFAULTS = {
       [ACTION_PERMISSIONS.ORGANIZATIONS.READ]: true,
       [ACTION_PERMISSIONS.ORGANIZATIONS.VIEW_METRICS]: true,
       
-      // Orders - view and update design status
+      // Orders - limited design-related access
       [ACTION_PERMISSIONS.ORDERS.READ]: true,
-      [ACTION_PERMISSIONS.ORDERS.UPDATE]: true,
-      [ACTION_PERMISSIONS.ORDERS.CHANGE_STATUS]: true,
+      [ACTION_PERMISSIONS.ORDERS.READ_ALL]: false, // Only assigned orders
+      [ACTION_PERMISSIONS.ORDERS.UPDATE]: true, // Design-related updates only
+      [ACTION_PERMISSIONS.ORDERS.UPDATE_SENSITIVE]: false,
+      [ACTION_PERMISSIONS.ORDERS.DELETE]: false,
+      [ACTION_PERMISSIONS.ORDERS.CHANGE_STATUS]: true, // Design status only
+      [ACTION_PERMISSIONS.ORDERS.APPROVE_STATUS_CHANGE]: false,
+      [ACTION_PERMISSIONS.ORDERS.ASSIGN]: false,
+      [ACTION_PERMISSIONS.ORDERS.FULFILL]: false,
+      [ACTION_PERMISSIONS.ORDERS.CANCEL]: false,
+      [ACTION_PERMISSIONS.ORDERS.FORCE_CANCEL]: false,
+      [ACTION_PERMISSIONS.ORDERS.VIEW_FINANCIALS]: false,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_FINANCIALS]: false,
+      [ACTION_PERMISSIONS.ORDERS.VIEW_INTERNAL_NOTES]: true,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_INTERNAL_NOTES]: false,
+      [ACTION_PERMISSIONS.ORDERS.BULK_OPERATIONS]: false,
+      [ACTION_PERMISSIONS.ORDERS.EXPORT_DATA]: false,
+      [ACTION_PERMISSIONS.ORDERS.OVERRIDE_VALIDATIONS]: false,
       
       // Catalog - full management
       ...Object.values(ACTION_PERMISSIONS.CATALOG).reduce((acc, perm) => ({ ...acc, [perm]: true }), {}),
@@ -351,11 +481,25 @@ export const ROLE_DEFAULTS = {
       [ACTION_PERMISSIONS.ORGANIZATIONS.READ]: true,
       [ACTION_PERMISSIONS.ORGANIZATIONS.VIEW_METRICS]: true,
       
-      // Orders - view and update production status
+      // Orders - manufacturing-related access
       [ACTION_PERMISSIONS.ORDERS.READ]: true,
-      [ACTION_PERMISSIONS.ORDERS.UPDATE]: true,
-      [ACTION_PERMISSIONS.ORDERS.CHANGE_STATUS]: true,
+      [ACTION_PERMISSIONS.ORDERS.READ_ALL]: true,
+      [ACTION_PERMISSIONS.ORDERS.UPDATE]: true, // Production-related updates only
+      [ACTION_PERMISSIONS.ORDERS.UPDATE_SENSITIVE]: false,
+      [ACTION_PERMISSIONS.ORDERS.DELETE]: false,
+      [ACTION_PERMISSIONS.ORDERS.CHANGE_STATUS]: true, // Production status only
+      [ACTION_PERMISSIONS.ORDERS.APPROVE_STATUS_CHANGE]: false,
+      [ACTION_PERMISSIONS.ORDERS.ASSIGN]: false,
       [ACTION_PERMISSIONS.ORDERS.FULFILL]: true,
+      [ACTION_PERMISSIONS.ORDERS.CANCEL]: false,
+      [ACTION_PERMISSIONS.ORDERS.FORCE_CANCEL]: false,
+      [ACTION_PERMISSIONS.ORDERS.VIEW_FINANCIALS]: false,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_FINANCIALS]: false,
+      [ACTION_PERMISSIONS.ORDERS.VIEW_INTERNAL_NOTES]: true,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_INTERNAL_NOTES]: true,
+      [ACTION_PERMISSIONS.ORDERS.BULK_OPERATIONS]: false,
+      [ACTION_PERMISSIONS.ORDERS.EXPORT_DATA]: true,
+      [ACTION_PERMISSIONS.ORDERS.OVERRIDE_VALIDATIONS]: false,
       
       // Manufacturing - full access
       ...Object.values(ACTION_PERMISSIONS.MANUFACTURING).reduce((acc, perm) => ({ ...acc, [perm]: true }), {}),
@@ -386,8 +530,25 @@ export const ROLE_DEFAULTS = {
       // Limited user management - own profile only
       [ACTION_PERMISSIONS.USERS.MANAGE_PROFILE]: true,
       
-      // View their own orders
-      [ACTION_PERMISSIONS.ORDERS.READ]: true,
+      // Orders - very limited customer access
+      [ACTION_PERMISSIONS.ORDERS.READ]: true, // Own orders only
+      [ACTION_PERMISSIONS.ORDERS.READ_ALL]: false,
+      [ACTION_PERMISSIONS.ORDERS.UPDATE]: false,
+      [ACTION_PERMISSIONS.ORDERS.UPDATE_SENSITIVE]: false,
+      [ACTION_PERMISSIONS.ORDERS.DELETE]: false,
+      [ACTION_PERMISSIONS.ORDERS.CHANGE_STATUS]: false,
+      [ACTION_PERMISSIONS.ORDERS.APPROVE_STATUS_CHANGE]: false,
+      [ACTION_PERMISSIONS.ORDERS.ASSIGN]: false,
+      [ACTION_PERMISSIONS.ORDERS.FULFILL]: false,
+      [ACTION_PERMISSIONS.ORDERS.CANCEL]: false,
+      [ACTION_PERMISSIONS.ORDERS.FORCE_CANCEL]: false,
+      [ACTION_PERMISSIONS.ORDERS.VIEW_FINANCIALS]: false,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_FINANCIALS]: false,
+      [ACTION_PERMISSIONS.ORDERS.VIEW_INTERNAL_NOTES]: false,
+      [ACTION_PERMISSIONS.ORDERS.EDIT_INTERNAL_NOTES]: false,
+      [ACTION_PERMISSIONS.ORDERS.BULK_OPERATIONS]: false,
+      [ACTION_PERMISSIONS.ORDERS.EXPORT_DATA]: false,
+      [ACTION_PERMISSIONS.ORDERS.OVERRIDE_VALIDATIONS]: false,
       
       // Quote access
       [ACTION_PERMISSIONS.QUOTES.CREATE]: true,

@@ -431,6 +431,9 @@ let wsManager: any = null;
 import { metricsDB } from './lib/db-metrics';
 metricsDB.startConnectionPoolMonitoring();
 
+// Export app for testing
+export { app };
+
 // Start server with startup verification
 server.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
