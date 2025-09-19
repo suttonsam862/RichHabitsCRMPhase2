@@ -86,7 +86,7 @@ export function OrdersPage() {
   }, [filters, sortBy, sortOrder]);
 
   // Fetch orders list
-  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+  const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ['/api/v1/orders', queryParams],
   });
 
