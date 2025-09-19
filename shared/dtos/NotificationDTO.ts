@@ -115,5 +115,4 @@ export type CreateRealtimeEvent = z.infer<typeof CreateRealtimeEventDTO>;
 export type WebSocketMessage = z.infer<typeof WebSocketMessageDTO>;
 export type WebSocketAuth = z.infer<typeof WebSocketAuthDTO>;
 
-// Export the Zod schemas as well
-export { WebSocketAuthDTO, WebSocketMessageDTO, RealtimeEventDTO, CreateRealtimeEventDTO };
+// Zod schemas are already exported above in the main section
