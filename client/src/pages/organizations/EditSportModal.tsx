@@ -7,7 +7,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,7 +20,6 @@ const editSportSchema = z.object({
   contact_name: z.string().min(1, "Contact name is required"),
   contact_email: z.string().email("Valid email is required"),
   contact_phone: z.string().optional(),
-  assigned_salesperson_id: z.string().optional(),
   user_id: z.string().optional(),
 });
 
@@ -35,8 +33,6 @@ interface EditSportModalProps {
     contact_name: string;
     contact_email: string;
     contact_phone?: string;
-    assigned_salesperson?: string;
-    assigned_salesperson_id?: string;
     team_name?: string;
   };
 }
@@ -58,19 +54,10 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
       contact_name: sport.contact_name || "",
       contact_email: sport.contact_email || "",
       contact_phone: sport.contact_phone || "",
-      assigned_salesperson_id: sport.assigned_salesperson_id || "none",
       user_id: "",
     },
   });
 
-  // Fetch staff/sales users for salesperson assignment
-  const { data: salespeopleData, isLoading: salespeopleLoading } = useQuery({
-    queryKey: ['users-enhanced', 'staff'],
-    queryFn: async () => {
-      return await apiRequest('/api/v1/users/enhanced?type=staff&pageSize=100');
-    },
-    enabled: !!user,
-  });
 
   // Fetch users for contact selection (with search) - using same pattern as setup route
   const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
@@ -96,7 +83,6 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
     staleTime: 30000, // Cache for 30 seconds
   });
 
-  const salespeople = salespeopleData?.data || [];
   const users = usersData?.data || [];
 
   // Update form values when user is selected from existing contacts
@@ -147,19 +133,17 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
   });
 
   const handleSubmit = (data: any) => {
-    // Prepare submission data based on contact type
-    const submissionData = {
-      ...data,
-      // Map salesperson "none" to undefined
-      assigned_salesperson_id: data.assigned_salesperson_id === "none" ? undefined : data.assigned_salesperson_id,
+    // Prepare submission data with only the required snake_case fields
+    const submissionData: any = {
+      team_name: data.team_name,
+      contact_name: data.contact_name,
+      contact_email: data.contact_email,
+      contact_phone: data.contact_phone || null,
     };
 
-    // If using existing contact, include user_id, otherwise omit it
+    // If using existing contact, include user_id
     if (contactType === "existing" && selectedUser) {
       submissionData.user_id = selectedUser.id;
-    } else {
-      // Remove user_id for new contacts
-      delete submissionData.user_id;
     }
 
     updateSportMutation.mutate(submissionData);
@@ -346,39 +330,6 @@ export default function EditSportModal({ isOpen, onClose, organizationId, sport 
                 )}
               </div>
             )}
-
-
-            <FormField
-              control={form.control}
-              name="assigned_salesperson_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400">
-                        <SelectValue placeholder="Select salesperson" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-gray-800 border-white/20">
-                      <SelectItem value="none" className="text-white focus:bg-white/10">No assignment</SelectItem>
-                      {salespeopleLoading ? (
-                        <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
-                      ) : salespeople.length === 0 ? (
-                        <div className="p-2 text-white/60 text-sm">No salespeople available</div>
-                      ) : (
-                        salespeople.map((person: any) => (
-                          <SelectItem key={person.id} value={person.id} className="text-white focus:bg-white/10">
-                            {person.fullName || person.name || 'Unknown User'} ({person.email})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end gap-3">
               <Button

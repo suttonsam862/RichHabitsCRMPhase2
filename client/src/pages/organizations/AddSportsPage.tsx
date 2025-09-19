@@ -8,69 +8,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Trophy, Save, Users, UserPlus } from "lucide-react";
+import { Plus, Trash2, Trophy, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layouts/AppLayout";
 
-// Sports data will be fetched dynamically from API
-
-const contactSchema = z.object({
+// Simplified form schema matching API expectations (snake_case)
+const sportFormSchema = z.object({
+  sport_id: z.string().min(1, "Sport is required"),
+  team_name: z.string().min(1, "Team name is required"),
   contact_name: z.string().min(1, "Contact name is required"),
   contact_email: z.string().email("Valid email is required"),
-  contact_phone: z.string().optional(),
-  team_name: z.string().min(1, "Team name is required"),
-  assigned_salesperson_id: z.string().optional(),
+  contact_phone: z.string().optional()
 });
 
-interface SportContact {
-  id: string;
+interface SportFormData {
   sport_id: string;
-  sportName: string;
+  team_name: string;
   contact_name: string;
   contact_email: string;
   contact_phone?: string;
-  team_name: string;
-  assigned_salesperson_id?: string;
 }
 
-const formSchema = z.object({
-  sports: z.array(z.object({
-    sportId: z.string().min(1, "Sport is required"),
-    teamName: z.string().min(1, "Team name is required"),
-    contactName: z.string().min(1, "Contact name is required"),
-    contactEmail: z.string().email("Valid email is required"),
-    contactPhone: z.string().optional(),
-    userId: z.string().optional().nullable()
-  }))
-});
-
+interface SportContact extends SportFormData {
+  id: string;
+  sportName: string;
+}
 
 export default function AddSportsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedSportId, setSelectedSportId] = useState<string>("");
   const [sportsToAdd, setSportsToAdd] = useState<SportContact[]>([]);
-  const [contactMode, setContactMode] = useState<'new' | 'existing'>('new');
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<SportFormData>({
+    resolver: zodResolver(sportFormSchema),
     defaultValues: {
-      sports: [
-        {
-          sportId: undefined,
-          teamName: 'Main Team',
-          contactName: '',
-          contactEmail: '',
-          contactPhone: '',
-          userId: undefined
-        }
-      ]
+      sport_id: "",
+      team_name: "Main Team",
+      contact_name: "",
+      contact_email: "",
+      contact_phone: ""
     }
   });
 
@@ -89,7 +69,7 @@ export default function AddSportsPage() {
   });
 
   // Fetch available sports from API
-  const { data: availableSportsData = {}, isLoading: sportsLoading } = useQuery({
+  const { data: availableSportsData = {} } = useQuery({
     queryKey: ['sports'],
     queryFn: () => api.get('/api/v1/sports'),
   });
@@ -97,38 +77,12 @@ export default function AddSportsPage() {
   // Handle API response structure
   const availableSports = availableSportsData?.data || [];
 
-  // Fetch existing users for selection (filter by contact role)
-  const { data: existingUsersData = {}, isLoading: usersLoading } = useQuery({
-    queryKey: ['users-contacts'],
-    queryFn: () => api.get('/api/v1/users/enhanced?type=customers&pageSize=100'),
-  });
-
-  const existingUsers = existingUsersData?.data?.users || existingUsersData?.data || [];
-
-  // Fetch staff/sales users for salesperson assignment
-  const { data: salespeopleData = {}, isLoading: salespeopleLoading } = useQuery({
-    queryKey: ['users-salespeople'],
-    queryFn: () => api.get('/api/v1/users/enhanced?type=staff&pageSize=100'),
-  });
-
-  const salespeople = salespeopleData?.data?.users || salespeopleData?.data || [];
-
   const addSportsMutation = useMutation({
-    mutationFn: async (sports: SportContact[]) => {
-      const payload = {
-        sports: sports.map(sport => ({
-          sport_id: sport.sport_id,
-          contact_name: sport.contact_name,
-          contact_email: sport.contact_email,
-          contact_phone: sport.contact_phone || "",
-          team_name: sport.team_name || "Main Team",
-          assigned_salesperson_id: (sport.assigned_salesperson_id && sport.assigned_salesperson_id !== 'none') ? sport.assigned_salesperson_id : null
-        })),
-      };
-
+    mutationFn: async (sports: SportFormData[]) => {
+      const payload = { sports };
       return api.post(`/api/v1/organizations/${id}/sports`, payload);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations', id, 'sports'] });
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
 
@@ -150,59 +104,11 @@ export default function AddSportsPage() {
     },
   });
 
-  const addSportContact = () => {
-    const formValues = form.getValues();
-    const sportName = Array.isArray(availableSports) ? availableSports.find((s: any) => s.id === selectedSportId)?.name : undefined;
-
-    if (!selectedSportId || !sportName) {
-      toast({
-        title: "Missing information",
-        description: "Please select a sport.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    let contactData;
-
-    if (contactMode === 'new') {
-      if (!formValues.contact_name || !formValues.contact_email || !formValues.team_name) {
-        toast({
-          title: "Missing information",
-          description: "Please fill in all required fields including team name.",
-          variant: "destructive",
-        });
-        return;
-      }
-      contactData = {
-        contact_name: formValues.contact_name,
-        contact_email: formValues.contact_email,
-        contact_phone: formValues.contact_phone || "",
-        team_name: formValues.team_name,
-        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : undefined
-      };
-    } else {
-      const selectedUser = existingUsers.find((u: any) => u.id === selectedUserId);
-      if (!selectedUser || !formValues.team_name) {
-        toast({
-          title: "Missing information",
-          description: "Please select an existing user and provide team name.",
-          variant: "destructive",
-        });
-        return;
-      }
-      contactData = {
-        contact_name: selectedUser.fullName || selectedUser.name || 'Unknown User',
-        contact_email: selectedUser.email,
-        contact_phone: selectedUser.phone || "",
-        userId: selectedUser.id,
-        team_name: formValues.team_name,
-        assigned_salesperson_id: (formValues.assigned_salesperson_id && formValues.assigned_salesperson_id !== 'none') ? formValues.assigned_salesperson_id : undefined
-      };
-    }
+  const addSportToList = (data: SportFormData) => {
+    const sportName = Array.isArray(availableSports) ? availableSports.find((s: any) => s.id === data.sport_id)?.name : "Unknown Sport";
 
     // Check if sport is already added
-    if (sportsToAdd.some(s => s.sport_id === selectedSportId)) {
+    if (sportsToAdd.some(s => s.sport_id === data.sport_id)) {
       toast({
         title: "Sport already added",
         description: "This sport has already been added to the list.",
@@ -213,26 +119,23 @@ export default function AddSportsPage() {
 
     const newContact: SportContact = {
       id: Date.now().toString(),
-      sport_id: selectedSportId,
-      sportName,
-      ...contactData
+      sportName: sportName || "Unknown Sport",
+      ...data
     };
 
     setSportsToAdd(prev => [...prev, newContact]);
 
-    // Reset form and selection
+    // Reset form
     form.reset({
+      sport_id: "",
+      team_name: "Main Team",
       contact_name: "",
       contact_email: "",
-      contact_phone: "",
-      team_name: "Main Team",
-      assigned_salesperson_id: "",
+      contact_phone: ""
     });
-    setSelectedSportId("");
-    setSelectedUserId("");
   };
 
-  const removeSportContact = (id: string) => {
+  const removeSportFromList = (id: string) => {
     setSportsToAdd(prev => prev.filter(s => s.id !== id));
   };
 
@@ -246,7 +149,16 @@ export default function AddSportsPage() {
       return;
     }
 
-    addSportsMutation.mutate(sportsToAdd);
+    // Convert to API format
+    const sportsData: SportFormData[] = sportsToAdd.map(sport => ({
+      sport_id: sport.sport_id,
+      team_name: sport.team_name,
+      contact_name: sport.contact_name,
+      contact_email: sport.contact_email,
+      contact_phone: sport.contact_phone
+    }));
+
+    addSportsMutation.mutate(sportsData);
   };
 
   // Get filtered sports (filter out existing ones and already added ones)
@@ -257,8 +169,6 @@ export default function AddSportsPage() {
         !existingSportIds.includes(sport.id) && !addedSportIds.includes(sport.id)
       )
     : [];
-
-  const canAddSport = selectedSportId && form.watch("contact_name") && form.watch("contact_email");
 
   if (orgLoading) {
     return (
@@ -314,345 +224,175 @@ export default function AddSportsPage() {
       backHref={`/organizations/${id}/sports`}
       headerActions={headerActions}
     >
-
       {/* Add Sport Form */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-6"
       >
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-            <Plus className="h-5 w-5 mr-2 text-cyan-400" />
-            Add Sport & Contact
-          </h3>
+        <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+          <Plus className="h-5 w-5 mr-2 text-cyan-400" />
+          Add Sport & Contact
+        </h3>
 
-          {/* Sport Selection */}
-          <div className="mb-6">
-            <label className="text-white text-sm font-medium">Sport</label>
-            <Select value={selectedSportId || undefined} onValueChange={setSelectedSportId}>
-              <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400 mt-2" data-testid="select-sport">
-                <SelectValue placeholder="Select sport" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-white/20">
-                {filteredSports.length === 0 ? (
-                  <div className="p-2 text-white/60 text-sm">No additional sports available</div>
-                ) : (
-                  filteredSports.map((sport: any) => (
-                    <SelectItem key={sport.id} value={sport.id || `sport-${sport.name}`} className="text-white focus:bg-white/10">
-                      {sport.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Contact Mode Tabs */}
-          <Tabs value={contactMode} onValueChange={(value: any) => setContactMode(value)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white/10">
-              <TabsTrigger value="new" className="flex items-center gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-                <UserPlus className="h-4 w-4" />
-                New Contact
-              </TabsTrigger>
-              <TabsTrigger value="existing" className="flex items-center gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-                <Users className="h-4 w-4" />
-                Select Existing User
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="new" className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Form {...form}>
-                  <FormField
-                    control={form.control}
-                    name="contact_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white">Contact Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter contact name"
-                            className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                            data-testid="input-contact-name"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </Form>
-
-                <Form {...form}>
-                  <FormField
-                    control={form.control}
-                    name="contact_email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white">Contact Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="Enter email address"
-                            className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                            data-testid="input-contact-email"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </Form>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <Form {...form}>
-                  <FormField
-                    control={form.control}
-                    name="team_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white">Team Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter team name"
-                            className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                            data-testid="input-team-name"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </Form>
-
-                <Form {...form}>
-                  <FormField
-                    control={form.control}
-                    name="contact_phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white">Contact Phone (Optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="tel"
-                            placeholder="Enter phone number"
-                            className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                            data-testid="input-contact-phone"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </Form>
-              </div>
-
-              <div className="mt-4">
-                <Form {...form}>
-                  <FormField
-                    control={form.control}
-                    name="assigned_salesperson_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                        <Select value={field.value || undefined} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson">
-                              <SelectValue placeholder="Select salesperson" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-gray-800 border-white/20">
-                            <SelectItem value="none" className="text-white focus:bg-white/10">No assignment</SelectItem>
-                            {salespeopleLoading ? (
-                              <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
-                            ) : salespeople.length === 0 ? (
-                              <div className="p-2 text-white/60 text-sm">No salespeople available</div>
-                            ) : (
-                              salespeople.map((person: any) => (
-                                <SelectItem key={person.id} value={person.id} className="text-white focus:bg-white/10">
-                                  {person.fullName || person.name || 'Unknown User'} ({person.email})
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </Form>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="existing" className="mt-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-white text-sm font-medium">Select User</label>
-                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                    <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400 mt-2" data-testid="select-existing-user">
-                      <SelectValue placeholder="Choose an existing user" />
-                    </SelectTrigger>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(addSportToList)} className="space-y-4">
+            {/* Sport Selection */}
+            <FormField
+              control={form.control}
+              name="sport_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white">Sport</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-sport">
+                        <SelectValue placeholder="Select sport" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent className="bg-gray-800 border-white/20">
-                      {usersLoading ? (
-                        <div className="p-2 text-white/60 text-sm">Loading users...</div>
-                      ) : existingUsers.length === 0 ? (
-                        <div className="p-2 text-white/60 text-sm">No users available</div>
+                      {filteredSports.length === 0 ? (
+                        <div className="p-2 text-white/60 text-sm">No additional sports available</div>
                       ) : (
-                        existingUsers.map((user: any) => (
-                          <SelectItem key={user.id} value={user.id || `user-${user.email}`} className="text-white focus:bg-white/10">
-                            {user.fullName || user.email}
+                        filteredSports.map((sport: any) => (
+                          <SelectItem key={sport.id} value={sport.id} className="text-white focus:bg-white/10">
+                            {sport.name}
                           </SelectItem>
                         ))
                       )}
                     </SelectContent>
                   </Select>
-                </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Form {...form}>
-                    <FormField
-                      control={form.control}
-                      name="team_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Team Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter team name"
-                              className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
-                              data-testid="input-team-name-existing"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </Form>
-
-                  <Form {...form}>
-                    <FormField
-                      control={form.control}
-                      name="assigned_salesperson_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Assign Salesperson (Optional)</FormLabel>
-                          <Select
-                            value={field.value || undefined}
-                            onValueChange={(value) => field.onChange(value || undefined)}
-                          >
-                            <SelectTrigger className="bg-white/5 text-white border-white/20 focus:border-cyan-400" data-testid="select-salesperson-existing">
-                              <SelectValue placeholder="Select salesperson" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-white/20">
-                              <SelectItem value="none" className="text-white focus:bg-white/10">No assignment</SelectItem>
-                              {salespeopleLoading ? (
-                                <div className="p-2 text-white/60 text-sm">Loading salespeople...</div>
-                              ) : salespeople.length === 0 ? (
-                                <div className="p-2 text-white/60 text-sm">No salespeople available</div>
-                              ) : (
-                                salespeople.map((person: any) => (
-                                  <SelectItem key={person.id} value={person.id} className="text-white focus:bg-white/10">
-                                    {person.fullName || person.name || 'Unknown User'} ({person.email})
-                                  </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </Form>
-                </div>
-
-                {selectedUserId && (
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <h4 className="text-white font-medium mb-2">Selected User Details</h4>
-                    {(() => {
-                      const user = existingUsers.find((u: any) => u.id === selectedUserId);
-                      return user ? (
-                        <div className="space-y-1 text-sm text-white/80">
-                          <p><strong>Name:</strong> {user.fullName || user.name || 'Unknown User'}</p>
-                          <p><strong>Email:</strong> {user.email}</p>
-                          {user.phone && <p><strong>Phone:</strong> {user.phone}</p>}
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="team_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Team Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter team name"
+                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                        data-testid="input-team-name"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
-            </TabsContent>
-          </Tabs>
+              />
 
-          <Button
-            onClick={addSportContact}
-            disabled={!selectedSportId || filteredSports.length === 0 || !form.watch("team_name") || (contactMode === 'new' ? (!form.watch("contact_name") || !form.watch("contact_email")) : !selectedUserId)}
-            className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 mt-4"
-            data-testid="button-add-sport"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Sport to List
-          </Button>
+              <FormField
+                control={form.control}
+                name="contact_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Contact Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter contact name"
+                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                        data-testid="input-contact-name"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="contact_email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Contact Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Enter email address"
+                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                        data-testid="input-contact-email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="contact_phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Contact Phone (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        placeholder="Enter phone number"
+                        className="bg-white/5 text-white border-white/20 focus:border-cyan-400"
+                        data-testid="input-contact-phone"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={!form.watch("sport_id") || !form.watch("team_name") || !form.watch("contact_name") || !form.watch("contact_email")}
+              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+              data-testid="button-add-sport-to-list"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add to List
+            </Button>
+          </form>
+        </Form>
       </motion.div>
 
-      {/* Added Sports List */}
+      {/* Sports to Add List */}
       {sportsToAdd.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6"
         >
-            <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-              <Trophy className="h-5 w-5 mr-2 text-cyan-400" />
-              Sports to Add ({sportsToAdd.length})
-            </h3>
-
-            <div className="space-y-3">
-              {sportsToAdd.map((sport, index) => (
-                <motion.div
-                  key={sport.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10"
-                  data-testid={`sport-item-${sport.id}`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center">
-                      <Trophy className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">{sport.sportName}</h4>
-                      <div className="text-white/70 text-sm">
-                        <div><strong>Team:</strong> {sport.team_name}</div>
-                        <div><strong>Contact:</strong> {sport.contact_name} • {sport.contact_email}
-                        {sport.contact_phone && ` • ${sport.contact_phone}`}</div>
-                        {sport.assigned_salesperson_id && (
-                          <div><strong>Salesperson:</strong> {(() => {
-                            const sp = salespeople.find((p: any) => p.id === sport.assigned_salesperson_id);
-                            return sp ? (sp.fullName || sp.name || 'Unknown') : 'Unknown';
-                          })()}</div>
-                        )}
-                      </div>
-                    </div>
+          <h3 className="text-xl font-semibold text-white mb-4">Sports to Add ({sportsToAdd.length})</h3>
+          <div className="space-y-3">
+            {sportsToAdd.map((sport) => (
+              <div key={sport.id} className="flex items-center justify-between bg-white/5 p-4 rounded-lg border border-white/10">
+                <div className="flex items-center gap-4">
+                  <Trophy className="h-5 w-5 text-cyan-400" />
+                  <div>
+                    <div className="text-white font-medium">{sport.sportName}</div>
+                    <div className="text-white/60 text-sm">{sport.team_name} - {sport.contact_name}</div>
+                    <div className="text-white/60 text-sm">{sport.contact_email}</div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeSportContact(sport.id)}
-                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                    data-testid={`button-remove-sport-${sport.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-              ))}
-            </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeSportFromList(sport.id)}
+                  className="border-red-400/50 text-red-400 hover:bg-red-400/10"
+                  data-testid={`button-remove-sport-${sport.id}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </motion.div>
       )}
     </AppLayout>

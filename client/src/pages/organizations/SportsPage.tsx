@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Phone, Mail, User, MapPin, Calendar, Trophy, Users, Edit } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, User, Calendar, Trophy, Edit, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
 import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layouts/AppLayout';
+import { useToast } from '@/hooks/use-toast';
 import EditSportModal from "./EditSportModal";
 
 interface Sport {
   id: string;
   name: string;
   team_name?: string;
-  assigned_salesperson?: string;
   contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
@@ -25,6 +25,8 @@ interface Sport {
 export default function OrganizationSportsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [editingSport, setEditingSport] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -35,7 +37,7 @@ export default function OrganizationSportsPage() {
   });
 
   // Fetch sports data from API
-  const { data: sportsData, isLoading: sportsLoading } = useQuery({
+  const { data: sportsData } = useQuery({
     queryKey: ['organizations', id, 'sports'],
     queryFn: () => api.get(`/api/v1/organizations/${id}/sports`),
     enabled: !!id && org?.success
@@ -43,7 +45,41 @@ export default function OrganizationSportsPage() {
 
   const sports: Sport[] = sportsData?.data || [];
 
-  if (orgLoading || sportsLoading) {
+  // Delete sport mutation
+  const deleteSportMutation = useMutation({
+    mutationFn: async (sportId: string) => {
+      return api.delete(`/api/v1/organizations/${id}/sports/${sportId}`);
+    },
+    onSuccess: (_data, sportId) => {
+      queryClient.invalidateQueries({ queryKey: ['organizations', id, 'sports'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      
+      const sportName = sports.find(s => s.id === sportId)?.name || 'Sport';
+      toast({
+        title: "Sport removed",
+        description: `${sportName} has been removed from ${org?.data?.name}`,
+      });
+    },
+    onError: (error: any, sportId) => {
+      const sportName = sports.find(s => s.id === sportId)?.name || 'Sport';
+      const message = error?.response?.data?.error || error?.message || "Failed to remove sport";
+      toast({
+        title: "Failed to remove sport",
+        description: `Could not remove ${sportName}: ${message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Note: EditSportModal handles its own mutation internally
+
+  const handleDeleteSport = (sport: Sport) => {
+    if (window.confirm(`Are you sure you want to remove ${sport.name} from ${org?.data?.name}?`)) {
+      deleteSportMutation.mutate(sport.id);
+    }
+  };
+
+  if (orgLoading) {
     return (
       <AppLayout>
         <div className="text-center py-12">
@@ -97,7 +133,10 @@ export default function OrganizationSportsPage() {
       {isEditModalOpen && editingSport && (
         <EditSportModal 
           isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingSport(null);
+          }}
           sport={editingSport}
           organizationId={id!}
         />
@@ -148,18 +187,32 @@ export default function OrganizationSportsPage() {
                         <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
                           Active
                         </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingSport(sport);
-                            setIsEditModalOpen(true);
-                          }}
-                          className="border-white/20 text-white hover:bg-white/10"
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingSport(sport);
+                              setIsEditModalOpen(true);
+                            }}
+                            className="border-white/20 text-white hover:bg-white/10"
+                            data-testid={`button-edit-sport-${sport.id}`}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteSport(sport)}
+                            disabled={deleteSportMutation.isPending}
+                            className="border-red-400/50 text-red-400 hover:bg-red-400/10"
+                            data-testid={`button-delete-sport-${sport.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                   </div>
 
@@ -201,12 +254,7 @@ export default function OrganizationSportsPage() {
                       </div>
                     )}
 
-                    {sport.assigned_salesperson && (
-                      <div className="flex items-center gap-3 text-white/80">
-                        <Users className="h-4 w-4 text-cyan-400" />
-                        <span className="text-sm">Sales: {sport.assigned_salesperson}</span>
-                      </div>
-                    )}
+                    {/* Removed assigned_salesperson field */}
                   </div>
 
                   {/* Footer */}

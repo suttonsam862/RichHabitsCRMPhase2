@@ -664,6 +664,95 @@ router.post('/:id/setup', requireAuth, requireOrgAdmin(), async (req: any, res) 
   }
 });
 
+// GET /api/v1/organizations/:id/sports - List all sports for organization  
+router.get('/:id/sports', requireAuth, requireOrgReadonly(), async (req: any, res) => {
+  try {
+    const { id: orgId } = req.params;
+    
+    const { data: sportsData, error } = await supabaseAdmin
+      .from('org_sports')
+      .select(`
+        *,
+        sport:sports(id, name, slug)
+      `)
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      logger.error({ orgId, error }, 'Failed to fetch organization sports');
+      return sendErr(res, 'DATABASE_ERROR', 'Failed to fetch sports', undefined, 500);
+    }
+
+    // Transform to expected frontend format
+    const transformedSports = sportsData.map(orgSport => ({
+      id: orgSport.sport?.id || orgSport.sport_id,
+      name: orgSport.sport?.name || 'Unknown Sport', 
+      team_name: orgSport.team_name,
+      contact_name: orgSport.contact_name,
+      contact_email: orgSport.contact_email,
+      contact_phone: orgSport.contact_phone,
+      created_at: orgSport.created_at,
+      updated_at: orgSport.updated_at
+    }));
+
+    return sendOk(res, transformedSports);
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.list.catch', error);
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Server error', undefined, 500);
+  }
+});
+
+// POST /api/v1/organizations/:id/sports - Add sports to organization
+router.post('/:id/sports', requireAuth, requireOrgAdmin(), async (req: any, res) => {
+  try {
+    const { id: orgId } = req.params;
+    const { sports } = req.body;
+
+    if (!sports || !Array.isArray(sports) || sports.length === 0) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Sports array is required', undefined, 400);
+    }
+
+    logger.info({ orgId, sportsCount: sports.length }, 'Adding sports to organization');
+
+    // Process each sport
+    for (const sport of sports) {
+      const { sport_id, team_name, contact_name, contact_email, contact_phone } = sport;
+
+      if (!sport_id || !team_name || !contact_name || !contact_email) {
+        return sendErr(res, 'VALIDATION_ERROR', 'sport_id, team_name, contact_name, and contact_email are required', undefined, 400);
+      }
+
+      // Insert or update org_sports record
+      const { error: sportError } = await supabaseAdmin
+        .from('org_sports')
+        .upsert({
+          organization_id: orgId,
+          sport_id,
+          team_name,
+          contact_name,
+          contact_email,
+          contact_phone: contact_phone || '',
+        }, {
+          onConflict: 'organization_id,sport_id'
+        });
+
+      if (sportError) {
+        logger.error({ orgId, sportId: sport_id, error: sportError }, 'Failed to add sport');
+        return sendErr(res, 'DATABASE_ERROR', `Failed to add sport: ${sportError.message}`, undefined, 400);
+      }
+
+      logger.info({ orgId, sportId: sport_id, teamName: team_name }, 'Successfully added sport');
+    }
+
+    return sendOk(res, { message: `Successfully added ${sports.length} sport${sports.length > 1 ? 's' : ''}` });
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.add.catch', error);
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Server error', undefined, 500);
+  }
+});
+
 // PATCH endpoint to update individual sport
 router.patch('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
@@ -701,6 +790,33 @@ router.patch('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req:
       error: 'Internal server error',
       message: error.message
     });
+  }
+});
+
+// DELETE /api/v1/organizations/:id/sports/:sportId - Remove sport from organization
+router.delete('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req: any, res) => {
+  try {
+    const { id: orgId, sportId } = req.params;
+    
+    logger.info({ orgId, sportId }, 'Removing sport from organization');
+
+    const { error } = await supabaseAdmin
+      .from('org_sports')
+      .delete()
+      .eq('organization_id', orgId)
+      .eq('sport_id', sportId);
+
+    if (error) {
+      logger.error({ orgId, sportId, error }, 'Failed to remove sport');
+      return sendErr(res, 'DATABASE_ERROR', 'Failed to remove sport', undefined, 400);
+    }
+
+    logger.info({ orgId, sportId }, 'Successfully removed sport from organization');
+    return sendOk(res, { message: 'Sport removed successfully' });
+
+  } catch (error: any) {
+    logSbError(req, 'orgs.sports.delete.catch', error);
+    return sendErr(res, 'INTERNAL_SERVER_ERROR', 'Server error', undefined, 500);
   }
 });
 
