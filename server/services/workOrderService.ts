@@ -217,6 +217,16 @@ export class WorkOrderService {
     // Update related order item status if needed
     await WorkOrderService.syncOrderItemStatus(sb, workOrder.order_item_id, newStatusCode);
 
+    // Check for material requirements and auto-generate POs if needed
+    if (newStatusCode === 'materials_needed' || newStatusCode === 'pending_materials') {
+      await WorkOrderService.checkMaterialRequirementsAndGeneratePOs(
+        sb, 
+        workOrderId, 
+        orgId, 
+        actorUserId
+      );
+    }
+
     return updatedWorkOrder;
   }
 
@@ -717,5 +727,181 @@ export class WorkOrderService {
     });
 
     return updatedWorkOrder;
+  }
+
+  /**
+   * Check material requirements for work order and auto-generate POs if configured
+   */
+  static async checkMaterialRequirementsAndGeneratePOs(
+    sb: SupabaseClient,
+    workOrderId: string,
+    orgId: string,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      // Import PurchaseOrderService to avoid circular dependency
+      const { PurchaseOrderService } = await import('./purchaseOrderService');
+
+      // Check if there are pending material requirements
+      const { data: pendingRequirements, error: reqError } = await sb
+        .from('material_requirements')
+        .select('id, status')
+        .eq('work_order_id', workOrderId)
+        .eq('org_id', orgId)
+        .eq('status', 'pending');
+
+      if (reqError || !pendingRequirements || pendingRequirements.length === 0) {
+        return; // No pending requirements, nothing to do
+      }
+
+      // Check organization settings for auto PO generation (if implemented)
+      // For now, we'll auto-generate POs for small quantities and flag larger ones
+      
+      try {
+        const purchaseOrders = await PurchaseOrderService.bulkGeneratePurchaseOrders(
+          sb,
+          {
+            workOrderIds: [workOrderId],
+            groupBySupplierId: true,
+            priority: 3,
+            notes: `Auto-generated from work order ${workOrderId} materials requirements`,
+          },
+          orgId,
+          actorUserId
+        );
+
+        if (purchaseOrders.length > 0) {
+          // Create production event for PO generation
+          await WorkOrderService.createProductionEvent(sb, {
+            workOrderId,
+            eventCode: 'POS_AUTO_GENERATED',
+            actorUserId,
+            payload: {
+              purchase_orders_created: purchaseOrders.length,
+              po_numbers: purchaseOrders.map(po => po.poNumber),
+              auto_generated: true,
+            },
+          });
+
+          console.log(`Auto-generated ${purchaseOrders.length} purchase orders for work order ${workOrderId}`);
+        }
+
+      } catch (poError) {
+        console.error(`Failed to auto-generate POs for work order ${workOrderId}:`, poError);
+        
+        // Create event for failed PO generation
+        await WorkOrderService.createProductionEvent(sb, {
+          workOrderId,
+          eventCode: 'PO_GENERATION_FAILED',
+          actorUserId,
+          payload: {
+            error_message: poError instanceof Error ? poError.message : 'Unknown error',
+            pending_requirements: pendingRequirements.length,
+          },
+        });
+      }
+
+    } catch (error) {
+      console.error(`Error checking material requirements for work order ${workOrderId}:`, error);
+    }
+  }
+
+  /**
+   * Create material requirements for a work order based on catalog item specifications
+   */
+  static async createMaterialRequirementsForWorkOrder(
+    sb: SupabaseClient,
+    workOrderId: string,
+    orgId: string,
+    catalogItemId?: string,
+    customRequirements?: Array<{
+      materialId: string;
+      quantityNeeded: number;
+      neededByDate?: string;
+    }>,
+    actorUserId?: string
+  ): Promise<void> {
+    try {
+      const { PurchaseOrderService } = await import('./purchaseOrderService');
+
+      let requirements: Array<{
+        materialId: string;
+        quantityNeeded: number;
+        neededByDate?: string;
+      }> = [];
+
+      // If custom requirements provided, use them
+      if (customRequirements && customRequirements.length > 0) {
+        requirements = customRequirements;
+      } 
+      // Otherwise, try to derive from catalog item if provided
+      else if (catalogItemId) {
+        // Get catalog item build requirements (if implemented in the future)
+        const { data: catalogItem } = await sb
+          .from('catalog_items')
+          .select('build_instructions, embellishments_json')
+          .eq('id', catalogItemId)
+          .single();
+
+        // This would need to be expanded based on how material requirements 
+        // are specified in catalog items - placeholder for future implementation
+        if (catalogItem?.build_instructions) {
+          console.log('Material requirements derivation from catalog items not yet implemented');
+          return;
+        }
+      }
+
+      if (requirements.length === 0) {
+        return; // No requirements to create
+      }
+
+      // Get work order details for date calculations
+      const { data: workOrder } = await sb
+        .from('manufacturing_work_orders')
+        .select('planned_start_date, planned_due_date')
+        .eq('id', workOrderId)
+        .single();
+
+      // Calculate needed by date (buffer before planned start date)
+      const neededByDate = workOrder?.planned_start_date 
+        ? new Date(new Date(workOrder.planned_start_date).getTime() - (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+        : undefined;
+
+      // Create material requirements
+      const materialRequirements = requirements.map(req => ({
+        orgId,
+        materialId: req.materialId,
+        quantityNeeded: req.quantityNeeded,
+        neededByDate: req.neededByDate || neededByDate,
+        status: 'pending' as const,
+        notes: `Required for work order ${workOrderId}`,
+      }));
+
+      await PurchaseOrderService.createMaterialRequirements(
+        sb,
+        workOrderId,
+        orgId,
+        materialRequirements,
+        actorUserId
+      );
+
+      // Create production event
+      await WorkOrderService.createProductionEvent(sb, {
+        workOrderId,
+        eventCode: 'MATERIAL_REQUIREMENTS_CREATED',
+        actorUserId,
+        payload: {
+          requirements_count: requirements.length,
+          catalog_item_id: catalogItemId,
+          needed_by_date: neededByDate,
+        },
+      });
+
+      console.log(`Created ${requirements.length} material requirements for work order ${workOrderId}`);
+
+    } catch (error) {
+      console.error(`Error creating material requirements for work order ${workOrderId}:`, error);
+      throw error;
+    }
   }
 }

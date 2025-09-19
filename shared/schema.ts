@@ -136,14 +136,14 @@ export const designJobEvents = pgTable("design_job_events", {
         id: uuid().defaultRandom().primaryKey().notNull(),
         designJobId: uuid("design_job_id").notNull(),
         eventCode: text("event_code").notNull(),
-        actorUserId: uuid("actor_user_id"),
+        actorUserId: varchar("actor_user_id"),
         payload: jsonb(),
         occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 });
 
 export const designJobs = pgTable("design_jobs", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        orgId: uuid("org_id").notNull(),
+        orgId: varchar("org_id").notNull(),
         orderItemId: uuid("order_item_id").notNull(),
         title: text(),
         brief: text(),
@@ -175,7 +175,7 @@ export const manufacturers = pgTable("manufacturers", {
 
 export const manufacturingWorkOrders = pgTable("manufacturing_work_orders", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        orgId: uuid("org_id").notNull(),
+        orgId: varchar("org_id").notNull(),
         orderItemId: uuid("order_item_id").notNull(),
         manufacturerId: uuid("manufacturer_id"),
         statusCode: text("status_code").default("pending"),
@@ -215,6 +215,318 @@ export const manufacturingWorkOrders = pgTable("manufacturing_work_orders", {
                 foreignColumns: [manufacturers.id],
                 name: "fk_work_orders_manufacturer_id"
         }).onDelete("set null"),
+}));
+
+// Materials and Supply Chain Tables
+
+export const materials = pgTable("materials", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        name: text().notNull(),
+        sku: text(),
+        description: text(),
+        category: text(), // e.g., "fabric", "thread", "hardware", "dye"
+        unit: text().notNull(), // e.g., "yards", "pieces", "lbs", "gallons"
+        unitCost: decimal("unit_cost", { precision: 10, scale: 4 }), // Cost per unit
+        reorderLevel: integer("reorder_level").default(0), // Minimum stock before reorder
+        preferredSupplierId: uuid("preferred_supplier_id"), // FK to manufacturers (suppliers)
+        leadTimeDays: integer("lead_time_days").default(7),
+        moq: integer(), // Minimum order quantity
+        specifications: jsonb(), // Material specs, color options, etc.
+        isActive: boolean("is_active").default(true),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxMaterialsOrgId: index("idx_materials_org_id").on(table.orgId),
+        idxMaterialsCategory: index("idx_materials_category").on(table.category),
+        idxMaterialsSupplierId: index("idx_materials_supplier_id").on(table.preferredSupplierId),
+        uniqMaterialsSku: unique("uniq_materials_sku").on(table.orgId, table.sku),
+        fkMaterialsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_materials_org_id"
+        }),
+        fkMaterialsSupplierId: foreignKey({
+                columns: [table.preferredSupplierId],
+                foreignColumns: [manufacturers.id],
+                name: "fk_materials_supplier_id"
+        }).onDelete("set null"),
+}));
+
+export const materialsInventory = pgTable("materials_inventory", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        materialId: uuid("material_id").notNull(),
+        quantityOnHand: decimal("quantity_on_hand", { precision: 12, scale: 4 }).default('0'),
+        quantityReserved: decimal("quantity_reserved", { precision: 12, scale: 4 }).default('0'), // Allocated to orders
+        quantityOnOrder: decimal("quantity_on_order", { precision: 12, scale: 4 }).default('0'), // In purchase orders
+        lastUpdated: timestamp("last_updated", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        notes: text(),
+}, (table) => ({
+        idxInventoryOrgId: index("idx_inventory_org_id").on(table.orgId),
+        idxInventoryMaterialId: index("idx_inventory_material_id").on(table.materialId),
+        uniqInventoryMaterial: unique("uniq_inventory_material").on(table.orgId, table.materialId),
+        fkInventoryOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_inventory_org_id"
+        }),
+        fkInventoryMaterialId: foreignKey({
+                columns: [table.materialId],
+                foreignColumns: [materials.id],
+                name: "fk_inventory_material_id"
+        }).onDelete("cascade"),
+}));
+
+export const materialRequirements = pgTable("material_requirements", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        workOrderId: uuid("work_order_id").notNull(),
+        materialId: uuid("material_id").notNull(),
+        quantityNeeded: decimal("quantity_needed", { precision: 12, scale: 4 }).notNull(),
+        quantityFulfilled: decimal("quantity_fulfilled", { precision: 12, scale: 4 }).default('0'),
+        neededByDate: date("needed_by_date"),
+        status: text().default("pending"), // pending, ordered, received, fulfilled
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxRequirementsWorkOrderId: index("idx_requirements_work_order_id").on(table.workOrderId),
+        idxRequirementsMaterialId: index("idx_requirements_material_id").on(table.materialId),
+        idxRequirementsStatus: index("idx_requirements_status").on(table.status),
+        fkRequirementsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_requirements_org_id"
+        }),
+        fkRequirementsWorkOrderId: foreignKey({
+                columns: [table.workOrderId],
+                foreignColumns: [manufacturingWorkOrders.id],
+                name: "fk_requirements_work_order_id"
+        }).onDelete("cascade"),
+        fkRequirementsMaterialId: foreignKey({
+                columns: [table.materialId],
+                foreignColumns: [materials.id],
+                name: "fk_requirements_material_id"
+        }).onDelete("cascade"),
+}));
+
+export const purchaseOrders = pgTable("purchase_orders", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        poNumber: text("po_number").notNull(), // Human-friendly PO number (PO-YYYYMMDD-XXXX)
+        supplierId: uuid("supplier_id").notNull(), // FK to manufacturers (acting as suppliers)
+        supplierName: text("supplier_name").notNull(), // Snapshot for history
+        supplierContactEmail: text("supplier_contact_email"),
+        supplierContactPhone: text("supplier_contact_phone"),
+        statusCode: text("status_code").default("draft"), // FK to status_purchase_orders
+        totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).default('0'),
+        approvalThreshold: decimal("approval_threshold", { precision: 10, scale: 2 }).default('1000'), // Amount requiring approval
+        approvedBy: varchar("approved_by"), // User ID who approved
+        approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }),
+        orderDate: date("order_date"),
+        expectedDeliveryDate: date("expected_delivery_date"),
+        actualDeliveryDate: date("actual_delivery_date"),
+        requestedBy: varchar("requested_by").notNull(), // User who created the PO
+        assignedTo: varchar("assigned_to"), // User responsible for managing this PO
+        priority: integer().default(3), // 1=urgent, 5=low
+        currency: text().default("USD"),
+        termsAndConditions: text("terms_and_conditions"),
+        shippingAddress: jsonb("shipping_address"), // Address where items should be delivered
+        notes: text(),
+        internalNotes: text("internal_notes"), // Notes not visible to supplier
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxPurchaseOrdersOrgId: index("idx_purchase_orders_org_id").on(table.orgId),
+        idxPurchaseOrdersSupplierId: index("idx_purchase_orders_supplier_id").on(table.supplierId),
+        idxPurchaseOrdersStatusCode: index("idx_purchase_orders_status_code").on(table.statusCode),
+        idxPurchaseOrdersRequestedBy: index("idx_purchase_orders_requested_by").on(table.requestedBy),
+        idxPurchaseOrdersExpectedDelivery: index("idx_purchase_orders_expected_delivery").on(table.expectedDeliveryDate),
+        uniqPurchaseOrdersNumber: unique("uniq_purchase_orders_number").on(table.orgId, table.poNumber),
+        fkPurchaseOrdersOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_purchase_orders_org_id"
+        }),
+        fkPurchaseOrdersSupplierId: foreignKey({
+                columns: [table.supplierId],
+                foreignColumns: [manufacturers.id],
+                name: "fk_purchase_orders_supplier_id"
+        }).onDelete("restrict"), // Don't allow supplier deletion if active POs exist
+        fkPurchaseOrdersRequestedBy: foreignKey({
+                columns: [table.requestedBy],
+                foreignColumns: [users.id],
+                name: "fk_purchase_orders_requested_by"
+        }).onDelete("set null"),
+        fkPurchaseOrdersApprovedBy: foreignKey({
+                columns: [table.approvedBy],
+                foreignColumns: [users.id],
+                name: "fk_purchase_orders_approved_by"
+        }).onDelete("set null"),
+        fkPurchaseOrdersAssignedTo: foreignKey({
+                columns: [table.assignedTo],
+                foreignColumns: [users.id],
+                name: "fk_purchase_orders_assigned_to"
+        }).onDelete("set null"),
+}));
+
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        purchaseOrderId: uuid("purchase_order_id").notNull(),
+        materialId: uuid("material_id"), // FK to materials, null for one-off items
+        materialName: text("material_name").notNull(), // Snapshot for history
+        materialSku: text("material_sku"), // Snapshot for history  
+        description: text(),
+        quantity: decimal({ precision: 12, scale: 4 }).notNull(),
+        unit: text().notNull(), // e.g., "yards", "pieces", "lbs"
+        unitCost: decimal("unit_cost", { precision: 10, scale: 4 }).notNull(),
+        totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(), // quantity * unitCost
+        quantityReceived: decimal("quantity_received", { precision: 12, scale: 4 }).default('0'),
+        dateReceived: date("date_received"),
+        receivedBy: varchar("received_by"), // User who marked as received
+        qualityCheckPassed: boolean("quality_check_passed"),
+        qualityNotes: text("quality_notes"),
+        lineNumber: integer("line_number").notNull(), // Order of items in PO
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxPurchaseOrderItemsPOId: index("idx_purchase_order_items_po_id").on(table.purchaseOrderId),
+        idxPurchaseOrderItemsMaterialId: index("idx_purchase_order_items_material_id").on(table.materialId),
+        idxPurchaseOrderItemsOrgId: index("idx_purchase_order_items_org_id").on(table.orgId),
+        uniqPurchaseOrderItemsLine: unique("uniq_purchase_order_items_line").on(table.purchaseOrderId, table.lineNumber),
+        fkPurchaseOrderItemsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_purchase_order_items_org_id"
+        }),
+        fkPurchaseOrderItemsPOId: foreignKey({
+                columns: [table.purchaseOrderId],
+                foreignColumns: [purchaseOrders.id],
+                name: "fk_purchase_order_items_po_id"
+        }).onDelete("cascade"),
+        fkPurchaseOrderItemsMaterialId: foreignKey({
+                columns: [table.materialId],
+                foreignColumns: [materials.id],
+                name: "fk_purchase_order_items_material_id"
+        }).onDelete("set null"),
+        fkPurchaseOrderItemsReceivedBy: foreignKey({
+                columns: [table.receivedBy],
+                foreignColumns: [users.id],
+                name: "fk_purchase_order_items_received_by"
+        }).onDelete("set null"),
+}));
+
+export const purchaseOrderMilestones = pgTable("purchase_order_milestones", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        purchaseOrderId: uuid("purchase_order_id").notNull(),
+        milestoneCode: text("milestone_code").notNull(), // e.g., "order_placed", "acknowledged", "shipped", "delivered", "received"
+        milestoneName: text("milestone_name").notNull(), // Human-readable name
+        expectedDate: date("expected_date"),
+        actualDate: timestamp("actual_date", { withTimezone: true, mode: 'string' }),
+        status: text().default("pending"), // pending, completed, skipped, overdue
+        completedBy: varchar("completed_by"), // User who marked milestone complete
+        notes: text(),
+        automaticallyTracked: boolean("automatically_tracked").default(false), // True if system sets this milestone
+        notificationSent: boolean("notification_sent").default(false), // Track if reminder emails sent
+        sortOrder: integer("sort_order").default(0), // Display order of milestones
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxPOMilestonesPOId: index("idx_po_milestones_po_id").on(table.purchaseOrderId),
+        idxPOMilestonesStatus: index("idx_po_milestones_status").on(table.status),
+        idxPOMilestonesExpectedDate: index("idx_po_milestones_expected_date").on(table.expectedDate),
+        idxPOMilestonesCode: index("idx_po_milestones_code").on(table.milestoneCode),
+        fkPOMilestonesOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_po_milestones_org_id"
+        }),
+        fkPOMilestonesPOId: foreignKey({
+                columns: [table.purchaseOrderId],
+                foreignColumns: [purchaseOrders.id],
+                name: "fk_po_milestones_po_id"
+        }).onDelete("cascade"),
+        fkPOMilestonesCompletedBy: foreignKey({
+                columns: [table.completedBy],
+                foreignColumns: [users.id],
+                name: "fk_po_milestones_completed_by"
+        }).onDelete("set null"),
+}));
+
+export const purchaseOrderEvents = pgTable("purchase_order_events", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        purchaseOrderId: uuid("purchase_order_id").notNull(),
+        eventCode: text("event_code").notNull(), // e.g., "PO_CREATED", "PO_APPROVED", "PO_SENT", "PO_RECEIVED"
+        actorUserId: varchar("actor_user_id"), // Who performed the action
+        payload: jsonb(), // Event-specific data
+        occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxPOEventsPOId: index("idx_po_events_po_id").on(table.purchaseOrderId),
+        idxPOEventsEventCode: index("idx_po_events_event_code").on(table.eventCode),
+        idxPOEventsOccurredAt: index("idx_po_events_occurred_at").on(table.occurredAt),
+        fkPOEventsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_po_events_org_id"
+        }),
+        fkPOEventsPOId: foreignKey({
+                columns: [table.purchaseOrderId],
+                foreignColumns: [purchaseOrders.id],
+                name: "fk_po_events_po_id"
+        }).onDelete("cascade"),
+        fkPOEventsActorUserId: foreignKey({
+                columns: [table.actorUserId],
+                foreignColumns: [users.id],
+                name: "fk_po_events_actor_user_id"
+        }).onDelete("set null"),
+}));
+
+// Status lookup tables for purchase orders
+export const statusPurchaseOrders = pgTable("status_purchase_orders", {
+        code: text().primaryKey().notNull(),
+        sortOrder: integer("sort_order").notNull(),
+        isTerminal: boolean("is_terminal").default(false).notNull(),
+        requiresApproval: boolean("requires_approval").default(false).notNull(), // If true, PO cannot progress until approved
+});
+
+export const supplierPerformanceMetrics = pgTable("supplier_performance_metrics", {
+        id: uuid().defaultRandom().primaryKey().notNull(),
+        orgId: varchar("org_id").notNull(),
+        supplierId: uuid("supplier_id").notNull(),
+        periodStart: date("period_start").notNull(),
+        periodEnd: date("period_end").notNull(),
+        totalOrders: integer("total_orders").default(0),
+        totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).default('0'),
+        onTimeDeliveries: integer("on_time_deliveries").default(0),
+        lateDeliveries: integer("late_deliveries").default(0),
+        averageDeliveryDays: decimal("average_delivery_days", { precision: 5, scale: 2 }),
+        qualityScore: decimal("quality_score", { precision: 3, scale: 2 }), // 1.00 to 5.00 rating
+        qualityIssues: integer("quality_issues").default(0),
+        communicationScore: decimal("communication_score", { precision: 3, scale: 2 }), // 1.00 to 5.00 rating
+        overallRating: decimal("overall_rating", { precision: 3, scale: 2 }), // 1.00 to 5.00 rating
+        notes: text(),
+        createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+        idxSupplierMetricsOrgId: index("idx_supplier_metrics_org_id").on(table.orgId),
+        idxSupplierMetricsSupplierId: index("idx_supplier_metrics_supplier_id").on(table.supplierId),
+        idxSupplierMetricsPeriod: index("idx_supplier_metrics_period").on(table.periodStart, table.periodEnd),
+        uniqSupplierMetricsPeriod: unique("uniq_supplier_metrics_period").on(table.orgId, table.supplierId, table.periodStart, table.periodEnd),
+        fkSupplierMetricsOrgId: foreignKey({
+                columns: [table.orgId],
+                foreignColumns: [organizations.id],
+                name: "fk_supplier_metrics_org_id"
+        }),
+        fkSupplierMetricsSupplierId: foreignKey({
+                columns: [table.supplierId],
+                foreignColumns: [manufacturers.id],
+                name: "fk_supplier_metrics_supplier_id"
+        }).onDelete("cascade"),
 }));
 
 export const organizations = pgTable("organizations", {
@@ -274,7 +586,7 @@ export const orderEvents = pgTable("order_events", {
         id: uuid().defaultRandom().primaryKey().notNull(),
         orderId: varchar("order_id").notNull(), // FK to orders.id (varchar)
         eventCode: text("event_code").notNull(),
-        actorUserId: uuid("actor_user_id"),
+        actorUserId: varchar("actor_user_id"),
         payload: jsonb(),
         occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => ({
@@ -398,7 +710,7 @@ export const organizationFavorites = pgTable("organization_favorites", {
 
 export const organizationMetrics = pgTable("organization_metrics", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        orgId: uuid("org_id").notNull(),
+        orgId: varchar("org_id").notNull(),
         periodStart: date("period_start").notNull(),
         periodEnd: date("period_end").notNull(),
         totalRevenue: decimal("total_revenue", { precision: 12, scale: 2 }).default('0'),
@@ -431,10 +743,10 @@ export const permissionTemplates = pgTable("permission_templates", {
 
 export const productionEvents = pgTable("production_events", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        orgId: uuid("org_id").notNull(), // CRITICAL: Added for RLS and tenancy
+        orgId: varchar("org_id").notNull(), // CRITICAL: Added for RLS and tenancy
         workOrderId: uuid("work_order_id").notNull(),
         eventCode: text("event_code").notNull(),
-        actorUserId: uuid("actor_user_id"),
+        actorUserId: varchar("actor_user_id"),
         payload: jsonb(),
         occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => ({
@@ -452,7 +764,7 @@ export const productionEvents = pgTable("production_events", {
 
 export const productionMilestones = pgTable("production_milestones", {
         id: uuid().defaultRandom().primaryKey().notNull(),
-        orgId: uuid("org_id").notNull(), // CRITICAL: Added for RLS and tenancy
+        orgId: varchar("org_id").notNull(), // CRITICAL: Added for RLS and tenancy
         workOrderId: uuid("work_order_id").notNull(),
         milestoneCode: text("milestone_code").notNull(),
         milestoneName: text("milestone_name").notNull(),
@@ -460,7 +772,7 @@ export const productionMilestones = pgTable("production_milestones", {
         actualDate: timestamp("actual_date", { withTimezone: true, mode: 'string' }),
         status: text().default("pending"), // pending, in_progress, completed, skipped
         notes: text(),
-        completedBy: uuid("completed_by"),
+        completedBy: varchar("completed_by"),
         createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => ({
@@ -543,7 +855,7 @@ export const statusWorkOrders = pgTable("status_work_orders", {
 export const userRoles = pgTable("user_roles", {
         userId: uuid("user_id").notNull(), // FK to users.id (varchar) - type mismatch!
         roleId: uuid("role_id").notNull(),
-        orgId: uuid("org_id"), // FK to organizations.id (varchar) - type mismatch!
+        orgId: varchar("org_id"), // FK to organizations.id (varchar) - fixed!
         assignedAt: timestamp("assigned_at", { withTimezone: true, mode: 'string' }).defaultNow(),
         assignedBy: uuid("assigned_by"),
 });
