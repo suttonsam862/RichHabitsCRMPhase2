@@ -7,6 +7,7 @@
 export * from './OrganizationDTO';
 export * from './UserDTO';
 export * from './LeadDTO';
+export * from './DesignJobDTO';
 // export * from './ProductDTO';
 export * from './OrderDTO';
 // export * from './PoDTO';

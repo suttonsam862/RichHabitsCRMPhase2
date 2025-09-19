@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { CreateOrderItemDTO, UpdateOrderItemDTO, OrderItemDTO } from '../../../shared/dtos';
+import { CreateOrderItemDTO, UpdateOrderItemDTO, OrderItemDTO, CreateDesignJobDTO } from '../../../shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
@@ -9,6 +9,7 @@ import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember } from '../../middleware/orgSecurity';
 import { logDatabaseOperation } from '../../lib/log';
 import { trackBusinessEvent } from '../../middleware/metrics';
+import { DesignJobService } from '../../services/designJobService';
 
 const router = express.Router({ mergeParams: true });
 
@@ -335,6 +336,22 @@ router.put('/:itemId',
         return HttpErrors.notFound(res, 'Order item not found');
       }
 
+      // Handle design job creation/updates if status changed
+      if (validatedData.statusCode && validatedData.statusCode !== item.status_code) {
+        try {
+          await DesignJobService.handleOrderItemStatusChange(
+            sb,
+            itemId,
+            validatedData.statusCode,
+            item.status_code,
+            req.user?.id
+          );
+        } catch (designJobError) {
+          // Log error but don't fail the order item update
+          console.error('Error handling design job for order item status change:', designJobError);
+        }
+      }
+
       // Recalculate order totals if quantity or price changed
       if (validatedData.quantity !== undefined || validatedData.priceSnapshot !== undefined) {
         await recalculateOrderTotals(orderId, sb);
@@ -410,5 +427,95 @@ router.delete('/:itemId', requireOrgMember() as any, asyncHandler(async (req: an
     handleDatabaseError(res, error, 'delete order item');
   }
 }));
+
+// POST /api/orders/:orderId/items/:itemId/create-design-job - Create design job for order item
+const createDesignJobParamsSchema = z.object({
+  orderId: z.string(),
+  itemId: z.string().uuid(),
+});
+
+router.post('/:itemId/create-design-job',
+  requireOrgMember() as any,
+  validateRequest({ 
+    params: createDesignJobParamsSchema,
+    body: CreateDesignJobDTO.omit({ orgId: true, orderItemId: true }).optional()
+  }) as any,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const { orderId, itemId } = req.params;
+    const designJobData = req.body || {};
+
+    try {
+      const sb = getAuthenticatedClient(req);
+      
+      // Verify order item access and get order info
+      const { order, item } = await verifyOrderItemAccess(orderId, itemId, req, sb);
+      
+      // Check if order is in a state that allows design job creation
+      if (order.status_code === 'completed' || order.status_code === 'cancelled') {
+        return HttpErrors.validationError(res, `Cannot create design job for ${order.status_code} order`);
+      }
+      
+      // Check if order item is in a design-requiring status
+      const designStatuses = ['design', 'pending_design', 'design_in_progress'];
+      if (!designStatuses.includes(item.status_code)) {
+        return HttpErrors.validationError(res, `Order item status '${item.status_code}' does not require design work`);
+      }
+
+      // Check if design job already exists for this order item
+      const { data: existingJob } = await sb
+        .from('design_jobs')
+        .select('id')
+        .eq('order_item_id', itemId)
+        .single();
+
+      if (existingJob) {
+        return HttpErrors.conflict(res, `Design job already exists for order item: ${itemId}`);
+      }
+
+      // Create design job using the service with authenticated client
+      const designJob = await DesignJobService.createDesignJob(
+        sb,
+        itemId,
+        order.org_id,
+        req.user?.id,
+        {
+          title: designJobData.title || `Design for ${item.name_snapshot || 'Order Item'}`,
+          brief: designJobData.brief,
+          priority: designJobData.priority || 5,
+          statusCode: designJobData.statusCode || 'queued',
+          assigneeDesignerId: designJobData.assigneeDesignerId,
+        }
+      );
+
+      // Track business event
+      trackBusinessEvent('design_job_created', req, {
+        design_job_id: designJob.id,
+        order_item_id: itemId,
+        order_id: orderId,
+        organization_id: order.org_id,
+      });
+
+      logDatabaseOperation(req, 'DESIGN_JOB_CREATED', 'design_jobs', { 
+        designJobId: designJob.id, 
+        orderId, 
+        itemId 
+      });
+      
+      sendCreated(res, designJob);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('already exists')) {
+        return HttpErrors.conflict(res, error.message);
+      }
+      if (error instanceof Error && (error.message === 'Order not found' || error.message === 'Order item not found')) {
+        return HttpErrors.notFound(res, error.message);
+      }
+      if (error instanceof Error && error.message === 'Missing authentication token') {
+        return HttpErrors.unauthorized(res, 'Authentication required');
+      }
+      console.error('Error creating design job:', error);
+      handleDatabaseError(res, error, 'create design job');
+    }
+  })
+);
 
 export default router;
