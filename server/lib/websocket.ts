@@ -3,7 +3,7 @@ import { IncomingMessage } from 'http';
 import { parse } from 'url';
 import { verify } from 'jsonwebtoken';
 import { supabaseAdmin } from './supabaseAdmin';
-import { WebSocketMessage, WebSocketAuth, CreateRealtimeEvent } from '../../shared/dtos/NotificationDTO';
+import type { WebSocketMessage, WebSocketAuth, CreateRealtimeEvent } from '../../shared/dtos/NotificationDTO';
 import { env } from './env';
 
 interface AuthenticatedWebSocket extends WebSocket {
