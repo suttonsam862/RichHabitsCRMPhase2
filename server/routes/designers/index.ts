@@ -6,8 +6,8 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { db } from '../../db';
-import { designers, users } from '@shared/schema';
-import { eq, sql, and, ilike, or } from 'drizzle-orm';
+import { designers, users } from '../../../shared/schema';
+import { eq, sql, and, ilike, or, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAuth } from '../../middleware/auth';
 import type { AuthedRequest } from '../../middleware/auth';
@@ -26,7 +26,8 @@ const createDesignerSchema = z.object({
 const updateDesignerSchema = createDesignerSchema.partial();
 
 // GET /api/v1/designers - List all designers with filters
-router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.get('/', requireAuth, async (req: Request, res: Response) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { 
       search, 
@@ -51,15 +52,16 @@ router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
       .$dynamic();
 
     // Build where conditions
-    const conditions = [];
+    const conditions: SQL[] = [];
     
     if (search) {
-      conditions.push(
-        or(
-          ilike(users.fullName, `%${search}%`),
-          ilike(users.email, `%${search}%`)
-        )
+      const searchCondition = or(
+        ilike(users.fullName, `%${search}%`),
+        ilike(users.email, `%${search}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (specialization) {
@@ -73,7 +75,7 @@ router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(conditions.length === 1 ? conditions[0]! : and(...conditions));
     }
 
     // Apply pagination
@@ -107,7 +109,8 @@ router.get('/', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // GET /api/v1/designers/:id - Get single designer with full details
-router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.get('/:id', requireAuth, async (req: Request, res: Response) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { id } = req.params;
 
@@ -151,7 +154,8 @@ router.get('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // POST /api/v1/designers - Create new designer
-router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
+  const authedReq = req as AuthedRequest;
   try {
     const validatedData = createDesignerSchema.parse(req.body);
 
@@ -194,7 +198,8 @@ router.post('/', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // PATCH /api/v1/designers/:id - Update designer
-router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { id } = req.params;
     const validatedData = updateDesignerSchema.parse(req.body);
@@ -229,7 +234,8 @@ router.patch('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
 });
 
 // DELETE /api/v1/designers/:id - Delete designer (soft delete by setting isActive to false)
-router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
+  const authedReq = req as AuthedRequest;
   try {
     const { id } = req.params;
 
@@ -255,7 +261,8 @@ router.delete('/:id', requireAuth, async (req: AuthedRequest, res: Response) => 
 });
 
 // GET /api/v1/designers/specializations - Get all unique specializations
-router.get('/meta/specializations', requireAuth, async (_req: AuthedRequest, res: Response) => {
+router.get('/meta/specializations', requireAuth, async (_req: Request, res: Response) => {
+  const authedReq = _req as AuthedRequest;
   try {
     const allDesigners = await db.select({ specializations: designers.specializations }).from(designers);
     

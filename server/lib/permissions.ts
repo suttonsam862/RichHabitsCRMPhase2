@@ -96,6 +96,22 @@ export const ACTION_PERMISSIONS = {
     VIEW_USER_ACTIVITY: 'reports.view_user_activity',
   },
 
+  // Design job management
+  DESIGN: {
+    CREATE: 'design.create',
+    READ: 'design.read',
+    UPDATE: 'design.update',
+    DELETE: 'design.delete',
+    ASSIGN: 'design.assign',
+    SUBMIT: 'design.submit',
+    REVIEW: 'design.review',
+    APPROVE: 'design.approve',
+    REQUEST_REVISIONS: 'design.request_revisions',
+    MANAGE_ASSETS: 'design.manage_assets',
+    VIEW_ALL: 'design.view_all',
+    BULK_ASSIGN: 'design.bulk_assign',
+  },
+
   // System administration
   SYSTEM: {
     MANAGE_SETTINGS: 'system.manage_settings',

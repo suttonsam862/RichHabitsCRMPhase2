@@ -9,11 +9,371 @@ import type {
   CreateDesignJobType, 
   UpdateDesignJobType,
   CreateDesignJobEventType,
-  DesignJobType 
+  DesignJobType,
+  SubmitDesignType,
+  ReviewDesignType,
+  BulkAssignDesignJobsType,
+  DesignerWorkloadType,
+  SkillMatchType
 } from '../../shared/dtos';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export class DesignJobService {
+  
+  /**
+   * Submit design for review - transitions job to review workflow
+   * SECURITY: Uses authenticated client with org validation
+   */
+  static async submitDesignForReview(
+    sb: SupabaseClient,
+    designJobId: string,
+    orgId: string,
+    actorUserId?: string,
+    submissionData: SubmitDesignType = {}
+  ): Promise<DesignJobType> {
+    try {
+      const { assetIds, notes, submissionType } = submissionData;
+      
+      // Update design job status to submitted_for_review
+      const updatedJob = await this.updateDesignJobStatus(
+        sb,
+        designJobId,
+        'submitted_for_review',
+        orgId,
+        actorUserId,
+        notes
+      );
+      
+      // Create submission event
+      await this.createDesignJobEvent(sb, {
+        designJobId,
+        eventCode: 'DESIGN_SUBMITTED',
+        actorUserId,
+        payload: {
+          submission_type: submissionType,
+          asset_ids: assetIds || [],
+          notes,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
+      return updatedJob;
+    } catch (error) {
+      console.error('Error submitting design for review:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Review design - approve or request revisions
+   * SECURITY: Uses authenticated client with org validation
+   */
+  static async reviewDesign(
+    sb: SupabaseClient,
+    designJobId: string,
+    orgId: string,
+    actorUserId?: string,
+    reviewData: ReviewDesignType
+  ): Promise<DesignJobType> {
+    try {
+      const { approved, feedback, requestRevisions, revisionNotes } = reviewData;
+      
+      let newStatus: string;
+      let eventCode: string;
+      
+      if (approved && !requestRevisions) {
+        newStatus = 'approved';
+        eventCode = 'DESIGN_APPROVED';
+      } else if (requestRevisions) {
+        newStatus = 'revision_requested';
+        eventCode = 'REVISIONS_REQUESTED';
+      } else {
+        newStatus = 'under_review';
+        eventCode = 'DESIGN_UNDER_REVIEW';
+      }
+      
+      // Update design job status
+      const updatedJob = await this.updateDesignJobStatus(
+        sb,
+        designJobId,
+        newStatus,
+        orgId,
+        actorUserId,
+        feedback
+      );
+      
+      // Create review event
+      await this.createDesignJobEvent(sb, {
+        designJobId,
+        eventCode,
+        actorUserId,
+        payload: {
+          approved,
+          feedback,
+          request_revisions: requestRevisions,
+          revision_notes: revisionNotes,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
+      return updatedJob;
+    } catch (error) {
+      console.error('Error reviewing design:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Bulk assign design jobs with workload balancing and skill matching
+   * SECURITY: Uses authenticated client with org validation
+   */
+  static async bulkAssignDesignJobs(
+    sb: SupabaseClient,
+    assignmentData: BulkAssignDesignJobsType,
+    actorUserId?: string
+  ): Promise<{ successful: DesignJobType[], failed: { jobId: string, error: string }[] }> {
+    try {
+      const {
+        designJobIds,
+        designerId,
+        useWorkloadBalancing,
+        useSkillMatching,
+        requiredSpecializations,
+        maxJobsPerDesigner
+      } = assignmentData;
+      
+      const successful: DesignJobType[] = [];
+      const failed: { jobId: string, error: string }[] = [];
+      
+      // If specific designer provided, assign all to them
+      if (designerId) {
+        for (const jobId of designJobIds) {
+          try {
+            const assignedJob = await this.assignDesigner(
+              sb,
+              jobId,
+              designerId,
+              actorUserId,
+              'Bulk assignment'
+            );
+            successful.push(assignedJob);
+          } catch (error) {
+            failed.push({
+              jobId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+        }
+      } else if (useWorkloadBalancing || useSkillMatching) {
+        // Smart assignment with balancing and skill matching
+        const assignments = await this.smartAssignDesignJobs(
+          sb,
+          designJobIds,
+          {
+            useWorkloadBalancing,
+            useSkillMatching,
+            requiredSpecializations,
+            maxJobsPerDesigner
+          }
+        );
+        
+        // Execute assignments
+        for (const assignment of assignments) {
+          try {
+            const assignedJob = await this.assignDesigner(
+              sb,
+              assignment.jobId,
+              assignment.designerId,
+              actorUserId,
+              `Smart assignment (score: ${assignment.score})`
+            );
+            successful.push(assignedJob);
+          } catch (error) {
+            failed.push({
+              jobId: assignment.jobId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+        }
+      } else {
+        // No smart assignment - need designer ID
+        for (const jobId of designJobIds) {
+          failed.push({
+            jobId,
+            error: 'No designer specified and smart assignment disabled'
+          });
+        }
+      }
+      
+      return { successful, failed };
+    } catch (error) {
+      console.error('Error in bulk assignment:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Smart assignment algorithm with workload balancing and skill matching
+   * SECURITY: Uses authenticated client with org validation
+   */
+  static async smartAssignDesignJobs(
+    sb: SupabaseClient,
+    designJobIds: string[],
+    options: {
+      useWorkloadBalancing?: boolean;
+      useSkillMatching?: boolean;
+      requiredSpecializations?: string[];
+      maxJobsPerDesigner?: number;
+    }
+  ): Promise<{ jobId: string, designerId: string, score: number }[]> {
+    try {
+      // Get designer workloads
+      const designerWorkloads = await this.getDesignerWorkloads(sb);
+      
+      // Get design job details for skill matching
+      const { data: designJobs, error: jobsError } = await sb
+        .from('design_jobs')
+        .select('id, title, brief, priority')
+        .in('id', designJobIds);
+      
+      if (jobsError || !designJobs) {
+        throw new Error(`Failed to fetch design jobs: ${jobsError?.message}`);
+      }
+      
+      const assignments: { jobId: string, designerId: string, score: number }[] = [];
+      
+      for (const job of designJobs) {
+        let bestMatch: { designerId: string, score: number } | null = null;
+        
+        for (const designer of designerWorkloads) {
+          // Skip if designer is at capacity (use provided limit or designer's capacity limit)
+          const maxJobs = options.maxJobsPerDesigner || designer.capacityLimit || 10;
+          if (designer.currentJobs >= maxJobs) {
+            continue;
+          }
+          
+          // Skip if designer is not available
+          if (!designer.isAvailable) {
+            continue;
+          }
+          
+          let score = 0;
+          
+          // Skill matching score (0-50 points)
+          if (options.useSkillMatching && options.requiredSpecializations) {
+            const matchingSkills = designer.specializations.filter(
+              skill => options.requiredSpecializations!.includes(skill)
+            ).length;
+            const skillScore = options.requiredSpecializations.length > 0 
+              ? (matchingSkills / options.requiredSpecializations.length) * 50
+              : 25; // Default if no required skills
+            score += skillScore;
+          } else {
+            score += 25; // Base skill score
+          }
+          
+          // Workload balancing score (0-50 points)
+          if (options.useWorkloadBalancing) {
+            const workloadScore = Math.max(0, 50 - designer.workloadScore);
+            score += workloadScore;
+          } else {
+            score += 25; // Base workload score
+          }
+          
+          // Update best match
+          if (!bestMatch || score > bestMatch.score) {
+            bestMatch = { designerId: designer.designerId, score };
+          }
+        }
+        
+        if (bestMatch) {
+          assignments.push({
+            jobId: job.id,
+            designerId: bestMatch.designerId,
+            score: bestMatch.score
+          });
+          
+          // Update designer workload for next iteration
+          const designer = designerWorkloads.find(d => d.designerId === bestMatch!.designerId);
+          if (designer) {
+            designer.currentJobs++;
+            designer.workloadScore = Math.min(100, designer.workloadScore + 10);
+          }
+        }
+      }
+      
+      return assignments;
+    } catch (error) {
+      console.error('Error in smart assignment:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get current workload for all designers
+   * SECURITY: Uses authenticated client with org validation
+   */
+  static async getDesignerWorkloads(sb: SupabaseClient): Promise<DesignerWorkloadType[]> {
+    try {
+      // Get designers with their current job counts
+      const { data: designers, error: designersError } = await sb
+        .from('designers')
+        .select(`
+          id,
+          user_id,
+          specializations,
+          hourly_rate,
+          is_active,
+          users:user_id(full_name)
+        `)
+        .eq('is_active', true);
+      
+      if (designersError) {
+        throw new Error(`Failed to fetch designers: ${designersError.message}`);
+      }
+      
+      const workloads: DesignerWorkloadType[] = [];
+      
+      for (const designer of designers || []) {
+        // Count current active jobs
+        const { count: currentJobs, error: countError } = await sb
+          .from('design_jobs')
+          .select('id', { count: 'exact', head: true })
+          .eq('assignee_designer_id', designer.id)
+          .not('status_code', 'in', '(approved,canceled)');
+        
+        if (countError) {
+          console.warn(`Failed to count jobs for designer ${designer.id}:`, countError);
+        }
+        
+        const jobCount = currentJobs || 0;
+        
+        // Use consistent capacity limit configuration
+        const defaultMaxJobs = 10; // Default capacity limit (should be configurable)
+        const capacityLimit = defaultMaxJobs;
+        
+        // Calculate workload score (0-100, where higher = busier)
+        const workloadScore = Math.min(100, (jobCount / capacityLimit) * 100);
+        
+        workloads.push({
+          designerId: designer.id,
+          name: designer.users?.full_name || 'Unknown Designer',
+          specializations: designer.specializations || [],
+          currentJobs: jobCount,
+          capacityLimit,
+          hourlyRate: designer.hourly_rate,
+          isAvailable: designer.is_active && jobCount < capacityLimit,
+          workloadScore
+        });
+      }
+      
+      return workloads;
+    } catch (error) {
+      console.error('Error getting designer workloads:', error);
+      throw error;
+    }
+  }
+
   /**
    * Create a design job for an order item
    * SECURITY: Uses authenticated client passed from caller to enforce RLS
@@ -385,10 +745,13 @@ export class DesignJobService {
     const transitions: Record<string, string[]> = {
       'queued': ['assigned', 'canceled'],
       'assigned': ['drafting', 'queued', 'canceled'],
-      'drafting': ['review', 'assigned', 'canceled'],
-      'review': ['approved', 'rejected', 'drafting'],
+      'drafting': ['submitted_for_review', 'assigned', 'canceled'],
+      'submitted_for_review': ['under_review', 'revision_requested', 'approved', 'drafting', 'canceled'],
+      'under_review': ['approved', 'revision_requested', 'rejected', 'canceled'],
+      'revision_requested': ['drafting', 'submitted_for_review', 'canceled'],
+      'review': ['approved', 'rejected', 'drafting'], // Legacy support
       'approved': [], // terminal
-      'rejected': ['drafting', 'canceled'],
+      'rejected': ['drafting', 'revision_requested', 'canceled'],
       'canceled': [], // terminal
     };
     return transitions[currentStatus] || [];

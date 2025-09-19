@@ -15,14 +15,17 @@ import { Plus, Edit, Trash, Search, Palette, DollarSign, Globe, User, CheckCircl
 import { sb } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Schema for designer form
 const designerSchema = z.object({
   userId: z.string().min(1, 'User is required'),
   specializations: z.array(z.string()).optional(),
   portfolioUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  hourlyRate: z.string().optional(),
+  hourlyRate: z.union([
+    z.string().transform(val => val === '' ? undefined : parseFloat(val)),
+    z.number(),
+    z.undefined()
+  ]).optional().refine(val => val === undefined || (!isNaN(val) && val > 0), 'Must be a positive number'),
   isActive: z.boolean().optional()
 });
 
@@ -34,7 +37,7 @@ type Designer = {
   phone?: string;
   specializations?: string[];
   portfolioUrl?: string;
-  hourlyRate?: string;
+  hourlyRate?: number;
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -61,7 +64,6 @@ export function DesignerManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedDesigner, setSelectedDesigner] = useState<Designer | null>(null);
-  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
   const { toast } = useToast();
 
   // Fetch designers
@@ -128,7 +130,6 @@ export function DesignerManagement() {
       setIsCreateDialogOpen(false);
       toast({ title: 'Designer created successfully' });
       form.reset();
-      setSelectedSpecializations([]);
     },
     onError: (error: any) => {
       toast({ 
@@ -184,7 +185,7 @@ export function DesignerManagement() {
       userId: '',
       specializations: [],
       portfolioUrl: '',
-      hourlyRate: '',
+      hourlyRate: undefined,
       isActive: true
     }
   });
@@ -192,13 +193,13 @@ export function DesignerManagement() {
   // Edit form
   const editForm = useForm<z.infer<typeof designerSchema>>({
     resolver: zodResolver(designerSchema),
-    defaultValues: selectedDesigner ? {
-      userId: selectedDesigner.userId,
-      specializations: selectedDesigner.specializations || [],
-      portfolioUrl: selectedDesigner.portfolioUrl || '',
-      hourlyRate: selectedDesigner.hourlyRate || '',
-      isActive: selectedDesigner.isActive
-    } : {}
+    defaultValues: {
+      userId: '',
+      specializations: [],
+      portfolioUrl: '',
+      hourlyRate: undefined,
+      isActive: true
+    }
   });
 
   const handleSpecializationToggle = (spec: string, isEdit = false) => {
@@ -346,7 +347,7 @@ export function DesignerManagement() {
                         {designer.hourlyRate && (
                           <div className="flex items-center gap-1">
                             <DollarSign className="h-3 w-3 text-muted-foreground" />
-                            <span>{designer.hourlyRate}/hr</span>
+                            <span>${typeof designer.hourlyRate === 'number' ? designer.hourlyRate.toFixed(2) : designer.hourlyRate}/hr</span>
                           </div>
                         )}
                       </TableCell>
@@ -387,7 +388,7 @@ export function DesignerManagement() {
                                 userId: designer.userId,
                                 specializations: designer.specializations || [],
                                 portfolioUrl: designer.portfolioUrl || '',
-                                hourlyRate: designer.hourlyRate || '',
+                                hourlyRate: designer.hourlyRate || undefined,
                                 isActive: designer.isActive
                               });
                               setIsEditDialogOpen(true);

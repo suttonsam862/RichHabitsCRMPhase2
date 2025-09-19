@@ -1,13 +1,11 @@
 
-import { config } from 'dotenv';
-import { resolve } from 'path';
-import { supabaseAdmin } from './lib/supabase';
-
-// Force load .env file and bypass any cached environment variables
-config({ path: resolve(process.cwd(), '.env'), override: true });
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { env } from './lib/env';
+import * as schema from '../shared/schema';
 
 // Verify we're using Supabase
-const connectionString = process.env.DATABASE_URL;
+const connectionString = env.DATABASE_URL;
 
 if (!connectionString) {
   console.error('❌ ERROR: DATABASE_URL environment variable is not set');
@@ -25,22 +23,24 @@ if (!isSupabase) {
   throw new Error('Invalid database configuration - must use Supabase');
 }
 
-// Export Supabase admin client for database operations
-export const db = supabaseAdmin;
+// Initialize postgres connection
+const sql = postgres(connectionString);
 
-// Test database connection using Supabase
+// Export Drizzle database instance for database operations
+export const db = drizzle(sql, { schema });
+
+// Test database connection using Drizzle
 async function testConnection() {
   try {
-    const { data, error } = await supabaseAdmin.from('organizations').select('count', { count: 'exact', head: true });
-    if (error) throw error;
-    console.log('✅ Supabase database connection test successful');
+    await sql`SELECT 1 as test`;
+    console.log('✅ Database connection test successful');
   } catch (error) {
-    console.error('❌ Supabase database connection test failed:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ Database connection test failed:', error instanceof Error ? error.message : 'Unknown error');
     throw error;
   }
 }
 
 // Test connection on startup
 testConnection().catch(error => {
-  console.error('Failed to establish Supabase database connection:', error);
+  console.error('Failed to establish database connection:', error);
 });
