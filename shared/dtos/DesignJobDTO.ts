@@ -297,7 +297,7 @@ export type CreateDesignJobCommentType = z.infer<typeof CreateDesignJobCommentDT
 export type DesignRevisionType = z.infer<typeof DesignRevisionDTO>;
 
 // Design job status validation helpers
-export const isTerminalStatus = (status: string): boolean => {
+export const isDesignJobTerminalStatus = (status: string): boolean => {
   return ["approved", "canceled"].includes(status);
 };
 
@@ -311,7 +311,7 @@ export const allowsRevisions = (status: string): boolean => {
   return ["revision_requested", "under_review"].includes(status);
 };
 
-export const getValidTransitions = (currentStatus: string): string[] => {
+export const getDesignJobValidTransitions = (currentStatus: string): string[] => {
   const transitions: Record<string, string[]> = {
     "queued": ["assigned", "canceled"],
     "assigned": ["drafting", "queued", "canceled"],
@@ -328,8 +328,8 @@ export const getValidTransitions = (currentStatus: string): string[] => {
   return transitions[currentStatus] || [];
 };
 
-export const canTransition = (from: string, to: string): boolean => {
-  return getValidTransitions(from).includes(to);
+export const canDesignJobTransition = (from: string, to: string): boolean => {
+  return getDesignJobValidTransitions(from).includes(to);
 };
 
 // Additional status codes for collaboration workflow

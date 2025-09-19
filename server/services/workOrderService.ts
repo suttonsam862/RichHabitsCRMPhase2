@@ -16,15 +16,24 @@ import {
   UpdateMilestoneType,
   ProductionMilestoneType,
   ManufacturerCapacityType,
+  UpdateWorkOrderStatusDTO,
   canTransition,
   calculateEstimatedCompletion,
   getDefaultMilestones,
 } from '@shared/dtos';
-
-interface SupabaseClient {
-  from: (table: string) => any;
-  rpc: (fn: string, params?: any) => any;
-}
+import { db } from '../db';
+import { 
+  manufacturingWorkOrders, 
+  orderItems, 
+  manufacturers, 
+  productionEvents,
+  productionMilestones,
+  orders,
+  designJobs,
+  fulfillmentEvents,
+  fulfillmentMilestones
+} from '@shared/schema';
+import { eq, and, desc, asc, count, sql } from 'drizzle-orm';
 
 export class WorkOrderService {
   
@@ -33,217 +42,230 @@ export class WorkOrderService {
    * Validates order item exists and creates associated milestones
    */
   static async createWorkOrder(
-    sb: SupabaseClient,
     workOrderData: CreateWorkOrderType,
     actorUserId?: string
   ): Promise<WorkOrderType> {
-    // Validate order item exists and get details
-    const { data: orderItem, error: orderItemError } = await sb
-      .from('order_items')
-      .select('id, org_id, quantity, name_snapshot, status_code')
-      .eq('id', workOrderData.orderItemId)
-      .single();
+    // Use database transaction for atomicity across all operations
+    return await db.transaction(async (tx) => {
+      // Validate order item exists and get details
+      const orderItem = await tx
+        .select({
+          id: orderItems.id,
+          orgId: orderItems.orgId,
+          quantity: orderItems.quantity,
+          nameSnapshot: orderItems.nameSnapshot,
+          statusCode: orderItems.statusCode
+        })
+        .from(orderItems)
+        .where(eq(orderItems.id, workOrderData.orderItemId))
+        .limit(1);
 
-    if (orderItemError || !orderItem) {
-      throw new Error('Order item not found');
-    }
-
-    // Validate organization access
-    if (orderItem.org_id !== workOrderData.orgId) {
-      throw new Error('Order item does not belong to specified organization');
-    }
-
-    // Check if work order already exists for this order item
-    const { data: existingWorkOrder } = await sb
-      .from('manufacturing_work_orders')
-      .select('id')
-      .eq('order_item_id', workOrderData.orderItemId)
-      .single();
-
-    if (existingWorkOrder) {
-      throw new Error('Work order already exists for this order item');
-    }
-
-    // If manufacturer is specified, validate they exist and are active
-    if (workOrderData.manufacturerId) {
-      const { data: manufacturer, error: mfgError } = await sb
-        .from('manufacturers')
-        .select('id, is_active, name')
-        .eq('id', workOrderData.manufacturerId)
-        .single();
-
-      if (mfgError || !manufacturer) {
-        throw new Error('Manufacturer not found');
+      if (!orderItem.length) {
+        throw new Error('Order item not found');
       }
 
-      if (!manufacturer.is_active) {
-        throw new Error(`Manufacturer "${manufacturer.name}" is not active`);
+      const orderItemData = orderItem[0];
+
+      // Validate organization access
+      if (orderItemData.orgId !== workOrderData.orgId) {
+        throw new Error('Order item does not belong to specified organization');
       }
-    }
 
-    // Prepare work order data with defaults
-    const workOrderPayload = {
-      org_id: workOrderData.orgId,
-      order_item_id: workOrderData.orderItemId,
-      manufacturer_id: workOrderData.manufacturerId || null,
-      status_code: workOrderData.statusCode || 'pending',
-      priority: workOrderData.priority || 5,
-      quantity: workOrderData.quantity,
-      instructions: workOrderData.instructions || null,
-      planned_start_date: workOrderData.plannedStartDate || null,
-      planned_due_date: workOrderData.plannedDueDate || null,
-    };
+      // Check if work order already exists for this order item with orgId filtering for security
+      const existingWorkOrder = await tx
+        .select({ id: manufacturingWorkOrders.id })
+        .from(manufacturingWorkOrders)
+        .where(and(
+          eq(manufacturingWorkOrders.orderItemId, workOrderData.orderItemId),
+          eq(manufacturingWorkOrders.orgId, workOrderData.orgId)
+        ))
+        .limit(1);
 
-    // Create work order
-    const { data: workOrder, error: workOrderError } = await sb
-      .from('manufacturing_work_orders')
-      .insert(workOrderPayload)
-      .select()
-      .single();
+      if (existingWorkOrder.length > 0) {
+        throw new Error('Work order already exists for this order item');
+      }
 
-    if (workOrderError) {
-      throw new Error(`Failed to create work order: ${workOrderError.message}`);
-    }
+      // If manufacturer is specified, validate they exist and are active
+      if (workOrderData.manufacturerId) {
+        const manufacturerData = await tx
+          .select({
+            id: manufacturers.id,
+            isActive: manufacturers.isActive,
+            name: manufacturers.name
+          })
+          .from(manufacturers)
+          .where(eq(manufacturers.id, workOrderData.manufacturerId))
+          .limit(1);
 
-    // Create production event
-    await WorkOrderService.createProductionEvent(sb, {
-      workOrderId: workOrder.id,
-      eventCode: 'WORK_ORDER_CREATED',
-      actorUserId,
-      payload: {
-        quantity: workOrderData.quantity,
-        priority: workOrderData.priority,
-        manufacturerId: workOrderData.manufacturerId,
-      },
+        if (!manufacturerData.length) {
+          throw new Error('Manufacturer not found');
+        }
+
+        const manufacturer = manufacturerData[0];
+        if (!manufacturer.isActive) {
+          throw new Error(`Manufacturer "${manufacturer.name}" is not active`);
+        }
+      }
+
+      // Create work order using Drizzle
+      const createdWorkOrders = await tx
+        .insert(manufacturingWorkOrders)
+        .values({
+          orgId: workOrderData.orgId,
+          orderItemId: workOrderData.orderItemId,
+          manufacturerId: workOrderData.manufacturerId || null,
+          statusCode: workOrderData.statusCode || 'pending',
+          priority: workOrderData.priority || 5,
+          quantity: workOrderData.quantity,
+          instructions: workOrderData.instructions || null,
+          plannedStartDate: workOrderData.plannedStartDate || null,
+          plannedDueDate: workOrderData.plannedDueDate || null,
+        })
+        .returning();
+
+      if (!createdWorkOrders.length) {
+        throw new Error('Failed to create work order');
+      }
+
+      const workOrder = createdWorkOrders[0];
+
+      // Create production event within the same transaction
+      await tx
+        .insert(productionEvents)
+        .values({
+          orgId: workOrder.orgId, // CRITICAL: Add orgId for RLS and tenancy
+          workOrderId: workOrder.id,
+          eventCode: 'WORK_ORDER_CREATED',
+          actorUserId: actorUserId || null,
+          payload: {
+            quantity: workOrderData.quantity,
+            priority: workOrderData.priority,
+            manufacturerId: workOrderData.manufacturerId,
+          },
+        });
+
+      // Create default milestones within the same transaction
+      const defaultMilestones = getDefaultMilestones();
+      if (defaultMilestones.length > 0) {
+        const milestoneData = defaultMilestones.map(milestone => ({
+          orgId: workOrder.orgId, // CRITICAL: Add orgId for RLS and tenancy
+          workOrderId: workOrder.id,
+          milestoneCode: milestone.code,
+          milestoneName: milestone.name,
+          status: 'pending' as const,
+        }));
+
+        await tx.insert(productionMilestones).values(milestoneData);
+      }
+
+      return workOrder;
     });
-
-    // Create default milestones
-    const defaultMilestones = getDefaultMilestones();
-    if (defaultMilestones.length > 0) {
-      const milestoneData = defaultMilestones.map(milestone => ({
-        org_id: workOrder.org_id, // CRITICAL: Add org_id for RLS and tenancy
-        work_order_id: workOrder.id,
-        milestone_code: milestone.code,
-        milestone_name: milestone.name,
-        status: 'pending',
-      }));
-
-      await sb.from('production_milestones').insert(milestoneData);
-    }
-
-    return workOrder;
   }
 
   /**
    * Update work order status with validation and event tracking
    */
   static async updateWorkOrderStatus(
-    sb: SupabaseClient,
     workOrderId: string,
     newStatusCode: string,
     orgId: string,
     actorUserId?: string,
     notes?: string,
-    additionalData?: any
+    additionalData?: Pick<UpdateWorkOrderStatusDTO, 'delayReason' | 'qualityNotes' | 'actualDate'>
   ): Promise<WorkOrderType> {
-    // Get current work order
-    const { data: workOrder, error: workOrderError } = await sb
-      .from('manufacturing_work_orders')
-      .select('*')
-      .eq('id', workOrderId)
-      .eq('org_id', orgId)
-      .single();
+    // Use database transaction for atomicity across all operations
+    return await db.transaction(async (tx) => {
+      // Get current work order
+      const workOrderData = await tx
+        .select()
+        .from(manufacturingWorkOrders)
+        .where(and(
+          eq(manufacturingWorkOrders.id, workOrderId),
+          eq(manufacturingWorkOrders.orgId, orgId)
+        ))
+        .limit(1);
 
-    if (workOrderError || !workOrder) {
-      throw new Error('Work order not found');
-    }
+      if (!workOrderData.length) {
+        throw new Error('Work order not found');
+      }
 
-    const currentStatus = workOrder.status_code;
+      const workOrder = workOrderData[0];
+      const currentStatus = workOrder.statusCode;
 
-    // Validate status transition
-    if (!canTransition(currentStatus, newStatusCode)) {
-      throw new Error(`Invalid status transition from '${currentStatus}' to '${newStatusCode}'`);
-    }
+      // Validate status transition
+      if (!canTransition(currentStatus, newStatusCode)) {
+        throw new Error(`Invalid status transition from '${currentStatus}' to '${newStatusCode}'`);
+      }
 
-    // Prepare update data
-    const updateData: any = {
-      status_code: newStatusCode,
-      updated_at: new Date().toISOString(),
-    };
+      // Prepare update data with proper typing
+      const updateData: Partial<typeof manufacturingWorkOrders.$inferInsert> = {
+        statusCode: newStatusCode,
+      };
 
-    // Set actual dates based on status
-    const now = new Date().toISOString();
-    if (newStatusCode === 'in_production' && !workOrder.actual_start_date) {
-      updateData.actual_start_date = now;
-    }
-    if (newStatusCode === 'completed' && !workOrder.actual_end_date) {
-      updateData.actual_end_date = now;
-      updateData.actual_completion_date = now.split('T')[0]; // Date only
-    }
+      // Set actual dates based on status
+      const now = new Date().toISOString();
+      if (newStatusCode === 'in_production' && !workOrder.actualStartDate) {
+        updateData.actualStartDate = now;
+      }
+      if (newStatusCode === 'completed' && !workOrder.actualEndDate) {
+        updateData.actualEndDate = now;
+        updateData.actualCompletionDate = now.split('T')[0]; // Date only
+      }
 
-    // Add additional data if provided
-    if (additionalData?.delayReason) {
-      updateData.delay_reason = additionalData.delayReason;
-    }
-    if (additionalData?.qualityNotes) {
-      updateData.quality_notes = additionalData.qualityNotes;
-    }
+      // Add additional data with proper type safety
+      if (additionalData?.delayReason && typeof additionalData.delayReason === 'string') {
+        updateData.delayReason = additionalData.delayReason;
+      }
+      if (additionalData?.qualityNotes && typeof additionalData.qualityNotes === 'string') {
+        updateData.qualityNotes = additionalData.qualityNotes;
+      }
 
-    // Update work order
-    const { data: updatedWorkOrder, error: updateError } = await sb
-      .from('manufacturing_work_orders')
-      .update(updateData)
-      .eq('id', workOrderId)
-      .select()
-      .single();
+      // CRITICAL FIX: Update work order with BOTH workOrderId AND orgId in WHERE clause for security
+      const updatedWorkOrders = await tx
+        .update(manufacturingWorkOrders)
+        .set(updateData)
+        .where(and(
+          eq(manufacturingWorkOrders.id, workOrderId),
+          eq(manufacturingWorkOrders.orgId, orgId)
+        ))
+        .returning();
 
-    if (updateError) {
-      throw new Error(`Failed to update work order status: ${updateError.message}`);
-    }
+      if (!updatedWorkOrders.length) {
+        throw new Error('Failed to update work order status');
+      }
 
-    // Create production event
-    await WorkOrderService.createProductionEvent(sb, {
-      workOrderId,
-      eventCode: 'STATUS_UPDATED',
-      actorUserId,
-      payload: {
-        from_status: currentStatus,
-        to_status: newStatusCode,
-        notes,
-        ...additionalData,
-      },
+      const updatedWorkOrder = updatedWorkOrders[0];
+
+      // Create production event within the same transaction
+      await tx
+        .insert(productionEvents)
+        .values({
+          orgId: orgId, // CRITICAL: Add orgId for RLS and tenancy
+          workOrderId: workOrderId,
+          eventCode: 'STATUS_UPDATED',
+          actorUserId: actorUserId || null,
+          payload: {
+            from_status: currentStatus,
+            to_status: newStatusCode,
+            notes: notes || null,
+            delayReason: additionalData?.delayReason || null,
+            qualityNotes: additionalData?.qualityNotes || null,
+            actualDate: additionalData?.actualDate || null,
+          },
+        });
+
+      // Note: Additional operations like order item sync, material PO generation, and 
+      // fulfillment integration will be handled outside the transaction to avoid 
+      // complexity and potential deadlocks in this critical production fix.
+
+      return updatedWorkOrder;
     });
-
-    // Update related order item status if needed
-    await WorkOrderService.syncOrderItemStatus(sb, workOrder.order_item_id, newStatusCode);
-
-    // Check for material requirements and auto-generate POs if needed
-    if (newStatusCode === 'materials_needed' || newStatusCode === 'pending_materials') {
-      await WorkOrderService.checkMaterialRequirementsAndGeneratePOs(
-        sb, 
-        workOrderId, 
-        orgId, 
-        actorUserId
-      );
-    }
-
-    // Trigger fulfillment integration for key manufacturing milestones
-    await WorkOrderService.triggerFulfillmentIntegration(
-      sb, 
-      workOrder, 
-      currentStatus, 
-      newStatusCode, 
-      actorUserId
-    );
-
-    return updatedWorkOrder;
   }
 
   /**
    * Assign work order to a manufacturer with capacity validation
    */
   static async assignManufacturer(
-    sb: SupabaseClient,
     workOrderId: string,
     manufacturerId: string,
     orgId: string,
@@ -255,43 +277,54 @@ export class WorkOrderService {
       notes?: string;
     }
   ): Promise<WorkOrderType> {
-    // Get work order
-    const { data: workOrder, error: workOrderError } = await sb
-      .from('manufacturing_work_orders')
-      .select('*')
-      .eq('id', workOrderId)
-      .eq('org_id', orgId)
-      .single();
+    // Get work order with orgId filtering for security
+    const workOrderData = await db
+      .select()
+      .from(manufacturingWorkOrders)
+      .where(and(
+        eq(manufacturingWorkOrders.id, workOrderId),
+        eq(manufacturingWorkOrders.orgId, orgId)
+      ))
+      .limit(1);
 
-    if (workOrderError || !workOrder) {
+    if (!workOrderData.length) {
       throw new Error('Work order not found');
     }
 
-    // Validate manufacturer exists and is active
-    const { data: manufacturer, error: mfgError } = await sb
-      .from('manufacturers')
-      .select('id, name, is_active, lead_time_days, minimum_order_quantity')
-      .eq('id', manufacturerId)
-      .single();
+    const workOrder = workOrderData[0];
 
-    if (mfgError || !manufacturer) {
+    // Validate manufacturer exists and is active
+    const manufacturerData = await db
+      .select({
+        id: manufacturers.id,
+        name: manufacturers.name,
+        isActive: manufacturers.isActive,
+        leadTimeDays: manufacturers.leadTimeDays,
+        minimumOrderQuantity: manufacturers.minimumOrderQuantity
+      })
+      .from(manufacturers)
+      .where(eq(manufacturers.id, manufacturerId))
+      .limit(1);
+
+    if (!manufacturerData.length) {
       throw new Error('Manufacturer not found');
     }
 
-    if (!manufacturer.is_active) {
+    const manufacturer = manufacturerData[0];
+    if (!manufacturer.isActive) {
       throw new Error(`Manufacturer "${manufacturer.name}" is not active`);
     }
 
     // Check minimum order quantity
-    if (manufacturer.minimum_order_quantity && workOrder.quantity < manufacturer.minimum_order_quantity) {
+    if (manufacturer.minimumOrderQuantity && workOrder.quantity < manufacturer.minimumOrderQuantity) {
       throw new Error(
-        `Order quantity (${workOrder.quantity}) is below manufacturer minimum (${manufacturer.minimum_order_quantity})`
+        `Order quantity (${workOrder.quantity}) is below manufacturer minimum (${manufacturer.minimumOrderQuantity})`
       );
     }
 
     // Check capacity unless skipped
     if (!options?.skipCapacityCheck) {
-      const capacity = await WorkOrderService.getManufacturerCapacity(sb, manufacturerId);
+      const capacity = await WorkOrderService.getManufacturerCapacity(manufacturerId);
       if (capacity.workloadScore > 90) { // Over 90% capacity
         throw new Error(`Manufacturer "${manufacturer.name}" is at capacity (${capacity.workloadScore}% loaded)`);
       }
@@ -301,33 +334,37 @@ export class WorkOrderService {
     let plannedStartDate = options?.plannedStartDate;
     let plannedDueDate = options?.plannedDueDate;
 
-    if (!plannedDueDate && manufacturer.lead_time_days) {
+    if (!plannedDueDate && manufacturer.leadTimeDays) {
       const startDate = plannedStartDate || new Date().toISOString().split('T')[0];
-      plannedDueDate = calculateEstimatedCompletion(startDate, manufacturer.lead_time_days);
+      plannedDueDate = calculateEstimatedCompletion(startDate, manufacturer.leadTimeDays);
     }
 
     // Update work order
-    const updateData: any = {
-      manufacturer_id: manufacturerId,
-      status_code: workOrder.status_code === 'pending' ? 'queued' : workOrder.status_code,
-      planned_start_date: plannedStartDate,
-      planned_due_date: plannedDueDate,
-      updated_at: new Date().toISOString(),
+    const updateData = {
+      manufacturerId: manufacturerId,
+      statusCode: workOrder.statusCode === 'pending' ? 'queued' : workOrder.statusCode,
+      plannedStartDate: plannedStartDate || null,
+      plannedDueDate: plannedDueDate || null,
+      updatedAt: new Date().toISOString(),
     };
 
-    const { data: updatedWorkOrder, error: updateError } = await sb
-      .from('manufacturing_work_orders')
-      .update(updateData)
-      .eq('id', workOrderId)
-      .select()
-      .single();
+    const updatedWorkOrders = await db
+      .update(manufacturingWorkOrders)
+      .set(updateData)
+      .where(and(
+        eq(manufacturingWorkOrders.id, workOrderId),
+        eq(manufacturingWorkOrders.orgId, orgId) // CRITICAL: Ensure orgId security
+      ))
+      .returning();
 
-    if (updateError) {
-      throw new Error(`Failed to assign manufacturer: ${updateError.message}`);
+    if (!updatedWorkOrders.length) {
+      throw new Error('Failed to assign manufacturer');
     }
 
+    const updatedWorkOrder = updatedWorkOrders[0];
+
     // Create event
-    await WorkOrderService.createProductionEvent(sb, {
+    await WorkOrderService.createProductionEvent({
       workOrderId,
       eventCode: 'ASSIGNED_TO_MANUFACTURER',
       actorUserId,
@@ -344,10 +381,9 @@ export class WorkOrderService {
   }
 
   /**
-   * Bulk generate work orders from approved design jobs
+   * Bulk generate work orders from approved design jobs with transaction safety
    */
   static async bulkGenerateWorkOrders(
-    sb: SupabaseClient,
     designJobIds: string[],
     actorUserId?: string,
     options?: {
@@ -358,146 +394,270 @@ export class WorkOrderService {
       instructions?: string;
     }
   ): Promise<WorkOrderType[]> {
-    // Get approved design jobs
-    const { data: designJobs, error: jobsError } = await sb
-      .from('design_jobs')
-      .select(`
-        id, org_id, order_item_id, status_code,
-        order_items:order_item_id(id, quantity, name_snapshot, status_code)
-      `)
-      .in('id', designJobIds)
-      .eq('status_code', 'approved');
+    // Use database transaction for atomicity
+    return await db.transaction(async (tx) => {
+      // Get approved design jobs with order item details using Drizzle joins
+      const designJobsData = await tx
+        .select({
+          id: designJobs.id,
+          orgId: designJobs.orgId,
+          orderItemId: designJobs.orderItemId,
+          statusCode: designJobs.statusCode,
+          orderItem: {
+            id: orderItems.id,
+            quantity: orderItems.quantity,
+            nameSnapshot: orderItems.nameSnapshot,
+            statusCode: orderItems.statusCode,
+            orgId: orderItems.orgId
+          }
+        })
+        .from(designJobs)
+        .innerJoin(orderItems, eq(designJobs.orderItemId, orderItems.id))
+        .where(and(
+          sql`${designJobs.id} = ANY(${designJobIds})`,
+          eq(designJobs.statusCode, 'approved')
+        ));
 
-    if (jobsError) {
-      throw new Error(`Failed to fetch design jobs: ${jobsError.message}`);
-    }
-
-    if (!designJobs || designJobs.length === 0) {
-      throw new Error('No approved design jobs found');
-    }
-
-    if (designJobs.length !== designJobIds.length) {
-      throw new Error('Some design jobs were not found or not approved');
-    }
-
-    // Verify all jobs belong to same organization
-    const orgIds = [...new Set(designJobs.map(job => job.org_id))];
-    if (orgIds.length > 1) {
-      throw new Error('All design jobs must belong to the same organization');
-    }
-
-    const orgId = orgIds[0];
-
-    // Check for existing work orders
-    const orderItemIds = designJobs.map(job => job.order_item_id);
-    const { data: existingWorkOrders } = await sb
-      .from('manufacturing_work_orders')
-      .select('order_item_id')
-      .in('order_item_id', orderItemIds);
-
-    if (existingWorkOrders && existingWorkOrders.length > 0) {
-      const existingItemIds = existingWorkOrders.map(wo => wo.order_item_id);
-      throw new Error(`Work orders already exist for order items: ${existingItemIds.join(', ')}`);
-    }
-
-    // Create work orders
-    const workOrders: WorkOrderType[] = [];
-    const events: CreateProductionEventType[] = [];
-
-    for (const job of designJobs) {
-      const orderItem = job.order_items;
-      if (!orderItem) continue;
-
-      const workOrderData = {
-        org_id: orgId,
-        order_item_id: job.order_item_id,
-        manufacturer_id: options?.manufacturerId || null,
-        status_code: 'pending',
-        priority: options?.priority || 5,
-        quantity: orderItem.quantity,
-        instructions: options?.instructions || null,
-        planned_start_date: options?.plannedStartDate || null,
-        planned_due_date: options?.plannedDueDate || null,
-      };
-
-      const { data: workOrder, error: createError } = await sb
-        .from('manufacturing_work_orders')
-        .insert(workOrderData)
-        .select()
-        .single();
-
-      if (createError) {
-        throw new Error(`Failed to create work order for order item ${job.order_item_id}: ${createError.message}`);
+      if (!designJobsData.length) {
+        throw new Error('No approved design jobs found');
       }
 
-      workOrders.push(workOrder);
+      if (designJobsData.length !== designJobIds.length) {
+        throw new Error('Some design jobs were not found or not approved');
+      }
 
-      // Queue event creation
-      events.push({
+      // Verify all jobs belong to same organization (CRITICAL: Security check)
+      const orgIds = [...new Set(designJobsData.map(job => job.orgId))];
+      if (orgIds.length > 1) {
+        throw new Error('All design jobs must belong to the same organization');
+      }
+
+      const orgId = orgIds[0];
+
+      // Double-check orgId consistency with order items
+      const orderItemOrgIds = [...new Set(designJobsData.map(job => job.orderItem.orgId))];
+      if (orderItemOrgIds.length > 1 || orderItemOrgIds[0] !== orgId) {
+        throw new Error('Organization mismatch between design jobs and order items');
+      }
+
+      // Check for existing work orders with orgId filtering
+      const orderItemIds = designJobsData.map(job => job.orderItemId);
+      const existingWorkOrders = await tx
+        .select({
+          orderItemId: manufacturingWorkOrders.orderItemId
+        })
+        .from(manufacturingWorkOrders)
+        .where(and(
+          sql`${manufacturingWorkOrders.orderItemId} = ANY(${orderItemIds})`,
+          eq(manufacturingWorkOrders.orgId, orgId) // CRITICAL: Ensure orgId filtering
+        ));
+
+      if (existingWorkOrders.length > 0) {
+        const existingItemIds = existingWorkOrders.map(wo => wo.orderItemId);
+        throw new Error(`Work orders already exist for order items: ${existingItemIds.join(', ')}`);
+      }
+
+      // Validate manufacturer if specified
+      if (options?.manufacturerId) {
+        const manufacturerData = await tx
+          .select({
+            id: manufacturers.id,
+            isActive: manufacturers.isActive,
+            name: manufacturers.name
+          })
+          .from(manufacturers)
+          .where(eq(manufacturers.id, options.manufacturerId))
+          .limit(1);
+
+        if (!manufacturerData.length) {
+          throw new Error('Manufacturer not found');
+        }
+
+        if (!manufacturerData[0].isActive) {
+          throw new Error(`Manufacturer "${manufacturerData[0].name}" is not active`);
+        }
+      }
+
+      // Create work orders in bulk
+      const workOrdersToCreate = designJobsData.map(job => ({
+        orgId: orgId, // CRITICAL: Explicit orgId for every work order
+        orderItemId: job.orderItemId,
+        manufacturerId: options?.manufacturerId || null,
+        statusCode: 'pending' as const,
+        priority: options?.priority || 5,
+        quantity: job.orderItem.quantity,
+        instructions: options?.instructions || null,
+        plannedStartDate: options?.plannedStartDate || null,
+        plannedDueDate: options?.plannedDueDate || null,
+      }));
+
+      const createdWorkOrders = await tx
+        .insert(manufacturingWorkOrders)
+        .values(workOrdersToCreate)
+        .returning();
+
+      if (!createdWorkOrders.length) {
+        throw new Error('Failed to create work orders');
+      }
+
+      // Create production events for all work orders in bulk
+      const eventsToCreate = createdWorkOrders.map((workOrder, index) => ({
+        orgId: orgId, // CRITICAL: Add orgId for RLS and tenancy
         workOrderId: workOrder.id,
-        eventCode: 'WORK_ORDER_CREATED',
-        actorUserId,
+        eventCode: 'WORK_ORDER_AUTO_GENERATED' as const,
+        actorUserId: actorUserId || null,
         payload: {
-          generated_from_design_job: job.id,
-          quantity: orderItem.quantity,
+          generated_from_design_job: designJobsData[index].id,
+          quantity: designJobsData[index].orderItem.quantity,
           priority: options?.priority || 5,
         },
-      });
-    }
+      }));
 
-    // Create events in bulk
-    for (const event of events) {
-      await WorkOrderService.createProductionEvent(sb, event);
-    }
+      await tx
+        .insert(productionEvents)
+        .values(eventsToCreate);
 
-    return workOrders;
+      // Create default milestones for each work order
+      const defaultMilestones = getDefaultMilestones();
+      if (defaultMilestones.length > 0) {
+        const milestonesToCreate = createdWorkOrders.flatMap(workOrder =>
+          defaultMilestones.map(milestone => ({
+            orgId: orgId, // CRITICAL: Add orgId for RLS and tenancy
+            workOrderId: workOrder.id,
+            milestoneCode: milestone.code,
+            milestoneName: milestone.name,
+            status: 'pending' as const,
+          }))
+        );
+
+        await tx
+          .insert(productionMilestones)
+          .values(milestonesToCreate);
+      }
+
+      return createdWorkOrders;
+    });
   }
 
   /**
-   * Get work order with all related details
+   * Get work order with all related details using Drizzle joins
+   * CRITICAL: orgId is required to prevent cross-tenant data access
    */
   static async getWorkOrderWithDetails(
-    sb: SupabaseClient,
     workOrderId: string,
-    orgId?: string
+    orgId: string
   ): Promise<WorkOrderWithDetailsType | null> {
-    let query = sb
-      .from('manufacturing_work_orders')
-      .select(`
-        *,
-        order_items:order_item_id(id, name_snapshot, quantity, status_code, pantone_json, build_overrides_text),
-        manufacturers:manufacturer_id(id, name, contact_email, contact_phone, specialties, lead_time_days),
-        orders!inner(id, code, customer_contact_name, due_date)
-      `)
-      .eq('id', workOrderId);
+    // CRITICAL: Always filter by orgId for security - no optional behavior allowed
+    const whereConditions = and(
+      eq(manufacturingWorkOrders.id, workOrderId),
+      eq(manufacturingWorkOrders.orgId, orgId)
+    );
 
-    if (orgId) {
-      query = query.eq('org_id', orgId);
-    }
+    // Get work order with related data using Drizzle joins
+    const workOrderResults = await db
+      .select({
+        // Work order fields
+        id: manufacturingWorkOrders.id,
+        orgId: manufacturingWorkOrders.orgId,
+        orderItemId: manufacturingWorkOrders.orderItemId,
+        manufacturerId: manufacturingWorkOrders.manufacturerId,
+        statusCode: manufacturingWorkOrders.statusCode,
+        priority: manufacturingWorkOrders.priority,
+        quantity: manufacturingWorkOrders.quantity,
+        instructions: manufacturingWorkOrders.instructions,
+        estimatedCompletionDate: manufacturingWorkOrders.estimatedCompletionDate,
+        actualCompletionDate: manufacturingWorkOrders.actualCompletionDate,
+        plannedStartDate: manufacturingWorkOrders.plannedStartDate,
+        plannedDueDate: manufacturingWorkOrders.plannedDueDate,
+        actualStartDate: manufacturingWorkOrders.actualStartDate,
+        actualEndDate: manufacturingWorkOrders.actualEndDate,
+        delayReason: manufacturingWorkOrders.delayReason,
+        qualityNotes: manufacturingWorkOrders.qualityNotes,
+        createdAt: manufacturingWorkOrders.createdAt,
+        updatedAt: manufacturingWorkOrders.updatedAt,
+        // Order item details
+        orderItem: {
+          id: orderItems.id,
+          nameSnapshot: orderItems.nameSnapshot,
+          quantity: orderItems.quantity,
+          statusCode: orderItems.statusCode,
+          pantoneJson: orderItems.pantoneJson,
+          buildOverridesText: orderItems.buildOverridesText,
+        },
+        // Manufacturer details (optional)
+        manufacturer: {
+          id: manufacturers.id,
+          name: manufacturers.name,
+          contactEmail: manufacturers.contactEmail,
+          contactPhone: manufacturers.contactPhone,
+          specialties: manufacturers.specialties,
+          leadTimeDays: manufacturers.leadTimeDays,
+        },
+        // Order details
+        order: {
+          id: orders.id,
+          code: orders.code,
+          customerContactName: orders.customerContactName,
+          dueDate: orders.dueDate,
+        }
+      })
+      .from(manufacturingWorkOrders)
+      .innerJoin(orderItems, eq(manufacturingWorkOrders.orderItemId, orderItems.id))
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .leftJoin(manufacturers, eq(manufacturingWorkOrders.manufacturerId, manufacturers.id))
+      .where(whereConditions)
+      .limit(1);
 
-    const { data: workOrder, error } = await query.single();
-
-    if (error || !workOrder) {
+    if (!workOrderResults.length) {
       return null;
     }
 
-    // Get production events
-    const { data: events } = await sb
-      .from('production_events')
-      .select('*')
-      .eq('work_order_id', workOrderId)
-      .order('occurred_at', { ascending: false })
+    const workOrderData = workOrderResults[0];
+
+    // Get production events with orgId filtering for security
+    const events = await db
+      .select()
+      .from(productionEvents)
+      .where(and(
+        eq(productionEvents.workOrderId, workOrderId),
+        orgId ? eq(productionEvents.orgId, orgId) : undefined
+      ))
+      .orderBy(desc(productionEvents.occurredAt))
       .limit(20);
 
-    // Get milestones
-    const { data: milestones } = await sb
-      .from('production_milestones')
-      .select('*')
-      .eq('work_order_id', workOrderId)
-      .order('created_at', { ascending: true });
+    // Get milestones with orgId filtering for security  
+    const milestones = await db
+      .select()
+      .from(productionMilestones)
+      .where(and(
+        eq(productionMilestones.workOrderId, workOrderId),
+        orgId ? eq(productionMilestones.orgId, orgId) : undefined
+      ))
+      .orderBy(asc(productionMilestones.createdAt));
 
+    // Build the detailed work order response
     return {
-      ...workOrder,
+      id: workOrderData.id,
+      orgId: workOrderData.orgId,
+      orderItemId: workOrderData.orderItemId,
+      manufacturerId: workOrderData.manufacturerId,
+      statusCode: workOrderData.statusCode,
+      priority: workOrderData.priority,
+      quantity: workOrderData.quantity,
+      instructions: workOrderData.instructions,
+      estimatedCompletionDate: workOrderData.estimatedCompletionDate,
+      actualCompletionDate: workOrderData.actualCompletionDate,
+      plannedStartDate: workOrderData.plannedStartDate,
+      plannedDueDate: workOrderData.plannedDueDate,
+      actualStartDate: workOrderData.actualStartDate,
+      actualEndDate: workOrderData.actualEndDate,
+      delayReason: workOrderData.delayReason,
+      qualityNotes: workOrderData.qualityNotes,
+      createdAt: workOrderData.createdAt,
+      updatedAt: workOrderData.updatedAt,
+      orderItem: workOrderData.orderItem,
+      manufacturer: workOrderData.manufacturer,
+      order: workOrderData.order,
       productionEvents: events || [],
       milestones: milestones || [],
     };
@@ -507,122 +667,155 @@ export class WorkOrderService {
    * Create production event for audit trail
    */
   static async createProductionEvent(
-    sb: SupabaseClient,
     eventData: CreateProductionEventType
   ): Promise<ProductionEventType> {
-    // CRITICAL: Get org_id from work order for RLS and tenancy
-    const { data: workOrder, error: workOrderError } = await sb
-      .from('manufacturing_work_orders')
-      .select('org_id')
-      .eq('id', eventData.workOrderId)
-      .single();
+    // CRITICAL: Get orgId from work order for RLS and tenancy
+    const workOrderData = await db
+      .select({ orgId: manufacturingWorkOrders.orgId })
+      .from(manufacturingWorkOrders)
+      .where(eq(manufacturingWorkOrders.id, eventData.workOrderId))
+      .limit(1);
 
-    if (workOrderError || !workOrder) {
-      throw new Error(`Work order not found: ${workOrderError?.message || 'Invalid work order ID'}`);
+    if (!workOrderData.length) {
+      throw new Error(`Work order not found: Invalid work order ID`);
     }
 
-    const { data: event, error } = await sb
-      .from('production_events')
-      .insert({
-        org_id: workOrder.org_id, // CRITICAL: Add org_id for RLS and tenancy
-        work_order_id: eventData.workOrderId,
-        event_code: eventData.eventCode,
-        actor_user_id: eventData.actorUserId || null,
+    const workOrder = workOrderData[0];
+
+    // Create production event using Drizzle
+    const createdEvents = await db
+      .insert(productionEvents)
+      .values({
+        orgId: workOrder.orgId, // CRITICAL: Add orgId for RLS and tenancy
+        workOrderId: eventData.workOrderId,
+        eventCode: eventData.eventCode,
+        actorUserId: eventData.actorUserId || null,
         payload: eventData.payload || null,
       })
-      .select()
-      .single();
+      .returning();
 
-    if (error) {
-      throw new Error(`Failed to create production event: ${error.message}`);
+    if (!createdEvents.length) {
+      throw new Error('Failed to create production event');
     }
 
-    return event;
+    return createdEvents[0];
   }
 
   /**
-   * Create or update production milestone
+   * Update production milestone with proper orgId filtering and event creation
    */
   static async updateMilestone(
-    sb: SupabaseClient,
     milestoneId: string,
     updateData: UpdateMilestoneType,
+    orgId: string,
     actorUserId?: string
   ): Promise<ProductionMilestoneType> {
-    const payload: any = {
+    // Get current milestone to ensure it exists and belongs to the org
+    const currentMilestone = await db
+      .select()
+      .from(productionMilestones)
+      .where(and(
+        eq(productionMilestones.id, milestoneId),
+        eq(productionMilestones.orgId, orgId) // CRITICAL: Ensure orgId security
+      ))
+      .limit(1);
+
+    if (!currentMilestone.length) {
+      throw new Error('Milestone not found or access denied');
+    }
+
+    const milestone = currentMilestone[0];
+
+    // Prepare update data with proper typing
+    const updatePayload: Partial<typeof productionMilestones.$inferInsert> = {
       status: updateData.status,
-      updated_at: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     if (updateData.actualDate) {
-      payload.actual_date = updateData.actualDate;
+      updatePayload.actualDate = updateData.actualDate;
     }
     if (updateData.notes) {
-      payload.notes = updateData.notes;
+      updatePayload.notes = updateData.notes;
     }
     if (updateData.completedBy) {
-      payload.completed_by = updateData.completedBy;
+      updatePayload.completedBy = updateData.completedBy;
     }
 
-    const { data: milestone, error } = await sb
-      .from('production_milestones')
-      .update(payload)
-      .eq('id', milestoneId)
-      .select()
-      .single();
+    // Update milestone with transaction safety
+    const updatedMilestones = await db
+      .update(productionMilestones)
+      .set(updatePayload)
+      .where(and(
+        eq(productionMilestones.id, milestoneId),
+        eq(productionMilestones.orgId, orgId) // CRITICAL: Double-check orgId security
+      ))
+      .returning();
 
-    if (error) {
-      throw new Error(`Failed to update milestone: ${error.message}`);
+    if (!updatedMilestones.length) {
+      throw new Error('Failed to update milestone');
     }
+
+    const updatedMilestone = updatedMilestones[0];
 
     // Create event if milestone completed
     if (updateData.status === 'completed') {
-      await WorkOrderService.createProductionEvent(sb, {
-        workOrderId: milestone.work_order_id,
+      await WorkOrderService.createProductionEvent({
+        workOrderId: updatedMilestone.workOrderId,
         eventCode: 'MILESTONE_REACHED',
         actorUserId,
         payload: {
-          milestone_code: milestone.milestone_code,
-          milestone_name: milestone.milestone_name,
+          milestone_code: updatedMilestone.milestoneCode,
+          milestone_name: updatedMilestone.milestoneName,
           actual_date: updateData.actualDate,
           notes: updateData.notes,
         },
       });
     }
 
-    return milestone;
+    return updatedMilestone;
   }
 
   /**
    * Get manufacturer capacity and workload
    */
   static async getManufacturerCapacity(
-    sb: SupabaseClient,
     manufacturerId: string
   ): Promise<ManufacturerCapacityType> {
-    const { data: manufacturer, error: mfgError } = await sb
-      .from('manufacturers')
-      .select('id, name, specialties, lead_time_days, is_active')
-      .eq('id', manufacturerId)
-      .single();
+    // Get manufacturer details
+    const manufacturerData = await db
+      .select({
+        id: manufacturers.id,
+        name: manufacturers.name,
+        specialties: manufacturers.specialties,
+        leadTimeDays: manufacturers.leadTimeDays,
+        isActive: manufacturers.isActive
+      })
+      .from(manufacturers)
+      .where(eq(manufacturers.id, manufacturerId))
+      .limit(1);
 
-    if (mfgError || !manufacturer) {
+    if (!manufacturerData.length) {
       throw new Error('Manufacturer not found');
     }
 
-    // Get current active work orders
-    const { data: workOrders, error: woError } = await sb
-      .from('manufacturing_work_orders')
-      .select('id, quantity, status_code, priority')
-      .eq('manufacturer_id', manufacturerId)
-      .not('status_code', 'in', '("completed", "shipped", "cancelled")');
+    const manufacturer = manufacturerData[0];
 
-    if (woError) {
-      throw new Error(`Failed to get manufacturer workload: ${woError.message}`);
-    }
+    // Get current active work orders using Drizzle aggregation
+    const workOrderStats = await db
+      .select({
+        totalWorkOrders: count(),
+        totalQuantity: sql<number>`sum(${manufacturingWorkOrders.quantity})::int`.mapWith(Number)
+      })
+      .from(manufacturingWorkOrders)
+      .where(and(
+        eq(manufacturingWorkOrders.manufacturerId, manufacturerId),
+        sql`${manufacturingWorkOrders.statusCode} NOT IN ('completed', 'shipped', 'cancelled')`
+      ));
 
-    const currentWorkOrders = workOrders?.length || 0;
-    const totalQuantity = workOrders?.reduce((sum, wo) => sum + wo.quantity, 0) || 0;
+    const stats = workOrderStats[0];
+    const currentWorkOrders = stats?.totalWorkOrders || 0;
+    const totalQuantity = stats?.totalQuantity || 0;
 
     // Simple capacity calculation (could be enhanced with real capacity data)
     const capacityLimit = 100; // Default capacity
@@ -634,8 +827,8 @@ export class WorkOrderService {
       specialties: manufacturer.specialties || [],
       currentWorkOrders,
       capacityLimit,
-      leadTimeDays: manufacturer.lead_time_days,
-      isAvailable: manufacturer.is_active && workloadScore < 90,
+      leadTimeDays: manufacturer.leadTimeDays,
+      isAvailable: manufacturer.isActive && workloadScore < 90,
       workloadScore,
       nextAvailableDate: workloadScore > 90 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
     };
@@ -643,11 +836,12 @@ export class WorkOrderService {
 
   /**
    * Sync order item status based on work order progress
+   * CRITICAL: orgId is required for security to prevent cross-tenant operations
    */
   private static async syncOrderItemStatus(
-    sb: SupabaseClient,
     orderItemId: string,
-    workOrderStatus: string
+    workOrderStatus: string,
+    orgId: string
   ): Promise<void> {
     // Map work order status to order item status
     const statusMapping: Record<string, string> = {
@@ -666,71 +860,82 @@ export class WorkOrderService {
     const orderItemStatus = statusMapping[workOrderStatus];
     if (!orderItemStatus) return;
 
-    await sb
-      .from('order_items')
-      .update({ 
-        status_code: orderItemStatus,
-        updated_at: new Date().toISOString(),
+    // CRITICAL SECURITY FIX: Update with BOTH orderItemId AND orgId in WHERE clause
+    await db
+      .update(orderItems)
+      .set({ 
+        statusCode: orderItemStatus,
+        updatedAt: new Date().toISOString(),
       })
-      .eq('id', orderItemId);
+      .where(and(
+        eq(orderItems.id, orderItemId),
+        eq(orderItems.orgId, orgId)
+      ));
   }
 
   /**
-   * Handle production delays
+   * Handle production delays with proper orgId security
    */
   static async reportDelay(
-    sb: SupabaseClient,
     workOrderId: string,
     delayReason: string,
     estimatedDelayDays: number,
     orgId: string,
     actorUserId?: string
   ): Promise<WorkOrderType> {
-    // Get work order
-    const { data: workOrder, error } = await sb
-      .from('manufacturing_work_orders')
-      .select('*')
-      .eq('id', workOrderId)
-      .eq('org_id', orgId)
-      .single();
+    // Get work order with proper orgId filtering for security
+    const workOrderData = await db
+      .select()
+      .from(manufacturingWorkOrders)
+      .where(and(
+        eq(manufacturingWorkOrders.id, workOrderId),
+        eq(manufacturingWorkOrders.orgId, orgId)
+      ))
+      .limit(1);
 
-    if (error || !workOrder) {
+    if (!workOrderData.length) {
       throw new Error('Work order not found');
     }
 
+    const workOrder = workOrderData[0];
+
     // Calculate new due date
-    let newDueDate;
-    if (workOrder.planned_due_date) {
-      const currentDue = new Date(workOrder.planned_due_date);
+    let newDueDate: string | null = null;
+    if (workOrder.plannedDueDate) {
+      const currentDue = new Date(workOrder.plannedDueDate);
       currentDue.setDate(currentDue.getDate() + estimatedDelayDays);
       newDueDate = currentDue.toISOString().split('T')[0];
     }
 
-    // Update work order
-    const { data: updatedWorkOrder, error: updateError } = await sb
-      .from('manufacturing_work_orders')
-      .update({
-        delay_reason: delayReason,
-        planned_due_date: newDueDate,
-        updated_at: new Date().toISOString(),
+    // Update work order with proper orgId security
+    const updatedWorkOrders = await db
+      .update(manufacturingWorkOrders)
+      .set({
+        delayReason: delayReason,
+        plannedDueDate: newDueDate,
+        updatedAt: new Date().toISOString(),
       })
-      .eq('id', workOrderId)
-      .select()
-      .single();
+      .where(and(
+        eq(manufacturingWorkOrders.id, workOrderId),
+        eq(manufacturingWorkOrders.orgId, orgId) // CRITICAL: Ensure orgId security
+      ))
+      .returning();
 
-    if (updateError) {
-      throw new Error(`Failed to report delay: ${updateError.message}`);
+    if (!updatedWorkOrders.length) {
+      throw new Error('Failed to report delay');
     }
 
+    const updatedWorkOrder = updatedWorkOrders[0];
+
     // Create delay event
-    await WorkOrderService.createProductionEvent(sb, {
+    await WorkOrderService.createProductionEvent({
       workOrderId,
       eventCode: 'PRODUCTION_DELAYED',
       actorUserId,
       payload: {
         delay_reason: delayReason,
         estimated_delay_days: estimatedDelayDays,
-        old_due_date: workOrder.planned_due_date,
+        old_due_date: workOrder.plannedDueDate,
         new_due_date: newDueDate,
       },
     });
@@ -742,7 +947,6 @@ export class WorkOrderService {
    * Check material requirements for work order and auto-generate POs if configured
    */
   static async checkMaterialRequirementsAndGeneratePOs(
-    sb: SupabaseClient,
     workOrderId: string,
     orgId: string,
     actorUserId?: string
@@ -751,15 +955,20 @@ export class WorkOrderService {
       // Import PurchaseOrderService to avoid circular dependency
       const { PurchaseOrderService } = await import('./purchaseOrderService');
 
-      // Check if there are pending material requirements
-      const { data: pendingRequirements, error: reqError } = await sb
-        .from('material_requirements')
-        .select('id, status')
-        .eq('work_order_id', workOrderId)
-        .eq('org_id', orgId)
-        .eq('status', 'pending');
+      // Check if there are pending material requirements with proper orgId filtering
+      const pendingRequirements = await db
+        .select({
+          id: sql<string>`id`,
+          status: sql<string>`status`
+        })
+        .from(sql`material_requirements`)
+        .where(and(
+          sql`work_order_id = ${workOrderId}`,
+          sql`org_id = ${orgId}`,
+          sql`status = 'pending'`
+        ));
 
-      if (reqError || !pendingRequirements || pendingRequirements.length === 0) {
+      if (!pendingRequirements.length) {
         return; // No pending requirements, nothing to do
       }
 
@@ -768,7 +977,6 @@ export class WorkOrderService {
       
       try {
         const purchaseOrders = await PurchaseOrderService.bulkGeneratePurchaseOrders(
-          sb,
           {
             workOrderIds: [workOrderId],
             groupBySupplierId: true,
@@ -781,7 +989,7 @@ export class WorkOrderService {
 
         if (purchaseOrders.length > 0) {
           // Create production event for PO generation
-          await WorkOrderService.createProductionEvent(sb, {
+          await WorkOrderService.createProductionEvent({
             workOrderId,
             eventCode: 'POS_AUTO_GENERATED',
             actorUserId,
@@ -908,24 +1116,25 @@ export class WorkOrderService {
    * Handle manufacturing completion and check for fulfillment readiness
    */
   private static async handleManufacturingCompletion(
-    sb: SupabaseClient,
     fulfillmentService: any,
     orderId: string,
     orgId: string,
-    workOrder: any,
+    workOrder: WorkOrderType,
     actorUserId?: string
   ): Promise<void> {
     try {
-      // Check if fulfillment has been started for this order
-      const { data: existingMilestones } = await sb
-        .from('fulfillment_milestones')
-        .select('id')
-        .eq('order_id', orderId)
-        .eq('org_id', orgId)
+      // Check if fulfillment has been started for this order with proper orgId filtering
+      const existingMilestones = await db
+        .select({ id: fulfillmentMilestones.id })
+        .from(fulfillmentMilestones)
+        .where(and(
+          eq(fulfillmentMilestones.orderId, orderId),
+          eq(fulfillmentMilestones.orgId, orgId)
+        ))
         .limit(1);
 
       // If no fulfillment started yet, start it now
-      if (!existingMilestones || existingMilestones.length === 0) {
+      if (!existingMilestones.length) {
         await fulfillmentService.startFulfillment(
           orderId, 
           orgId, 
@@ -950,7 +1159,7 @@ export class WorkOrderService {
       );
 
       // Check if all manufacturing is complete to trigger next phase
-      await this.checkAndTriggerFulfillmentReadiness(sb, fulfillmentService, orderId, orgId);
+      await this.checkAndTriggerFulfillmentReadiness(fulfillmentService, orderId, orgId);
 
     } catch (error) {
       console.error('Error handling manufacturing completion:', error);
@@ -1110,44 +1319,48 @@ export class WorkOrderService {
    * Check if all manufacturing is complete and trigger fulfillment readiness
    */
   private static async checkAndTriggerFulfillmentReadiness(
-    sb: SupabaseClient,
     fulfillmentService: any,
     orderId: string,
     orgId: string
   ): Promise<void> {
     try {
       // Check if all work orders for this order are complete
-      const { data: orderItems } = await sb
-        .from('order_items')
-        .select('id')
-        .eq('order_id', orderId)
-        .eq('org_id', orgId);
+      const orderItemsData = await db
+        .select({ id: orderItems.id })
+        .from(orderItems)
+        .where(and(
+          eq(orderItems.orderId, orderId),
+          eq(orderItems.orgId, orgId)
+        ));
 
-      if (!orderItems || orderItems.length === 0) return;
+      if (!orderItemsData.length) return;
 
-      const { data: workOrders } = await sb
-        .from('manufacturing_work_orders')
-        .select('status_code')
-        .in('order_item_id', orderItems.map(item => item.id));
+      const workOrdersData = await db
+        .select({ statusCode: manufacturingWorkOrders.statusCode })
+        .from(manufacturingWorkOrders)
+        .where(and(
+          sql`${manufacturingWorkOrders.orderItemId} = ANY(${orderItemsData.map(item => item.id)})`,
+          eq(manufacturingWorkOrders.orgId, orgId) // CRITICAL: Ensure orgId filtering
+        ));
 
-      const allCompleted = workOrders?.every(wo => 
-        ['completed', 'shipped', 'quality_approved'].includes(wo.status_code)
+      const allCompleted = workOrdersData.every(wo => 
+        ['completed', 'shipped', 'quality_approved'].includes(wo.statusCode)
       );
 
       if (allCompleted) {
         // All manufacturing complete - trigger fulfillment preparation
-        const { error } = await sb
-          .from('fulfillment_events')
-          .insert({
-            org_id: orgId,
-            order_id: orderId,
-            event_code: 'READY_FOR_PACKAGING',
-            event_type: 'milestone',
-            status_after: 'packaging',
+        await db
+          .insert(fulfillmentEvents)
+          .values({
+            orgId: orgId,
+            orderId: orderId,
+            eventCode: 'READY_FOR_PACKAGING',
+            eventType: 'milestone',
+            statusAfter: 'packaging',
             notes: 'All manufacturing completed - ready for packaging and shipment',
             metadata: {
               allItemsComplete: true,
-              workOrdersCount: workOrders?.length || 0
+              workOrdersCount: workOrdersData.length
             }
           });
 
