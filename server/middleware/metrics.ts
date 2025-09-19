@@ -15,6 +15,7 @@ import {
   rateLimitHits,
   corsViolations
 } from '../lib/metrics';
+import { createHash } from 'crypto'; // Import createHash here
 
 interface MetricsRequest extends Request {
   startTime?: number;
@@ -55,7 +56,7 @@ export function metricsMiddleware(req: MetricsRequest, res: Response, next: Next
     try {
       // Calculate request duration
       const duration = (Date.now() - startTime) / 1000;
-      
+
       // Use req.route?.path to prevent cardinality explosion, fallback to normalized route
       const route = req.route?.path || normalizeRoute(req.originalUrl || req.url);
       const statusCode = res.statusCode.toString();
@@ -96,7 +97,7 @@ export function rateLimitMetricsMiddleware(req: MetricsRequest, res: Response, n
     if (res.statusCode === 429) {
       const route = req.route?.path || normalizeRoute(req.originalUrl || req.url);
       const orgLabel = getOrganizationLabel(req);
-      
+
       // Determine limit type based on endpoint
       let limitType = 'general';
       if (route.includes('/auth/')) {
@@ -104,7 +105,7 @@ export function rateLimitMetricsMiddleware(req: MetricsRequest, res: Response, n
       } else if (route.includes('/api/')) {
         limitType = 'api';
       }
-      
+
       rateLimitHits.labels(route, limitType, orgLabel).inc();
     }
   });
@@ -117,7 +118,7 @@ export function rateLimitMetricsMiddleware(req: MetricsRequest, res: Response, n
  */
 export function corsMetricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const origin = req.get('origin');
-  
+
   res.on('finish', () => {
     // Check for CORS-related errors
     if (res.statusCode === 403 && origin) {
@@ -136,7 +137,7 @@ export function corsMetricsMiddleware(req: Request, res: Response, next: NextFun
 export function trackBusinessEvent(event: string, req: MetricsRequest, additionalLabels: Record<string, string> = {}) {
   const orgLabel = getOrganizationLabel(req);
   const roleLabel = getUserRoleLabel(req);
-  
+
   try {
     // Import business metrics here to avoid circular dependencies
     const { 
@@ -146,36 +147,36 @@ export function trackBusinessEvent(event: string, req: MetricsRequest, additiona
       businessOrganizationsCreated, 
       businessQuotesGenerated 
     } = require('../lib/metrics');
-    
+
     // Track specific business events with dedicated counters
     switch (event) {
       case 'order_created':
         const orderStatus = additionalLabels.status || 'pending';
         businessOrdersCreated.labels(orgLabel, orderStatus, roleLabel).inc();
         break;
-        
+
       case 'user_registered':
         const regStatus = additionalLabels.status || 'success';
         businessUserRegistrations.labels(orgLabel, roleLabel, regStatus).inc();
         break;
-        
+
       case 'file_uploaded':
         const fileType = additionalLabels.file_type || 'unknown';
         const uploadStatus = additionalLabels.status || 'success';
         businessFileUploads.labels(orgLabel, fileType, uploadStatus).inc();
         break;
-        
+
       case 'organization_created':
         const createdByRole = additionalLabels.created_by_role || roleLabel;
         const orgStatus = additionalLabels.status || 'success';
         businessOrganizationsCreated.labels(createdByRole, orgStatus).inc();
         break;
-        
+
       case 'quote_generated':
         const quoteStatus = additionalLabels.status || 'success';
         businessQuotesGenerated.labels(orgLabel, roleLabel, quoteStatus).inc();
         break;
-        
+
       default:
         // For unknown events, log them for visibility
         console.log(`Business event tracked: ${event}`, {
@@ -197,18 +198,18 @@ export function trackBusinessEvent(event: string, req: MetricsRequest, additiona
 export function errorMetricsMiddleware(error: any, req: MetricsRequest, res: Response, next: NextFunction) {
   try {
     const orgLabel = getOrganizationLabel(req);
-    
+
     // Import the error counter here to avoid circular dependencies
     const { errorTotal } = require('../lib/metrics');
-    
+
     // Determine error type and severity
     let errorType = 'unknown';
     let severity = 'error';
-    
+
     if (error.name) {
       errorType = error.name.toLowerCase();
     }
-    
+
     if (error.status || error.statusCode) {
       const status = error.status || error.statusCode;
       if (status >= 400 && status < 500) {
@@ -217,7 +218,7 @@ export function errorMetricsMiddleware(error: any, req: MetricsRequest, res: Res
         severity = 'error';
       }
     }
-    
+
     // Determine component based on the request path
     let component = 'unknown';
     const path = req.originalUrl || req.url;
@@ -234,12 +235,12 @@ export function errorMetricsMiddleware(error: any, req: MetricsRequest, res: Res
     } else {
       component = 'frontend';
     }
-    
+
     errorTotal.labels(errorType, severity, component, orgLabel).inc();
   } catch (metricsError) {
     console.error('Error in error metrics middleware:', metricsError);
   }
-  
+
   // Always continue to the next error handler
   next(error);
 }
@@ -252,9 +253,35 @@ export function trackSecurityEvent(eventType: string, req: MetricsRequest, sever
   try {
     const { securityEvents } = require('../lib/metrics');
     const orgLabel = getOrganizationLabel(req);
-    
+
     securityEvents.labels(eventType, severity, orgLabel).inc();
   } catch (error) {
     console.error('Error tracking security event:', error);
   }
+}
+
+/**
+ * Helper function to safely get organization from request context
+ */
+export function getOrganizationLabel(req: any): string {
+  // Handle case where req is undefined (during module import)
+  if (!req || !req.user) return 'none';
+
+  const orgId = req.user?.organization_id;
+  if (!orgId) return 'none';
+
+  // Hash organization ID for privacy - don't expose actual org IDs in metrics
+  const hash = createHash('sha256').update(orgId).digest('hex').substring(0, 8);
+  return `org_${hash}`;
+}
+
+/**
+ * Helper function to safely get user role from request context
+ */
+export function getUserRoleLabel(req: any): string {
+  // Handle case where req is undefined (during module import)
+  if (!req || !req.user) return 'anonymous';
+
+  const role = req.user?.role;
+  return role || 'anonymous';
 }
