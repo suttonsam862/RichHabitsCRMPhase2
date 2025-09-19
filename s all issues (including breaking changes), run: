@@ -1,0 +1,69 @@
+         column_name         |          data_type          | is_nullable 
+-----------------------------+-----------------------------+-------------
+ id                          | character varying           | NO
+ instance_id                 | uuid                        | YES
+ id                          | uuid                        | NO
+ email                       | text                        | NO
+ aud                         | character varying           | YES
+ password_hash               | text                        | YES
+ full_name                   | text                        | NO
+ role                        | character varying           | YES
+ phone                       | text                        | YES
+ email                       | character varying           | YES
+ encrypted_password          | character varying           | YES
+ role                        | text                        | NO
+ avatar_url                  | text                        | YES
+ email_confirmed_at          | timestamp with time zone    | YES
+ is_active                   | integer                     | NO
+ invited_at                  | timestamp with time zone    | YES
+ organization_id             | character varying           | YES
+ confirmation_token          | character varying           | YES
+ confirmation_sent_at        | timestamp with time zone    | YES
+ address_line1               | text                        | YES
+ recovery_token              | character varying           | YES
+ address_line2               | text                        | YES
+ recovery_sent_at            | timestamp with time zone    | YES
+ city                        | text                        | YES
+ email_change_token_new      | character varying           | YES
+ state                       | text                        | YES
+ postal_code                 | text                        | YES
+ email_change                | character varying           | YES
+ email_change_sent_at        | timestamp with time zone    | YES
+ country                     | text                        | YES
+ last_sign_in_at             | timestamp with time zone    | YES
+ last_login                  | timestamp without time zone | YES
+ raw_app_meta_data           | jsonb                       | YES
+ password_reset_token        | text                        | YES
+ password_reset_expires      | timestamp without time zone | YES
+ raw_user_meta_data          | jsonb                       | YES
+ email_verified              | integer                     | YES
+ is_super_admin              | boolean                     | YES
+ created_at                  | timestamp with time zone    | YES
+ notes                       | text                        | YES
+ created_by                  | uuid                        | YES
+ updated_at                  | timestamp with time zone    | YES
+ phone                       | text                        | YES
+ created_at                  | timestamp without time zone | NO
+ updated_at                  | timestamp without time zone | NO
+ phone_confirmed_at          | timestamp with time zone    | YES
+ subrole                     | text                        | YES
+ phone_change                | text                        | YES
+ job_title                   | text                        | YES
+ phone_change_token          | character varying           | YES
+ phone_change_sent_at        | timestamp with time zone    | YES
+ department                  | text                        | YES
+ hire_date                   | timestamp without time zone | YES
+ confirmed_at                | timestamp with time zone    | YES
+ email_change_token_current  | character varying           | YES
+ permissions                 | jsonb                       | YES
+ page_access                 | jsonb                       | YES
+ email_change_confirm_status | smallint                    | YES
+ initial_temp_password       | text                        | YES
+ banned_until                | timestamp with time zone    | YES
+ reauthentication_token      | character varying           | YES
+ reauthentication_sent_at    | timestamp with time zone    | YES
+ is_sso_user                 | boolean                     | NO
+ deleted_at                  | timestamp with time zone    | YES
+ is_anonymous                | boolean                     | NO
+(65 rows)
+
