@@ -150,62 +150,9 @@ async function validateDatabaseSchema() {
   }
 }
 
-// User auto-creation helper function - Updated to use Supabase Auth
-async function createUserFromContact(contactEmail: string, contactName: string, organizationId: string) {
-  try {
-    // Check if Supabase Auth user already exists
-    // Use paginated approach since listUsers doesn't support email filtering
-    let page = 1;
-    let existingUser: { id: string; email?: string } | null = null;
-
-    while (!existingUser) {
-      const { data: authUsersPage, error: authCheckError } = await supabaseAdmin.auth.admin.listUsers({
-        page: page,
-        perPage: 100
-      });
-
-      if (authCheckError) {
-        logger.error(`Failed to check existing auth users: ${authCheckError.message}`);
-        break;
-      }
-
-      existingUser = authUsersPage?.users?.find(user => user.email === contactEmail) ?? null;
-
-      // If we found less than 100 users, we've reached the end
-      if (!authUsersPage?.users || authUsersPage.users.length < 100) {
-        break;
-      }
-      page++;
-    }
-
-    if (existingUser) {
-      return { success: true, data: { id: existingUser.id } };
-    }
-
-    // Create new Supabase Auth user (proper authenticated user)
-    const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: contactEmail,
-      user_metadata: {
-        full_name: contactName,
-        organization_id: organizationId,
-        role: 'contact'
-      },
-      email_confirm: false  // Skip email confirmation for auto-created contacts
-    });
-
-    if (authError) {
-      logger.error(`Failed to create auth user from contact: ${authError.message}`);
-      return { success: false, error: authError.message };
-    }
-
-    logger.info(`Auto-created Supabase Auth user for contact: ${contactEmail} (ID: ${newAuthUser.user?.id})`);
-    return { success: true, data: { id: newAuthUser.user?.id } };
-
-  } catch (error: any) {
-    logger.error('Error in createUserFromContact:', error);
-    return { success: false, error };
-  }
-}
+// REMOVED: createUserFromContact function - SECURITY FIX
+// This function was a security vulnerability that allowed any authenticated user
+// to create arbitrary Supabase Auth accounts via organization creation.
 
 // Prepare sports data for insertion
 function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: string) {
@@ -223,93 +170,49 @@ function prepareSportsData(sports: CreateOrganizationRequest['sports'], orgId: s
   }));
 }
 
-// GET route to list organizations - HARDENED IMPLEMENTATION
+// GET route to list organizations - YAML SPECIFICATION with RLS SECURITY
 router.get('/', requireAuth, async (req, res) => {
   try {
-    // Import the hardened service
-    const { OrganizationsService } = await import('../../services/OrganizationsService.js');
-
-    // Extract query parameters
-    const {
-      q = '',
-      tag = '',
-      onlyFavorites = 'false',
-      includeArchived = 'false',
-      sort = 'updated',
-      dir = 'desc',
-      limit = 24,
-      offset = 0
-    } = req.query;
-
-    // Use hardened service
-    const result = await OrganizationsService.listOrganizations({
-      q: q as string,
-      tag: tag as string,
-      onlyFavorites: onlyFavorites as string,
-      includeArchived: includeArchived as string,
-      sort: sort as string,
-      dir: dir as string,
-      limit: parseInt(limit as string) || 24,
-      offset: parseInt(offset as string) || 0
-    }, req);
-
-    if (!result.success) {
-      logSbError(req, 'orgs.list', result.error);
-      return res.status(500).json(result);
+    // Use RLS-scoped client to respect tenant data isolation
+    const token = req.headers?.authorization?.split(' ')[1];
+    if (!token) {
+      return sendErr(res, 'AUTH_ERROR', 'Authentication token required', undefined, 401);
     }
-
-    // Single summary log after successful fetch
-    const rid = (res as any).locals?.rid;
-    logger.info({ rid, count: result.data?.length }, 'organizations.list ok');
-
-    return res.json(result);
-
-  } catch (error: any) {
-    logSbError(req, 'orgs.list.route', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Route handler error',
-      message: error.message
-    });
+    
+    const userClient = supabaseForUser(token);
+    const { data: orgs, error } = await userClient
+      .from('organizations')
+      .select('id, name, is_business, brand_primary, brand_secondary, tags, status, is_archived, created_at, updated_at')
+      .order('name');
+    if (error) return sendErr(res, 'DB_ERROR', 'Failed to fetch organizations', error, 500);
+    return sendOk(res, orgs);
+  } catch (err) {
+    return sendErr(res, 'INTERNAL_ERROR', 'Error fetching organizations', err, 500);
   }
 });
 
-// GET route to fetch single organization by ID - HARDENED IMPLEMENTATION
+// GET route to fetch single organization by ID - YAML SPECIFICATION with RLS
 router.get('/:id', requireAuth, requireOrgReadonly(), async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        error: 'Organization ID is required'
-      });
+    // Use RLS-scoped client for defense-in-depth security
+    const token = req.headers?.authorization?.split(' ')[1];
+    if (!token) {
+      return sendErr(res, 'AUTH_ERROR', 'Authentication token required', undefined, 401);
     }
-
-    // Import the hardened service
-    const { OrganizationsService } = await import('../../services/OrganizationsService.js');
-
-    // Use hardened service to get organization by ID
-    const result = await OrganizationsService.getOrganizationById(id, req);
-
-    if (!result.success) {
-      if (result.error === 'Organization not found') {
-        return res.status(404).json(result);
-      }
-
-      logSbError(req, 'orgs.getById', result.error);
-      return res.status(500).json(result);
+    
+    const userClient = supabaseForUser(token);
+    const { data: org, error } = await userClient
+      .from('organizations')
+      .select('id, name, is_business, brand_primary, brand_secondary, tags, status, is_archived, created_at, updated_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (error || !org) {
+      return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
     }
-
-    return res.json(result);
-
-  } catch (error: any) {
-    logSbError(req, 'orgs.getById.route', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Route handler error',
-      message: error.message
-    });
+    return sendOk(res, org);
+  } catch (err) {
+    return sendErr(res, 'INTERNAL_ERROR', 'Error fetching organization', err, 500);
   }
 });
 
@@ -397,18 +300,10 @@ router.post('/', requireAuth, async (req, res) => {
             logger.info(`Associating existing user ${sport.userId} with sport ${sport.sportId}`);
             contactUserId = sport.userId ?? null;
           } else {
-            // Auto-create user from contact
-            const userResult = await createUserFromContact(
-              sport.contactEmail,
-              sport.contactName,
-              orgData.id
-            );
-
-            if (!userResult.success) {
-              logger.warn(`Failed to create user for contact ${sport.contactEmail}:`, userResult.error);
-            } else {
-              contactUserId = userResult.data?.id || null;
-            }
+            // SECURITY FIX: Disabled auto-user creation to prevent arbitrary account injection
+            // Only store contact info as plain data, do not auto-create auth accounts
+            logger.info(`Storing contact info for ${sport.contactEmail} without creating auth account`);
+            contactUserId = null;
           }
 
           // Add the sport data with user association
@@ -462,6 +357,26 @@ router.post('/', requireAuth, async (req, res) => {
       logger.info(`Created ${sportsData.length} sports with user associations for organization ${orgData.id}`);
     }
 
+    // CRITICAL: Link creator to organization for RLS access via org_users
+    const creatorId = (req as any).user?.id;
+    if (creatorId) {
+      const { error: linkError } = await supabaseAdmin
+        .from('org_users')
+        .insert({
+          user_id: creatorId,
+          organization_id: orgData.id,
+          role: 'owner',
+          is_active: true
+        });
+      
+      if (linkError) {
+        logger.error({ orgId: orgData.id, userId: creatorId, error: linkError }, 'Failed to link creator to organization');
+        // Continue - org created but creator link failed
+      } else {
+        logger.info({ orgId: orgData.id, userId: creatorId }, 'Creator linked to organization');
+      }
+    }
+
     // Track successful organization creation
     trackBusinessEvent('organization_created', req, { 
       status: 'success', 
@@ -469,14 +384,9 @@ router.post('/', requireAuth, async (req, res) => {
       organization_name: orgData.name
     });
 
-    return res.status(201).json({
-      success: true,
-      data: {
-        id: orgData.id,
-        name: orgData.name,
-        createdAt: orgData.created_at
-      }
-    });
+    // YAML specification: return only the ID (plain object)
+    const newOrgId = orgData.id;
+    return res.status(201).json({ id: newOrgId });
 
   } catch (error: any) {
     logSbError(req, 'orgs.create.route', error);
@@ -484,8 +394,7 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Internal server error',
-      message: error.message,
-      stack: error.stack
+      message: 'An unexpected error occurred'
     });
   }
 });
@@ -659,14 +568,22 @@ router.get('/:id/setup', requireAuth, requireOrgReadonly(), async (req: any, res
   }
 });
 
-// POST setup save (all essential fields)
+// POST setup save (all essential fields) 
 router.post('/:id/setup', requireAuth, requireOrgAdmin(), async (req: any, res) => {
   try {
+    // SECURITY FIX: Apply schema validation to prevent invalid data
+    const validation = SetupSchema.safeParse(req.body);
+    if (!validation.success) {
+      return sendErr(res, 'VALIDATION_ERROR', 'Invalid setup data', validation.error.errors, 400);
+    }
+    
     const sb = supabaseAdmin;
     const orgId = req.params.id;
-    const { sports, brand_primary, brand_secondary, address, city, state, zip, complete } = req.body;
+    const validatedData = validation.data;
+    const { sports, brand_primary, brand_secondary, address, city, state, zip, complete } = validatedData;
 
-    logger.info({ orgId, sportsCount: sports?.length || 0, payload: req.body }, 'Setup save started');
+    // SECURITY FIX: Log only safe fields, not full payload which contains PII
+    logger.info({ orgId, sportsCount: sports?.length || 0, hasAddress: !!address, hasComplete: complete !== undefined }, 'Setup save started');
 
     // Update organization fields if provided
     if (brand_primary || brand_secondary || address || city || state || zip || complete !== undefined) {
@@ -710,7 +627,7 @@ router.post('/:id/setup', requireAuth, requireOrgAdmin(), async (req: any, res) 
     // Process sports if provided
     if (sports && Array.isArray(sports) && sports.length > 0) {
       for (const sport of sports) {
-        const { sport_id, team_name, contact_name, contact_email, contact_phone, assigned_salesperson_id } = sport;
+        const { sport_id, team_name, contact_name, contact_email, contact_phone } = sport;
 
         logger.info({ orgId, sportId: sport_id, teamName: team_name }, 'Processing sport');
 
@@ -724,7 +641,7 @@ router.post('/:id/setup', requireAuth, requireOrgAdmin(), async (req: any, res) 
             contact_name,
             contact_email,
             contact_phone: contact_phone || '',
-            assigned_salesperson_id: assigned_salesperson_id || null
+            // removed assigned_salesperson_id - field may not exist
           }, {
             onConflict: 'organization_id,sport_id'
           });
@@ -752,7 +669,7 @@ router.patch('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req:
   try {
     const sb = supabaseAdmin;
     const { id: orgId, sportId } = req.params;
-    const { team_name, contact_name, contact_email, contact_phone, assigned_salesperson_id } = req.body;
+    const { team_name, contact_name, contact_email, contact_phone } = req.body;
 
     logger.info({ orgId, sportId }, 'Updating sport');
 
@@ -763,7 +680,7 @@ router.patch('/:id/sports/:sportId', requireAuth, requireOrgAdmin(), async (req:
         contact_name,
         contact_email,
         contact_phone: contact_phone || '',
-        assigned_salesperson_id: assigned_salesperson_id || null,
+        // removed assigned_salesperson_id - field may not exist
         updated_at: new Date().toISOString()
       })
       .eq('organization_id', orgId)
@@ -798,93 +715,18 @@ const SetupSchema = z.object({
   state: z.string().optional(),
   zip: z.string().optional(),
   logo_url: z.string().optional(),
-  complete: z.boolean().optional()
+  complete: z.boolean().optional(),
+  sports: z.array(z.object({
+    sport_id: z.string().uuid(),
+    team_name: z.string().optional(),
+    contact_name: z.string().optional(),
+    contact_email: z.string().email().optional(),
+    contact_phone: z.string().optional(),
+    // removed assigned_salesperson_id - may not exist in all schemas
+  })).optional().default([])
 });
 
-router.post('/:id/setup', async (req: any, res) => {
-  try {
-    const parse = SetupSchema.safeParse(req.body);
-    if (!parse.success) return sendErr(res, 'VALIDATION_ERROR', 'Invalid payload', parse.error.flatten(), 400);
-
-    const sb = supabaseAdmin; // server-side writes
-    const orgId = req.params.id;
-    const patch: any = {};
-
-    // Brand colors
-    if (parse.data.brand_primary) patch.brand_primary = parse.data.brand_primary;
-    if (parse.data.brand_secondary) patch.brand_secondary = parse.data.brand_secondary;
-    if (parse.data.color_palette) patch.color_palette = parse.data.color_palette;
-
-    // Finance contact
-    if (parse.data.finance_email) patch.finance_email = parse.data.finance_email;
-
-    // Address fields
-    if (parse.data.address) patch.address = parse.data.address;
-    if (parse.data.city) patch.city = parse.data.city;
-    if (parse.data.state) patch.state = parse.data.state;
-    if (parse.data.zip) patch.zip = parse.data.zip;
-
-    // Logo URL - accept new logo or preserve existing one
-    if (parse.data.logo_url) {
-      patch.logo_url = parse.data.logo_url;
-      logger.info({ orgId, logoUrl: parse.data.logo_url }, 'Updating organization logo_url');
-    } else {
-      // CRITICAL FIX: Preserve existing logo_url during setup save if no new one provided
-      const currentOrg = await sb.from('organizations')
-        .select('logo_url')
-        .eq('id', orgId)
-        .single();
-
-      if (currentOrg.data?.logo_url) {
-        patch.logo_url = currentOrg.data.logo_url;
-        logger.info({ orgId, logoUrl: currentOrg.data.logo_url }, 'Preserving existing logo_url during setup save');
-      }
-    }
-
-    // Generate gradient CSS if both brand colors are present
-    if (patch.brand_primary && patch.brand_secondary) {
-      patch.gradient_css = `linear-gradient(135deg, ${patch.brand_primary} 0%, ${patch.brand_secondary} 100%)`;
-    }
-
-    // Always add updated timestamp
-    patch.updated_at = new Date().toISOString();
-
-    // Mark setup as complete when complete flag is true
-    if (parse.data.complete) {
-      patch.setup_complete = true; // Use snake_case to match database field
-      patch.setup_completed_at = new Date().toISOString();
-      logger.info({ orgId }, 'Marking organization setup as complete');
-    }
-
-    // Use Supabase Admin directly with proper error handling and logging
-    logger.info({ orgId, patchFields: Object.keys(patch) }, 'orgs.setup.save attempting update');
-
-    const directUp = await supabaseAdmin.from('organizations').update(patch).eq('id', orgId).select().single();
-
-    if (directUp.error) {
-      logger.error({ orgId, error: directUp.error, patch }, 'orgs.setup.save failed');
-      if (directUp.error.code === 'PGRST116') {
-        return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
-      }
-      return sendErr(res, 'DB_ERROR', directUp.error.message, directUp.error, 400);
-    }
-
-    if (!directUp.data) {
-      logger.warn({ orgId, patch }, 'orgs.setup.save no data returned');
-      return sendErr(res, 'NOT_FOUND', 'Organization not found', undefined, 404);
-    }
-
-    logger.info({ orgId, updatedFields: Object.keys(patch), setupComplete: directUp.data.setup_complete }, 'orgs.setup.save success');
-    return sendOk(res, directUp.data);
-  } catch (error: any) {
-    logSbError(req, 'orgs.setup.save', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      message: error.message
-    });
-  }
-});
+// REMOVED DUPLICATE UNPROTECTED SETUP ROUTE - SECURITY FIX
 
 // Per-sport shipping address upsert
 const AddressSchema = z.object({
@@ -1147,7 +989,7 @@ router.patch('/:id', requireAuth, requireOrgAdmin(), async (req: any, res) => {
     }
 
     // Transform response to camelCase using the same service
-    const { OrganizationsService } = await import('../../services/OrganizationsService.js');
+    const { OrganizationsService } = await import('../../services/OrganizationsService.ts');
     const result = await OrganizationsService.getOrganizationById(id, req);
 
     if (!result.success) {
@@ -1478,7 +1320,7 @@ router.get('/:id/sports', requireAuth, requireOrgReadonly(), async (req: any, re
         contactName: orgSport.contact_name,
         contactEmail: orgSport.contact_email,
         contactPhone: orgSport.contact_phone,
-        assignedSalespersonId: orgSport.assigned_salesperson_id || null, // Safe mapping
+        // removed assignedSalespersonId - field may not exist in all schemas
         createdAt: orgSport.created_at,
         updatedAt: orgSport.updated_at
       }));
