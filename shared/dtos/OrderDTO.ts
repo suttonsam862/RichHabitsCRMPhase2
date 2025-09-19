@@ -2,64 +2,84 @@ import { z } from "zod";
 
 /**
  * Order DTO schemas for order management API
+ * Aligned with actual database schema (orders & order_items tables)
  */
-
 
 export const OrderItemDTO = z.object({
   id: z.string(),
-  productId: z.string(),
-  productName: z.string(),
-  productSku: z.string(),
+  orgId: z.string(),
+  orderId: z.string(),
+  productId: z.string().optional(),
   variantId: z.string().optional(),
-  variantName: z.string().optional(),
+  nameSnapshot: z.string().optional(),
+  skuSnapshot: z.string().optional(),
+  priceSnapshot: z.number().optional(),
   quantity: z.number(),
-  unitPrice: z.number(),
-  totalPrice: z.number(),
-  statusCode: z.enum(['pending', 'design', 'approved', 'manufacturing', 'shipped', 'done']),
-  customizations: z.record(z.string(), z.string()).optional(),
-});
-
-export const OrderTotalsDTO = z.object({
-  subtotal: z.number(),
-  tax: z.number(),
-  shipping: z.number(),
-  discount: z.number().optional(),
-  total: z.number(),
-});
-
-export const OrderDTO = z.object({
-  id: z.string(),
-  orderNumber: z.string(),
-  quoteId: z.string().optional(),
-  organizationId: z.string().optional(),
-  customerName: z.string(),
-  customerEmail: z.string().email(),
-  customerPhone: z.string().optional(),
-  statusCode: z.enum(['consultation', 'design', 'manufacturing', 'shipped', 'completed']),
-  items: z.array(OrderItemDTO),
-  totals: OrderTotalsDTO,
-  shippingAddress: z.object({
-    street: z.string(),
-    city: z.string(),
-    state: z.string(),
-    zipCode: z.string(),
-    country: z.string().default("US"),
-  }).optional(),
-  deliveryDate: z.string().optional(),
-  notes: z.string().optional(),
-  assignedTo: z.string().optional(), // User ID
+  statusCode: z.string().default("pending_design"),
+  designerId: z.string().optional(),
+  manufacturerId: z.string().optional(),
+  pantoneJson: z.record(z.any()).optional(),
+  buildOverridesText: z.string().optional(),
+  variantImageUrl: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 
+export const OrderTotalsDTO = z.object({
+  totalAmount: z.number().optional(),
+  revenueEstimate: z.number().optional(),
+});
+
+export const OrderDTO = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  customerId: z.string(),
+  salespersonId: z.string().optional(),
+  sportId: z.string().optional(),
+  code: z.string(), // Order number (ORD-YYYYMMDD-XXXX)
+  customerContactName: z.string().optional(),
+  customerContactEmail: z.string().optional(),
+  customerContactPhone: z.string().optional(),
+  statusCode: z.string().default("draft"),
+  totalAmount: z.number().optional(),
+  revenueEstimate: z.number().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  // Legacy fields for backwards compatibility
+  organizationId: z.string().optional(),
+  orderNumber: z.string().optional(),
+  customerName: z.string().optional(),
+  items: z.array(OrderItemDTO).optional(),
+});
+
 export const CreateOrderDTO = OrderDTO.omit({
   id: true,
+  code: true,
+  createdAt: true,
+  updatedAt: true,
   orderNumber: true,
+}).extend({
+  // Allow items to be provided during order creation
+  items: z.array(OrderItemDTO.omit({ id: true, orderId: true, createdAt: true, updatedAt: true })).optional(),
+});
+
+export const UpdateOrderDTO = CreateOrderDTO.partial();
+
+// Additional specialized DTOs
+export const CreateOrderItemDTO = OrderItemDTO.omit({
+  id: true,
+  orderId: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const UpdateOrderDTO = CreateOrderDTO.partial();
+export const UpdateOrderItemDTO = CreateOrderItemDTO.partial();
+
+export const CancelOrderDTO = z.object({
+  reason: z.string().optional(),
+});
 
 // TypeScript types
 export type OrderType = z.infer<typeof OrderDTO>;
@@ -67,3 +87,6 @@ export type OrderItemType = z.infer<typeof OrderItemDTO>;
 export type OrderTotalsType = z.infer<typeof OrderTotalsDTO>;
 export type CreateOrderType = z.infer<typeof CreateOrderDTO>;
 export type UpdateOrderType = z.infer<typeof UpdateOrderDTO>;
+export type CreateOrderItemType = z.infer<typeof CreateOrderItemDTO>;
+export type UpdateOrderItemType = z.infer<typeof UpdateOrderItemDTO>;
+export type CancelOrderType = z.infer<typeof CancelOrderDTO>;
