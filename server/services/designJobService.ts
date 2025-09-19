@@ -30,7 +30,7 @@ export class DesignJobService {
     designJobId: string,
     orgId: string,
     actorUserId?: string,
-    submissionData: SubmitDesignType = {}
+    submissionData: SubmitDesignType = { submissionType: 'initial' }
   ): Promise<DesignJobType> {
     try {
       const { assetIds, notes, submissionType } = submissionData;
@@ -73,8 +73,8 @@ export class DesignJobService {
     sb: SupabaseClient,
     designJobId: string,
     orgId: string,
-    actorUserId?: string,
-    reviewData: ReviewDesignType
+    reviewData: ReviewDesignType,
+    actorUserId?: string
   ): Promise<DesignJobType> {
     try {
       const { approved, feedback, requestRevisions, revisionNotes } = reviewData;
@@ -190,7 +190,7 @@ export class DesignJobService {
       };
 
       // Create the work order using WorkOrderService
-      const workOrder = await WorkOrderService.createWorkOrder(sb, workOrderData, actorUserId);
+      const workOrder = await WorkOrderService.createWorkOrder(sb, workOrderData);
 
       console.log(`Successfully created work order ${workOrder.id} for approved design job ${approvedDesignJob.id}`);
 
@@ -431,7 +431,7 @@ export class DesignJobService {
           specializations,
           hourly_rate,
           is_active,
-          users:user_id(full_name)
+          users!inner(full_name)
         `)
         .eq('is_active', true);
       
@@ -464,7 +464,7 @@ export class DesignJobService {
         
         workloads.push({
           designerId: designer.id,
-          name: designer.users?.full_name || 'Unknown Designer',
+          name: (designer.users as any)?.full_name || 'Unknown Designer',
           specializations: designer.specializations || [],
           currentJobs: jobCount,
           capacityLimit,
@@ -696,8 +696,8 @@ export class DesignJobService {
       }
 
       // Check if the operation was successful
-      if (!result.success) {
-        const errorMessage = result.error_message || 'Unknown error in atomic status update';
+      if (!(result as any).success) {
+        const errorMessage = (result as any).error_message || 'Unknown error in atomic status update';
         
         // Handle access denied errors specifically for better error reporting
         if (errorMessage.includes('Access denied') || 
@@ -710,17 +710,18 @@ export class DesignJobService {
       }
 
       // Return the updated design job data
+      const resultData = result as any;
       return {
-        id: result.id,
-        orgId: result.org_id,
-        orderItemId: result.order_item_id,
-        title: result.title,
-        brief: result.brief,
-        priority: result.priority,
-        statusCode: result.status_code,
-        assigneeDesignerId: result.assignee_designer_id,
-        createdAt: result.created_at,
-        updatedAt: result.updated_at,
+        id: resultData.id,
+        orgId: resultData.org_id,
+        orderItemId: resultData.order_item_id,
+        title: resultData.title,
+        brief: resultData.brief,
+        priority: resultData.priority,
+        statusCode: resultData.status_code,
+        assigneeDesignerId: resultData.assignee_designer_id,
+        createdAt: resultData.created_at,
+        updatedAt: resultData.updated_at,
       };
     } catch (error) {
       console.error('Error updating design job status:', error);

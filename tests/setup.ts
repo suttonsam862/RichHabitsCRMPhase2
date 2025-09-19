@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi, afterEach, beforeAll, afterAll } from 'vitest';
-import { setupTestDatabase, cleanupTestData } from './helpers/test-setup';
+import { initializeTestDatabase, cleanTestDatabase, verifyTestDatabase } from './helpers/test-db';
 
 // Set test environment
 process.env.NODE_ENV = 'test';
@@ -49,7 +49,8 @@ vi.mock('crypto', async () => {
 // Setup global test database connection
 beforeAll(async () => {
   try {
-    await setupTestDatabase();
+    await verifyTestDatabase();
+    await initializeTestDatabase();
   } catch (error) {
     console.error('Failed to setup test database:', error);
     process.exit(1);
@@ -59,7 +60,7 @@ beforeAll(async () => {
 // Cleanup after all tests
 afterAll(async () => {
   try {
-    await cleanupTestData();
+    await cleanTestDatabase();
   } catch (error) {
     console.error('Failed to cleanup test data:', error);
   }

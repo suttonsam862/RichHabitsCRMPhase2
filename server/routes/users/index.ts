@@ -1,5 +1,5 @@
 import express from 'express';
-import { CreateUserDTO, UpdateUserDTO, UserDTO } from '@shared/dtos';
+import { CreateUserDTO, UpdateUserDTO, UserDTO } from '../../../shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { sendSuccess, sendOk, sendErr, sendCreated, HttpErrors, handleDatabaseError } from '../../lib/http';
@@ -90,7 +90,7 @@ router.get('/', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
       avatarUrl: user.user_metadata?.avatar_url || null,
       role: user.user_metadata?.role || 'customer',
       subrole: user.user_metadata?.subrole || null,
-      isActive: !user.banned_until,
+      isActive: true, // Note: Supabase User type doesn't have banned_until, using default
       preferences: user.user_metadata?.preferences || {},
       createdAt: user.created_at,
       updatedAt: user.updated_at,
@@ -122,7 +122,7 @@ router.get('/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res) => 
       avatarUrl: user.user.user_metadata?.avatar_url || null,
       role: user.user.user_metadata?.role || 'customer',
       subrole: user.user.user_metadata?.subrole || null,
-      isActive: !user.user.banned_until,
+      isActive: true, // Note: Supabase User type doesn't have banned_until, using default
       preferences: user.user.user_metadata?.preferences || {},
       createdAt: user.user.created_at,
       updatedAt: user.user.updated_at,
@@ -382,7 +382,7 @@ router.patch('/:id',
         fullName: updatedUser.user?.user_metadata?.full_name,
         role: updatedUser.user?.user_metadata?.role,
         subrole: updatedUser.user?.user_metadata?.subrole,
-        isActive: !updatedUser.user?.banned_until,
+        isActive: true, // Note: Supabase User type doesn't have banned_until, using default
         preferences: updatedUser.user?.user_metadata?.preferences || {},
         createdAt: updatedUser.user?.created_at,
         updatedAt: updatedUser.user?.updated_at

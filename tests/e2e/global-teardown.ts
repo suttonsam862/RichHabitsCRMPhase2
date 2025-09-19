@@ -1,12 +1,12 @@
 import { FullConfig } from '@playwright/test';
-import { cleanupTestData } from '../helpers/test-setup';
+import { cleanTestDatabase } from '../helpers/test-db';
 
 async function globalTeardown(config: FullConfig) {
   console.log('🧹 Starting E2E test global teardown...');
   
   try {
     // Cleanup test data
-    await cleanupTestData();
+    await cleanTestDatabase();
     console.log('✅ Test data cleanup complete');
     
     // Additional global teardown can go here

@@ -13,6 +13,67 @@ export * from './WorkOrderDTO';
 export * from './OrderDTO';
 export * from './PoDTO';
 
+// Import FulfillmentDTO selectively to avoid conflicts with WorkOrder QualityCheck types
+export {
+  // Fulfillment DTOs (avoiding conflicts with WorkOrder QualityCheck types)
+  FulfillmentEventDTO,
+  CreateFulfillmentEventDTO,
+  ShippingAddressDTO,
+  PackageDimensionsDTO,
+  ShippingInfoDTO,
+  CreateShippingInfoDTO,
+  UpdateShippingInfoDTO,
+  CompletionRecordDTO,
+  CreateCompletionRecordDTO,
+  UpdateCompletionRecordDTO,
+  FulfillmentMilestoneDTO,
+  CreateFulfillmentMilestoneDTO,
+  UpdateFulfillmentMilestoneDTO,
+  StartFulfillmentDTO,
+  ShipOrderDTO,
+  DeliverOrderDTO,
+  CompleteOrderDTO,
+  FulfillmentStatusDTO,
+  FulfillmentDashboardItemDTO,
+  FulfillmentDashboardDTO,
+  // Quality Check types with unique names to avoid conflicts with WorkOrder types
+  QualityCheckDTO as FulfillmentQualityCheckDTO,
+  CreateQualityCheckDTO as CreateFulfillmentQualityCheckDTO,
+  UpdateQualityCheckDTO as UpdateFulfillmentQualityCheckDTO,
+  // Types
+  type FulfillmentEventType,
+  type CreateFulfillmentEventType,
+  type ShippingAddressType,
+  type PackageDimensionsType,
+  type ShippingInfoType,
+  type CreateShippingInfoType,
+  type UpdateShippingInfoType,
+  type QualityCheckType as FulfillmentQualityCheckType,
+  type CreateQualityCheckType as CreateFulfillmentQualityCheckType,
+  type UpdateQualityCheckType as UpdateFulfillmentQualityCheckType,
+  type CompletionRecordType,
+  type CreateCompletionRecordType,
+  type UpdateCompletionRecordType,
+  type FulfillmentMilestoneType,
+  type CreateFulfillmentMilestoneType,
+  type UpdateFulfillmentMilestoneType,
+  type StartFulfillmentType,
+  type ShipOrderType,
+  type DeliverOrderType,
+  type CompleteOrderType,
+  type FulfillmentStatusType,
+  type FulfillmentDashboardItemType,
+  type FulfillmentDashboardType,
+  // Constants
+  FULFILLMENT_EVENT_CODES,
+  FULFILLMENT_MILESTONE_CODES,
+  FULFILLMENT_STATUS_CODES,
+  SHIPPING_STATUS_CODES,
+  FULFILLMENT_STATUS_TRANSITIONS,
+  canTransitionFulfillmentStatus,
+  getDefaultFulfillmentMilestones
+} from './FulfillmentDTO';
+
 // Common response wrappers
 import { z } from "zod";
 

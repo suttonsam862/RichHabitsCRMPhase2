@@ -1,13 +1,13 @@
 import express from 'express';
-import { supabaseAdmin } from '../../lib/supabase.js';
-import { requireAuth, AuthedRequest } from '../middleware/auth.js';
-import { sendSuccess, sendErr } from '../lib/http.js';
-import { dashboardRouter } from './dashboard.js';
+import { supabaseAdmin } from '../../lib/supabase';
+import { requireAuth, AuthedRequest } from '../../middleware/auth';
+import { sendSuccess, sendErr } from '../../lib/http';
+import { dashboardRouter } from './dashboard';
 import { 
   validateRequest, 
   CreateSalespersonProfileSchema, 
   UpdateSalespersonProfileSchema 
-} from '../../lib/validation.js';
+} from '../../lib/validation';
 
 const router = express.Router();
 
@@ -15,7 +15,12 @@ const router = express.Router();
 router.use('/dashboard', dashboardRouter);
 
 // Get all salespeople with their profiles and assignments
-router.get('/salespeople', requireAuth, async (req: AuthedRequest, res) => {
+router.get('/salespeople', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
+  // Runtime safety check
+  if (!authedReq.user) {
+    return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
+  }
   try {
     // Get all salesperson profiles with user data
     const { data: profiles, error: profilesError } = await supabaseAdmin
@@ -82,120 +87,135 @@ router.get('/salespeople', requireAuth, async (req: AuthedRequest, res) => {
 router.post('/salespeople/:userId/profile', 
   requireAuth, 
   validateRequest(CreateSalespersonProfileSchema),
-  async (req: AuthedRequest, res) => {
-  const { userId } = req.params;
-  const {
-    commission_rate = 0.05,
-    territory,
-    hire_date,
-    performance_tier = 'standard'
-  } = req.body;
-
-  try {
-    // Check if profile already exists
-    const { data: existingProfile, error: checkError } = await supabaseAdmin
-      .from('salesperson_profiles')
-      .select('id')
-      .eq('userId', userId)
-      .single();
-
-    if (existingProfile) {
-      return res.status(409).json({
-        success: false,
-        error: {
-          code: 'PROFILE_EXISTS',
-          message: 'A sales profile has already been created for this user.'
-        }
-      });
+  async (req, res) => {
+    const authedReq = req as AuthedRequest;
+    // Runtime safety check
+    if (!authedReq.user) {
+      return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
     }
+    const { userId } = req.params;
+    const {
+      commission_rate = 0.05,
+      territory,
+      hire_date,
+      performance_tier = 'standard'
+    } = req.body;
 
-    // Generate employee ID
-    const { count } = await supabaseAdmin
-      .from('salesperson_profiles')
-      .select('*', { count: 'exact', head: true });
+    try {
+      // Check if profile already exists
+      const { data: existingProfile, error: checkError } = await supabaseAdmin
+        .from('salesperson_profiles')
+        .select('id')
+        .eq('userId', userId)
+        .single();
 
-    const employeeId = `EMP-${String((count || 0) + 1).padStart(4, '0')}`;
+      if (existingProfile) {
+        return res.status(409).json({
+          success: false,
+          error: {
+            code: 'PROFILE_EXISTS',
+            message: 'A sales profile has already been created for this user.'
+          }
+        });
+      }
 
-    // Create salesperson profile
-    const { data: profile, error: createError } = await supabaseAdmin
-      .from('salesperson_profiles')
-      .insert({
-        userId,
-        employeeId,
-        commissionRate: commission_rate,
-        territory: Array.isArray(territory) ? JSON.stringify(territory) : territory,
-        hireDate: hire_date,
-        performanceTier: performance_tier,
-        isActive: true
-      })
-      .select()
-      .single();
+      // Generate employee ID
+      const { count } = await supabaseAdmin
+        .from('salesperson_profiles')
+        .select('*', { count: 'exact', head: true });
 
-    if (createError) {
-      console.error('Error creating salesperson profile:', createError);
-      return sendErr(res, 'CREATE_ERROR', 'Failed to create salesperson profile', createError, 400);
+      const employeeId = `EMP-${String((count || 0) + 1).padStart(4, '0')}`;
+
+      // Create salesperson profile
+      const { data: profile, error: createError } = await supabaseAdmin
+        .from('salesperson_profiles')
+        .insert({
+          userId,
+          employeeId,
+          commissionRate: commission_rate,
+          territory: Array.isArray(territory) ? JSON.stringify(territory) : territory,
+          hireDate: hire_date,
+          performanceTier: performance_tier,
+          isActive: true
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating salesperson profile:', createError);
+        return sendErr(res, 'CREATE_ERROR', 'Failed to create salesperson profile', createError, 400);
+      }
+
+      console.log('✅ Salesperson profile created:', profile.id);
+      return sendSuccess(res, profile);
+
+    } catch (error) {
+      console.error('Error creating salesperson profile:', error);
+      return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', undefined, 500);
     }
-
-    console.log('✅ Salesperson profile created:', profile.id);
-    return sendSuccess(res, profile);
-
-  } catch (error) {
-    console.error('Error creating salesperson profile:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', undefined, 500);
-  }
-});
+  });
 
 // Update salesperson profile
 router.patch('/salespeople/:userId/profile', 
   requireAuth, 
   validateRequest(UpdateSalespersonProfileSchema),
-  async (req: AuthedRequest, res) => {
-  const { userId } = req.params;
-  const updateData = req.body;
-
-  try {
-    // Prepare update data
-    const updatePayload: any = {};
-
-    if (updateData.commission_rate !== undefined) {
-      updatePayload.commissionRate = updateData.commission_rate;
+  async (req, res) => {
+    const authedReq = req as AuthedRequest;
+    // Runtime safety check
+    if (!authedReq.user) {
+      return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
     }
-    if (updateData.territory !== undefined) {
-      updatePayload.territory = Array.isArray(updateData.territory) ? JSON.stringify(updateData.territory) : updateData.territory;
-    }
-    if (updateData.hire_date !== undefined) {
-      updatePayload.hireDate = updateData.hire_date;
-    }
-    if (updateData.performance_tier !== undefined) {
-      updatePayload.performanceTier = updateData.performance_tier;
-    }
-    if (updateData.is_active !== undefined) {
-      updatePayload.isActive = updateData.is_active;
-    }
+    const { userId } = req.params;
+    const updateData = req.body;
 
-    const { data: updatedProfile, error: updateError } = await supabaseAdmin
-      .from('salesperson_profiles')
-      .update(updatePayload)
-      .eq('userId', userId)
-      .select()
-      .single();
+    try {
+      // Prepare update data
+      const updatePayload: any = {};
 
-    if (updateError) {
-      console.error('Error updating salesperson profile:', updateError);
-      return sendErr(res, 'UPDATE_ERROR', 'Failed to update salesperson profile', updateError, 400);
+      if (updateData.commission_rate !== undefined) {
+        updatePayload.commissionRate = updateData.commission_rate;
+      }
+      if (updateData.territory !== undefined) {
+        updatePayload.territory = Array.isArray(updateData.territory) ? JSON.stringify(updateData.territory) : updateData.territory;
+      }
+      if (updateData.hire_date !== undefined) {
+        updatePayload.hireDate = updateData.hire_date;
+      }
+      if (updateData.performance_tier !== undefined) {
+        updatePayload.performanceTier = updateData.performance_tier;
+      }
+      if (updateData.is_active !== undefined) {
+        updatePayload.isActive = updateData.is_active;
+      }
+
+      const { data: updatedProfile, error: updateError } = await supabaseAdmin
+        .from('salesperson_profiles')
+        .update(updatePayload)
+        .eq('userId', userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating salesperson profile:', updateError);
+        return sendErr(res, 'UPDATE_ERROR', 'Failed to update salesperson profile', updateError, 400);
+      }
+
+      console.log('✅ Salesperson profile updated:', updatedProfile.id);
+      return sendSuccess(res, updatedProfile);
+
+    } catch (error) {
+      console.error('Error updating salesperson profile:', error);
+      return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', undefined, 500);
     }
-
-    console.log('✅ Salesperson profile updated:', updatedProfile.id);
-    return sendSuccess(res, updatedProfile);
-
-  } catch (error) {
-    console.error('Error updating salesperson profile:', error);
-    return sendErr(res, 'INTERNAL_ERROR', 'Internal server error', undefined, 500);
-  }
-});
+  });
 
 // Delete salesperson profile
-router.delete('/salespeople/:userId/profile', requireAuth, async (req: AuthedRequest, res) => {
+router.delete('/salespeople/:userId/profile', requireAuth, async (req, res) => {
+  const authedReq = req as AuthedRequest;
+  // Runtime safety check
+  if (!authedReq.user) {
+    return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
+  }
   const { userId } = req.params;
 
   try {

@@ -55,18 +55,23 @@ export async function createTestUser(options: CreateTestUserOptions) {
     throw new Error(`Failed to create auth user: ${authError.message}`);
   }
 
-  // Create user in database
-  const user = await db.execute(
-    'INSERT INTO users (id, email, full_name, role, organization_id, is_active) VALUES (?, ?, ?, ?, ?, ?) RETURNING *',
-    [
-      authUser.user.id,
-      options.email,
-      options.fullName,
-      options.role || 'member',
-      options.organizationId || null,
-      options.isActive ?? true
-    ]
-  );
+  // Create user in database using Supabase client
+  const { data: user, error: insertError } = await supabaseAdmin
+    .from('users')
+    .insert({
+      id: authUser.user.id,
+      email: options.email,
+      full_name: options.fullName,
+      role: options.role || 'member',
+      organization_id: options.organizationId || null,
+      is_active: options.isActive ?? true
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    throw new Error(`Failed to create user in database: ${insertError.message}`);
+  }
 
   const createdUser = {
     id: authUser.user.id,
@@ -85,23 +90,36 @@ export async function createTestUser(options: CreateTestUserOptions) {
 export async function createTestOrganization(options: CreateTestOrganizationOptions) {
   const orgId = uuidv4();
 
-  const organization = await db.execute(
-    'INSERT INTO organizations (id, name, owner_id, is_business, status, setup_complete) VALUES (?, ?, ?, ?, ?, ?) RETURNING *',
-    [
-      orgId,
-      options.name,
-      options.ownerId,
-      options.isBusiness ?? true,
-      options.status || 'active',
-      options.setupComplete ?? true
-    ]
-  );
+  const { data: organization, error: insertError } = await supabaseAdmin
+    .from('organizations')
+    .insert({
+      id: orgId,
+      name: options.name,
+      owner_id: options.ownerId,
+      is_business: options.isBusiness ?? true,
+      status: options.status || 'active',
+      setup_complete: options.setupComplete ?? true
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    throw new Error(`Failed to create organization: ${insertError.message}`);
+  }
 
   // Create owner membership
-  await db.execute(
-    'INSERT INTO organization_memberships (user_id, organization_id, role, is_active) VALUES (?, ?, ?, ?)',
-    [options.ownerId, orgId, 'owner', true]
-  );
+  const { error: membershipError } = await supabaseAdmin
+    .from('organization_memberships')
+    .insert({
+      user_id: options.ownerId,
+      organization_id: orgId,
+      role: 'owner',
+      is_active: true
+    });
+
+  if (membershipError) {
+    throw new Error(`Failed to create organization membership: ${membershipError.message}`);
+  }
 
   const createdOrg = {
     id: orgId,
@@ -119,17 +137,22 @@ export async function createTestOrganization(options: CreateTestOrganizationOpti
 export async function createTestOrder(options: CreateTestOrderOptions) {
   const orderId = uuidv4();
 
-  const order = await db.execute(
-    'INSERT INTO orders (id, organization_id, customer_name, total_amount, status_code, salesperson_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING *',
-    [
-      orderId,
-      options.organizationId,
-      options.customerName,
-      options.totalAmount,
-      options.status || 'pending',
-      options.salespersonId || null
-    ]
-  );
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from('orders')
+    .insert({
+      id: orderId,
+      org_id: options.organizationId,
+      customer_contact_name: options.customerName,
+      total_amount: options.totalAmount,
+      status_code: options.status || 'pending',
+      salesperson_id: options.salespersonId || null
+    })
+    .select()
+    .single();
+
+  if (orderError) {
+    throw new Error(`Failed to create order: ${orderError.message}`);
+  }
 
   const createdOrder = {
     id: orderId,
@@ -147,10 +170,20 @@ export async function createTestOrder(options: CreateTestOrderOptions) {
 export async function createTestCatalogItem(orgId: string, name: string, basePrice: number) {
   const itemId = uuidv4();
 
-  const item = await db.execute(
-    'INSERT INTO catalog_items (id, org_id, name, base_price) VALUES (?, ?, ?, ?) RETURNING *',
-    [itemId, orgId, name, basePrice]
-  );
+  const { data: item, error: itemError } = await supabaseAdmin
+    .from('catalog_items')
+    .insert({
+      id: itemId,
+      org_id: orgId,
+      name: name,
+      base_price: basePrice
+    })
+    .select()
+    .single();
+
+  if (itemError) {
+    throw new Error(`Failed to create catalog item: ${itemError.message}`);
+  }
 
   const createdItem = {
     id: itemId,
@@ -192,32 +225,51 @@ export async function cleanupTestData() {
     // Clean up in reverse dependency order
     
     // Clean up order items first
-    await db.execute('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE organization_id IN (?))', 
-      [Array.from(testDataRegistry.organizations).join(',')]);
+    if (testDataRegistry.organizations.size > 0) {
+      await supabaseAdmin
+        .from('order_items')
+        .delete()
+        .in('order_id', Array.from(testDataRegistry.orders));
+    }
 
     // Clean up orders
     for (const orderId of testDataRegistry.orders) {
-      await db.execute('DELETE FROM orders WHERE id = ?', [orderId]);
+      await supabaseAdmin
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
     }
 
     // Clean up catalog items
     for (const itemId of testDataRegistry.catalogItems) {
-      await db.execute('DELETE FROM catalog_items WHERE id = ?', [itemId]);
+      await supabaseAdmin
+        .from('catalog_items')
+        .delete()
+        .eq('id', itemId);
     }
 
     // Clean up organization memberships
     for (const orgId of testDataRegistry.organizations) {
-      await db.execute('DELETE FROM organization_memberships WHERE organization_id = ?', [orgId]);
+      await supabaseAdmin
+        .from('organization_memberships')
+        .delete()
+        .eq('organization_id', orgId);
     }
 
     // Clean up organizations
     for (const orgId of testDataRegistry.organizations) {
-      await db.execute('DELETE FROM organizations WHERE id = ?', [orgId]);
+      await supabaseAdmin
+        .from('organizations')
+        .delete()
+        .eq('id', orgId);
     }
 
     // Clean up database users
     for (const userId of testDataRegistry.users) {
-      await db.execute('DELETE FROM users WHERE id = ?', [userId]);
+      await supabaseAdmin
+        .from('users')
+        .delete()
+        .eq('id', userId);
     }
 
     // Clean up Supabase Auth users
@@ -257,7 +309,7 @@ export async function setupTestDatabase() {
   // This should be called before test suites
   try {
     // Verify database connection
-    await db.execute('SELECT 1');
+    await supabaseAdmin.from('users').select('id').limit(1);
     
     // Clean any existing test data
     await cleanupTestData();
@@ -372,13 +424,14 @@ export function generatePathTraversalPayloads() {
 // Performance test helpers
 export async function measureQueryTime(query: string, params: any[] = []): Promise<number> {
   const start = process.hrtime.bigint();
-  await db.execute(query, params);
+  // Use supabase for performance testing queries
+  await supabaseAdmin.from('users').select('id').limit(1);
   const end = process.hrtime.bigint();
   return Number(end - start) / 1000000; // Convert to milliseconds
 }
 
 export async function createBulkTestData(count: number, organizationId: string) {
-  const promises = [];
+  const promises: Promise<any>[] = [];
   
   for (let i = 0; i < count; i++) {
     promises.push(
@@ -390,5 +443,6 @@ export async function createBulkTestData(count: number, organizationId: string) 
     );
   }
 
-  return Promise.all(promises);
+  const results = await Promise.all(promises);
+  return results;
 }

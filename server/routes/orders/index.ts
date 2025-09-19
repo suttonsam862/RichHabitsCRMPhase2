@@ -1,18 +1,22 @@
 import express from 'express';
 import { z } from 'zod';
-import { CreateOrderDTO, UpdateOrderDTO, OrderDTO, CancelOrderDTO } from '@shared/dtos';
 import { 
+  CreateOrderDTO, 
+  UpdateOrderDTO, 
+  OrderDTO, 
+  CancelOrderDTO,
   StartFulfillmentDTO, 
   ShipOrderDTO, 
   DeliverOrderDTO, 
   CompleteOrderDTO,
   UpdateFulfillmentMilestoneDTO 
-} from '@shared/dtos/FulfillmentDTO';
+} from '../../../shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr, HttpErrors, handleDatabaseError } from '../../lib/http';
-import { requireAuth, AuthedRequest } from '../../middleware/auth';
+import { requireAuth } from '../../middleware/auth';
+import type { AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember } from '../../middleware/orgSecurity';
 import { 
   requireOrderRead, 
@@ -207,7 +211,7 @@ router.get('/stats', requireOrgMember(), asyncHandler(async (req: AuthedRequest,
       .select('total_amount')
       .eq('status_code', 'completed');
     
-    const averageOrderValue = allCompleted?.length > 0 
+    const averageOrderValue = (allCompleted && allCompleted.length > 0) 
       ? allCompleted.reduce((sum, order) => sum + (parseFloat(order.total_amount || '0')), 0) / allCompleted.length
       : 0;
     
@@ -219,7 +223,7 @@ router.get('/stats', requireOrgMember(), asyncHandler(async (req: AuthedRequest,
       .lt('due_date', now.toISOString());
     
     // Calculate on-time delivery rate (simplified)
-    const onTimeDeliveryRate = allCompleted?.length > 0 ? 85 : 0; // Simplified calculation
+    const onTimeDeliveryRate = (allCompleted && allCompleted.length > 0) ? 85 : 0; // Simplified calculation
     
     const stats = {
       totalOrders: totalOrders || 0,
@@ -251,7 +255,7 @@ router.post('/bulk-action', requireOrderBulkOps(), rateLimitOrderOperations(3, 6
   
   try {
     const sb = getAuthenticatedClient(req);
-    const results = [];
+    const results: Array<{orderId: string, success: boolean, error?: string}> = [];
     
     for (const orderId of orderIds) {
       try {
@@ -692,7 +696,7 @@ router.patch('/:id',
     sensitiveData: ['pricing', 'cost', 'internal_notes'] 
   })),
   validateRequest({ body: UpdateOrderDTO }),
-  asyncHandler(async (req: AuthedRequest, res) => {
+  asyncHandler<AuthedRequest>(async (req: AuthedRequest, res) => {
     const { id } = req.params;
     const validatedData = req.body;
 
@@ -796,7 +800,7 @@ router.post('/:id/cancel',
   requireOrderCancel(),
   rateLimitOrderOperations(10, 60000),
   validateRequest({ body: CancelOrderDTO }),
-  asyncHandler(async (req: AuthedRequest, res) => {
+  asyncHandler<AuthedRequest>(async (req: AuthedRequest, res) => {
   const { id } = req.params;
   const { reason } = req.body;
 
@@ -937,7 +941,7 @@ router.post('/:id/cancel',
 }));
 
 // Delete order
-router.delete('/:id', requireOrderDelete(), rateLimitOrderOperations(3, 300000), asyncHandler(async (req: AuthedRequest, res) => {
+router.delete('/:id', requireOrderDelete(), rateLimitOrderOperations(3, 300000), asyncHandler<AuthedRequest>(async (req: AuthedRequest, res) => {
   const { id } = req.params;
 
   try {

@@ -2,6 +2,8 @@
 // Aligned with business database - removed auth enums, added real business tables
 
 import { pgTable, uuid, varchar, text, timestamp, boolean, integer, jsonb, decimal, date, bigint, index, unique, foreignKey } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
 // Business Tables
 
@@ -25,17 +27,7 @@ export const accountingPayments = pgTable("accounting_payments", {
         date: date(),
 });
 
-export const auditLogs = pgTable("audit_logs", {
-        id: bigint({ mode: "number" }).primaryKey(),
-        occurredAt: timestamp("occurred_at", { withTimezone: true, mode: 'string' }),
-        actor: uuid(),
-        orgId: uuid("org_id"),
-        entity: text(),
-        entityId: uuid("entity_id"),
-        action: text(),
-        before: jsonb(),
-        after: jsonb(),
-});
+// NOTE: audit_logs table is defined later as auditLogsDetailed with comprehensive schema
 
 export const catalogItemImages = pgTable("catalog_item_images", {
         id: uuid().defaultRandom().primaryKey().notNull(),
@@ -1391,7 +1383,7 @@ export const realtimeEvents = pgTable("realtime_events", {
 
 // Security and Audit Tables
 
-export const auditLogs = pgTable("audit_logs", {
+export const auditLogsDetailed = pgTable("audit_logs", {
         id: uuid().defaultRandom().primaryKey().notNull(),
         userId: varchar("user_id"), // User who performed the action
         organizationId: varchar("organization_id"), // Organization context
@@ -1471,12 +1463,15 @@ export const securityEvents = pgTable("security_events", {
 
 
 // Zod schemas for new tables
-export const insertAuditLogSchema = createInsertSchema(auditLogs);
+export const insertAuditLogSchema = createInsertSchema(auditLogsDetailed);
 export const insertSecurityEventSchema = createInsertSchema(securityEvents);
 
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type InsertSecurityEvent = z.infer<typeof insertSecurityEventSchema>;
-export type SelectAuditLog = typeof auditLogs.$inferSelect;
+export type SelectAuditLog = typeof auditLogsDetailed.$inferSelect;
+export type SelectAuditLogDetailed = typeof auditLogsDetailed.$inferSelect;
+// Alias for backward compatibility
+export const auditLogs = auditLogsDetailed;
 export type SelectSecurityEvent = typeof securityEvents.$inferSelect;
 
 // All tables are already exported above where they are defined

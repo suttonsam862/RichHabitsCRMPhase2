@@ -482,5 +482,7 @@ export const getDefaultMilestones = (productType?: string): Array<{code: string,
   ];
   
   // Could customize based on product type in the future
+  // Currently productType is unused but kept for future expansion
+  void productType;
   return defaultMilestones;
 };
