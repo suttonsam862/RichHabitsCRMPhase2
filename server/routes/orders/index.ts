@@ -264,7 +264,7 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
     // Handle bulk operations based on action type
     let result;
     switch (action) {
-      case 'archive':
+      case 'archive': {
         if (!Array.isArray(orderIds) || orderIds.length === 0) {
           return sendErr(res, 'VALIDATION_ERROR', 'Order IDs are required for archive action', undefined, 400);
         }
@@ -281,8 +281,9 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         
         result = { action: 'archive', affected: affectedCount };
         break;
+      }
 
-      case 'changeStatus':
+      case 'changeStatus': {
         const { statusCode } = req.body;
         if (!statusCode || !Array.isArray(orderIds) || orderIds.length === 0) {
           return sendErr(res, 'VALIDATION_ERROR', 'Status code and order IDs are required', undefined, 400);
@@ -300,8 +301,9 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         
         result = { action: 'changeStatus', statusCode, affected: affectedCount };
         break;
+      }
 
-      case 'assign':
+      case 'assign': {
         const { assigneeId } = req.body;
         if (!assigneeId || !Array.isArray(orderIds) || orderIds.length === 0) {
           return sendErr(res, 'VALIDATION_ERROR', 'Assignee ID and order IDs are required', undefined, 400);
@@ -319,6 +321,7 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         
         result = { action: 'assign', assigneeId, affected: affectedCount };
         break;
+      }
 
       case 'export':
         // For export, we don't modify data, just return success
