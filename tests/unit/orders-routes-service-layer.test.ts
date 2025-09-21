@@ -1,13 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
+
+// Mock dependencies before importing
+vi.mock('../../server/lib/supabase', () => ({
+  supabaseAdmin: {},
+  supabaseForUser: () => ({})
+}));
+
+vi.mock('../../server/services/supabase/orders');
+vi.mock('../../server/services/supabase/orderItems');
+
 import ordersRouter from '../../server/routes/orders/index';
 import { listOrders, getOrderById, updateOrder } from '../../server/services/supabase/orders';
 import { listOrderItems } from '../../server/services/supabase/orderItems';
-
-// Mock the services
-vi.mock('../../server/services/supabase/orders');
-vi.mock('../../server/services/supabase/orderItems');
 
 const mockListOrders = vi.mocked(listOrders);
 const mockGetOrderById = vi.mocked(getOrderById);
