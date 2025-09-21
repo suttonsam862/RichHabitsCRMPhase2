@@ -101,28 +101,31 @@ export async function listOrders(options: ListOrdersOptions = {}): Promise<Servi
 }
 
 /**
- * Get order by ID
+ * Get order by ID with tenant scoping for security
+ * REQUIRED: org_id must be provided to prevent cross-tenant access
  */
-export async function getOrderById(id: string): Promise<ServiceResult<Order>> {
+export async function getOrderById(id: string, org_id: string): Promise<ServiceResult<Order>> {
   try {
     const validId = validateId(id);
+    const validOrgId = asText(org_id);
     const supabase = getSupabaseClient();
 
     const { data, error } = await supabase
       .from('orders')
       .select('*')
       .eq('id', validId)
+      .eq('org_id', validOrgId)
       .single();
 
     if (error) {
-      logger.debug({ error, id: validId }, 'Error getting order by ID');
+      logger.debug({ error, id: validId, org_id: validOrgId }, 'Error getting order by ID');
       return failure(`Failed to get order: ${error.message}`);
     }
 
-    logger.debug({ id: validId }, 'Successfully retrieved order');
+    logger.debug({ id: validId, org_id: validOrgId }, 'Successfully retrieved order');
     return success(data as Order);
   } catch (error) {
-    logger.debug({ error, id }, 'Exception in getOrderById');
+    logger.debug({ error, id, org_id }, 'Exception in getOrderById');
     return failure(`Unexpected error getting order: ${error}`);
   }
 }

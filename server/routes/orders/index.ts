@@ -9,7 +9,7 @@ const router = express.Router();
 // GET /api/orders - List orders with filtering and sorting
 router.get('/', requireAuth, async (req, res) => {
   const authedReq = req as AuthedRequest;
-  if (!authedReq.user) {
+  if (!authedReq.user || !authedReq.user.organization_id) {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
@@ -22,6 +22,7 @@ router.get('/', requireAuth, async (req, res) => {
       limit = '50'
     } = req.query;
 
+    // Use tenant scoping for security - only show orders for user's org
     let query = supabaseAdmin
       .from('orders')
       .select(`
@@ -37,7 +38,8 @@ router.get('/', requireAuth, async (req, res) => {
         priority,
         organizations:organization_id(name),
         sports:sport_id(name)
-      `);
+      `)
+      .eq('org_id', authedReq.user.organization_id);
 
     // Apply filters
     if (q && typeof q === 'string') {
@@ -79,30 +81,36 @@ router.get('/', requireAuth, async (req, res) => {
 // GET /api/orders/stats - Order statistics
 router.get('/stats', requireAuth, async (req, res) => {
   const authedReq = req as AuthedRequest;
-  if (!authedReq.user) {
+  if (!authedReq.user || !authedReq.user.organization_id) {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
   try {
-    // Get basic stats from orders table
+    const orgId = authedReq.user.organization_id;
+
+    // Get basic stats from orders table - scoped to user's org
     const { count: totalOrders } = await supabaseAdmin
       .from('orders')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .eq('org_id', orgId);
 
     const { count: activeOrders } = await supabaseAdmin
       .from('orders')
       .select('*', { count: 'exact', head: true })
+      .eq('org_id', orgId)
       .not('status_code', 'in', '(completed,cancelled,archived)');
 
     const { count: completedThisMonth } = await supabaseAdmin
       .from('orders')
       .select('*', { count: 'exact', head: true })
+      .eq('org_id', orgId)
       .eq('status_code', 'completed')
       .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
 
     const { count: overdueOrders } = await supabaseAdmin
       .from('orders')
       .select('*', { count: 'exact', head: true })
+      .eq('org_id', orgId)
       .not('status_code', 'in', '(completed,cancelled,archived)')
       .lt('due_date', new Date().toISOString());
 
@@ -126,15 +134,16 @@ router.get('/stats', requireAuth, async (req, res) => {
 // GET /api/orders/:id - Get single order
 router.get('/:id', requireAuth, async (req, res) => {
   const authedReq = req as AuthedRequest;
-  if (!authedReq.user) {
+  if (!authedReq.user || !authedReq.user.organization_id) {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
   try {
     const { id } = req.params;
+    const orgId = authedReq.user.organization_id;
 
-    // Use new service layer
-    const result = await getOrderByIdService(id);
+    // Use new service layer with tenant scoping
+    const result = await getOrderByIdService(id, orgId);
 
     if (result.error) {
       if (result.error.includes('not found')) {
@@ -153,18 +162,20 @@ router.get('/:id', requireAuth, async (req, res) => {
 // PATCH /api/orders/:id/status - Update order status
 router.patch('/:id/status', requireAuth, async (req, res) => {
   const authedReq = req as AuthedRequest;
-  if (!authedReq.user) {
+  if (!authedReq.user || !authedReq.user.organization_id) {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
   try {
     const { id } = req.params;
     const { statusCode } = req.body;
+    const orgId = authedReq.user.organization_id;
 
     if (!statusCode) {
       return sendErr(res, 'VALIDATION_ERROR', 'Status code is required', undefined, 400);
     }
 
+    // Add tenant scoping for security - only update orders in user's org
     const { data: updatedOrder, error } = await supabaseAdmin
       .from('orders')
       .update({ 
@@ -172,6 +183,7 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('org_id', orgId)
       .select()
       .single();
 
@@ -189,17 +201,20 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
 // GET /api/orders/:id/items - Get order items
 router.get('/:id/items', requireAuth, async (req, res) => {
   const authedReq = req as AuthedRequest;
-  if (!authedReq.user) {
+  if (!authedReq.user || !authedReq.user.organization_id) {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
   try {
     const { id } = req.params;
+    const orgId = authedReq.user.organization_id;
 
+    // Add tenant scoping for security - only get items from orders in user's org
     const { data: items, error } = await supabaseAdmin
       .from('order_items')
       .select('*')
       .eq('order_id', id)
+      .eq('org_id', orgId)
       .order('created_at');
 
     if (error) {

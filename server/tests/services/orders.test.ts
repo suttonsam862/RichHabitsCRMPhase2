@@ -67,7 +67,7 @@ describe('Orders Service - Happy Path Tests', () => {
     expect(result.error).toBeNull();
   });
 
-  it('should successfully get an order by ID', async () => {
+  it('should successfully get an order by ID with tenant scoping', async () => {
     const mockOrderData = {
       id: 'order-123',
       org_id: 'org-456',
@@ -78,7 +78,7 @@ describe('Orders Service - Happy Path Tests', () => {
     const mockChain = createMockChain({ data: mockOrderData, error: null });
     (mockSupabaseClient.from as any).mockReturnValue(mockChain);
 
-    const result = await getOrderById('order-123');
+    const result = await getOrderById('order-123', 'org-456');
 
     expect(result.data).toEqual(mockOrderData);
     expect(result.error).toBeNull();
@@ -88,7 +88,7 @@ describe('Orders Service - Happy Path Tests', () => {
     const mockChain = createMockChain({ data: null, error: { message: 'Database connection failed' } });
     (mockSupabaseClient.from as any).mockReturnValue(mockChain);
 
-    const result = await getOrderById('invalid-id');
+    const result = await getOrderById('invalid-id', 'org-456');
 
     expect(result.data).toBeNull();
     expect(result.error).toContain('Failed to get order');
