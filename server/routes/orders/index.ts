@@ -2,6 +2,7 @@ import express from 'express';
 import { supabaseAdmin, supabaseForUser } from '../../lib/supabase';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { sendSuccess, sendErr, handleDatabaseError } from '../../lib/http';
+import { getOrderById as getOrderByIdService } from '../../services/supabase/orders';
 
 const router = express.Router();
 
@@ -132,33 +133,17 @@ router.get('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { data: order, error } = await supabaseAdmin
-      .from('orders')
-      .select(`
-        *,
-        organizations:organization_id(name),
-        sports:sport_id(name)
-      `)
-      .eq('id', id)
-      .single();
+    // Use new service layer
+    const result = await getOrderByIdService(id);
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+    if (result.error) {
+      if (result.error.includes('not found')) {
         return sendErr(res, 'NOT_FOUND', 'Order not found', undefined, 404);
       }
-      return handleDatabaseError(res, error, 'fetch order');
+      return sendErr(res, 'DATABASE_ERROR', result.error, undefined, 500);
     }
 
-    // Transform data to match frontend expectations
-    const transformedOrder = {
-      ...order,
-      organization_name: order.organizations?.[0]?.name,
-      sport_name: order.sports?.[0]?.name,
-      organizations: undefined,
-      sports: undefined
-    };
-
-    sendSuccess(res, transformedOrder);
+    sendSuccess(res, result.data);
   } catch (error) {
     console.error('Error fetching order:', error);
     sendErr(res, 'DATABASE_ERROR', 'Failed to fetch order', undefined, 500);
