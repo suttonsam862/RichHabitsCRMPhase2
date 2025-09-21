@@ -269,20 +269,17 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
           return sendErr(res, 'VALIDATION_ERROR', 'Order IDs are required for archive action', undefined, 400);
         }
         
-        // Use user client to enforce RLS and org scoping
-        const { error: archiveError } = await userClient
-          .from('orders')
-          .update({ 
-            status_code: 'archived',
-            updated_at: new Date().toISOString()
-          })
-          .in('id', orderIds);
-
-        if (archiveError) {
-          return handleDatabaseError(res, archiveError, 'bulk archive orders');
+        // Use service layer for each order with org scoping
+        let affectedCount = 0;
+        for (const orderId of orderIds) {
+          const result = await updateOrder(orderId, { status_code: 'archived' });
+          if (result.error) {
+            return handleDatabaseError(res, { message: result.error }, 'bulk archive orders');
+          }
+          affectedCount++;
         }
         
-        result = { action: 'archive', affected: orderIds.length };
+        result = { action: 'archive', affected: affectedCount };
         break;
 
       case 'changeStatus':
@@ -291,19 +288,17 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
           return sendErr(res, 'VALIDATION_ERROR', 'Status code and order IDs are required', undefined, 400);
         }
 
-        const { error: statusError } = await userClient
-          .from('orders')
-          .update({ 
-            status_code: statusCode,
-            updated_at: new Date().toISOString()
-          })
-          .in('id', orderIds);
-
-        if (statusError) {
-          return handleDatabaseError(res, statusError, 'bulk status change');
+        // Use service layer for each order with org scoping
+        let affectedCount = 0;
+        for (const orderId of orderIds) {
+          const result = await updateOrder(orderId, { status_code: statusCode });
+          if (result.error) {
+            return handleDatabaseError(res, { message: result.error }, 'bulk status change');
+          }
+          affectedCount++;
         }
         
-        result = { action: 'changeStatus', statusCode, affected: orderIds.length };
+        result = { action: 'changeStatus', statusCode, affected: affectedCount };
         break;
 
       case 'assign':
@@ -312,19 +307,17 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
           return sendErr(res, 'VALIDATION_ERROR', 'Assignee ID and order IDs are required', undefined, 400);
         }
 
-        const { error: assignError } = await userClient
-          .from('orders')
-          .update({ 
-            assigned_to: assigneeId,
-            updated_at: new Date().toISOString()
-          })
-          .in('id', orderIds);
-
-        if (assignError) {
-          return handleDatabaseError(res, assignError, 'bulk assign orders');
+        // Use service layer for each order with org scoping
+        let affectedCount = 0;
+        for (const orderId of orderIds) {
+          const result = await updateOrder(orderId, { assigned_to: assigneeId });
+          if (result.error) {
+            return handleDatabaseError(res, { message: result.error }, 'bulk assign orders');
+          }
+          affectedCount++;
         }
         
-        result = { action: 'assign', assigneeId, affected: orderIds.length };
+        result = { action: 'assign', assigneeId, affected: affectedCount };
         break;
 
       case 'export':

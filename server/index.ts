@@ -369,6 +369,13 @@ app.use(rateLimitMetricsMiddleware as any);
 // Development auth bypass middleware
 app.use(devAuthBypass);
 
+// Mirror user.organization_id to res.locals.org_id for compatibility
+app.use((req, res, next) => {
+  const u = (req as any).user;
+  if (u?.organization_id) res.locals.org_id = u.organization_id;
+  next();
+});
+
 // Mount canonical API router at /api/v1 with rate limiting
 app.use('/api/v1', apiLimiter, apiRouter);
 
