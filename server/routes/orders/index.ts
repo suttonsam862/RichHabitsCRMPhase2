@@ -192,27 +192,17 @@ router.get('/:id/items', requireAuth, async (req, res) => {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
-  try {
-    const { id } = req.params;
-    const orgId = authedReq.user.organization_id;
+  const { id } = req.params;
+  const orgId = authedReq.user.organization_id;
 
-    // Add tenant scoping for security - only get items from orders in user's org
-    const { data: items, error } = await supabaseAdmin
-      .from('order_items')
-      .select('*')
-      .eq('order_id', id)
-      .eq('org_id', orgId)
-      .order('created_at');
-
-    if (error) {
-      return handleDatabaseError(res, error, 'fetch order items');
-    }
-
-    sendSuccess(res, items || []);
-  } catch (error) {
-    console.error('Error fetching order items:', error);
-    sendErr(res, 'DATABASE_ERROR', 'Failed to fetch order items', undefined, 500);
+  // Use service to get order items with tenant scoping
+  const result = await listOrderItems({ order_id: id, org_id: orgId });
+  
+  if (result.error) {
+    return sendErr(res, 'DATABASE_ERROR', result.error, undefined, 500);
   }
+
+  sendSuccess(res, result.data || []);
 });
 
 // GET /api/orders/:id/events - Get order timeline events
