@@ -95,7 +95,7 @@ router.get('/stats', requireAuth, async (req, res) => {
     return sendErr(res, 'DATABASE_ERROR', result.error, undefined, 500);
   }
 
-  const orders = result.data;
+  const orders = result.data || [];
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const completedStatuses = ['completed'];
@@ -157,36 +157,32 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
-  try {
-    const { id } = req.params;
-    const { statusCode } = req.body;
-    const orgId = authedReq.user.organization_id;
+  const { id } = req.params;
+  const { statusCode } = req.body;
+  const orgId = authedReq.user.organization_id;
 
-    if (!statusCode) {
-      return sendErr(res, 'VALIDATION_ERROR', 'Status code is required', undefined, 400);
-    }
-
-    // Add tenant scoping for security - only update orders in user's org
-    const { data: updatedOrder, error } = await supabaseAdmin
-      .from('orders')
-      .update({ 
-        status_code: statusCode,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .eq('org_id', orgId)
-      .select()
-      .single();
-
-    if (error) {
-      return handleDatabaseError(res, error, 'update order status');
-    }
-
-    sendSuccess(res, updatedOrder);
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    sendErr(res, 'DATABASE_ERROR', 'Failed to update order status', undefined, 500);
+  if (!statusCode) {
+    return sendErr(res, 'VALIDATION_ERROR', 'Status code is required', undefined, 400);
   }
+
+  // First verify order exists and belongs to user's org for tenant scoping
+  const orderResult = await getOrderByIdService(id, orgId);
+  
+  if (orderResult.error) {
+    if (orderResult.error.includes('not found')) {
+      return sendErr(res, 'NOT_FOUND', 'Order not found', undefined, 404);
+    }
+    return sendErr(res, 'DATABASE_ERROR', orderResult.error, undefined, 500);
+  }
+
+  // Use service to update the order
+  const updateResult = await updateOrder(id, { status_code: statusCode });
+  
+  if (updateResult.error) {
+    return sendErr(res, 'DATABASE_ERROR', updateResult.error, undefined, 500);
+  }
+
+  sendSuccess(res, updateResult.data);
 });
 
 // GET /api/orders/:id/items - Get order items
