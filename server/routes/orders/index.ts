@@ -37,8 +37,7 @@ router.get('/', requireAuth, async (req, res) => {
         created_at,
         due_date,
         priority,
-        organizations:organization_id(name),
-        sports:sport_id(name)
+        organizations:org_id(name),
       `)
       .eq('org_id', authedReq.user.organization_id);
 
@@ -67,9 +66,7 @@ router.get('/', requireAuth, async (req, res) => {
     const transformedOrders = (orders || []).map(order => ({
       ...order,
       organization_name: order.organizations?.[0]?.name,
-      sport_name: order.sports?.[0]?.name,
       organizations: undefined,
-      sports: undefined
     }));
 
     sendSuccess(res, transformedOrders);
