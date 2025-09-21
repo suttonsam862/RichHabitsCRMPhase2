@@ -22,6 +22,7 @@ import { setupVite, serveStatic } from './vite';
 import { errorHandler } from './middleware/error';
 // slim request logger (1 line/req; ignores vite/assets)
 import { requestLog } from './middleware/requestLog.js';
+import { devAuthBypass } from './middleware/devAuth';
 import { env } from './lib/env';
 // Metrics middleware and service
 import { metricsMiddleware, rateLimitMetricsMiddleware, corsMetricsMiddleware, errorMetricsMiddleware } from './middleware/metrics';
@@ -364,6 +365,9 @@ app.use('/api/v1/auth/register', authLimiter);
 
 // Add rate limit metrics tracking after rate limiters
 app.use(rateLimitMetricsMiddleware as any);
+
+// Development auth bypass middleware
+app.use(devAuthBypass);
 
 // Mount canonical API router at /api/v1 with rate limiting
 app.use('/api/v1', apiLimiter, apiRouter);
