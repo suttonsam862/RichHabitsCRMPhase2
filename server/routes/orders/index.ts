@@ -2,7 +2,8 @@ import express from 'express';
 import { supabaseAdmin, supabaseForUser } from '../../lib/supabase';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { sendSuccess, sendErr, handleDatabaseError } from '../../lib/http';
-import { getOrderById as getOrderByIdService } from '../../services/supabase/orders';
+import { getOrderById as getOrderByIdService, listOrders, updateOrder } from '../../services/supabase/orders';
+import { listOrderItems } from '../../services/supabase/orderItems';
 
 const router = express.Router();
 
@@ -85,50 +86,40 @@ router.get('/stats', requireAuth, async (req, res) => {
     return sendErr(res, 'UNAUTHORIZED', 'User authentication required', undefined, 401);
   }
 
-  try {
-    const orgId = authedReq.user.organization_id;
+  const orgId = authedReq.user.organization_id;
 
-    // Get basic stats from orders table - scoped to user's org
-    const { count: totalOrders } = await supabaseAdmin
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('org_id', orgId);
-
-    const { count: activeOrders } = await supabaseAdmin
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('org_id', orgId)
-      .not('status_code', 'in', '(completed,cancelled,archived)');
-
-    const { count: completedThisMonth } = await supabaseAdmin
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('org_id', orgId)
-      .eq('status_code', 'completed')
-      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
-
-    const { count: overdueOrders } = await supabaseAdmin
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('org_id', orgId)
-      .not('status_code', 'in', '(completed,cancelled,archived)')
-      .lt('due_date', new Date().toISOString());
-
-    const stats = {
-      totalOrders: totalOrders || 0,
-      activeOrders: activeOrders || 0,
-      completedThisMonth: completedThisMonth || 0,
-      revenueThisMonth: 0, // TODO: Calculate from order amounts
-      averageOrderValue: 0, // TODO: Calculate average
-      onTimeDeliveryRate: 85, // TODO: Calculate actual rate
-      overdueOrders: overdueOrders || 0,
-    };
-
-    sendSuccess(res, stats);
-  } catch (error) {
-    console.error('Error fetching order stats:', error);
-    sendErr(res, 'DATABASE_ERROR', 'Failed to fetch order statistics', undefined, 500);
+  // Use orders service to get all orders for the org and aggregate in code
+  const result = await listOrders({ org_id: orgId });
+  
+  if (result.error) {
+    return sendErr(res, 'DATABASE_ERROR', result.error, undefined, 500);
   }
+
+  const orders = result.data;
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const completedStatuses = ['completed'];
+  const archivedStatuses = ['completed', 'cancelled', 'archived'];
+
+  // Aggregate stats from the orders data
+  const stats = {
+    totalOrders: orders.length,
+    activeOrders: orders.filter(order => !archivedStatuses.includes(order.status_code)).length,
+    completedThisMonth: orders.filter(order => 
+      completedStatuses.includes(order.status_code) && 
+      new Date(order.created_at) >= startOfMonth
+    ).length,
+    revenueThisMonth: 0, // TODO: Calculate from order amounts
+    averageOrderValue: 0, // TODO: Calculate average
+    onTimeDeliveryRate: 85, // TODO: Calculate actual rate
+    overdueOrders: orders.filter(order => 
+      !archivedStatuses.includes(order.status_code) &&
+      order.due_date && 
+      new Date(order.due_date) < now
+    ).length,
+  };
+
+  sendSuccess(res, stats);
 });
 
 // GET /api/orders/:id - Get single order
