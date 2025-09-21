@@ -37,7 +37,7 @@ router.get('/', requireAuth, async (req, res) => {
         created_at,
         due_date,
         priority,
-        organizations:org_id(name),
+        organizations:org_id(name)
       `)
       .eq('org_id', authedReq.user.organization_id);
 
