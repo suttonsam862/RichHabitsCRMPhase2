@@ -26,7 +26,7 @@ router.get('/', requireAuth, async (req, res) => {
     // Use tenant scoping for security - only show orders for user's org
     let query = supabaseAdmin
       .from('orders')
-      .select("*")
+      .select('id,code,status_code,created_at,due_date,priority,customer_contact_name,customer_contact_email,org_id')
       .eq('org_id', authedReq.user.organization_id);
 
     // Apply filters
@@ -50,12 +50,8 @@ router.get('/', requireAuth, async (req, res) => {
       return handleDatabaseError(res, error, 'fetch orders');
     }
 
-    // Transform data to match frontend expectations
-    const transformedOrders = (orders || []).map(order => ({
-      ...order,
-      organization_name: order.organizations?.[0]?.name,
-      organizations: undefined,
-    }));
+    // Send orders data directly (no join artifacts to transform)
+    const transformedOrders = orders || [];
 
     sendSuccess(res, transformedOrders);
   } catch (error) {
