@@ -244,7 +244,6 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
 
     // Handle bulk operations based on action type
     let result;
-    let affectedCount = 0;
     switch (action) {
       case 'archive': {
         if (!Array.isArray(orderIds) || orderIds.length === 0) {
@@ -252,16 +251,16 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         }
         
         // Use service layer for each order with org scoping
-        affectedCount = 0;
+        let archiveCount = 0;
         for (const orderId of orderIds) {
           const result = await updateOrder(orderId, { status_code: 'archived' });
           if (result.error) {
             return handleDatabaseError(res, { message: result.error }, 'bulk archive orders');
           }
-          affectedCount++;
+          archiveCount++;
         }
         
-        result = { action: 'archive', affected: affectedCount };
+        result = { action: 'archive', affected: archiveCount };
         break;
       }
 
@@ -272,16 +271,16 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         }
 
         // Use service layer for each order with org scoping
-        affectedCount = 0;
+        let statusChangeCount = 0;
         for (const orderId of orderIds) {
           const result = await updateOrder(orderId, { status_code: statusCode });
           if (result.error) {
             return handleDatabaseError(res, { message: result.error }, 'bulk status change');
           }
-          affectedCount++;
+          statusChangeCount++;
         }
         
-        result = { action: 'changeStatus', statusCode, affected: affectedCount };
+        result = { action: 'changeStatus', statusCode, affected: statusChangeCount };
         break;
       }
 
@@ -292,16 +291,16 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         }
 
         // Use service layer for each order with org scoping
-        affectedCount = 0;
+        let assignCount = 0;
         for (const orderId of orderIds) {
           const result = await updateOrder(orderId, { salesperson_id: assigneeId });
           if (result.error) {
             return handleDatabaseError(res, { message: result.error }, 'bulk assign orders');
           }
-          affectedCount++;
+          assignCount++;
         }
         
-        result = { action: 'assign', assigneeId, affected: affectedCount };
+        result = { action: 'assign', assigneeId, affected: assignCount };
         break;
       }
 
