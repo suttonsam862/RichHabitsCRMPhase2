@@ -50,6 +50,40 @@ bash scripts/dev-smoke.sh
 
 The script will test both the health endpoint and orders list endpoint using the dev bypass authentication.
 
+## Running tests safely
+
+The test suite includes automatic production database protection to prevent accidental connections to live data during testing.
+
+### Database Safety Features
+
+- **Automatic Detection**: Tests automatically detect if `DATABASE_URL` contains production indicators (like "supabase.co")
+- **Safe Fallback**: When production DB is detected and `TEST_DATABASE_URL` is configured, tests automatically switch to the test database
+- **Skip Behavior**: If production DB is detected but no `TEST_DATABASE_URL` is set, database integration tests are automatically skipped with clear warnings
+
+### Configuration
+
+Set up a test database URL for safe testing:
+
+```bash
+export TEST_DATABASE_URL="postgresql://test:test@localhost:5432/test_db"
+# or for Supabase test projects:
+export TEST_DATABASE_URL="postgresql://postgres:[password]@db.[your-test-project].supabase.co:5432/postgres"
+```
+
+### Running Tests
+
+```bash
+# Run all tests (will use TEST_DATABASE_URL if DATABASE_URL is production)
+npm run test
+
+# Silent mode (reduces output)
+npm run test -s
+```
+
+When tests detect a production database:
+- ✅ **With TEST_DATABASE_URL**: Tests run safely against test database
+- ⚠️ **Without TEST_DATABASE_URL**: Integration tests are skipped with warning, unit tests continue
+
 ### Postman Collection
 
 Import the dev bypass Postman collection for easy API testing:

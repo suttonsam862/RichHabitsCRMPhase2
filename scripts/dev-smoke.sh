@@ -21,9 +21,17 @@ echo ""
 
 # Test 2: Orders list
 echo "📋 Testing orders list endpoint..."
-curl -s -H "x-dev-auth: $DEV_API_KEY" \
+ORDERS_RESPONSE=$(curl -s -H "x-dev-auth: $DEV_API_KEY" \
      -H "Content-Type: application/json" \
-     "$BASE_URL/api/v1/orders?limit=5" | jq . || echo "❌ Orders list failed"
+     "$BASE_URL/api/v1/orders?limit=5")
+
+echo "$ORDERS_RESPONSE" | jq . || echo "❌ Orders list failed"
+
+# Print array length if response is valid JSON
+if echo "$ORDERS_RESPONSE" | jq . > /dev/null 2>&1; then
+  ORDERS_COUNT=$(echo "$ORDERS_RESPONSE" | jq 'if type == "array" then length else (if .data then (.data | length) else 0 end) end' 2>/dev/null || echo "0")
+  echo "📊 Orders array length: $ORDERS_COUNT"
+fi
 echo ""
 
 echo "✅ Smoke tests completed!"
