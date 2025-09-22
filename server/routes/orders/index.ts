@@ -26,19 +26,7 @@ router.get('/', requireAuth, async (req, res) => {
     // Use tenant scoping for security - only show orders for user's org
     let query = supabaseAdmin
       .from('orders')
-      .select(`
-        id,
-        code,
-        customer_contact_name,
-        customer_contact_email,
-        status_code,
-        total_amount,
-        total_items,
-        created_at,
-        due_date,
-        priority,
-        organizations:org_id(name)
-      `)
+      .select("*")
       .eq('org_id', authedReq.user.organization_id);
 
     // Apply filters

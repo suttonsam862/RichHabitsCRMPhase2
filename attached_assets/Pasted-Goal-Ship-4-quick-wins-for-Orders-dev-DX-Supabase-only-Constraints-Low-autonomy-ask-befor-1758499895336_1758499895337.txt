@@ -1,0 +1,41 @@
+Goal: Ship 4 quick wins for Orders + dev DX (Supabase-only).
+
+Constraints:
+- Low autonomy; ask before deleting/renaming.
+- No schema/migrations; no ORM; use @supabase/supabase-js v2.
+- Keep dev-bypass intact; touch only dev code paths.
+
+Tasks:
+1) Orders list: replace wildcard select with a safe field list (no joins).
+   File: server/routes/orders/index.ts
+   - For GET /api/v1/orders, set: .select('id,code,status_code,created_at,due_date,priority,customer_contact_name,customer_contact_email,org_id')
+   - Remove any leftover join artifacts and transforms.
+   - Keep q/statusCode filters, sort, limit as-is.
+
+2) Service wiring: eliminate direct Supabase mutations in Orders routes.
+   File: server/routes/orders/index.ts
+   - Ensure POST /bulk-action cases (‘archive’, ‘changeStatus’, ‘assign’) call updateOrder() only (no raw .update / admin client).
+   - Confirm GET /:id, PATCH /:id/status, GET /:id/items use services (getOrderByIdService, updateOrder, listOrderItems).
+   - All handlers return {success, data} or {success:false, error}; no throws.
+
+3) Dev DX: add a tiny curl + Postman collection.
+   Files:
+   - scripts/dev-smoke.sh (bash): two curls (healthz, orders list) with header `x-dev-auth: ${DEV_API_KEY:-dev-allow}`.
+   - postman/DevBypass.postman_collection.json: endpoints:
+       GET {{base}}/healthz
+       GET {{base}}/api/v1/orders?limit=5  (header x-dev-auth: dev-allow)
+     Variables: base = http://localhost:5000
+   - README update (one short section “Dev bypass”): how to set DEV_API_KEY, sample curl, and how to run scripts/dev-smoke.sh.
+
+4) CORS: allow the header if not already present.
+   File: server/index.ts
+   - Ensure cors({ allowedHeaders: ['Content-Type','Authorization','x-dev-auth', ...] }) includes 'x-dev-auth'. No other changes.
+
+Acceptance:
+- `npm run dev` boots clean.
+- `bash scripts/dev-smoke.sh` prints health JSON and either [] or a list (not 401/500).
+- Grep shows no direct .update/.from mutations in Orders routes (only service calls).
+- Postman collection exists and imports without errors.
+
+Output:
+- One PR with a checklist of files changed and a short “How to verify” block.
