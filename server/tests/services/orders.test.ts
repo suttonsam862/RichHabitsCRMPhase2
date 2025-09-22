@@ -1,18 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createOrder, getOrderById } from '../../services/supabase/orders';
+import { getSupabaseClient } from '../../services/supabase/client';
 
 // Mock the client module
-vi.mock('../../services/supabase/client');
-
-const mockSupabaseClient = {
-  from: vi.fn(),
-  select: vi.fn(),
-  insert: vi.fn(),
-  update: vi.fn(),
-  eq: vi.fn(),
-  order: vi.fn(),
-  single: vi.fn(),
-};
+vi.mock('../../services/supabase/client', () => ({
+  getSupabaseClient: vi.fn(),
+}));
 
 // Create chainable mock
 const createMockChain = (returnValue: any) => {
@@ -31,8 +24,6 @@ const createMockChain = (returnValue: any) => {
 describe('Orders Service - Happy Path Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    const { getSupabaseClient } = require('../../services/supabase/client');
-    (getSupabaseClient as any).mockReturnValue(mockSupabaseClient);
   });
 
   it('should successfully create a new order', async () => {
@@ -50,8 +41,11 @@ describe('Orders Service - Happy Path Tests', () => {
       updated_at: '2025-09-21T10:00:00Z'
     };
 
+    // Create the mock chain that directly returns the mock data
     const mockChain = createMockChain({ data: mockOrderData, error: null });
-    (mockSupabaseClient.from as any).mockReturnValue(mockChain);
+    
+    // Mock getSupabaseClient to return the chain directly
+    (getSupabaseClient as any).mockReturnValue(mockChain);
 
     const createInput = {
       org_id: 'org-456',
@@ -75,8 +69,11 @@ describe('Orders Service - Happy Path Tests', () => {
       customer_contact_name: 'John Doe'
     };
 
+    // Create the mock chain that directly returns the mock data
     const mockChain = createMockChain({ data: mockOrderData, error: null });
-    (mockSupabaseClient.from as any).mockReturnValue(mockChain);
+    
+    // Mock getSupabaseClient to return the chain directly
+    (getSupabaseClient as any).mockReturnValue(mockChain);
 
     const result = await getOrderById('order-123', 'org-456');
 
@@ -85,8 +82,11 @@ describe('Orders Service - Happy Path Tests', () => {
   });
 
   it('should handle database errors gracefully', async () => {
+    // Create the mock chain that returns an error
     const mockChain = createMockChain({ data: null, error: { message: 'Database connection failed' } });
-    (mockSupabaseClient.from as any).mockReturnValue(mockChain);
+    
+    // Mock getSupabaseClient to return the chain directly
+    (getSupabaseClient as any).mockReturnValue(mockChain);
 
     const result = await getOrderById('invalid-id', 'org-456');
 
