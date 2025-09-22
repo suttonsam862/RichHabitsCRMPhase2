@@ -1,3 +1,4 @@
+
 import { Response } from 'express';
 
 /**
@@ -24,6 +25,13 @@ export function sendOk(res: any, data?: any, count?: any) {
 }
 export function sendCreated(res: any, data?: any) { return res.status(201).json({ success:true, data }); }
 export function sendNoContent(res: any) { return res.status(204).send(); }
+
+export function sendSuccess(res: Response, data?: any, count?: number, status = 200) {
+  const body: any = { success: true, data };
+  if (typeof count === 'number') body.count = count;
+  return res.status(status).json(body);
+}
+
 export function sendErr(
   res: Response,
   error: string,
@@ -31,7 +39,6 @@ export function sendErr(
   details?: any,
   status?: number
 ) {
-  // Default to 400 unless explicitly overridden (unit tests expect this)
   const httpStatus = typeof status === 'number' ? status : 400;
   return res.status(httpStatus).json({
     success: false,
@@ -41,16 +48,7 @@ export function sendErr(
     timestamp: new Date().toISOString(),
   });
 }
-}
 
-/**
- * Send standardized success response
- */
-export function sendSuccess(res: Response, data?: any, count?: number, status = 200) {
-  const body: any = { success: true, data };
-  if (typeof count === 'number') body.count = count;
-  return res.status(status).json(body);
-}
 /**
  * Send standardized error response
  */

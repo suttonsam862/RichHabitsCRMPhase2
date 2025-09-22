@@ -240,7 +240,11 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
     );
   }
 
-  const { organization, brandingFiles, sports, users, stats } = summary;
+  const organization = summary?.organization ?? {};
+  const stats = summary?.stats ?? {};
+  const brandingFiles = summary?.brandingFiles ?? [];
+  const sports = summary?.sports ?? [];
+  const users = summary?.users ?? [];
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
@@ -509,7 +513,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               </TabsContent>
 
               <TabsContent value="branding" className="space-y-6 mt-0">
-                {brandingFiles.length > 0 ? (
+                {(brandingFiles?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {brandingFiles.map((file: any, index: number) => (
                       <Card key={index} className="overflow-hidden">
@@ -555,7 +559,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               </TabsContent>
 
               <TabsContent value="sports" className="space-y-4 mt-0">
-                {sports.length > 0 ? (
+                {(sports?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
                     {sports.map((sport: any) => (
                       <Card key={sport.id}>
@@ -601,7 +605,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               </TabsContent>
 
               <TabsContent value="users" className="space-y-4 mt-0">
-                {users.length > 0 ? (
+                {(users?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
                     {users.map((user: any) => (
                       <Card key={user.id}>
