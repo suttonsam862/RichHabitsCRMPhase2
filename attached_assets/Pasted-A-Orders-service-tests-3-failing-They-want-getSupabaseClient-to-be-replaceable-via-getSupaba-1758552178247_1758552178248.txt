@@ -1,0 +1,196 @@
+A) Orders service tests (3 failing)
+
+They want:
+
+getSupabaseClient() to be replaceable via getSupabaseClient.mockReturnValue(mock).
+
+Service to gracefully handle missing/undefined client and normalize error messages (“Failed to get order…”, “Failed to create order…”).
+
+Results shaped like { data, error } where data is your row (or null) and error is a friendly string (or null).
+
+Do this
+1) Keep the supabase client shim mockable (you already added it)
+
+You’re good here; the tests called .mockReturnValue and it didn’t throw. We just need the service to use it correctly and to wrap errors consistently.
+
+2) Harden the orders service
+
+Edit (or create if missing) server/services/orders.ts so its public API matches what tests expect:
+
+// server/services/orders.ts
+import { getSupabaseClient } from './supabase/client';
+
+type Result<T> = { data: T | null; error: string | null };
+
+export async function createOrder(input: any): Promise<Result<any>> {
+  try {
+    const sb: any = getSupabaseClient();
+    if (!sb || typeof sb.from !== 'function') {
+      return { data: null, error: 'Failed to create order: database unavailable' };
+    }
+
+    const { data, error } = await sb
+      .from('orders')
+      .insert(input)
+      .select('*')
+      .single();
+
+    if (error) {
+      return { data: null, error: `Failed to create order: ${error.message ?? String(error)}` };
+    }
+    return { data, error: null };
+  } catch (e: any) {
+    return { data: null, error: `Failed to create order: ${e?.message ?? String(e)}` };
+  }
+}
+
+export async function getOrderById(id: string, orgId: string): Promise<Result<any>> {
+  try {
+    const sb: any = getSupabaseClient();
+    if (!sb || typeof sb.from !== 'function') {
+      return { data: null, error: 'Failed to get order: database unavailable' };
+    }
+
+    const { data, error } = await sb
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .single();
+
+    if (error) {
+      return { data: null, error: `Failed to get order: ${error.message ?? String(error)}` };
+    }
+    return { data, error: null };
+  } catch (e: any) {
+    return { data: null, error: `Failed to get order: ${e?.message ?? String(e)}` };
+  }
+}
+
+
+This ensures:
+
+When tests set getSupabaseClient.mockReturnValue(mockSupabaseClient), your service uses that mock.
+
+If tests make the client undefined (to force an error), the message contains “Failed to get order”.
+
+B) OrgQuickViewDialog (7 failing)
+
+Symptoms:
+
+Crashes on .length or .brandingFilesCount (undefined).
+
+Nothing renders (tests can’t find “Test Organization”, tabs, or loading text).
+
+React key warning.
+
+Do this
+
+Open client/src/components/org-quick-view-dialog.tsx and make these changes:
+
+1) Never early-return null when open is true
+
+Make sure you don’t return null just because data is loading/undefined. Render the dialog shell with a loading state instead.
+
+At the top of the component (right after fetching data), add defensive defaults:
+
+const loading = query?.isLoading ?? false;       // adapt to your hook
+const error = (query?.error as Error) ?? null;
+const data = query?.data ?? {};
+
+const organization = data.organization ?? { name: '', email: '', isBusiness: false };
+const stats = data.stats ?? {};
+const brandingFiles = data.brandingFiles ?? [];
+const sportsTeams = data.sportsTeams ?? [];
+const contacts = data.contacts ?? [];
+const users = data.users ?? [];
+
+
+Now all the places that previously did brandingFiles.length or stats.brandingFilesCount should be guarded:
+
+const brandingCount = (stats?.brandingFilesCount ?? brandingFiles.length ?? 0);
+const sportsCount = (stats?.sportsCount ?? sportsTeams.length ?? 0);
+const usersCount = (stats?.usersCount ?? users.length ?? 0);
+
+2) Always render visible title & tabs
+
+Make sure your dialog always mounts content when open is true:
+
+<Dialog open={open} /* ... */>
+  <DialogContent>
+    <h2 data-testid="org-title">
+      {organization.name || (loading ? 'Loading organization details...' : 'Organization')}
+    </h2>
+
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList role="tablist">
+        <TabsTrigger value="branding" role="tab">
+          Branding ({brandingCount})
+        </TabsTrigger>
+        <TabsTrigger value="sports" role="tab">
+          Sports ({sportsCount})
+        </TabsTrigger>
+        <TabsTrigger value="users" role="tab">
+          Users ({usersCount})
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="branding">
+        {(brandingFiles?.length ?? 0) > 0 ? (
+          <div className="grid gap-4">
+            {brandingFiles.map((file: any, i: number) => (
+              <Card key={file?.id ?? `branding-${i}`}>
+                {/* ... */}
+              </Card>
+            ))}
+          </div>
+        ) : loading ? (
+          <p>Loading organization details...</p>
+        ) : (
+          <p>No branding files</p>
+        )}
+      </TabsContent>
+
+      <TabsContent value="sports">
+        {(sportsTeams?.length ?? 0) > 0 ? (
+          sportsTeams.map((t: any, i: number) => (
+            <div key={t?.id ?? `team-${i}`}>{t?.name ?? 'Team'}</div>
+          ))
+        ) : loading ? (
+          <p>Loading organization details...</p>
+        ) : (
+          <p>No sports teams</p>
+        )}
+      </TabsContent>
+
+      <TabsContent value="users">
+        {(users?.length ?? 0) > 0 ? (
+          users.map((u: any, i: number) => (
+            <div key={u?.id ?? `user-${i}`}>{u?.full_name ?? 'User'}</div>
+          ))
+        ) : loading ? (
+          <p>Loading organization details...</p>
+        ) : (
+          <p>No users</p>
+        )}
+      </TabsContent>
+    </Tabs>
+
+    {error && (
+      <div role="alert">
+        Failed to load organization data
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
+
+
+Key takeaways:
+
+Use ?? [] / ?? {} everywhere for lists & stats.
+
+Show “Loading organization details…” (tests look for that exact text).
+
+Ensure tabs have role="tab" and are present even while loading (tests click them by role/name).
+
+Fix the React warning by using stable key props (id ?? \prefix-index``).
