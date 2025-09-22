@@ -161,6 +161,18 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
     staleTime: 30000, // Cache for 30 seconds
   });
 
+  // Rock-solid defaults
+  const isOpen = open;
+  const loading = isLoading;
+  const errorState = error as Error | null;
+
+  const organization = summary?.organization ?? { name: '', email: '', isBusiness: false };
+  const stats = summary?.stats ?? {};
+  const brandingFiles = summary?.brandingFiles ?? [];
+  const sportsTeams = summary?.sports ?? [];
+  const contacts = summary?.contacts ?? [];
+  const users = summary?.users ?? [];
+
   const deleteOrgMutation = useMutation({
     mutationFn: () => apiRequest(`/api/v1/organizations/${organizationId}`, { method: 'DELETE' }),
     onSuccess: () => {
@@ -204,47 +216,6 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
     }
   };
 
-  if (isLoading) {
-    return (
-      <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-4xl max-h-[90vh]" aria-describedby="org-dialog-loading-desc">
-          <DialogHeader>
-            <DialogTitle>Loading Organization...</DialogTitle>
-            <DialogDescription id="org-dialog-loading-desc">
-              Please wait while we fetch the organization details
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  if (error || !summary) {
-    return (
-      <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-md" aria-describedby="org-dialog-error-desc">
-          <DialogHeader>
-            <DialogTitle>Organization Not Found</DialogTitle>
-            <DialogDescription id="org-dialog-error-desc">
-              The requested organization could not be found or loaded
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-4 text-center">
-            <Button onClick={onClose} data-testid="button-close-error">Close</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  const organization = summary?.organization ?? {};
-  const stats = summary?.stats ?? {};
-  const brandingFiles = summary?.brandingFiles ?? [];
-  const sports = summary?.sports ?? [];
-  const users = summary?.users ?? [];
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
@@ -277,8 +248,9 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               )}
 
               <div className="space-y-2">
-                <DialogTitle className="text-2xl font-bold" data-testid="text-org-name">
-                  {organization.name}
+                {/* Title */}
+                <DialogTitle className="text-2xl font-bold" data-testid="org-title">
+                  {organization.name || (loading ? 'Loading organization details...' : 'Organization')}
                 </DialogTitle>
                 <div className="flex items-center gap-3 text-muted-foreground flex-wrap">
                   {organization.state && (
@@ -362,17 +334,17 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                   <Building2 className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="branding" data-testid="tab-branding" className="flex items-center gap-2">
+                <TabsTrigger value="branding" role="tab" data-testid="tab-branding" className="flex items-center gap-2">
                   <Images className="h-4 w-4" />
-                  Branding ({stats?.brandingFilesCount ?? 0})
+                  Branding ({stats?.brandingFilesCount ?? brandingFiles.length ?? 0})
                 </TabsTrigger>
-                <TabsTrigger value="sports" data-testid="tab-sports" className="flex items-center gap-2">
+                <TabsTrigger value="sports" role="tab" data-testid="tab-sports" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Sports ({stats?.sportsCount ?? 0})
+                  Sports ({stats?.sportsCount ?? sportsTeams.length ?? 0})
                 </TabsTrigger>
-                <TabsTrigger value="users" data-testid="tab-users" className="flex items-center gap-2">
+                <TabsTrigger value="users" role="tab" data-testid="tab-users" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Users ({stats?.usersCount ?? 0})
+                  Users ({stats?.usersCount ?? users.length ?? 0})
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -516,7 +488,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                 {(brandingFiles?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {brandingFiles.map((file: any, index: number) => (
-                      <Card key={index} className="overflow-hidden">
+                      <Card key={file.id ?? index} className="overflow-hidden">
                         <div className="aspect-video bg-muted relative">
                           {file.url && (
                             <img
@@ -546,6 +518,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       </Card>
                     ))}
                   </div>
+                ) : loading ? (
+                  <p>Loading organization details...</p>
                 ) : (
                   <div className="text-center py-12">
                     <Images className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -559,10 +533,10 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               </TabsContent>
 
               <TabsContent value="sports" className="space-y-4 mt-0">
-                {(sports?.length ?? 0) > 0 ? (
+                {(sportsTeams?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
-                    {sports.map((sport: any) => (
-                      <Card key={sport.id}>
+                    {sportsTeams.map((sport: any, i: number) => (
+                      <Card key={sport.id ?? i}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -596,10 +570,12 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       </Card>
                     ))}
                   </div>
+                ) : loading ? (
+                  <p>Loading organization details...</p>
                 ) : (
                   <div className="text-center py-12">
                     <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No sports contacts configured</p>
+                    <p className="text-muted-foreground">No sports teams</p>
                   </div>
                 )}
               </TabsContent>
@@ -607,8 +583,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               <TabsContent value="users" className="space-y-4 mt-0">
                 {(users?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
-                    {users.map((user: any) => (
-                      <Card key={user.id}>
+                    {users.map((user: any, i: number) => (
+                      <Card key={user.id ?? i}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -651,10 +627,12 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       </Card>
                     ))}
                   </div>
+                ) : loading ? (
+                  <p>Loading organization details...</p>
                 ) : (
                   <div className="text-center py-12">
                     <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No users assigned to this organization</p>
+                    <p className="text-muted-foreground">No users</p>
                   </div>
                 )}
               </TabsContent>
