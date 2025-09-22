@@ -1,0 +1,108 @@
+1) server/lib/http.ts still has a stray brace
+
+You’ve got an extra } after sendErr. Make the file look like this (no extra parens/braces after the function):
+
+import type { Response } from 'express';
+
+export function sendSuccess(res: Response, data?: any, count?: number, status = 200) {
+  const body: any = { success: true, data };
+  if (typeof count === 'number') body.count = count;
+  return res.status(status).json(body);
+}
+
+export function sendErr(
+  res: Response,
+  error: string,
+  message?: string,
+  details?: any,
+  status?: number
+) {
+  const httpStatus = typeof status === 'number' ? status : 400;
+  return res.status(httpStatus).json({
+    success: false,
+    error,
+    message,
+    details,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * (rest of the file…)
+ */
+
+
+That should clear the esbuild “Unexpected '}'”/“Unexpected ')'” errors.
+
+2) OrgQuickViewDialog null-safety for arrays + counts
+
+The test crash now is on brandingFiles.length (line ~512). Default every array-ish bit of data and guard counts:
+
+In client/src/components/org-quick-view-dialog.tsx:
+
+When deriving data from the query, add fallbacks:
+
+const organization = data?.organization ?? defaultOrg; // if you have a default
+const stats = data?.stats ?? {};
+const brandingFiles = data?.brandingFiles ?? [];
+const sportsTeams = data?.sportsTeams ?? [];
+const contacts = data?.contacts ?? [];
+const users = data?.users ?? [];
+
+
+Anywhere you render counts/tabs/badges, guard them:
+
+<TabsTrigger value="branding">
+  Branding ({stats?.brandingFilesCount ?? 0})
+</TabsTrigger>
+
+{(brandingFiles?.length ?? 0) > 0 ? (
+  // grid…
+) : (
+  <p className="text-sm text-muted-foreground">No branding files</p>
+)}
+
+
+Do the same for:
+
+stats.usersCount, stats.sportsCount, etc. → stats?.usersCount ?? 0
+
+users.length, sportsTeams.length, etc. → (users?.length ?? 0)
+
+This makes the dialog render even when mocks omit optional fields, which is what your tests are exercising.
+
+3) Make server/services/supabase/client.js truly CommonJS
+
+Vitest is treating the repo as ESM (so module is undefined), but your tests are calling require('../../services/supabase/client') and expect CommonJS. Easiest fix: force CommonJS only in that folder by adding a local package.json.
+
+Create server/services/supabase/package.json with:
+
+{ "type": "commonjs" }
+
+
+Keep server/services/supabase/client.js as pure CJS:
+
+function noop() {
+  return {
+    from() { return this; },
+    select() { return this; },
+    insert() { return this; },
+    update() { return this; },
+    delete() { return this; },
+    eq() { return this; },
+    in() { return this; },
+    neq() { return this; },
+    single() { return Promise.resolve({ data: null, error: null }); },
+    rpc() { return Promise.resolve({ data: null, error: null }); },
+  };
+}
+
+const fake = noop();
+
+function getSupabaseClient() { return fake; }
+function getAdminClient() { return fake; }
+
+module.exports = { getSupabaseClient, getAdminClient };
+
+
+That eliminates both “module is not defined” and “Cannot require() ES Module … in a cycle.” because Node/Vitest will resolve that subpath as CJS.
