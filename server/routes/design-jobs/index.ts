@@ -17,6 +17,7 @@ import { logDatabaseOperation } from '../../lib/log';
 import { trackBusinessEvent } from '../../middleware/metrics';
 import { DesignJobService } from '../../services/designJobService';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
+import { getDesignJobById } from '../../services/supabase/designJobs';
 import { createAssetUploadUrl, getAssetDownloadUrl } from '../../lib/unified-storage';
 import {
   CreateDesignJobDTO,
@@ -49,17 +50,13 @@ function getAuthenticatedClient(req: AuthedRequest) {
 
 // Helper to verify design job access and get job info
 async function verifyDesignJobAccess(jobId: string, req: AuthedRequest, sb: any): Promise<any> {
-  const { data: job, error } = await sb
-    .from('design_jobs')
-    .select('id, org_id, status_code, order_item_id')
-    .eq('id', jobId)
-    .single();
-    
-  if (error || !job) {
+  const result = await getDesignJobById(jobId);
+  
+  if (result.error || !result.data) {
     throw new Error('Design job not found');
   }
   
-  return job;
+  return result.data;
 }
 
 // Helper to validate design job status codes
@@ -216,20 +213,14 @@ router.get('/:jobId',
     try {
       const sb = getAuthenticatedClient(req);
       
-      // Verify design job access and get job with related data
-      const { data: jobResult, error: jobError } = await sb
-        .from('design_jobs')
-        .select(`
-          *,
-          order_items:order_item_id(id, name_snapshot, quantity, status_code),
-          designers:assignee_designer_id(id, users(full_name), specializations, hourly_rate)
-        `)
-        .eq('id', jobId)
-        .single();
-
-      if (jobError || !jobResult) {
-        return HttpErrors.notFound(res, 'Design job not found');
+      // Use service layer to get design job
+      const result = await getDesignJobById(jobId);
+      
+      if (result.error || !result.data) {
+        return sendOk(res, { success: false, error: 'Design job not found' });
       }
+      
+      const jobResult = result.data;
 
       // Get recent events
       const { data: events, error: eventsError } = await sb
@@ -244,7 +235,7 @@ router.get('/:jobId',
       }
 
       // Format response to match DesignJobWithDetailsDTO structure
-      const response = {
+      const responseData = {
         id: jobResult.id,
         orgId: jobResult.org_id,
         orderItemId: jobResult.order_item_id,
@@ -255,18 +246,6 @@ router.get('/:jobId',
         assigneeDesignerId: jobResult.assignee_designer_id,
         createdAt: jobResult.created_at,
         updatedAt: jobResult.updated_at,
-        orderItem: jobResult.order_items ? {
-          id: jobResult.order_items.id,
-          nameSnapshot: jobResult.order_items.name_snapshot,
-          quantity: jobResult.order_items.quantity,
-          statusCode: jobResult.order_items.status_code,
-        } : undefined,
-        assignedDesigner: jobResult.designers ? {
-          id: jobResult.designers.id,
-          name: jobResult.designers.users?.full_name || 'Unknown Designer',
-          specializations: jobResult.designers.specializations || [],
-          hourlyRate: jobResult.designers.hourly_rate,
-        } : undefined,
         events: (events || []).map(event => ({
           id: event.id,
           designJobId: event.design_job_id,
@@ -277,7 +256,7 @@ router.get('/:jobId',
         })),
       };
 
-      sendOk(res, response);
+      sendOk(res, { success: true, data: responseData });
     } catch (error) {
       if (error instanceof Error && error.message === 'Missing authentication token') {
         return HttpErrors.unauthorized(res, 'Authentication required');
@@ -311,7 +290,7 @@ router.put('/:jobId/status',
       // Validate status code
       const isValidStatus = await validateDesignJobStatusCode(statusCode, sb);
       if (!isValidStatus) {
-        return HttpErrors.validationError(res, `Invalid status code: ${statusCode}. Use GET /api/design-jobs/status-codes to see valid options.`);
+        return sendOk(res, { success: false, error: `Invalid status code: ${statusCode}. Use GET /api/design-jobs/status-codes to see valid options.` });
       }
 
       // If assigning designer, use assign method
@@ -329,7 +308,7 @@ router.put('/:jobId/status',
           designer_id: assigneeDesignerId,
         });
 
-        sendOk(res, designJob);
+        sendOk(res, { success: true, data: designJob });
         return;
       }
 
@@ -349,22 +328,22 @@ router.put('/:jobId/status',
       });
 
       logDatabaseOperation(req, 'DESIGN_JOB_STATUS_UPDATED', 'design_jobs', { designJobId: jobId });
-      sendOk(res, designJob);
+      sendOk(res, { success: true, data: designJob });
     } catch (error) {
       if (error instanceof Error && error.message === 'Missing authentication token') {
-        return HttpErrors.unauthorized(res, 'Authentication required');
+        return sendOk(res, { success: false, error: 'Authentication required' });
       }
       if (error instanceof Error && (error.message === 'Design job not found' || error.message.includes('not found'))) {
-        return HttpErrors.notFound(res, error.message);
+        return sendOk(res, { success: false, error: error.message });
       }
       if (error instanceof Error && error.message.includes('Invalid status transition')) {
-        return HttpErrors.validationError(res, error.message);
+        return sendOk(res, { success: false, error: error.message });
       }
       if (error instanceof Error && error.message.includes('Access denied')) {
-        return HttpErrors.forbidden(res, error.message);
+        return sendOk(res, { success: false, error: error.message });
       }
       console.error('Error updating design job status:', error);
-      handleDatabaseError(res, error, 'update design job status');
+      return sendOk(res, { success: false, error: 'Failed to update design job status' });
     }
   })
 );
