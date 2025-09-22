@@ -289,7 +289,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                   {(stats?.usersCount ?? 0) > 0 && (
                     <Badge variant="outline" data-testid="badge-user-count">
                       <Users className="h-3 w-3 mr-1" />
-                      {stats.usersCount} user{stats.usersCount !== 1 ? 's' : ''}
+                      {stats?.usersCount ?? 0} user{(stats?.usersCount ?? 0) !== 1 ? 's' : ''}
                     </Badge>
                   )}
                 </div>
@@ -360,15 +360,15 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                 </TabsTrigger>
                 <TabsTrigger value="branding" data-testid="tab-branding" className="flex items-center gap-2">
                   <Images className="h-4 w-4" />
-                  Branding ({stats.brandingFilesCount})
+                  Branding ({stats?.brandingFilesCount ?? 0})
                 </TabsTrigger>
                 <TabsTrigger value="sports" data-testid="tab-sports" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Sports ({stats.sportsCount})
+                  Sports ({stats?.sportsCount ?? 0})
                 </TabsTrigger>
                 <TabsTrigger value="users" data-testid="tab-users" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Users ({stats.usersCount})
+                  Users ({stats?.usersCount ?? 0})
                 </TabsTrigger>
               </TabsList>
             </div>

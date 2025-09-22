@@ -41,7 +41,6 @@ export function sendErr(
     timestamp: new Date().toISOString(),
   });
 }
-);
 }
 
 /**
