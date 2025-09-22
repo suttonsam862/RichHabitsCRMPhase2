@@ -248,6 +248,7 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
 
     // Handle bulk operations based on action type
     let result;
+    let affectedCount = 0;
     switch (action) {
       case 'archive': {
         if (!Array.isArray(orderIds) || orderIds.length === 0) {
@@ -255,7 +256,7 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         }
         
         // Use service layer for each order with org scoping
-        let affectedCount = 0;
+        affectedCount = 0;
         for (const orderId of orderIds) {
           const result = await updateOrder(orderId, { status_code: 'archived' });
           if (result.error) {
@@ -275,7 +276,7 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         }
 
         // Use service layer for each order with org scoping
-        let affectedCount = 0;
+        affectedCount = 0;
         for (const orderId of orderIds) {
           const result = await updateOrder(orderId, { status_code: statusCode });
           if (result.error) {
@@ -295,9 +296,9 @@ router.post('/bulk-action', requireAuth, async (req, res) => {
         }
 
         // Use service layer for each order with org scoping
-        let affectedCount = 0;
+        affectedCount = 0;
         for (const orderId of orderIds) {
-          const result = await updateOrder(orderId, { assigned_to: assigneeId });
+          const result = await updateOrder(orderId, { salesperson_id: assigneeId });
           if (result.error) {
             return handleDatabaseError(res, { message: result.error }, 'bulk assign orders');
           }
