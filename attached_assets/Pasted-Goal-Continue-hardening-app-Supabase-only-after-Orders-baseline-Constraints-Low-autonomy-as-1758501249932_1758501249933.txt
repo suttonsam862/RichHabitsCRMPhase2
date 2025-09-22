@@ -1,0 +1,47 @@
+Goal: Continue hardening app (Supabase-only) after Orders baseline.
+
+Constraints:
+- Low autonomy; ask before deleting/renaming.
+- No schema/migrations; no ORM; use @supabase/supabase-js v2.
+- Keep dev-bypass & current working Orders route intact.
+- Avoid any network calls to prod in tests.
+
+Tasks:
+
+A) Orders list: restore safe fields (no joins)
+File: server/routes/orders/index.ts
+- Current select: .select('id,code,status_code,created_at,org_id')
+- Stepwise add back only if columns exist:
+  1) + due_date
+  2) + priority
+  3) + customer_contact_name, customer_contact_email
+- If a column causes 500, skip it and leave a TODO comment with the exact error.
+- Keep q/statusCode filters, sort, limit unchanged.
+
+B) DesignJobs routes → service layer
+Files: server/routes/design-jobs/**/* (or server/routes/design-jobs/index.ts)
+- Ensure GET list, GET :id, PATCH :id/status use services in server/services/supabase/designJobs.ts.
+- All handlers return {success, data} or {success:false, error}; no raw .update/.from mutations in routes.
+
+C) Test safety: block prod DB & prefer TEST_DATABASE_URL
+Files:
+- tests/setup.ts (or equivalent test boot)
+- server/tests/** if needed
+Changes:
+- If process.env.DATABASE_URL includes "supabase.co" and TEST_DATABASE_URL is set, auto-switch to TEST_DATABASE_URL for tests.
+- Otherwise, skip DB-init with a clear console.warn and mark integration suites as skipped (do NOT exit(1)).
+- Add a tiny helper `tests/helpers/test-env.ts` exporting getDbUrl() with that logic, and import it where needed.
+
+D) Dev DX polish
+Files:
+- scripts/dev-smoke.sh: add `?limit=5` to orders list and print length of array.
+- README.md: add a short “Running tests safely” section documenting TEST_DATABASE_URL and the skip behavior.
+
+Acceptance:
+- `npm run dev` boots clean.
+- `bash scripts/dev-smoke.sh` prints health JSON and orders array (not 401/500).
+- `rg -n "\.update\(|\.from\('design_jobs'\)" server/routes/design-jobs` returns nothing (routes use services).
+- Running `npm run test -s` does NOT attempt to hit prod DB; integration tests either use TEST_DATABASE_URL or are skipped with a warning.
+
+Output:
+- One PR with a checklist and a “How to verify” block (commands).
