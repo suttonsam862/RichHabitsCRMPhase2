@@ -524,9 +524,9 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                                 <p className="text-sm text-muted-foreground" data-testid={`user-email-${user.id}`}>
                                   {user.email}
                                 </p>
-                                {user.roles.length > 0 && (
+                                {(user.roles?.length ?? 0) > 0 && (
                                   <div className="flex gap-1 mt-1">
-                                    {user.roles.map((role: any) => (
+                                    {user.roles?.map((role: any) => (
                                       <Badge key={role.id} variant="outline" className="text-xs">
                                         {role.name}
                                       </Badge>
