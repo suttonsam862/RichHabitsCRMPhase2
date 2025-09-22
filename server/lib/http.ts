@@ -19,9 +19,10 @@ export interface ApiResponse<T = any> {
   error?: ApiError;
 }
 
-export function sendOk(res: any, data?: any, count?: any) {
-  const body = count !== undefined ? { success:true, data, count } : { success:true, data };
-  return res.status(200).json(body);
+export function sendOk(res: Response, data?: any, count?: number, status = 200) {
+  const body: any = { success: true, data };
+  if (typeof count === 'number') body.count = count;
+  return res.status(status).json(body);
 }
 export function sendCreated(res: any, data?: any) { return res.status(201).json({ success:true, data }); }
 export function sendNoContent(res: any) { return res.status(204).send(); }
@@ -32,18 +33,28 @@ export function sendSuccess(res: Response, data?: any, count?: number, status = 
   return res.status(status).json(body);
 }
 
+// Flexible arg parsing: sendErr(res, error, message?, details?, status?)
+// Also supports: sendErr(res, error, status)  <-- test uses this
 export function sendErr(
   res: Response,
   error: string,
-  message?: string,
+  message?: string | number,
   details?: any,
   status?: number
 ) {
-  const httpStatus = typeof status === 'number' ? status : 400;
+  let httpStatus = status;
+  let msg: string | undefined = typeof message === 'number' ? undefined : message;
+
+  if (typeof message === 'number' && typeof status !== 'number') {
+    httpStatus = message;
+  }
+
+  if (typeof httpStatus !== 'number') httpStatus = 500; // default for errors
+
   return res.status(httpStatus).json({
     success: false,
     error,
-    message,
+    message: msg,
     details,
     timestamp: new Date().toISOString(),
   });
