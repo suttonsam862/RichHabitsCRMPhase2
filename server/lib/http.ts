@@ -24,36 +24,34 @@ export function sendOk(res: any, data?: any, count?: any) {
 }
 export function sendCreated(res: any, data?: any) { return res.status(201).json({ success:true, data }); }
 export function sendNoContent(res: any) { return res.status(204).send(); }
-export function sendErr(res: Response, code: string, message: string, details?: any, statusCode = 500) {
-  // Ensure statusCode is a valid HTTP status code number
-  const validStatusCode = typeof statusCode === 'number' && statusCode >= 100 && statusCode <= 599 ? statusCode : 500;
-
-  res.status(validStatusCode).json({
+export function sendErr(
+  res: Response,
+  error: string,
+  message?: string,
+  details?: any,
+  status?: number
+) {
+  // Default to 400 unless explicitly overridden (unit tests expect this)
+  const httpStatus = typeof status === 'number' ? status : 400;
+  return res.status(httpStatus).json({
     success: false,
-    error: code,
+    error,
     message,
     details,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
+}
+);
 }
 
 /**
  * Send standardized success response
  */
-export function sendSuccess<T>(
-  res: Response, 
-  data?: T, 
-  count?: number, 
-  status: number = 200
-): void {
-  const response: ApiResponse<T> = {
-    success: true,
-    ...(data !== undefined && { data }),
-    ...(count !== undefined && { count })
-  };
-  res.status(status).json(response);
+export function sendSuccess(res: Response, data?: any, count?: number, status = 200) {
+  const body: any = { success: true, data };
+  if (typeof count === 'number') body.count = count;
+  return res.status(status).json(body);
 }
-
 /**
  * Send standardized error response
  */

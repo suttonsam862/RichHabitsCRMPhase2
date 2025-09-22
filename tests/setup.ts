@@ -93,3 +93,14 @@ afterEach(async () => {
     (global.fetch as any).mockReset();
   }
 });
+/** Polyfill for esbuild invariant in Vitest (TextEncoder must return Uint8Array) */
+import { TextEncoder as _TE, TextDecoder as _TD } from 'util';
+try {
+  const ok =
+    typeof globalThis.TextEncoder !== 'undefined' &&
+    (new (globalThis as any).TextEncoder()).encode('') instanceof Uint8Array;
+  if (!ok) throw new Error('broken');
+} catch {
+  (globalThis as any).TextEncoder = _TE as any;
+  (globalThis as any).TextDecoder = _TD as any;
+}

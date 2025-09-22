@@ -286,7 +286,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                   <Badge variant={organization.isBusiness ? "default" : "secondary"} data-testid="badge-org-type">
                     {organization.isBusiness ? 'Business' : 'School'}
                   </Badge>
-                  {stats.usersCount > 0 && (
+                  {(stats?.usersCount ?? 0) > 0 && (
                     <Badge variant="outline" data-testid="badge-user-count">
                       <Users className="h-3 w-3 mr-1" />
                       {stats.usersCount} user{stats.usersCount !== 1 ? 's' : ''}

@@ -23,9 +23,28 @@ export interface AuthedRequest extends Request {
  * Middleware to require authentication for protected routes
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  // Safe header getter for mocked Request objects in tests
+  const getHeader = (name: string) => {
+    const h = (req as any).get ? (req as any).get(name) :
+             (req as any).header ? (req as any).header(name) :
+             undefined;
+    return h ?? (req.headers?.[name.toLowerCase()] as string | undefined);
+  };
+
+  // DEV/TEST BYPASS: accept x-dev-auth instead of real JWT
+  if ((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') &&
+      getHeader('x-dev-auth') === process.env.DEV_API_KEY) {
+    const org = process.env.DEV_DEFAULT_ORG_ID ?? '00000000-0000-0000-0000-000000000000';
+    const uid = process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-000000000001';
+    (req as any).user = { id: uid, organization_id: org };
+    res.locals.user = (req as any).user;
+    res.locals.org_id = org;
+    return next();
+  }
+
   try {
     // DEV BYPASS: accept x-dev-auth instead of real JWT
-    if (process.env.NODE_ENV === 'development' && req.header('x-dev-auth') === process.env.DEV_API_KEY) {
+    if (process.env.NODE_ENV === 'development' && getHeader('x-dev-auth') === process.env.DEV_API_KEY) {
       const org = process.env.DEV_DEFAULT_ORG_ID ?? '00000000-0000-0000-0000-000000000000';
       const uid = process.env.DEV_USER_ID ?? '00000000-0000-0000-0000-000000000001';
       (req as any).user = { id: uid, organization_id: org };
