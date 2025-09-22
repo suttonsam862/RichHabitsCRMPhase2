@@ -7,23 +7,15 @@ import {
   Mail,
   Users,
   Images,
-  FileText,
-  Settings,
   X,
   Edit,
-  Trash,
   AlertCircle,
-  Loader2,
   Upload,
   Download,
   Eye,
-  Calendar,
-  Hash,
   Globe,
-  User,
   Shield,
-  Star,
-  Trash2 // Import Trash2 icon
+  Trash2
 } from "lucide-react";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,7 +23,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getLogoDisplayUrl } from "@/lib/logoUtils";
@@ -39,71 +30,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-// Types for the summary data
-interface OrganizationSummary {
-  organization: {
-    id: string;
-    name: string;
-    email?: string;
-    phone?: string;
-    state?: string;
-    city?: string;
-    addressLine1?: string;
-    addressLine2?: string;
-    postalCode?: string;
-    website?: string;
-    logoUrl?: string;
-    titleCardUrl?: string;
-    brandPrimary?: string;
-    brandSecondary?: string;
-    colorPalette?: string[];
-    isBusiness?: boolean;
-    status?: string;
-    notes?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  };
-  brandingFiles: Array<{
-    name: string;
-    size?: number;
-    url: string;
-    uploadedAt?: string;
-  }>;
-  sports: Array<{
-    id: string;
-    sportId: string;
-    sportName: string;
-    teamName?: string;
-    sportEmoji?: string;
-    contactName?: string;
-    contactEmail?: string;
-    contactPhone?: string;
-    contactUserId?: string;
-    contactUserFullName?: string;
-    contactUserEmail?: string;
-  }>;
-  users: Array<{
-    id: string;
-    email: string;
-    fullName?: string;
-    phone?: string;
-    avatarUrl?: string;
-    isActive: boolean;
-    lastLogin?: string;
-    roles: Array<{
-      id: string;
-      name: string;
-      slug: string;
-      description?: string;
-    }>;
-  }>;
-  stats: {
-    sportsCount: number;
-    usersCount: number;
-    brandingFilesCount: number;
-    activeUsersCount: number;
-  };
-}
 
 // Helper to format dates safely
 function formatDateSafe(dateString?: string | null): string {
@@ -154,7 +80,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
   const { toast } = useToast();
 
   // Fetch organization summary using new endpoint
-  const { data: summary, isLoading, error } = useQuery({
+  const { data: summary, isLoading } = useQuery({
     queryKey: ['organizations', organizationId, 'summary'],
     queryFn: () => apiRequest(`/api/v1/organizations/${organizationId}/summary`),
     enabled: open && !!organizationId,
@@ -162,15 +88,12 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
   });
 
   // Rock-solid defaults
-  const isOpen = open;
   const loading = isLoading;
-  const errorState = error as Error | null;
 
   const organization = summary?.organization ?? { name: '', email: '', isBusiness: false };
   const stats = summary?.stats ?? {};
   const brandingFiles = summary?.brandingFiles ?? [];
   const sportsTeams = summary?.sports ?? [];
-  const contacts = summary?.contacts ?? [];
   const users = summary?.users ?? [];
 
   const deleteOrgMutation = useMutation({
@@ -183,7 +106,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
         description: "The organization has been successfully deleted.",
       });
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       console.error("Delete failed:", error);
       // Check if the error is a string or an object with a message property
       let errorMessage = 'Failed to delete organization';
@@ -191,8 +114,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
         errorMessage = error;
       } else if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string') {
+        errorMessage = (error as any).message;
       }
       setDeleteError(errorMessage);
       toast({
