@@ -1,0 +1,110 @@
+2) OrgQuickViewDialog doesn’t render content in tests (7 tests failing)
+
+Symptoms in output:
+
+Body is just <div /> while tests look for “Test Organization”, tabs, and loading text.
+
+Earlier you saw the sr-only “Dialog opened/closed” helpers; now nothing shows, which means the content isn’t mounting.
+
+Also saw crashes previously on stats.brandingFilesCount and brandingFiles.length—so we need defensive defaults and we must render even while loading.
+
+What to change (inside client/src/components/org-quick-view-dialog.tsx)
+
+Never return null when open is true. Render the dialog shell and show a loading or empty state inside the tabs/content.
+
+Defensive defaults right after your queries:
+
+const isLoading = query?.isLoading ?? false;
+const err = (query?.error as Error) ?? null;
+const payload = query?.data ?? {};
+
+const organization = payload.organization ?? { name: '', email: '', isBusiness: false };
+const stats = payload.stats ?? {};
+const brandingFiles = payload.brandingFiles ?? [];
+const sportsTeams = payload.sportsTeams ?? [];
+const contacts = payload.contacts ?? [];
+const users = payload.users ?? [];
+
+const brandingCount = (stats.brandingFilesCount ?? brandingFiles.length ?? 0);
+const sportsCount = (stats.sportsCount ?? sportsTeams.length ?? 0);
+const usersCount = (stats.usersCount ?? users.length ?? 0);
+
+
+Force content to mount and ensure tabs/labels exist even while loading.
+
+If you’re using Radix UI, set forceMount on DialogContent (and/or on TabsContent) so JSDOM sees it:
+
+<Dialog open={open} onOpenChange={onOpenChange}>
+  <DialogContent forceMount>
+    <h2>{organization.name || (isLoading ? 'Loading organization details...' : 'Organization')}</h2>
+
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList role="tablist">
+        <TabsTrigger value="branding" role="tab">Branding ({brandingCount})</TabsTrigger>
+        <TabsTrigger value="sports" role="tab">Sports ({sportsCount})</TabsTrigger>
+        <TabsTrigger value="users" role="tab">Users ({usersCount})</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="branding" forceMount>
+        {(brandingFiles?.length ?? 0) > 0 ? (
+          <div className="grid gap-4">
+            {brandingFiles.map((file: any, i: number) => (
+              <Card key={file?.id ?? `branding-${i}`}>{/* … */}</Card>
+            ))}
+          </div>
+        ) : isLoading ? (
+          <p>Loading organization details...</p>
+        ) : (
+          <p>No branding files</p>
+        )}
+      </TabsContent>
+
+      <TabsContent value="sports" forceMount>
+        {(sportsTeams?.length ?? 0) > 0 ? (
+          sportsTeams.map((t: any, i: number) => <div key={t?.id ?? `team-${i}`}>{t?.name ?? 'Team'}</div>)
+        ) : isLoading ? (
+          <p>Loading organization details...</p>
+        ) : (
+          <p>No sports teams</p>
+        )}
+      </TabsContent>
+
+      <TabsContent value="users" forceMount>
+        {(users?.length ?? 0) > 0 ? (
+          users.map((u: any, i: number) => (
+            <div key={u?.id ?? `user-${i}`}>
+              <div>{u?.full_name ?? 'User'}</div>
+              {(u?.roles?.length ?? 0) > 0 && (
+                <div className="flex gap-1 mt-1">
+                  {u.roles.map((r: any, j: number) => (
+                    <Badge key={r?.id ?? `role-${j}`} variant="outline">
+                      {r?.name ?? 'Role'}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))
+        ) : isLoading ? (
+          <p>Loading organization details...</p>
+        ) : (
+          <p>No users</p>
+        )}
+      </TabsContent>
+    </Tabs>
+
+    {err && <div role="alert">Failed to load organization data</div>}
+  </DialogContent>
+</Dialog>
+
+
+Fix the “unique key” warning
+Every .map must use a stable key. You can safely do item.id ?? \prefix-${index}`` as shown.
+
+Why this fixes the tests
+
+The tests assert for text (“Test Organization”, “Loading organization details…”, and /failed to load organization data/i) and use getByRole('tab', {name: /branding/i}). Those elements need to always be present when open is true—even if the data is loading—so they can be found and clicked.
+
+forceMount ensures Radix Dialog/Tabs content exists in the DOM under JSDOM.
+
+The defensive ?? [] / ?? {} stops the crashes on .length / property reads.

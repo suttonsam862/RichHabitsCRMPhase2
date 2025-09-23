@@ -80,21 +80,27 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
   const { toast } = useToast();
 
   // Fetch organization summary using new endpoint
-  const { data: summary, isLoading } = useQuery({
+  const query = useQuery({
     queryKey: ['organizations', organizationId, 'summary'],
     queryFn: () => apiRequest(`/api/v1/organizations/${organizationId}/summary`),
     enabled: open && !!organizationId,
     staleTime: 30000, // Cache for 30 seconds
   });
 
-  // Rock-solid defaults
-  const loading = isLoading;
+  // Defensive defaults right after queries
+  const isLoading = query?.isLoading ?? false;
+  const err = (query?.error as Error) ?? null;
+  const payload = query?.data ?? {};
 
-  const organization = summary?.organization ?? { name: '', email: '', isBusiness: false };
-  const stats = summary?.stats ?? {};
-  const brandingFiles = summary?.brandingFiles ?? [];
-  const sportsTeams = summary?.sports ?? [];
-  const users = summary?.users ?? [];
+  const organization = payload.organization ?? { name: '', email: '', isBusiness: false };
+  const stats = payload.stats ?? {};
+  const brandingFiles = payload.brandingFiles ?? [];
+  const sportsTeams = payload.sportsTeams ?? [];
+  const users = payload.users ?? [];
+
+  const brandingCount = (stats.brandingFilesCount ?? brandingFiles.length ?? 0);
+  const sportsCount = (stats.sportsCount ?? sportsTeams.length ?? 0);
+  const usersCount = (stats.usersCount ?? users.length ?? 0);
 
   const deleteOrgMutation = useMutation({
     mutationFn: () => apiRequest(`/api/v1/organizations/${organizationId}`, { method: 'DELETE' }),
@@ -127,9 +133,9 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
   });
 
   const handleDelete = async () => {
-    if (!summary?.organization) return;
+    if (!payload?.organization) return;
 
-    if (confirm(`Are you sure you want to delete ${summary.organization.name}? This action cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete ${payload.organization.name}? This action cannot be undone.`)) {
       try {
         await deleteOrgMutation.mutateAsync();
       } catch (error) {
@@ -142,7 +148,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent forceMount className="max-w-6xl max-h-[90vh] p-0 overflow-hidden">
         <DialogDescription className="sr-only">
           {editMode ? "Edit organization details and settings" : "View comprehensive organization details, branding, sports, and users"}
         </DialogDescription>
@@ -173,7 +179,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               <div className="space-y-2">
                 {/* Title */}
                 <DialogTitle className="text-2xl font-bold" data-testid="org-title">
-                  {organization.name || (loading ? 'Loading organization details...' : 'Organization')}
+                  {organization.name || (isLoading ? 'Loading organization details...' : 'Organization')}
                 </DialogTitle>
                 <div className="flex items-center gap-3 text-muted-foreground flex-wrap">
                   {organization.state && (
@@ -259,15 +265,15 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                 </TabsTrigger>
                 <TabsTrigger value="branding" role="tab" data-testid="tab-branding" className="flex items-center gap-2">
                   <Images className="h-4 w-4" />
-                  Branding ({stats?.brandingFilesCount ?? brandingFiles.length ?? 0})
+                  Branding ({brandingCount})
                 </TabsTrigger>
                 <TabsTrigger value="sports" role="tab" data-testid="tab-sports" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Sports ({stats?.sportsCount ?? sportsTeams.length ?? 0})
+                  Sports ({sportsCount})
                 </TabsTrigger>
                 <TabsTrigger value="users" role="tab" data-testid="tab-users" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Users ({stats?.usersCount ?? users.length ?? 0})
+                  Users ({usersCount})
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -407,11 +413,11 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                 )}
               </TabsContent>
 
-              <TabsContent value="branding" className="space-y-6 mt-0">
+              <TabsContent value="branding" forceMount className="space-y-6 mt-0">
                 {(brandingFiles?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {brandingFiles.map((file: any, index: number) => (
-                      <Card key={file.id ?? index} className="overflow-hidden">
+                      <Card key={file.id ?? `branding-${index}`} className="overflow-hidden">
                         <div className="aspect-video bg-muted relative">
                           {file.url && (
                             <img
@@ -441,7 +447,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       </Card>
                     ))}
                   </div>
-                ) : loading ? (
+                ) : isLoading ? (
                   <p>Loading organization details...</p>
                 ) : (
                   <div className="text-center py-12">
@@ -455,11 +461,11 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                 )}
               </TabsContent>
 
-              <TabsContent value="sports" className="space-y-4 mt-0">
+              <TabsContent value="sports" forceMount className="space-y-4 mt-0">
                 {(sportsTeams?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
                     {sportsTeams.map((sport: any, i: number) => (
-                      <Card key={sport.id ?? i}>
+                      <Card key={sport.id ?? `team-${i}`}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -493,7 +499,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       </Card>
                     ))}
                   </div>
-                ) : loading ? (
+                ) : isLoading ? (
                   <p>Loading organization details...</p>
                 ) : (
                   <div className="text-center py-12">
@@ -503,11 +509,11 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                 )}
               </TabsContent>
 
-              <TabsContent value="users" className="space-y-4 mt-0">
+              <TabsContent value="users" forceMount className="space-y-4 mt-0">
                 {(users?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
                     {users.map((user: any, i: number) => (
-                      <Card key={user.id ?? i}>
+                      <Card key={user.id ?? `user-${i}`}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -526,8 +532,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                                 </p>
                                 {(user.roles?.length ?? 0) > 0 && (
                                   <div className="flex gap-1 mt-1">
-                                    {user.roles?.map((role: any) => (
-                                      <Badge key={role.id} variant="outline" className="text-xs">
+                                    {user.roles?.map((role: any, j: number) => (
+                                      <Badge key={role.id ?? `role-${j}`} variant="outline" className="text-xs">
                                         {role.name}
                                       </Badge>
                                     ))}
@@ -550,7 +556,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       </Card>
                     ))}
                   </div>
-                ) : loading ? (
+                ) : isLoading ? (
                   <p>Loading organization details...</p>
                 ) : (
                   <div className="text-center py-12">
@@ -562,6 +568,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
             </ScrollArea>
           </Tabs>
         </div>
+
+        {err && <div role="alert">Failed to load organization data</div>}
       </DialogContent>
     </Dialog>
   );

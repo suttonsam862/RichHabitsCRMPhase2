@@ -52,9 +52,9 @@ describe('OrgQuickViewDialog', () => {
     return render(
       <QueryClientProvider client={queryClient}>
         <OrgQuickViewDialog
-          isOpen={isOpen}
+          open={isOpen}
           onClose={() => {}}
-          orgId={orgId}
+          organizationId={orgId}
         />
       </QueryClientProvider>
     );
