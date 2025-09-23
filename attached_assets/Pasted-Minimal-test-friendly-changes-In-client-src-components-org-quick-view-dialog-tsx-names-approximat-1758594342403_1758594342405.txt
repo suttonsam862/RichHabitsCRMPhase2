@@ -1,0 +1,134 @@
+Minimal, test-friendly changes
+
+In client/src/components/org-quick-view-dialog.tsx (names approximated to your current structure):
+
+1) Header & org-type labels
+// compute once
+const isLoading = query?.isLoading ?? false;
+const payload = query?.data ?? {};
+const organization = payload.organization ?? { name: '', email: '', isBusiness: false };
+
+// Title: do NOT put the loading message here.
+// If empty, just say "Organization" so there’s no duplicate “Loading...” text.
+const titleText = organization.name || 'Organization';
+
+<h2 data-testid="org-title" className="tracking-tight text-2xl font-bold">
+  {titleText}
+</h2>
+
+<div className="flex items-center gap-3 text-muted-foreground flex-wrap">
+  {/* This is the single “School” node the tests will match */}
+  <Badge data-testid="badge-org-type">
+    {organization.isBusiness ? 'Business' : 'School'}
+  </Badge>
+
+  {/* Keep this for details, but avoid exact “School” to prevent duplicate match */}
+  <p className="font-medium" data-testid="text-org-type-detail">
+    Organization type: {organization.isBusiness ? 'Business' : 'School'}
+  </p>
+</div>
+
+2) Single loading message, not everywhere
+
+Right under the header (and not inside tabs/contents), render a single loading message:
+
+{isLoading && (
+  <p data-testid="loading">Loading organization details...</p>
+)}
+
+
+Then, inside each <TabsContent>, don’t render the loading text anymore. Show nothing or an empty placeholder while loading:
+
+<TabsContent value="branding" forceMount>
+  {!isLoading && (brandingFiles?.length ?? 0) > 0 ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {brandingFiles.map((file: any, i: number) => (
+        <Card key={file?.id ?? `branding-${i}`}>
+          <CardHeader>
+            {/* Must be exactly "logo.png" when file.name is that */}
+            <CardTitle>{file?.name ?? 'Unknown file'}</CardTitle>
+            {/* Must be exactly "1.0 KB" etc. */}
+            <CardDescription>{formatBytes(file?.size ?? 0)}</CardDescription>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  ) : !isLoading ? (
+    <p>No branding files</p>
+  ) : null}
+</TabsContent>
+
+
+Ensure your formatBytes(1024) returns 1.0 KB (not 1 KB, 1 kB, etc.).
+
+3) Sports pane: exact visible strings
+<TabsContent value="sports" forceMount>
+  {!isLoading && (sportsTeams?.length ?? 0) > 0 ? (
+    <div className="space-y-3">
+      {sportsTeams.map((t: any, i: number) => (
+        <div key={t?.id ?? `team-${i}`}>
+          {/* Must be visible, exactly "Basketball" etc */}
+          <div className="font-medium">{t?.name ?? 'Team'}</div>
+          {/* Must be visible, exactly "John Coach" etc */}
+          <div className="text-sm text-muted-foreground">{t?.coach ?? ''}</div>
+        </div>
+      ))}
+    </div>
+  ) : !isLoading ? (
+    <p>No sports teams</p>
+  ) : null}
+</TabsContent>
+
+4) Users pane: roles show exactly “Admin”
+<TabsContent value="users" forceMount>
+  {!isLoading && (users?.length ?? 0) > 0 ? (
+    <div className="space-y-3">
+      {users.map((u: any, i: number) => (
+        <div key={u?.id ?? `user-${i}`}>
+          <div className="font-medium">{u?.full_name ?? 'User'}</div>
+          <div className="text-sm text-muted-foreground">{u?.email ?? ''}</div>
+
+          {(u?.roles?.length ?? 0) > 0 && (
+            <div className="flex gap-1 mt-1">
+              {u.roles.map((r: any, j: number) => (
+                <Badge key={r?.id ?? `role-${j}`} variant="outline">
+                  {/* Must be exactly "Admin" etc */}
+                  {r?.name ?? 'Role'}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  ) : !isLoading ? (
+    <p>No users</p>
+  ) : null}
+</TabsContent>
+
+5) Tabs are always present and clickable
+
+Keep the tab bar mounted regardless of loading state, and use Radix Tabs’ state so Testing Library can click them:
+
+<Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="branding">
+  <TabsList role="tablist">
+    <TabsTrigger value="branding" role="tab">Branding ({brandingCount})</TabsTrigger>
+    <TabsTrigger value="sports" role="tab">Sports ({sportsCount})</TabsTrigger>
+    <TabsTrigger value="users" role="tab">Users ({usersCount})</TabsTrigger>
+  </TabsList>
+  {/* ...contents as above... */}
+</Tabs>
+
+Why these fix the 5 failures
+
+Single “School”: only the badge is exactly School; detail is Organization type: School, so getByText('School') is unique.
+
+Branding: CardTitle text is exactly logo.png, and size text is exactly 1.0 KB, so both assertions pass when the tab is clicked.
+
+Sports: visible plain text Basketball and John Coach rendered as-is in the sports tab.
+
+Users: role badges render plain Admin, so getByText('Admin') succeeds.
+
+Loading: you now emit the loading message only once (a single <p>), avoiding multiple matches.
+
+That’s it — with those exact strings and de-dup of loading text, the suite should flip to green.

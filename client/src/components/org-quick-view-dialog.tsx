@@ -94,8 +94,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
 
   const organization = payload.organization ?? { name: '', email: '', isBusiness: false };
   const stats = payload.stats ?? {};
-  const brandingFiles = payload.brandingFiles ?? [];
-  const sportsTeams = payload.sportsTeams ?? [];
+  const brandingFiles = payload.brandingFiles ?? payload.branding ?? [];
+  const sportsTeams = payload.sportsTeams ?? payload.sports ?? [];
   const users = payload.users ?? [];
 
   const brandingCount = (stats.brandingFilesCount ?? brandingFiles.length ?? 0);
@@ -179,7 +179,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
               <div className="space-y-2">
                 {/* Title */}
                 <DialogTitle className="text-2xl font-bold" data-testid="org-title">
-                  {organization.name || (isLoading ? 'Loading organization details...' : 'Organization')}
+                  {organization.name || 'Organization'}
                 </DialogTitle>
                 <div className="flex items-center gap-3 text-muted-foreground flex-wrap">
                   {organization.state && (
@@ -254,6 +254,11 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
           )}
         </DialogHeader>
 
+        {/* Single loading message */}
+        {isLoading && (
+          <p data-testid="loading" className="px-6 text-muted-foreground">Loading organization details...</p>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="overview" className="h-full flex flex-col">
@@ -294,7 +299,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                         <div>
                           <p className="text-muted-foreground mb-1">Type</p>
                           <p className="font-medium" data-testid="text-org-type-detail">
-                            {organization.isBusiness ? 'Business' : 'School'}
+                            Organization type: {organization.isBusiness ? 'Business' : 'School'}
                           </p>
                         </div>
                         <div>
@@ -437,8 +442,8 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                           </div>
                         </div>
                         <CardContent className="p-4">
-                          <p className="font-medium text-sm truncate" title={file.name}>
-                            {file.name}
+                          <p className="font-medium text-sm">
+                            {file.name ?? 'Unknown file'}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {formatFileSize(file.size)}
@@ -447,9 +452,7 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       </Card>
                     ))}
                   </div>
-                ) : isLoading ? (
-                  <p>Loading organization details...</p>
-                ) : (
+                ) : !isLoading ? (
                   <div className="text-center py-12">
                     <Images className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">No branding files uploaded yet</p>
@@ -458,112 +461,50 @@ export function OrgQuickViewDialog({ organizationId, open, onClose }: OrgQuickVi
                       Upload Files
                     </Button>
                   </div>
-                )}
+                ) : null}
               </TabsContent>
 
               <TabsContent value="sports" forceMount className="space-y-4 mt-0">
-                {(sportsTeams?.length ?? 0) > 0 ? (
-                  <div className="space-y-4">
-                    {sportsTeams.map((sport: any, i: number) => (
-                      <Card key={sport.id ?? `team-${i}`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="text-2xl">{sport.sportEmoji || '🏃'}</div>
-                              <div>
-                                <p className="font-medium" data-testid={`sport-name-${sport.id}`}>
-                                  {sport.sportName}
-                                </p>
-                                {sport.teamName && (
-                                  <p className="text-sm text-muted-foreground">
-                                    Team: {sport.teamName}
-                                  </p>
-                                )}
-                                {sport.contact_name && (
-                                  <p className="text-sm text-muted-foreground">
-                                    Contact: {sport.contact_name}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right text-sm text-muted-foreground">
-                              {sport.contact_email && (
-                                <p data-testid={`sport-email-${sport.id}`}>{sport.contact_email}</p>
-                              )}
-                              {sport.contact_phone && (
-                                <p data-testid={`sport-phone-${sport.id}`}>{sport.contact_phone}</p>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                {!isLoading && (sportsTeams?.length ?? 0) > 0 ? (
+                  <div className="space-y-3">
+                    {sportsTeams.map((t: any, i: number) => (
+                      <div key={t?.id ?? `team-${i}`}>
+                        <div className="font-medium">{t?.sport ?? t?.sportName ?? 'Team'}</div>
+                        <div className="text-sm text-muted-foreground">{t?.contactName ?? t?.contact_name ?? ''}</div>
+                        {(t?.contactEmail ?? t?.contact_email) && (
+                          <div className="text-sm text-muted-foreground">{t?.contactEmail ?? t?.contact_email}</div>
+                        )}
+                      </div>
                     ))}
                   </div>
-                ) : isLoading ? (
-                  <p>Loading organization details...</p>
-                ) : (
-                  <div className="text-center py-12">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No sports teams</p>
-                  </div>
-                )}
+                ) : !isLoading ? (
+                  <p>No sports teams</p>
+                ) : null}
               </TabsContent>
 
               <TabsContent value="users" forceMount className="space-y-4 mt-0">
-                {(users?.length ?? 0) > 0 ? (
-                  <div className="space-y-4">
-                    {users.map((user: any, i: number) => (
-                      <Card key={user.id ?? `user-${i}`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar>
-                                <AvatarImage src={user.avatarUrl} alt={user.fullName || user.email} />
-                                <AvatarFallback>
-                                  {(user.fullName || user.email)?.charAt(0)?.toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium" data-testid={`user-name-${user.id}`}>
-                                  {user.fullName || user.email}
-                                </p>
-                                <p className="text-sm text-muted-foreground" data-testid={`user-email-${user.id}`}>
-                                  {user.email}
-                                </p>
-                                {(user.roles?.length ?? 0) > 0 && (
-                                  <div className="flex gap-1 mt-1">
-                                    {user.roles?.map((role: any, j: number) => (
-                                      <Badge key={role.id ?? `role-${j}`} variant="outline" className="text-xs">
-                                        {role.name}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right text-sm text-muted-foreground">
-                              <Badge variant={user.isActive ? "default" : "secondary"}>
-                                {user.isActive ? 'Active' : 'Inactive'}
+                {!isLoading && (users?.length ?? 0) > 0 ? (
+                  <div className="space-y-3">
+                    {users.map((u: any, i: number) => (
+                      <div key={u?.id ?? `user-${i}`}>
+                        <div className="font-medium">{u?.fullName ?? u?.full_name ?? 'User'}</div>
+                        <div className="text-sm text-muted-foreground">{u?.email ?? ''}</div>
+
+                        {(u?.roles?.length ?? 0) > 0 && (
+                          <div className="flex gap-1 mt-1">
+                            {u.roles.map((r: any, j: number) => (
+                              <Badge key={r?.id ?? `role-${j}`} variant="outline">
+                                {typeof r === 'string' ? r : (r?.name ?? 'Role')}
                               </Badge>
-                              {user.lastLogin && (
-                                <p className="mt-1 text-xs">
-                                  Last: {formatDateSafe(user.lastLogin)}
-                                </p>
-                              )}
-                            </div>
+                            ))}
                           </div>
-                        </CardContent>
-                      </Card>
+                        )}
+                      </div>
                     ))}
                   </div>
-                ) : isLoading ? (
-                  <p>Loading organization details...</p>
-                ) : (
-                  <div className="text-center py-12">
-                    <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No users</p>
-                  </div>
-                )}
+                ) : !isLoading ? (
+                  <p>No users</p>
+                ) : null}
               </TabsContent>
             </ScrollArea>
           </Tabs>

@@ -1,0 +1,2360 @@
+~/workspace$ NODE_ENV=test npm run test -s -- \
+  tests/unit/api-helpers.test.ts \
+  tests/unit/org-quick-view.test.tsx \
+  server/tests/services/orders.test.ts
+
+ DEV  v3.2.4 /home/runner/workspace
+
+stdout | tests/unit/api-helpers.test.ts
+[dotenv@17.2.1] injecting env (3) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+
+stdout | tests/unit/org-quick-view.test.tsx
+[dotenv@17.2.1] injecting env (3) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+stdout | tests/unit/org-quick-view.test.tsx
+🔌 Database connection string: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+🔍 Is Supabase? true
+
+stdout | tests/unit/api-helpers.test.ts
+🔌 Database connection string: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+🔍 Is Supabase? true
+
+stderr | tests/unit/org-quick-view.test.tsx
+⚠️  Production database detected but no TEST_DATABASE_URL set - skipping database tests
+Skipping database tests: Production database detected but no TEST_DATABASE_URL configured. Set TEST_DATABASE_URL to run database tests safely.
+
+stderr | tests/unit/api-helpers.test.ts
+⚠️  Production database detected but no TEST_DATABASE_URL set - skipping database tests
+Skipping database tests: Production database detected but no TEST_DATABASE_URL configured. Set TEST_DATABASE_URL to run database tests safely.
+
+ ✓ tests/unit/api-helpers.test.ts (5 tests) 10ms
+stdout | server/tests/services/orders.test.ts
+[dotenv@17.2.1] injecting env (3) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+stdout | server/tests/services/orders.test.ts
+🔌 Database connection string: postgresql://postgres.qkampkccsdiebvkcfuby:***@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+🔍 Is Supabase? true
+
+stderr | server/tests/services/orders.test.ts
+⚠️  Production database detected but no TEST_DATABASE_URL set - skipping database tests
+Skipping database tests: Production database detected but no TEST_DATABASE_URL configured. Set TEST_DATABASE_URL to run database tests safely.
+
+ ✓ server/tests/services/orders.test.ts (3 tests) 6ms
+ ❯ tests/unit/org-quick-view.test.tsx (8 tests | 5 failed) 4853ms
+   ✓ OrgQuickViewDialog > renders organization quick view dialog when open  459ms
+   × OrgQuickViewDialog > displays organization information correctly 1075ms
+     → Found multiple elements with the text: School
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<div
+  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+  data-testid="badge-org-type"
+>
+  School
+</div>
+
+Ignored nodes: comments, script, style
+<p
+  class="font-medium"
+  data-testid="text-org-type-detail"
+>
+  School
+</p>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:ra:"
+    aria-labelledby="radix-:r9:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:r8:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:ra:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:r9:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:ra:"
+      aria-labelledby="radix-:r9:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:r8:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:ra:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:r9:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fill
+   × OrgQuickViewDialog > shows branding files in grid layout 1084ms
+     → Unable to find an element with the text: logo.png. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:ri:"
+    aria-labelledby="radix-:rh:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:rg:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:ri:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:rh:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:ri:"
+      aria-labelledby="radix-:rh:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:rg:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:ri:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:rh:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fill
+   × OrgQuickViewDialog > displays sports and contacts information 1078ms
+     → Unable to find an element with the text: Basketball. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:rq:"
+    aria-labelledby="radix-:rp:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:ro:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:rq:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:rp:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:rq:"
+      aria-labelledby="radix-:rp:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:ro:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:rq:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:rp:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fill
+   × OrgQuickViewDialog > shows users and their roles 1055ms
+     → Unable to find an element with the text: Admin. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:r12:"
+    aria-labelledby="radix-:r11:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:r10:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:r12:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:r11:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              s...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:r12:"
+      aria-labelledby="radix-:r11:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:r10:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:r12:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:r11:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fi...
+   × OrgQuickViewDialog > handles loading state properly 36ms
+     → Found multiple elements with the text: Loading organization details...
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<h2
+  class="tracking-tight text-2xl font-bold"
+  data-testid="org-title"
+  id="radix-:r19:"
+>
+  Loading organization details...
+</h2>
+
+Ignored nodes: comments, script, style
+<p>
+  Loading organization details...
+</p>
+
+Ignored nodes: comments, script, style
+<p>
+  Loading organization details...
+</p>
+
+Ignored nodes: comments, script, style
+<p>
+  Loading organization details...
+</p>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-atomic="true"
+    aria-live="polite"
+    class="sr-only"
+  >
+    Dialog closed
+  </div>
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-atomic="true"
+    aria-live="polite"
+    class="sr-only"
+  >
+    Dialog opened
+  </div>
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:r1a:"
+    aria-labelledby="radix-:r19:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:r18:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:r1a:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            />
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:r19:"
+            >
+              Loading organization details...
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg...
+   ✓ OrgQuickViewDialog > handles error state gracefully 53ms
+   ✓ OrgQuickViewDialog > does not render when closed 11ms
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/org-quick-view.test.tsx > OrgQuickViewDialog > displays organization information correctly
+TestingLibraryElementError: Found multiple elements with the text: School
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<div
+  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+  data-testid="badge-org-type"
+>
+  School
+</div>
+
+Ignored nodes: comments, script, style
+<p
+  class="font-medium"
+  data-testid="text-org-type-detail"
+>
+  School
+</p>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:ra:"
+    aria-labelledby="radix-:r9:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:r8:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:ra:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:r9:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:ra:"
+      aria-labelledby="radix-:r9:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:r8:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:ra:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:r9:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fill
+ ❯ Proxy.waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ tests/unit/org-quick-view.test.tsx:80:11
+     78|     renderComponent();
+     79| 
+     80|     await waitFor(() => {
+       |           ^
+     81|       expect(screen.getByText('Test Organization')).toBeInTheDocument();
+     82|       expect(screen.getByText('test@example.com')).toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  tests/unit/org-quick-view.test.tsx > OrgQuickViewDialog > shows branding files in grid layout
+TestingLibraryElementError: Unable to find an element with the text: logo.png. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:ri:"
+    aria-labelledby="radix-:rh:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:rg:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:ri:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:rh:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:ri:"
+      aria-labelledby="radix-:rh:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:rg:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:ri:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:rh:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fill
+ ❯ Proxy.waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ tests/unit/org-quick-view.test.tsx:94:11
+     92|     fireEvent.click(screen.getByRole('tab', { name: /branding/i }));
+     93| 
+     94|     await waitFor(() => {
+       |           ^
+     95|       expect(screen.getByText('logo.png')).toBeInTheDocument();
+     96|       expect(screen.getByText('1.0 KB')).toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  tests/unit/org-quick-view.test.tsx > OrgQuickViewDialog > displays sports and contacts information
+TestingLibraryElementError: Unable to find an element with the text: Basketball. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:rq:"
+    aria-labelledby="radix-:rp:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:ro:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:rq:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:rp:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:rq:"
+      aria-labelledby="radix-:rp:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:ro:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:rq:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:rp:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fill
+ ❯ Proxy.waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ tests/unit/org-quick-view.test.tsx:106:11
+    104|     fireEvent.click(screen.getByRole('tab', { name: /sports/i }));
+    105| 
+    106|     await waitFor(() => {
+       |           ^
+    107|       expect(screen.getByText('Basketball')).toBeInTheDocument();
+    108|       expect(screen.getByText('John Coach')).toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  tests/unit/org-quick-view.test.tsx > OrgQuickViewDialog > shows users and their roles
+TestingLibraryElementError: Unable to find an element with the text: Admin. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:r12:"
+    aria-labelledby="radix-:r11:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:r10:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:r12:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            >
+              T
+            </span>
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:r11:"
+            >
+              Test Organization
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg
+              class="lucide lucide-trash2 h-4 w-4 mr-2"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              s...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body
+    data-scroll-locked="1"
+    style="pointer-events: none;"
+  >
+    <span
+      aria-hidden="true"
+      data-aria-hidden="true"
+      data-radix-focus-guard=""
+      style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+      tabindex="0"
+    />
+    <div
+      aria-hidden="true"
+      data-aria-hidden="true"
+    />
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      data-aria-hidden="true"
+      data-state="open"
+      style="pointer-events: auto;"
+    />
+    <div
+      aria-describedby="radix-:r12:"
+      aria-labelledby="radix-:r11:"
+      aria-modal="true"
+      class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+      data-state="open"
+      id="radix-:r10:"
+      role="dialog"
+      style="pointer-events: auto;"
+      tabindex="-1"
+    >
+      <p
+        class="text-sm text-muted-foreground sr-only"
+        id="radix-:r12:"
+      >
+        View comprehensive organization details, branding, sports, and users
+      </p>
+      <div
+        class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+      >
+        <div
+          class="flex items-start justify-between"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <span
+              class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+            >
+              <span
+                class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+              >
+                T
+              </span>
+            </span>
+            <div
+              class="space-y-2"
+            >
+              <h2
+                class="tracking-tight text-2xl font-bold"
+                data-testid="org-title"
+                id="radix-:r11:"
+              >
+                Test Organization
+              </h2>
+              <div
+                class="flex items-center gap-3 text-muted-foreground flex-wrap"
+              >
+                <div
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                  data-testid="badge-org-type"
+                >
+                  School
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="flex gap-2"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+              data-testid="button-edit-org"
+            >
+              <svg
+                class="lucide lucide-square-pen h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                />
+                <path
+                  d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+                />
+              </svg>
+            </button>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+            >
+              <svg
+                class="lucide lucide-trash2 h-4 w-4 mr-2"
+                fi...
+ ❯ Proxy.waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ tests/unit/org-quick-view.test.tsx:119:11
+    117|     fireEvent.click(screen.getByRole('tab', { name: /users/i }));
+    118| 
+    119|     await waitFor(() => {
+       |           ^
+    120|       expect(screen.getByText('Jane Admin')).toBeInTheDocument();
+    121|       expect(screen.getByText('admin@school.edu')).toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  tests/unit/org-quick-view.test.tsx > OrgQuickViewDialog > handles loading state properly
+TestingLibraryElementError: Found multiple elements with the text: Loading organization details...
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<h2
+  class="tracking-tight text-2xl font-bold"
+  data-testid="org-title"
+  id="radix-:r19:"
+>
+  Loading organization details...
+</h2>
+
+Ignored nodes: comments, script, style
+<p>
+  Loading organization details...
+</p>
+
+Ignored nodes: comments, script, style
+<p>
+  Loading organization details...
+</p>
+
+Ignored nodes: comments, script, style
+<p>
+  Loading organization details...
+</p>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body
+  data-scroll-locked="1"
+  style="pointer-events: none;"
+>
+  <span
+    aria-hidden="true"
+    data-aria-hidden="true"
+    data-radix-focus-guard=""
+    style="outline: none; opacity: 0; position: fixed; pointer-events: none;"
+    tabindex="0"
+  />
+  <div
+    aria-atomic="true"
+    aria-live="polite"
+    class="sr-only"
+  >
+    Dialog closed
+  </div>
+  <div
+    aria-hidden="true"
+    data-aria-hidden="true"
+  />
+  <div
+    aria-atomic="true"
+    aria-live="polite"
+    class="sr-only"
+  >
+    Dialog opened
+  </div>
+  <div
+    aria-hidden="true"
+    class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    data-aria-hidden="true"
+    data-state="open"
+    style="pointer-events: auto;"
+  />
+  <div
+    aria-describedby="radix-:r1a:"
+    aria-labelledby="radix-:r19:"
+    aria-modal="true"
+    class="fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 max-w-6xl max-h-[90vh] p-0 overflow-hidden"
+    data-state="open"
+    id="radix-:r18:"
+    role="dialog"
+    style="pointer-events: auto;"
+    tabindex="-1"
+  >
+    <p
+      class="text-sm text-muted-foreground sr-only"
+      id="radix-:r1a:"
+    >
+      View comprehensive organization details, branding, sports, and users
+    </p>
+    <div
+      class="flex flex-col space-y-1.5 text-center sm:text-left p-6 pb-4 border-b"
+    >
+      <div
+        class="flex items-start justify-between"
+      >
+        <div
+          class="flex items-center gap-4"
+        >
+          <span
+            class="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 bg-primary"
+          >
+            <span
+              class="flex h-full w-full items-center justify-center rounded-full text-lg font-bold bg-primary text-primary-foreground"
+            />
+          </span>
+          <div
+            class="space-y-2"
+          >
+            <h2
+              class="tracking-tight text-2xl font-bold"
+              data-testid="org-title"
+              id="radix-:r19:"
+            >
+              Loading organization details...
+            </h2>
+            <div
+              class="flex items-center gap-3 text-muted-foreground flex-wrap"
+            >
+              <div
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 motion-reduce:transition-none border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 forced-colors:border-[ButtonText] forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText]"
+                data-testid="badge-org-type"
+              >
+                School
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex gap-2"
+        >
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+            data-testid="button-edit-org"
+          >
+            <svg
+              class="lucide lucide-square-pen h-4 w-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
+              />
+            </svg>
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transition-none bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-md px-3 transition-all duration-200 hover:scale-105"
+          >
+            <svg...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/unit/org-quick-view.test.tsx:132:19
+    130|     renderComponent();
+    131| 
+    132|     expect(screen.getByText('Loading organization details...')).toBeInTheDocument();
+       |                   ^
+    133|   });
+    134| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  5 failed | 11 passed (16)
+   Start at  02:19:49
+   Duration  7.53s (transform 701ms, setup 1.65s, collect 1.03s, tests 4.87s, environment 1.74s, prepare 696ms)
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
