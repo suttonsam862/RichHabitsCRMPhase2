@@ -20,45 +20,40 @@ router.post('/test-error', (req, res) => {
 
   const errorType = req.body.type || 'generic';
   
-  try {
-    switch (errorType) {
-      case 'sync':
-        throw new Error('Test synchronous error from Sentry integration');
-      
-      case 'async':
-        setTimeout(() => {
-          throw new Error('Test asynchronous error from Sentry integration');
-        }, 100);
-        break;
-      
-      case 'unhandled':
-        // This will cause an unhandled promise rejection
-        Promise.reject(new Error('Test unhandled promise rejection'));
-        break;
-      
-      case 'custom':
-        const customError = new Error('Test custom error with context');
-        captureErrorWithContext(customError, req, {
-          testData: 'This is test context data',
-          timestamp: new Date().toISOString(),
-          userAgent: req.get('User-Agent'),
-        });
-        throw customError;
-      
-      default:
-        throw new Error('Test generic error from Sentry integration');
+  switch (errorType) {
+    case 'sync':
+      throw new Error('Test synchronous error from Sentry integration');
+    
+    case 'async':
+      setTimeout(() => {
+        throw new Error('Test asynchronous error from Sentry integration');
+      }, 100);
+      break;
+    
+    case 'unhandled':
+      // This will cause an unhandled promise rejection
+      Promise.reject(new Error('Test unhandled promise rejection'));
+      break;
+    
+    case 'custom': {
+      const customError = new Error('Test custom error with context');
+      captureErrorWithContext(customError, req, {
+        testData: 'This is test context data',
+        timestamp: new Date().toISOString(),
+        userAgent: req.get('User-Agent'),
+      });
+      throw customError;
     }
     
-    res.json({
-      success: true,
-      message: `Test ${errorType} error triggered successfully`,
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    // This error will be caught by Sentry's error handler
-    throw error;
+    default:
+      throw new Error('Test generic error from Sentry integration');
   }
+  
+  res.json({
+    success: true,
+    message: `Test ${errorType} error triggered successfully`,
+    timestamp: new Date().toISOString()
+  });
 });
 
 /**

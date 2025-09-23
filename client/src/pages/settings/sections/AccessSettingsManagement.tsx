@@ -272,15 +272,16 @@ export default function AccessSettingsManagement() {
   // Helper functions
   const processValueByDataType = (value: any, dataType: string) => {
     switch (dataType) {
-      case 'number':
+      case 'number': {
         const num = typeof value === 'string' ? parseFloat(value) : value;
         if (isNaN(num)) {
           throw new Error('Value must be a valid number');
         }
         return num;
+      }
       case 'boolean':
         return Boolean(value);
-      case 'json':
+      case 'json': {
         if (typeof value === 'string') {
           try {
             return JSON.parse(value);
@@ -289,6 +290,7 @@ export default function AccessSettingsManagement() {
           }
         }
         return value;
+      }
       default:
         return String(value);
     }

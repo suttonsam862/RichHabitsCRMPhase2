@@ -1,0 +1,139 @@
+✅ Fix the 2 real errors (will unblock CI)
+1) no-case-declarations (“Unexpected lexical declaration in case block”)
+
+File: client/src/pages/settings/sections/AccessSettingsManagement.tsx (around line 276)
+
+Why: You’re declaring const/let inside a case without a block.
+
+Fix: Wrap each affected case with braces.
+
+switch (action.type) {
+  case 'something': {
+    const value = action.payload;
+    // ...do stuff
+    return state;
+  }
+  case 'another': {
+    let tmp = compute();
+    // ...
+    return state;
+  }
+  default:
+    return state;
+}
+
+
+Do this for every case in that reducer/switch that declares variables.
+
+2) no-useless-catch (and another no-case-declarations)
+
+File: server/routes/test-sentry.ts (lines ~23 and ~40)
+
+Why: There’s a try/catch that just rethrows, and a case with declarations but no braces.
+
+Fix A – remove useless try/catch (or add real handling):
+
+// BEFORE
+try {
+  await doThing();
+} catch (e) {
+  throw e; // <-- useless
+}
+
+// AFTER (simple)
+await doThing();
+
+// OR (if you want to add context)
+try {
+  await doThing();
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error('test-sentry route failed', e);
+  throw e;
+}
+
+
+Fix B – wrap case blocks with braces (same pattern as above):
+
+switch (kind) {
+  case 'db': {
+    const span = startSpan('db');
+    // ...
+    break;
+  }
+  case 'api': {
+    const span = startSpan('api');
+    // ...
+    break;
+  }
+  default:
+    break;
+}
+
+
+Run eslint locally after these two changes—you should see 0 errors.
+
+(Optional) Quiet the warnings so your list isn’t huge
+
+If your pipeline uses --max-warnings=0, change it to allow warnings, or relax the two noisiest rules:
+
+A) Allow console in app code (or only warn)
+
+In .eslintrc.* add an override for client/server code:
+
+overrides: [
+  {
+    files: ['client/**/*.{ts,tsx}', 'server/**/*.{ts,tsx}'],
+    rules: {
+      // Pick ONE of these:
+      'no-console': 'off',              // totally allow
+      // or 'no-console': ['warn', { allow: ['warn', 'error'] }], // allow .warn/.error only
+    },
+  },
+]
+
+B) Tame “unused vars” without deleting imports yet
+
+Also in overrides:
+
+'@typescript-eslint/no-unused-vars': [
+  'warn',
+  {
+    argsIgnorePattern: '^_',
+    varsIgnorePattern: '^_',
+    caughtErrorsIgnorePattern: '^_',
+  },
+],
+
+
+Prefix unused things with _ to silence while you refactor.
+
+(Optional) Keep warnings out of CI
+
+Open the lint step in your GitHub Action and change:
+
+npx eslint . --max-warnings=0
+
+
+to:
+
+npx eslint .
+
+
+(or set a small threshold like --max-warnings=50 while you clean up gradually).
+
+Quick checklist
+
+ Wrap switch case blocks with { ... } in:
+
+client/.../AccessSettingsManagement.tsx
+
+server/routes/test-sentry.ts
+
+ Remove or make meaningful the useless try/catch in server/routes/test-sentry.ts.
+
+ Re-run: npx eslint . → confirm 0 errors.
+
+ (Optional) Relax no-console/no-unused-vars and/or CI --max-warnings.
+
+If you paste the exact snippets around those two spots, I’ll give you the precise edited code blocks to drop in.

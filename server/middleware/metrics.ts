@@ -148,32 +148,37 @@ export async function trackBusinessEvent(event: string, req: MetricsRequest, add
 
     // Track specific business events with dedicated counters
     switch (event) {
-      case 'order_created':
+      case 'order_created': {
         const orderStatus = additionalLabels.status || 'pending';
         businessOrdersCreated.labels(orgLabel, orderStatus, roleLabel).inc();
         break;
+      }
 
-      case 'user_registered':
+      case 'user_registered': {
         const regStatus = additionalLabels.status || 'success';
         businessUserRegistrations.labels(orgLabel, roleLabel, regStatus).inc();
         break;
+      }
 
-      case 'file_uploaded':
+      case 'file_uploaded': {
         const fileType = additionalLabels.file_type || 'unknown';
         const uploadStatus = additionalLabels.status || 'success';
         businessFileUploads.labels(orgLabel, fileType, uploadStatus).inc();
         break;
+      }
 
-      case 'organization_created':
+      case 'organization_created': {
         const createdByRole = additionalLabels.created_by_role || roleLabel;
         const orgStatus = additionalLabels.status || 'success';
         businessOrganizationsCreated.labels(createdByRole, orgStatus).inc();
         break;
+      }
 
-      case 'quote_generated':
+      case 'quote_generated': {
         const quoteStatus = additionalLabels.status || 'success';
         businessQuotesGenerated.labels(orgLabel, roleLabel, quoteStatus).inc();
         break;
+      }
 
       default:
         // For unknown events, log them for visibility
