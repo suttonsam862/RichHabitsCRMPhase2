@@ -1,0 +1,204 @@
+You’ve got 2 kinds of problems:
+
+Config gaps (ESLint doesn’t know it’s in a browser/Node/Vitest world, so it flags DOM/Node/Vitest globals).
+
+Noise from scripts/migrations (not production code, but linted with strict rules).
+
+Fix the config and 90% of those errors disappear. Here’s a minimal, safe set of changes you can drop in right now.
+
+1) Ignore non-source scripts (they’re generating most warnings)
+
+Create or update .eslintignore at repo root:
+
+# generated / raw or ops scripts — not app source
+scripts/**
+# root maintenance scripts
+/*.js
+/*.cjs
+add-missing-columns.js
+apply-supabase-schema.js
+complete-migration.js
+complete-schema-push.js
+create-salesperson-tables.js
+create-users-columns.js
+debug-salesperson-tables.js
+ensure-database-setup.js
+fix-users-schema.js
+performance-benchmark.js
+schema-sync.js
+security-validator.js
+sync-users-to-supabase.js
+test-*.js
+verify-database-*.js
+
+# database schema DSL (not TS-runtime code)
+migrations/schema.ts
+
+
+You can prune this list later. For now it gets CI green by excluding ad-hoc scripts that aren’t part of shipped code.
+
+2) Teach ESLint about Browser, Node, and Vitest + calm TS “no-undef”
+
+Install the Vitest plugin (so vi, describe, it, etc. are recognized):
+
+npm i -D eslint-plugin-vitest
+
+
+Update .eslintrc.cjs (or .eslintrc.js) with these additions.
+You don’t need to replace your file—just merge the overrides, env, and globals blocks below (place them at top-level in the exported config):
+
+/** @type {import('eslint').Linter.Config} */
+module.exports = {
+  // keep your existing config...
+  env: {
+    es2022: true,
+    node: true,
+    // keep anything you already had here
+  },
+
+  // Add these globals so ESLint stops flagging DOM/Node types and perf APIs
+  globals: {
+    // Browser-ish
+    AbortController: 'readonly',
+    Blob: 'readonly',
+    Event: 'readonly',
+    navigator: 'readonly',
+    performance: 'readonly',
+    btoa: 'readonly',
+    // DOM types often referenced in TS
+    HTMLImageElement: 'readonly',
+    HTMLUListElement: 'readonly',
+    HTMLTableElement: 'readonly',
+    HTMLTableSectionElement: 'readonly',
+    HTMLTableRowElement: 'readonly',
+    HTMLTableCellElement: 'readonly',
+    HTMLTableCaptionElement: 'readonly',
+    HTMLTextAreaElement: 'readonly',
+    HTMLSelectElement: 'readonly',
+    // Fetch/Web APIs used in TS
+    RequestInit: 'readonly',
+    Response: 'readonly',
+    WebSocket: 'readonly',
+    // Node-ish names sometimes referenced in types
+    NodeJS: 'readonly',
+    crypto: 'readonly',
+  },
+
+  overrides: [
+    // Client code runs in the browser; turn off core no-undef for TS (false positives)
+    {
+      files: ['client/**/*.{ts,tsx}'],
+      env: { browser: true },
+      rules: {
+        // TS already type-checks names; the base rule misfires on TS type names
+        'no-undef': 'off',
+      },
+    },
+
+    // Server + tools run in Node
+    {
+      files: [
+        'server/**/*.{ts,tsx}',
+        'shared/**/*.{ts,tsx}',
+        'tools/**/*.{ts,tsx}',
+      ],
+      env: { node: true },
+      rules: {
+        'no-undef': 'off',
+      },
+    },
+
+    // Tests (unit/integration/e2e) — enable Vitest globals & relax a few strict rules
+    {
+      files: [
+        'tests/**/*.{ts,tsx,js}',
+        '**/*.{test,spec}.{ts,tsx,js}',
+      ],
+      env: {
+        node: true,
+        browser: true,
+        'vitest-globals': true, // provided by eslint-plugin-vitest
+      },
+      plugins: ['vitest'],
+      rules: {
+        'no-undef': 'off',                 // Vitest + TS will provide globals
+        'no-restricted-imports': 'off',    // tests can import relatively
+        'no-unexpected-multiline': 'off',  // some template-heavy tests
+        'no-useless-catch': 'off',         // tests often wrap to assert
+      },
+    },
+
+    // Shared schema/dto files: quiet some stylistic rules that aren’t functional
+    {
+      files: ['shared/**/*.{ts,tsx}'],
+      rules: {
+        'no-redeclare': 'off',
+        '@typescript-eslint/no-redeclare': 'off',
+        'no-useless-escape': 'off',
+        'no-control-regex': 'off',
+      },
+    },
+
+    // UI primitives that reference DOM types directly
+    {
+      files: ['client/src/components/ui/**/*.{ts,tsx}'],
+      env: { browser: true },
+      rules: { 'no-undef': 'off' },
+    },
+  ],
+};
+
+
+Why these changes?
+
+no-undef: off for TS: the base rule is known to false-positive on TypeScript type names like HTMLUListElement, RequestInit, etc. TypeScript already validates this.
+
+env + globals make ESLint aware of DOM/Node/Vitest so it stops flagging performance, AbortController, vi, etc.
+
+tests override loosens a few stylistic rules that commonly trip test code.
+
+.eslintignore removes big piles of script warnings from CI.
+
+3) (Optional) keep no-console strict only in shipped code
+
+If you want to allow console.* in tests/dev but keep it strict in app code, add:
+
+overrides: [
+  // ...previous overrides...
+  {
+    files: ['tests/**/*', 'scripts/**/*', '**/*.test.*', '**/*.spec.*'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+]
+
+
+(Leave no-console as-is for client/ and server/ if your policy forbids it.)
+
+4) Run it
+npm ci
+npm run lint      # or: npx eslint .
+
+
+If your project has a format step:
+
+npm run format    # or: npx prettier . --write
+
+
+Then commit on a branch and push:
+
+git checkout -b fix/eslint-config
+git add -A
+git commit -m "chore(eslint): add browser/node/vitest env, ignore scripts, relax TS no-undef"
+git push -u origin fix/eslint-config
+
+What this solves immediately
+
+Errors like 'HTMLUListElement' is not defined, 'RequestInit' is not defined, 'performance' is not defined, 'AbortController' is not defined, 'vi' is not defined, 'btoa' is not defined, 'Express' is not defined, 'NodeJS' is not defined → gone.
+
+Parsing errors on #! and mountains of no-console/unused-var warnings from root scripts → ignored.
+
+Test-only style errors (no-unexpected-multiline, no-useless-catch, no-restricted-imports in tests) → silenced so CI can run the real checks.
+
+Once CI passes lint, you can selectively re-enable rules in smaller areas and clean code incrementally—without blocking commits.

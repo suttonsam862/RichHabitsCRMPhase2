@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Search, Filter, X, Calendar as CalendarIcon, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
-export interface OrderFilters {
+export interface OrderFiltersData {
   search: string;
   status: string;
   customer: string;
@@ -26,8 +26,8 @@ export interface OrderFilters {
 }
 
 interface OrderFiltersProps {
-  filters: OrderFilters;
-  onFiltersChange: (filters: OrderFilters) => void;
+  filters: OrderFiltersData;
+  onFiltersChange: (filters: OrderFiltersData) => void;
   onExport?: () => void;
   className?: string;
 }
@@ -35,14 +35,14 @@ interface OrderFiltersProps {
 export function OrderFilters({ filters, onFiltersChange, onExport, className }: OrderFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const updateFilter = (key: keyof OrderFilters, value: any) => {
+  const updateFilter = (key: keyof OrderFiltersData, value: any) => {
     onFiltersChange({
       ...filters,
       [key]: value,
     });
   };
 
-  const clearFilter = (key: keyof OrderFilters) => {
+  const clearFilter = (key: keyof OrderFiltersData) => {
     const defaultValues = {
       search: '',
       status: 'all',

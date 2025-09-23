@@ -1,0 +1,23 @@
+# generated / raw or ops scripts — not app source
+scripts/**
+# root maintenance scripts
+/*.js
+/*.cjs
+add-missing-columns.js
+apply-supabase-schema.js
+complete-migration.js
+complete-schema-push.js
+create-salesperson-tables.js
+create-users-columns.js
+debug-salesperson-tables.js
+ensure-database-setup.js
+fix-users-schema.js
+performance-benchmark.js
+schema-sync.js
+security-validator.js
+sync-users-to-supabase.js
+test-*.js
+verify-database-*.js
+
+# database schema DSL (not TS-runtime code)
+migrations/schema.ts

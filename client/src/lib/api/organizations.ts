@@ -10,22 +10,18 @@ interface Organization {
 }
 const BASE_URL = '/api/v1/organizations';
 export const createOrganization = async (organizationData: Omit<Organization, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { sports?: string[] }): Promise<Organization> => {
-  try {
-    const token = (await sb?.auth.getSession())?.data.session?.access_token;
-    if (!token) { throw new Error('Authentication token not found.'); }
-    const response = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(organizationData),
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create organization');
-    }
-    return await response.json();
-  } catch (error) {
-    throw error;
+  const token = (await sb?.auth.getSession())?.data.session?.access_token;
+  if (!token) { throw new Error('Authentication token not found.'); }
+  const response = await fetch(BASE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(organizationData),
+  });
+  if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to create organization');
   }
+  return await response.json();
 };
 export const getOrganizations = async (): Promise<Organization[]> => {
     try {
