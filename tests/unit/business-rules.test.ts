@@ -578,7 +578,7 @@ describe('Business Rules Testing', () => {
       }
 
       function normalizePhone(phone: string): string {
-        return phone.replace(/[^\d\+]/g, '');
+        return phone.replace(/[^\d+]/g, '');
       }
 
       function validateEmail(email: string): boolean {

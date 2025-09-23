@@ -42,8 +42,9 @@ class InputSanitizer {
   static sanitizeString(input: string): string {
     if (typeof input !== 'string') return input;
     
-    // Remove null bytes and control characters
-    let sanitized = input.replace(/\0/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    // Remove null bytes and control characters (intentional security filter)
+    /* eslint-disable-next-line no-control-regex */
+    let sanitized = input.replace(/[\u0000-\u001F\u007F]/g, '');
     
     // Sanitize HTML content
     sanitized = DOMPurify.sanitize(sanitized, { 

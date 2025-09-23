@@ -375,7 +375,7 @@ describe('Data Mapping and Transformation Functions', () => {
       
       const cloned: any = {};
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.hasOwn(obj, key)) {
           cloned[key] = deepClone(obj[key]);
         }
       }
@@ -396,7 +396,7 @@ describe('Data Mapping and Transformation Functions', () => {
       const flattened: any = {};
       
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.hasOwn(obj, key)) {
           const newKey = prefix ? `${prefix}.${key}` : key;
           
           if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {

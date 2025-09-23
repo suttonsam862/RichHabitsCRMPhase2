@@ -118,7 +118,7 @@ describe('Database Backup and Recovery Testing', () => {
         let offset = 0;
         const chunkSize = 10;
         
-        while (true) {
+        for (;;) {
           const chunk = await tx.execute(sql`
             SELECT id, customer_name, total_amount, created_at
             FROM orders 

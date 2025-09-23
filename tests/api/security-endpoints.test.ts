@@ -474,7 +474,7 @@ describe('API Security and Authorization Testing', () => {
         expect(errorMessage.toLowerCase()).not.toContain('column');
         
         // Should not expose file paths
-        expect(errorMessage).not.toMatch(/\/[a-zA-Z0-9_\-\/]+\.(js|ts|json)/);
+        expect(errorMessage).not.toMatch(/\/[a-zA-Z0-9_\-/]+\.(js|ts|json)/);
         
         // Should not expose stack traces in production-like responses
         expect(errorMessage).not.toContain('    at ');
