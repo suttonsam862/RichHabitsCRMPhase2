@@ -186,7 +186,8 @@ export default function SalesManagement() {
     queryKey: ['/api/v1/sales/assignments'],
     queryFn: async () => {
       const response = await api.get('/api/v1/sales/assignments');
-      return response; // Server returns direct data, not wrapped in .data
+      // Ensure we return an array even if the API response is unexpected
+      return Array.isArray(response) ? response : [];
     },
     refetchInterval: 30000,
     staleTime: 25000
@@ -595,7 +596,7 @@ export default function SalesManagement() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {(allAssignments || []).map((assignment) => (
+                        {Array.isArray(allAssignments) ? allAssignments.map((assignment) => (
                           <TableRow key={assignment.id}>
                             <TableCell className="font-medium">
                               {salespeopleArray.find(p => p.id === assignment.salesperson_id)?.full_name || 'Unknown'}
@@ -617,7 +618,14 @@ export default function SalesManagement() {
                               </Button>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )) : []}
+                        {!Array.isArray(allAssignments) && allAssignments && (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center text-muted-foreground">
+                              Failed to load assignments. Please try again later.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   )}
