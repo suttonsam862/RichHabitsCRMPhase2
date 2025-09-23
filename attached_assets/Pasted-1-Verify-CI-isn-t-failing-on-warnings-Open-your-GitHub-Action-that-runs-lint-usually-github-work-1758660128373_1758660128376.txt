@@ -1,0 +1,108 @@
+1) Verify CI isn’t failing on warnings
+
+Open your GitHub Action that runs lint (usually .github/workflows/ci.yml) and check the lint step. If it uses --max-warnings=0, warnings will fail the job.
+
+Change this:
+
+npx eslint . --max-warnings=0
+
+
+To this (pick one):
+
+npx eslint .                          # allow warnings
+# or
+npx eslint . --max-warnings=200        # temporary threshold while you clean up
+
+
+Now push again and the “Lint Code” job should pass if there are 0 errors (warnings allowed).
+
+2) Quiet the two loudest warning types (without big refactors)
+
+Add these overrides to your ESLint config (.eslintrc.js / .eslintrc.cjs):
+
+module.exports = {
+  // ... your existing config ...
+  overrides: [
+    // App code
+    {
+      files: ['client/**/*.{ts,tsx}', 'server/**/*.{ts,tsx}'],
+      rules: {
+        // Option A: completely allow console in app code
+        // 'no-console': 'off',
+
+        // Option B (safer): allow only console.warn/error and treat others as warnings
+        'no-console': ['warn', { allow: ['warn', 'error'] }],
+
+        '@typescript-eslint/no-unused-vars': [
+          'warn',
+          { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
+        ],
+      },
+    },
+
+    // Scripts / tooling (migration, debug, seeds, ci helpers, etc.)
+    {
+      files: [
+        '*.cjs',
+        '*.js',
+        'scripts/**/*.{js,cjs,ts}',
+        '*-schema*.js',
+        '*migration*.js',
+        '*seed*.{js,ts}',
+        '*debug*.{js,ts}',
+      ],
+      env: { node: true },
+      rules: {
+        'no-console': 'off',
+        'no-restricted-imports': 'off',
+        '@typescript-eslint/no-unused-vars': [
+          'warn',
+          { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
+        ],
+      },
+    },
+  ],
+};
+
+
+Tip: when you truly want to keep a console for operational logging in app code, prefix with a comment:
+
+// eslint-disable-next-line no-console
+console.log('…');
+
+3) Quick fixes for common stragglers you might still see
+
+no-case-declarations
+You already fixed a few; remember every case with const/let/function needs { … }.
+
+no-useless-catch
+If a catch only rethrows, remove it or add real handling (log, wrap error).
+
+no-useless-escape (regex strings)
+Remove \, unless escaping a special char in the current context. In most plain strings:
+
+\+ \- \( \) \. → usually unnecessary
+
+In character classes some escapes are still useful.
+
+no-control-regex
+If you truly need control chars, prefer ranges like /[\u0000-\u001F]/. If it’s intentional and audited, wrap minimally:
+
+/* eslint-disable-next-line no-control-regex */
+const rx = /[\x00-\x1F]/;
+
+
+Tests complaining about browser/node globals
+Add per-folder env in overrides:
+
+{ files: ['client/**/*'], env: { browser: true } }
+{ files: ['server/**/*', 'tests/**/*'], env: { node: true } }
+
+
+Alias rule in tests (no-restricted-imports)
+If you see “use @/ alias” again, change:
+
+// wrong
+import X from '../../client/src/components/...'
+// right
+import X from '@/components/...'

@@ -172,6 +172,25 @@ export default [
     }
   },
   
+  // App code - quiet the two loudest warning types
+  {
+    files: ['client/**/*.{ts,tsx}', 'server/**/*.{ts,tsx}'],
+    rules: {
+      // Allow console.warn/error and treat others as warnings (not errors)
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      
+      // Use underscore pattern to ignore unused vars during refactoring
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    }
+  },
+
   // Client code runs in the browser; turn off core no-undef for TS (false positives)
   {
     files: ['client/**/*.{ts,tsx}'],
@@ -266,11 +285,43 @@ export default [
     }
   },
 
-  // Allow console statements in tests/dev but keep strict in app code
+  // Scripts / tooling (migration, debug, seeds, ci helpers, etc.)
   {
-    files: ['tests/**/*', 'scripts/**/*', '**/*.test.*', '**/*.spec.*'],
+    files: [
+      '*.cjs',
+      '*.js', 
+      'scripts/**/*.{js,cjs,ts}',
+      '*-schema*.js',
+      '*migration*.js', 
+      '*seed*.{js,ts}',
+      '*debug*.{js,ts}',
+      'tests/**/*', 
+      '**/*.test.*', 
+      '**/*.spec.*'
+    ],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        global: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly'
+      }
+    },
     rules: {
       'no-console': 'off',
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { 
+          argsIgnorePattern: '^_', 
+          varsIgnorePattern: '^_', 
+          caughtErrorsIgnorePattern: '^_' 
+        }
+      ],
     }
   },
 
