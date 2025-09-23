@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { OrgQuickViewDialog } from '@/components/org-quick-view-dialog';
+import { OrgQuickViewDialog } from '../../client/src/components/org-quick-view-dialog';
 
 // Mock the organization summary API response
 const mockOrgSummary = {
