@@ -1,0 +1,150 @@
+1) Figure out why “can’t commit”
+
+There are a few common blockages. Start at the top and stop when you find the culprit.
+
+A. Pre-commit hooks are failing (most likely)
+
+Projects often use husky + lint-staged to run ESLint/Prettier before commit. If that fails, git commit aborts.
+
+Try a commit and see if a hook message appears:
+
+git add -A
+git commit -m "WIP"    # watch the output carefully
+
+
+If you see ESLint/Prettier/test messages, it’s hooks.
+
+Fix it (preferred):
+
+# pick the one your repo uses
+npm run lint
+npm run lint:fix
+npm run format
+# or
+npx eslint . --ext .js,.ts,.jsx,.tsx --fix
+npx prettier . --write
+
+
+Then commit again.
+
+Temporarily bypass (not recommended, but useful when you must save progress):
+
+git commit -m "WIP" --no-verify
+
+B. You’re blocked from pushing to main
+
+Most repos protect main. You can’t push directly, only via PR with passing checks.
+
+git checkout -b fix/your-change
+git push -u origin fix/your-change
+# Open PR on GitHub
+
+C. Auth problem pushing to GitHub
+
+If push asks for password or fails:
+
+# set the remote to HTTPS (recommended with tokens)
+git remote -v
+git remote set-url origin https://github.com/<org>/<repo>.git
+
+# create a PAT (with 'repo' scope) and use it as password once,
+# or set up a credential helper:
+git config --global credential.helper store
+git push
+
+
+(Use your PAT when prompted.)
+
+D. GPG signing required
+
+If the repo requires signed commits, you must configure GPG/SSH signing, or disable for this repo:
+
+# to see if signing is enforced locally
+git config --get commit.gpgsign
+
+# quick local disable (only if policy allows)
+git config commit.gpgsign false
+
+E. Oversized files / LFS
+
+If your commit contains large binaries, you might need Git LFS:
+
+# if you saw “file exceeds GitHub’s file size limit”
+git lfs install
+git lfs track "path/to/large/*"
+git add .gitattributes
+git add -A
+git commit -m "track large files with LFS"
+
+2) Why your CI shows “Lint Code (push) failed” and others skipped
+
+Your workflow is probably structured like:
+
+lint job
+
+other jobs needs: lint (so they skip when lint fails)
+
+So: fix lint locally before pushing to get the rest of the pipeline to run.
+
+Do this locally before pushing:
+# install deps if needed
+npm ci
+
+# run and fix lint
+npm run lint
+npm run lint:fix || npx eslint . --ext .ts,.tsx --fix
+
+# run prettier if present
+npm run format || npx prettier . --write
+
+# run tests (since you recently got green locally)
+npm test
+
+# commit + push a branch
+git checkout -b fix/lint
+git add -A
+git commit -m "Fix lint & formatting"
+git push -u origin fix/lint
+
+
+Then open the PR and click into Actions → the failing workflow → Lint Code if anything still breaks. The log will point to exact files/lines.
+
+3) Fast fixes for typical lint failures you likely triggered
+
+Trailing commas / quotes / spacing → run Prettier.
+
+Unused vars/imports → remove or prefix with _ (e.g., _req) depending on your ESLint rules.
+
+TypeScript no-unsafe-any/no-explicit-any → add proper types or narrow; if necessary, cast in one place rather than adding any everywhere.
+
+Radix/React key warnings → ensure key={item.id ?? index} on all .map().
+
+4) If you truly can’t commit right now (but need to back up your work)
+
+Use a work-in-progress stash on a new branch (bypassing hooks) and push:
+
+git checkout -b wip/rescue
+git add -A
+git commit -m "WIP – snapshot" --no-verify
+git push -u origin wip/rescue
+
+
+Now your changes are safely on GitHub; you can fix lint in follow-ups.
+
+5) Quick checklist
+
+ On a feature branch (not main)
+
+ npm run lint passes locally
+
+ npm run format applied
+
+ npm test passes
+
+ Commit without hooks failing (or use --no-verify for WIP)
+
+ Push branch → open PR
+
+ Verify Actions: Lint Code succeeds → other jobs run
+
+If you paste the error from your git commit or git push attempt (the literal terminal output), I can pinpoint the exact fix in one go.
