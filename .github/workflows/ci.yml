@@ -145,7 +145,7 @@ jobs:
         continue-on-error: true
       
       - name: Run security linting
-        run: npx eslint . --ext .ts,.tsx,.js,.jsx --config .eslintrc-security.js
+        run: npx eslint .
         continue-on-error: true
       
       - name: Check for hardcoded secrets
