@@ -1,0 +1,111 @@
+Fix the remaining real errors
+A) no-control-regex
+
+Use ranges instead of literal control characters.
+
+Before
+
+// e.g. shared/validation-helpers.ts
+const CONTROL = /[\x00\x08\x0b\x0c\x0e-\x1f]/;
+
+
+After
+
+// Covers all ASCII control chars
+const CONTROL = /[\u0000-\u001F]/;
+// If you need DEL too:
+/// const CONTROL = /[\u0000-\u001F\u007F]/;
+
+
+If this is genuinely intentional (security filter), keep the range and add a minimal comment; avoid eslint-disable unless absolutely necessary.
+
+B) no-useless-escape
+
+Remove pointless escapes in normal strings/regexes. Escapes like \+ \- \( \) \. are only needed inside character classes or when escaping actually special tokens.
+
+Before (DTOs / schemas)
+
+const PHONE = /^\+?\(?\d{3}\)?\.\d{3}\.\d{4}$/;
+// or strings with "\\+" etc
+
+
+After
+
+const PHONE = /^\+?\(?\d{3}\)?\.\d{3}\.\d{4}$/; // keep only the needed ones
+// + ( ) . are special in regex, but you only need to escape them where they’re special.
+// In most cases you didn’t need to escape + inside a character class, etc.
+
+
+Rule of thumb:
+
+Outside [...]: escape . ( ) + ? * ^ $ | if you want literal meaning.
+
+Inside [...]: usually don’t escape . ( ) + unless you need a literal ], -, ^, or \.
+
+If you’re unsure, test the pattern briefly in your editor’s regex tester.
+
+C) no-prototype-builtins
+
+Don’t call obj.hasOwnProperty(...) directly.
+
+Before (tests/unit/data-mapping.test.ts)
+
+if (obj.hasOwnProperty(k)) { ... }
+
+
+After
+
+if (Object.hasOwn(obj, k)) { ... }            // Node 16+ / modern TS
+// or
+if (Object.prototype.hasOwnProperty.call(obj, k)) { ... }
+
+D) no-constant-condition
+
+Usually shows up with while (true) / if (true) in tests or loops.
+
+Preferred fix
+
+for (;;) {  // infinite loop, no constant-condition
+  // ...
+  break;
+}
+
+
+If you truly need it:
+
+/* eslint-disable-next-line no-constant-condition */
+while (true) {
+  // ...
+}
+
+
+Use the comment only where it’s intentional and local.
+
+(Optional) Small config polish
+
+If you still see Node/browser/global complaints in odd places, add env per tree:
+
+overrides: [
+  { files: ['client/**/*'], env: { browser: true } },
+  { files: ['server/**/*', 'scripts/**/*', 'tests/**/*'], env: { node: true } },
+]
+
+
+And for tests using vi, describe, etc. (Vitest):
+
+{ files: ['tests/**/*', '**/*.test.ts', '**/*.test.tsx'], env: { 'vitest/globals': true } }
+
+
+(Requires eslint-plugin-vitest or extend from your current testing setup.)
+
+Quick sweep script (optional)
+
+If you want to mass-fix the “prototype builtins” pattern across tests:
+
+# review the diff before committing
+git grep -n "hasOwnProperty(" tests | cut -d: -f1 | sort -u | while read f; do
+  sed -i "s/\([^\.]\)\.hasOwnProperty(\([^)]\+\))/Object.hasOwn(\1, \2)/g" "$f"
+done
+
+
+(Back up first or run on a branch; regex is intentionally conservative.)
