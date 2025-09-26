@@ -1,5 +1,5 @@
 import { getSupabaseClient } from './client';
-import { ServiceResult, success, failure, validateId, asText, asUuid } from '../../lib/id';
+import { ServiceResult, success, failure, asText, asUuid } from '../../lib/id';
 import pino from 'pino';
 
 const logger = pino({ name: 'design-jobs-service' });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import {
   OrderStatusSchema,
@@ -7,9 +7,7 @@ import {
   OrderDTO,
   CreateOrderDTO,
   UpdateOrderDTO,
-  OrderItemDTO,
-  CreateOrderItemDTO,
-  UpdateOrderItemDTO
+  OrderItemDTO
 } from '../../shared/dtos/enhanced/OrderDTO';
 
 describe('Order Validation Schemas', () => {

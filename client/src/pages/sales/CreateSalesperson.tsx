@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, UserPlus, Loader2, Upload, X, Users } from 'lucide-react';
+import { ArrowLeft, UserPlus, Loader2, X, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { US_STATES } from '@/constants/us-states';
 import { Badge } from '@/components/ui/badge';

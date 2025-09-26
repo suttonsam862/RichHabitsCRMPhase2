@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { sendErr } from '../lib/http';
 import { logSecurityEvent } from '../lib/log';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { AuthedRequest } from './auth';
 import { ACTION_PERMISSIONS, hasPermission } from '../lib/permissions';
-import { requireOrgMember, OrgRole } from './orgSecurity';
+import { requireOrgMember } from './orgSecurity';
 
 /**
  * Enhanced order-specific permission middleware for granular RBAC

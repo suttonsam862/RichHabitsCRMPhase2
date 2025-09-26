@@ -2,8 +2,6 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Package, Truck, MapPin, Clock, CheckCircle2, ExternalLink } from 'lucide-react';
 
 export default function OrderTrackingPage() {

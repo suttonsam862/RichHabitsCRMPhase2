@@ -1,13 +1,11 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Factory, 
   ShoppingCart, 
   Truck, 
   Clock,
-  Home,
-  Settings
+  Home
 } from "lucide-react";
 
 const manufacturingNavItems = [

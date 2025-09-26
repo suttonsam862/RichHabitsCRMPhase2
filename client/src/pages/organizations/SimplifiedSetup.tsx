@@ -1,25 +1,20 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import {
   Building,
   Palette,
-  Upload,
   MapPin,
   Save,
-  ImageIcon,
   X,
   Plus,
   Trash2,
-  Sparkles,
-  Search,
-  User
+  Sparkles
 } from 'lucide-react';
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +29,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -120,7 +114,7 @@ export default function SimplifiedSetup() {
 
   // Essential branding fields
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [_uploadingLogo, _setUploadingLogo] = useState(false);
   const [brandPrimary, setBrandPrimary] = useState('#6EE7F9');
   const [brandSecondary, setBrandSecondary] = useState('#A78BFA');
   // File upload now handled by ObjectUploader component

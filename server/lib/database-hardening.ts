@@ -3,7 +3,7 @@
  * Rock-solid database operations with comprehensive error handling
  */
 
-import { supabaseAdmin, supabaseForUser } from './supabase';
+import { supabaseAdmin } from './supabase';
 import { logger } from './log';
 
 export interface DatabaseOperation<T> {

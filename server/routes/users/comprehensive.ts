@@ -1,6 +1,6 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
-import { supabaseAdmin, createUser, deleteUser } from '../../lib/supabaseAdmin.js';
+import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
 import { logger } from '../../lib/log.js';
 import { logSbError } from '../../lib/dbLog.js';
 import { sendOk, sendErr } from '../../lib/http.js';

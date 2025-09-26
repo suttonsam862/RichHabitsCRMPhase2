@@ -1,11 +1,5 @@
 // Consolidated organization routes - canonical implementation
-import { Router, Response } from 'express';
-import { eq, desc, asc, count, ilike, or } from 'drizzle-orm';
-import { organizations, organizationMetrics } from '../../../shared/schema';
-import { db } from '../../db';
-import { sendOk, sendErr } from '../../lib/http';
-import { logSecurityEvent } from '../../lib/log';
-import { AuthedRequest, requireAuth } from '../../middleware/auth';
+import { Router } from 'express';
 import hardenedRouter from "./hardened.js";
 import assetsRouter from "./assets.js";
 import metricsRouter from "./metrics.js";

@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 type Sport = {
   id: string;

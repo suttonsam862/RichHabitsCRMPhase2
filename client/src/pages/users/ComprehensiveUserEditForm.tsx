@@ -33,14 +33,11 @@ import {
   Loader2,
   Shield,
   Settings,
-  User,
   Key,
   Eye,
   EyeOff,
   Copy,
-  RefreshCw,
-  Check,
-  X
+  RefreshCw
 } from 'lucide-react';
 
 interface UserDetails {

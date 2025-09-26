@@ -1,9 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../../server/index';
 import { createTestUser, createTestOrganization, cleanupTestData, getAuthToken } from '../helpers/test-setup';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 
 describe('Comprehensive Security Controls Testing', () => {
   let adminUser: any;

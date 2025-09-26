@@ -1,6 +1,5 @@
 import { supabaseAdmin } from './supabaseAdmin';
 import { getWebSocketManager } from './websocket';
-import { env } from './env';
 
 interface VerificationResult {
   name: string;

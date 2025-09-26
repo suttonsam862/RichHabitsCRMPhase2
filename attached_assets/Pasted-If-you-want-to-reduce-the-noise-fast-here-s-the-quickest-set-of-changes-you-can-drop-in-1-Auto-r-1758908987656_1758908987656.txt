@@ -1,0 +1,80 @@
+If you want to reduce the noise fast, here’s the quickest set of changes you can drop in.
+
+1) Auto-remove unused imports/vars (biggest win)
+
+Install a helper plugin that deletes unused imports on --fix and downgrades unused vars to warnings you can prefix with _ when you keep them for future work.
+
+npm i -D eslint-plugin-unused-imports
+
+
+In your ESLint config, add:
+
+plugins: ['unused-imports'],
+
+rules: {
+  // remove unused imports automatically
+  'unused-imports/no-unused-imports': 'error',
+  // turn unused vars into warnings and allow leading underscore to keep them
+  'unused-imports/no-unused-vars': [
+    'warn',
+    { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' }
+  ],
+},
+
+
+Then run:
+
+npx eslint . --fix
+
+
+This will wipe a lot of the “defined but never used” warnings you pasted.
+
+2) Tame no-console where it’s expected
+
+You already allow console.warn/error. For dev scripts, tests, and debug helpers, allow console entirely so they don’t warn:
+
+overrides: [
+  {
+    files: [
+      'scripts/**/*',
+      'tests/**/*',
+      'server/**/debug-*.ts',
+      'server/tools/**/*',
+      'client/src/lib/devtools.ts',
+      'server/lib/startup-verification.ts'
+    ],
+    rules: { 'no-console': 'off' }
+  }
+]
+
+3) React Hooks warnings (selective)
+
+For each hook warning, pick one:
+
+Fix deps (recommended):
+
+useCallback(..., [schema]) → check if schema is stable; if yes, hoist it or memoize it.
+
+useEffect(..., [loadUsers]) → include the function or wrap it in useCallback and depend on it.
+
+Intentional ignore (local, documented):
+
+// eslint-disable-next-line react-hooks/exhaustive-deps -- effect intentionally runs once; loadUsers reads stable refs
+useEffect(() => { /* ... */ }, []);
+
+4) Keep “intentional” unused parameters w/o warnings
+
+Anywhere you keep a parameter for signature/typing but don’t use it, prefix with _:
+
+function onStatusChange(_next: string) { /* … */ }    // silences the warning cleanly
+
+
+Same for catch (err) → catch (_err) and for props you spread but don’t use yet.
+
+5) Optional: quiet remaining hotspots
+
+Replace console.log in app/server code with your logger (logger.info/debug) if you have one.
+
+For client/src/lib/env.ts, server/lib/env*.ts, startup-verification.ts, either keep console allowed via the override above or switch to the logger.
+
+Files like organization-wizard/*, SalesManagement.tsx, etc. still have sprinkled logs — either remove them or wrap them with your logger.

@@ -17,7 +17,6 @@ import { apiRequest } from '@/lib/queryClient';
 import {
   Plus,
   Edit2,
-  User as UserIcon,
   Key,
   Shield,
   AlertCircle,

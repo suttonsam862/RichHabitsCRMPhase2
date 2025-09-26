@@ -1,14 +1,11 @@
 import express from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { sendOk, sendErr, sendNoContent, HttpErrors } from '../../lib/http';
+import { sendOk, sendNoContent, HttpErrors } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
-import { supabaseForUser, supabaseAdmin } from '../../lib/supabase';
-import { logSecurityEvent, logDatabaseOperation, createRequestLogger } from '../../lib/log';
-import { db } from '../../db';
-import { organizations } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE, validateFileType } from '../../lib/unified-storage';
+import { supabaseAdmin } from '../../lib/supabase';
+import { createRequestLogger } from '../../lib/log';
+import { MAX_FILE_SIZE, validateFileType } from '../../lib/unified-storage';
 
 const router = express.Router();
 

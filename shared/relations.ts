@@ -2,7 +2,7 @@
 // This file was automatically generated from the database
 
 import { relations } from "drizzle-orm/relations";
-import { organizations, userRoles, roles, statusOrders, orders, statusOrderItems, orderItems, organizationMetrics, users, organizationFavorites, salespeople, salespersonAssignments } from "./schema";
+import { organizations, userRoles, roles, organizationFavorites, salespeople, salespersonAssignments } from "./schema";
 
 export const userRolesRelations = relations(userRoles, ({one}) => ({
         organization: one(organizations, {

@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { execSync } from 'child_process';
 
 describe('API Integration Tests', () => {
   const API_BASE = 'http://localhost:5000';

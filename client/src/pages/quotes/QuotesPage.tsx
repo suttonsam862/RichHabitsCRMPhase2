@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, FileText, History, Search, Eye, Calendar, DollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 // QuoteGenerator component moved to dedicated page route
 import { useToast } from '@/hooks/use-toast';

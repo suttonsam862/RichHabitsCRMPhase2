@@ -17,7 +17,6 @@ import {
   Play, 
   Pause,
   User,
-  Calendar,
   DollarSign,
   Package
 } from 'lucide-react';

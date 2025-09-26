@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Camera, Trash2, User } from 'lucide-react';
-import { Label } from '@/components/ui/label';
 
 interface ProfilePictureUploadProps {
   currentAvatarUrl?: string;

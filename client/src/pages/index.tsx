@@ -7,7 +7,6 @@ import { paths } from "@/lib/paths";
 import { motion } from "framer-motion";
 import { Building2, ArrowRight } from "lucide-react";
 import { GlowCard } from "@/components/ui/glow-card";
-import { RBButton } from "@/components/ui/rb-button";
 import { HeadMeta } from "@/components/head-meta";
 
 export default function Home() {

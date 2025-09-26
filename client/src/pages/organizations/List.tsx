@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import GlowCard from '@/components/ui/GlowCard';
@@ -8,7 +8,7 @@ import { useCurrentUser } from '@/auth/guard';
 import { Role } from '@/auth/roles';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Building2, GraduationCap, MapPin, Users, Grid3X3, List } from 'lucide-react';
+import { Building2, GraduationCap, MapPin, Users, List } from 'lucide-react';
 
 type Org = { 
   id:string; 

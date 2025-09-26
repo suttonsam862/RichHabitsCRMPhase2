@@ -5,8 +5,6 @@
 
 import { supabaseAdmin } from './supabase';
 import { 
-  dbQueryDuration, 
-  dbQueryTotal, 
   trackDbQuery, 
   trackDbQueryError,
   dbConnectionPoolActive,

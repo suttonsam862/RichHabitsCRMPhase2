@@ -4,10 +4,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { 
   CreatePurchaseOrderType,
   PurchaseOrderType,
-  UpdatePurchaseOrderType,
   ApprovePurchaseOrderType,
   ReceivePurchaseOrderItemsType,
-  MaterialRequirementType,
   BulkGeneratePurchaseOrdersType
 } from '../../shared/dtos';
 

@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Building2, Users, ShoppingBag } from "lucide-react";
+import { Building2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getLogoDisplayUrl } from "@/lib/logoUtils";
 import { imageLoadMonitor } from "@/lib/imageLoadMonitor";

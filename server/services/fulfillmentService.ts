@@ -4,20 +4,15 @@ import {
   CreateFulfillmentEventType,
   ShippingInfoType,
   CreateShippingInfoType,
-  UpdateShippingInfoType,
   QualityCheckType,
   CreateQualityCheckType,
-  UpdateQualityCheckType,
   CompletionRecordType,
-  CreateCompletionRecordType,
   FulfillmentMilestoneType,
-  CreateFulfillmentMilestoneType,
   FulfillmentStatusType,
   FulfillmentDashboardType,
   FULFILLMENT_EVENT_CODES,
   FULFILLMENT_MILESTONE_CODES,
   FULFILLMENT_STATUS_CODES,
-  canTransitionFulfillmentStatus,
   getDefaultFulfillmentMilestones
 } from '@shared/dtos/FulfillmentDTO';
 import {
@@ -30,16 +25,13 @@ import {
   deserializeQualityCheck,
   serializeCompletionRecord,
   deserializeCompletionRecord,
-  serializeFulfillmentMilestone,
   deserializeFulfillmentMilestone,
   serializeShipment,
   deserializeShipment,
   serializeShipmentItem,
-  deserializeShipmentItem,
   generateShipmentNumber,
   ShipmentType,
   CreateShipmentType,
-  ShipmentItemType,
   CreateShipmentItemType
 } from './fulfillmentTransformers';
 

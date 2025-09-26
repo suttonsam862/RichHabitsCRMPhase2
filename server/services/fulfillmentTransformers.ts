@@ -12,12 +12,10 @@ import {
   UpdateShippingInfoType,
   QualityCheckType,
   CreateQualityCheckType,
-  UpdateQualityCheckType,
   CompletionRecordType,
   CreateCompletionRecordType,
   FulfillmentMilestoneType,
   CreateFulfillmentMilestoneType,
-  UpdateFulfillmentMilestoneType,
 } from '@shared/dtos/FulfillmentDTO';
 
 // Shipment DTOs (for new partial fulfillment support)

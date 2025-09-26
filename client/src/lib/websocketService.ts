@@ -1,4 +1,4 @@
-import { WebSocketMessage, WebSocketAuth } from '../../../shared/dtos/NotificationDTO';
+import { WebSocketMessage } from '../../../shared/dtos/NotificationDTO';
 import { queryClient } from './queryClient';
 
 export interface WebSocketConfig {

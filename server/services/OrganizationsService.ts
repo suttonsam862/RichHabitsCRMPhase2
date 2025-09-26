@@ -11,7 +11,6 @@
  */
 
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
-import { logger } from '../lib/log.js';
 import { logSbError } from '../lib/dbLog.js';
 
 // Hardened column definitions - DO NOT CHANGE

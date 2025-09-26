@@ -22,9 +22,7 @@ import {
 import { 
   ArrowLeft, 
   Save, 
-  Loader2, 
-  Upload, 
-  User,
+  Loader2,
   AlertTriangle,
   X,
   Trash2

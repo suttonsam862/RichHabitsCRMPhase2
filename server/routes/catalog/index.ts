@@ -4,10 +4,10 @@
  */
 
 import { Router } from 'express';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { db } from '../../db';
 import { catalogItems, catalogItemImages, catalogItemManufacturers, categories, manufacturers, sports } from '@shared/schema';
-import { eq, sql, and, inArray, ilike, or } from 'drizzle-orm';
+import { eq, sql, and, inArray, ilike } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAuth } from '../../middleware/auth';
 import type { AuthedRequest } from '../../middleware/auth';

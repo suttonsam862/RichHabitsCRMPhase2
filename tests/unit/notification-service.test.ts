@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NotificationService } from '../../server/services/notificationService';
-import type { CreateNotification, CreateRealtimeEvent, WebSocketMessage } from '../../shared/dtos/NotificationDTO';
+import type { CreateNotification, CreateRealtimeEvent } from '../../shared/dtos/NotificationDTO';
 
 // Mock dependencies
 const mockSupabaseAdmin = {

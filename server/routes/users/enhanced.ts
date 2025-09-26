@@ -1,7 +1,7 @@
 
 import express from 'express';
 import { z } from 'zod';
-import { sendSuccess, sendErr, sendCreated } from '../../lib/http';
+import { sendSuccess, sendErr } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { supabaseAdmin } from '../../lib/supabase';
 

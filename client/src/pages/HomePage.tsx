@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Users, FileText, ShoppingCart, Package, BarChart3, Settings, LogOut, TrendingUp, Palette, Factory, BookOpen } from 'lucide-react';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Building2, Users, FileText, Settings, LogOut, TrendingUp, Palette, Factory, BookOpen } from 'lucide-react';
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { PageShell } from "@/components/ui/page-shell";
 
 
 export function HomePage() {

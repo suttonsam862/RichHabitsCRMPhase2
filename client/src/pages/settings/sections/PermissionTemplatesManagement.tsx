@@ -36,10 +36,7 @@ import {
   Edit, 
   Trash2, 
   Save, 
-  X, 
-  Shield, 
   Copy,
-  Check,
   Loader2
 } from 'lucide-react';
 

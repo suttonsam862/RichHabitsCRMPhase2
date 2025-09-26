@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { validateRequest } from '../../server/routes/middleware/validation';
 import { 
   CreateUserSchema,
-  UpdateUserSchema,
   CreateOrderSchema,
   UpdateOrganizationSchema,
   SignedUrlSchema,

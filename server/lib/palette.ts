@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 
 export async function getLogoPalette(url: string): Promise<string[]> {
   try {

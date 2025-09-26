@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { db } from '../../db';
 import { manufacturers } from '@shared/schema';
 import { eq, and, ilike, or, sql } from 'drizzle-orm';

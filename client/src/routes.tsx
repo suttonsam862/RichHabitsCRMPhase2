@@ -11,7 +11,6 @@ import { AuthConfirmedPage } from '@/pages/auth/AuthConfirmedPage';
 
 // Protected pages
 import { HomePage } from '@/pages/HomePage';
-import { OrganizationListPage } from '@/pages/organization/OrganizationListPage';
 import OrganizationsList from '@/pages/organizations/List';
 import CreateWizard from '@/pages/organizations/CreateWizard';
 import { NotFound } from '@/components/NotFound';

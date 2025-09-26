@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Image } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { STORAGE_ROUTES } from "@shared/routes";
 
 interface ObjectUploaderProps {
   onUploadComplete?: (url: string) => void;

@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 import { MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from './lib/unified-storage';
 
 // Initialize Supabase client with service role for storage operations

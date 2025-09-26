@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { db } from '../../server/db';
 import { createTestUser, createTestOrganization, cleanupTestData } from '../helpers/test-setup';
-import { getUserOrgRole, addUserToOrganization, OrgRole } from '../../server/middleware/orgSecurity';
 
 describe('Database Security Integration Tests', () => {
   let testUser: any;

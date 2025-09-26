@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X } from "lucide-react";
 import { PrimaryStep } from "./primary-step";
 import { BrandingStep } from "./branding-step";
-import { SportsContactsStep } from "./sports-contacts-step";
 import { type CreateOrgFormData } from "./types";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useScreenReaderAnnouncement } from "@/hooks/useFocusManagement";

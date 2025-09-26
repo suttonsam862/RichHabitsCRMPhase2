@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { db } from '../../server/db';

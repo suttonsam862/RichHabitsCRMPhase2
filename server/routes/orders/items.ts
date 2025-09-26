@@ -1,14 +1,12 @@
 import express from 'express';
 import { z } from 'zod';
-import { CreateOrderItemDTO, UpdateOrderItemDTO, OrderItemDTO, CreateDesignJobDTO } from '../../../shared/dtos';
+import { CreateOrderItemDTO, UpdateOrderItemDTO, CreateDesignJobDTO } from '../../../shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
 import { sendOk, sendCreated, sendNoContent, HttpErrors, handleDatabaseError } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember } from '../../middleware/orgSecurity';
-import { requireOrderRead, requireOrderUpdate, requireOrderPermissionWithContext } from '../../middleware/orderSecurity';
-import { ACTION_PERMISSIONS } from '../../lib/permissions';
 import { logDatabaseOperation } from '../../lib/log';
 import { trackBusinessEvent } from '../../middleware/metrics';
 import { DesignJobService } from '../../services/designJobService';

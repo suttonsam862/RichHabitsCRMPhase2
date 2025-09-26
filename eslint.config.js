@@ -4,6 +4,7 @@ import tsparser from '@typescript-eslint/parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import vitest from 'eslint-plugin-vitest';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
   // Ignore patterns for files we don't want to lint
@@ -122,11 +123,24 @@ export default [
       '@typescript-eslint': tseslint,
       'react': react,
       'react-hooks': reactHooks,
-      'vitest': vitest
+      'vitest': vitest,
+      'unused-imports': unusedImports
     },
     rules: {
+      // Auto-remove unused imports and downgrade unused vars
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        { 
+          vars: 'all', 
+          varsIgnorePattern: '^_', 
+          args: 'after-used', 
+          argsIgnorePattern: '^_' 
+        }
+      ],
+      
       // TypeScript rules
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': 'off', // Use unused-imports version instead
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
       
@@ -136,7 +150,7 @@ export default [
       
       // General rules
       'no-console': 'warn',
-      'no-unused-vars': 'off', // Use TypeScript version instead
+      'no-unused-vars': 'off', // Use unused-imports version instead
       
       // Canonical frontend tree enforcement rules
       'no-restricted-imports': [
@@ -179,15 +193,8 @@ export default [
       // Allow console.warn/error and treat others as warnings (not errors)
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       
-      // Use underscore pattern to ignore unused vars during refactoring
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-        },
-      ],
+      // Turn off the duplicate TypeScript rule - using unused-imports version
+      '@typescript-eslint/no-unused-vars': 'off',
     }
   },
 
@@ -285,16 +292,20 @@ export default [
     }
   },
 
-  // Scripts / tooling (migration, debug, seeds, ci helpers, etc.)
+  // Scripts / tooling (migration, debug, seeds, ci helpers, etc.) - allow console entirely
   {
     files: [
       '*.cjs',
       '*.js', 
-      'scripts/**/*.{js,cjs,ts}',
+      'scripts/**/*',
       '*-schema*.js',
       '*migration*.js', 
       '*seed*.{js,ts}',
       '*debug*.{js,ts}',
+      'server/**/debug-*.ts',
+      'server/tools/**/*',
+      'client/src/lib/devtools.ts',
+      'server/lib/startup-verification.ts',
       'tests/**/*', 
       '**/*.test.*', 
       '**/*.spec.*'
@@ -314,7 +325,7 @@ export default [
     rules: {
       'no-console': 'off',
       'no-restricted-imports': 'off',
-      '@typescript-eslint/no-unused-vars': [
+      'unused-imports/no-unused-vars': [
         'warn',
         { 
           argsIgnorePattern: '^_', 

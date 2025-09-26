@@ -1,8 +1,8 @@
 import express from 'express';
-import { CreateUserDTO, UpdateUserDTO, UserDTO } from '../../../shared/dtos';
+import { CreateUserDTO, UpdateUserDTO } from '../../../shared/dtos';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { sendSuccess, sendOk, sendErr, sendCreated, HttpErrors, handleDatabaseError } from '../../lib/http';
+import { sendOk, sendErr, HttpErrors, handleDatabaseError } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { supabaseAdmin } from '../../lib/supabase';
 import { logDatabaseOperation, logSecurityEvent } from '../../lib/log';

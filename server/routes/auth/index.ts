@@ -8,10 +8,8 @@ import { validateRequest, CreateAdminUserSchema } from '../../lib/validation';
 import { 
   authAttempts, 
   authTokensIssued, 
-  authPasswordResets, 
-  businessUserRegistrations,
-  getOrganizationLabel,
-  getUserRoleLabel
+  authPasswordResets,
+  getOrganizationLabel
 } from '../../lib/metrics';
 import { trackBusinessEvent } from '../../middleware/metrics';
 const r = Router();

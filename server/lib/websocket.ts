@@ -1,9 +1,8 @@
 import { WebSocket, WebSocketServer, RawData } from 'ws';
 import { IncomingMessage } from 'http';
-import { parse } from 'url';
 import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from './supabaseAdmin';
-import type { WebSocketMessage, WebSocketAuth, CreateRealtimeEvent } from '../../shared/dtos/NotificationDTO';
+import type { WebSocketMessage, CreateRealtimeEvent } from '../../shared/dtos/NotificationDTO';
 import { WebSocketAuthDTO } from '../../shared/dtos/NotificationDTO';
 import { env } from './env';
 

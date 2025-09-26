@@ -4,13 +4,10 @@ import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
 import { logger } from '../../lib/log.js';
 import { logSbError } from '../../lib/dbLog.js';
 import { sendOk, sendErr } from '../../lib/http.js';
-import path from 'path';
-import fs from 'fs';
 import { supabaseForUser } from '../../lib/supabase.js';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../../middleware/auth';
-import { requireOrgMember, requireOrgAdmin, requireOrgOwner, requireOrgReadonly } from '../../middleware/orgSecurity';
-import { businessOrganizationsCreated, getOrganizationLabel, getUserRoleLabel } from '../../lib/metrics';
+import { requireOrgAdmin, requireOrgOwner, requireOrgReadonly } from '../../middleware/orgSecurity';
 import { trackBusinessEvent } from '../../middleware/metrics';
 
 const router = Router();

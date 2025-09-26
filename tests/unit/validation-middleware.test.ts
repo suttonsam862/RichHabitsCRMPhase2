@@ -7,12 +7,9 @@ import {
   UpdateSalespersonProfileSchema,
   CreateAdminUserSchema,
   CreateUserSchema,
-  UpdateUserSchema,
   CreateCatalogItemSchema,
   CreateOrderSchema,
   UpdateOrderStatusSchema,
-  CreateManufacturerSchema,
-  CreateDesignerSchema,
   SignedUrlSchema,
   AssetUploadSchema,
   UpdateOrganizationSchema

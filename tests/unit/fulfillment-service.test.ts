@@ -2,11 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FulfillmentService } from '../../server/services/fulfillmentService';
 import type { 
   CreateShippingInfoType,
-  UpdateShippingInfoType,
   CreateQualityCheckType,
   CreateCompletionRecordType,
-  CreateFulfillmentMilestoneType,
-  FulfillmentStatusType,
   FulfillmentEventType,
   ShippingInfoType,
   QualityCheckType

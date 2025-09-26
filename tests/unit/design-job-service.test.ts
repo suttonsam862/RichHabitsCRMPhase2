@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DesignJobService } from '../../server/services/designJobService';
-import { WorkOrderService } from '../../server/services/workOrderService';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { 
-  CreateDesignJobType, 
-  UpdateDesignJobType,
+  CreateDesignJobType,
   SubmitDesignType,
   ReviewDesignType,
-  BulkAssignDesignJobsType,
   DesignJobType 
 } from '../../shared/dtos';
 

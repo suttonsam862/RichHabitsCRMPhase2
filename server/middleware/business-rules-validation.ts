@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthedRequest } from './auth';
 import { db } from '../db';
-import { ErrorFormatting, ValidationUtils } from '../../shared/validation-helpers';
+import { ErrorFormatting } from '../../shared/validation-helpers';
 
 /**
  * Business Rules Validation Middleware

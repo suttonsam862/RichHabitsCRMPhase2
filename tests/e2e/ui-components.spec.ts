@@ -1,5 +1,5 @@
 import { test, expect, Page, Browser } from '@playwright/test';
-import { createTestUser, createTestOrganization, getAuthToken, cleanupTestData } from '../helpers/test-setup';
+import { createTestUser, createTestOrganization, cleanupTestData } from '../helpers/test-setup';
 
 test.describe('UI Components and User Workflows E2E Tests', () => {
   let browser: Browser;

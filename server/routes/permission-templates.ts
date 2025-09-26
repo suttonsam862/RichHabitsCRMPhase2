@@ -4,7 +4,7 @@ import { requireAuth, AuthedRequest } from '../middleware/auth.js';
 import { sendOk, sendErr, sendCreated } from '../lib/http.js';
 import { logSbError } from '../lib/dbLog.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
-import { InsertPermissionTemplate, PermissionTemplate } from '../../shared/schema.js';
+import { InsertPermissionTemplate } from '../../shared/schema.js';
 import { ROLE_DEFAULTS, ACTION_PERMISSIONS, PAGE_ACCESS } from '../lib/permissions.js';
 import { logger } from '../lib/log.js';
 

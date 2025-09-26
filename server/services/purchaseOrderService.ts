@@ -5,9 +5,7 @@
 
 import { 
   PurchaseOrderType, 
-  CreatePurchaseOrderType, 
-  UpdatePurchaseOrderType,
-  PurchaseOrderItemType,
+  CreatePurchaseOrderType,
   CreatePurchaseOrderItemType,
   MaterialRequirementType,
   CreateMaterialRequirementType,
@@ -18,7 +16,6 @@ import {
   PurchaseOrderStatusType,
   PurchaseOrderEventType,
   CreatePurchaseOrderEventType,
-  MaterialType,
   SupplierType,
   canTransitionToStatus,
   requiresApproval,

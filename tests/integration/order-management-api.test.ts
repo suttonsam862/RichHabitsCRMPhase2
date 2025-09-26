@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
-import { db } from '../../server/db';
 import { supabaseAdmin } from '../../server/lib/supabaseAdmin';
 import { 
   createTestUser, 
@@ -20,8 +19,6 @@ import fulfillmentRouter from '../../server/routes/fulfillment/index';
 import catalogRouter from '../../server/routes/catalog/index';
 
 // Import middleware
-import { requireAuth } from '../../server/middleware/auth';
-import { requireOrgMember } from '../../server/middleware/orgSecurity';
 
 describe('Order Management API Integration Tests', () => {
   let app: express.Application;

@@ -3,7 +3,6 @@ import { sendErr } from '../lib/http';
 import { logSecurityEvent } from '../lib/log';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
-import { organizationMemberships } from '../../shared/schema';
 // AuthedRequest is now available via Express.Request augmentation
 
 /**

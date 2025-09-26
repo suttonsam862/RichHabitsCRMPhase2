@@ -6,15 +6,13 @@
  */
 
 import type { 
-  CreateDesignJobType, 
-  UpdateDesignJobType,
+  CreateDesignJobType,
   CreateDesignJobEventType,
   DesignJobType,
   SubmitDesignType,
   ReviewDesignType,
   BulkAssignDesignJobsType,
-  DesignerWorkloadType,
-  SkillMatchType
+  DesignerWorkloadType
 } from '../../shared/dtos';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { WorkOrderService } from './workOrderService';

@@ -1,14 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WorkOrderService } from '../../server/services/workOrderService';
-import { eq, and } from 'drizzle-orm';
 import type { 
-  CreateWorkOrderType, 
-  UpdateWorkOrderType,
-  WorkOrderType,
-  WorkOrderWithDetailsType,
-  BulkGenerateWorkOrdersType,
-  CreateProductionEventType,
-  ManufacturerCapacityType 
+  CreateWorkOrderType,
+  BulkGenerateWorkOrdersType 
 } from '../../shared/dtos';
 
 // Mock database

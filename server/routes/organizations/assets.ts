@@ -10,9 +10,7 @@ import {
   deleteBatchAssets,
   listOrgAssets, 
   listAllOrgAssets,
-  migrateStorageKeyToUrl,
-  FileUploadSchema,
-  BatchFileUploadSchema
+  migrateStorageKeyToUrl
 } from '../../lib/unified-storage.js';
 import { supabaseAdmin } from '../../lib/supabase.js';
 import { createRequestLogger } from '../../lib/log.js';

@@ -5,14 +5,14 @@
  */
 
 import { Router } from 'express';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../../middleware/auth';
 import type { AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember, requireOrgAdmin } from '../../middleware/orgSecurity';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { sendOk, sendCreated, sendNoContent, HttpErrors, handleDatabaseError } from '../../lib/http';
+import { sendOk, sendCreated, HttpErrors, handleDatabaseError } from '../../lib/http';
 import { logDatabaseOperation } from '../../lib/log';
 import { trackBusinessEvent } from '../../middleware/metrics';
 import { DesignJobService } from '../../services/designJobService';
@@ -20,18 +20,14 @@ import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
 import { getDesignJobById } from '../../services/supabase/designJobs';
 import { createAssetUploadUrl, getAssetDownloadUrl } from '../../lib/unified-storage';
 import {
-  CreateDesignJobDTO,
-  UpdateDesignJobDTO,
   UpdateDesignJobStatusDTO,
   BulkCreateDesignJobsDTO,
   AssignDesignerDTO,
   DesignJobFiltersDTO,
-  DesignJobWithDetailsDTO,
   SubmitDesignDTO,
   ReviewDesignDTO,
   CreateDesignJobCommentDTO,
   BulkAssignDesignJobsDTO,
-  SmartAssignDesignerDTO,
 } from '../../../shared/dtos';
 
 const router = Router();

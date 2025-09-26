@@ -5,7 +5,7 @@ import { sendOk, sendErr } from '../../lib/http';
 import { requireAuth } from '../../middleware/auth';
 import { createRequestLogger } from '../../lib/log';
 import { AuthedRequest } from '../../middleware/auth';
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE, validateFileType } from '../../lib/unified-storage';
+import { MAX_FILE_SIZE, validateFileType } from '../../lib/unified-storage';
 
 // Validation schemas
 const PortfolioUploadSchema = z.object({

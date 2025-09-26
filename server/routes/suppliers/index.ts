@@ -6,16 +6,14 @@
 import express from 'express';
 import { 
   SupplierFiltersDTO,
-  SupplierType,
 } from '../../../shared/dtos/index.js';
-import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
-import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr, HttpErrors, handleDatabaseError } from '../../lib/http';
+import { sendOk, HttpErrors, handleDatabaseError } from '../../lib/http';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember } from '../../middleware/orgSecurity';
 import { logDatabaseOperation } from '../../lib/log';
-import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
+import { sendPaginatedResponse } from '../../lib/pagination';
 import { trackBusinessEvent, MetricsRequest } from '../../middleware/metrics';
 import { PurchaseOrderService } from '../../services/purchaseOrderService';
 

@@ -6,13 +6,12 @@
 
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { z } from 'zod';
 import { requireAuth } from '../../middleware/auth';
 import type { AuthedRequest } from '../../middleware/auth';
 import { requireOrgMember, requireOrgAdmin } from '../../middleware/orgSecurity';
 import { validateRequest } from '../middleware/validation';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { sendOk, sendCreated, sendNoContent, HttpErrors, handleDatabaseError } from '../../lib/http';
+import { sendOk, sendCreated, HttpErrors, handleDatabaseError } from '../../lib/http';
 import { logDatabaseOperation } from '../../lib/log';
 import { trackBusinessEvent } from '../../middleware/metrics';
 import { WorkOrderService } from '../../services/workOrderService';
@@ -20,18 +19,14 @@ import { supabaseForUser, extractAccessToken } from '../../lib/supabase';
 import { parsePaginationParams, sendPaginatedResponse } from '../../lib/pagination';
 import {
   CreateWorkOrderDTO,
-  UpdateWorkOrderDTO,
   UpdateWorkOrderStatusDTO,
   BulkGenerateWorkOrdersDTO,
-  BulkAssignWorkOrdersDTO,
   AssignManufacturerDTO,
-  SmartAssignManufacturerDTO,
   WorkOrderFiltersDTO,
   CreateMilestoneDTO,
   UpdateMilestoneDTO,
   CreateProductionEventDTO,
   ProductionDelayDTO,
-  CreateQualityCheckDTO,
 } from '../../../shared/dtos';
 
 const router = Router();

@@ -2,7 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { db } from '../../db';
 import { systemRegions } from '../../../shared/schema';
-import { eq, like, and, desc, sql } from 'drizzle-orm';
+import { eq, like, and, sql } from 'drizzle-orm';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
 import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr } from '../../lib/http';
 

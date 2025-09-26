@@ -2,7 +2,7 @@
  * Comprehensive security tests for order management permissions
  */
 
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../index';
 import { db } from '../db';

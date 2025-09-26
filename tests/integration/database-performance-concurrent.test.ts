@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { db } from '../../server/db';
 import { createTestUser, createTestOrganization, cleanupTestData } from '../helpers/test-setup';
 import { sql } from 'drizzle-orm';

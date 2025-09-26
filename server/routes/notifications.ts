@@ -4,10 +4,10 @@ import { validateRequest } from './middleware/validation';
 import { asyncHandler } from './middleware/asyncHandler';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { requireOrgMember, requireOrgAdmin } from '../middleware/orgSecurity';
-import { sendOk, sendCreated, sendNoContent, HttpErrors, handleDatabaseError } from '../lib/http';
+import { sendOk, sendCreated, HttpErrors, handleDatabaseError } from '../lib/http';
 import { parsePaginationParams, sendPaginatedResponse } from '../lib/pagination';
 import { notificationService } from '../services/notificationService';
-import { CreateNotificationDTO, UpdateNotificationDTO } from '../../shared/dtos/NotificationDTO';
+import { CreateNotificationDTO } from '../../shared/dtos/NotificationDTO';
 
 const router = express.Router();
 

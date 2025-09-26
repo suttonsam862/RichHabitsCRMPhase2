@@ -2,9 +2,9 @@ import express from 'express';
 import { z } from 'zod';
 import { db } from '../../db';
 import { statusOrders, statusOrderItems, statusDesignJobs, statusWorkOrders } from '../../../shared/schema';
-import { eq, like, and, desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { requireAuth, AuthedRequest } from '../../middleware/auth';
-import { sendSuccess, sendOk, sendCreated, sendNoContent, sendErr } from '../../lib/http';
+import { sendOk, sendErr } from '../../lib/http';
 
 const router = express.Router();
 
